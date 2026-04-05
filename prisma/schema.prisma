@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  nickname  String
+  avatar    String?
+  role         String   @default("user")
+  signupSource String?
+  createdAt    DateTime @default(now())
+
+  attempts  QuizAttempt[]
+  bookmarks Bookmark[]
+  reviews   Review[]
+}
+
+model Category {
+  id    String @id @default(uuid())
+  name  String
+  icon  String @default("📚")
+  order Int    @default(0)
+
+  workbooks Workbook[]
+  oxSets    OxQuizSet[]
+  vocabSets VocabQuizSet[]
+}
+
+model Workbook {
+  id              String   @id @default(uuid())
+  title           String
+  thumbnail       String?
+  categoryId      String
+  totalQuestions  Int      @default(0)
+  questionPerPage Int      @default(12)
+  createdAt       DateTime @default(now())
+
+  category Category  @relation(fields: [categoryId], references: [id])
+  problems Problem[]
+  attempts QuizAttempt[]
+  reviews  Review[]
+}
+
+model Problem {
+  id            String  @id @default(uuid())
+  workbookId    String
+  order         Int
+  passageImage  String?
+  questionImage String?
+  questionText  String?
+  choice1       String
+  choice2       String
+  choice3       String
+  choice4       String
+  choice5       String?
+  answer        Int
+  explanation   String?
+
+  workbook Workbook       @relation(fields: [workbookId], references: [id], onDelete: Cascade)
+  answers  ProblemAnswer[]
+}
+
+model ProblemAnswer {
+  id        String  @id @default(uuid())
+  attemptId String
+  problemId String
+  selected  Int?
+  isCorrect Boolean @default(false)
+
+  attempt QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  problem Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model OxQuizSet {
+  id             String   @id @default(uuid())
+  title          String
+  thumbnail      String?
+  categoryId     String
+  difficulty     String   @default("보통")
+  totalQuestions Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  category  Category     @relation(fields: [categoryId], references: [id])
+  questions OxQuestion[]
+  attempts  QuizAttempt[]
+}
+
+model OxQuestion {
+  id          String  @id @default(uuid())
+  oxQuizSetId String
+  order       Int
+  question    String
+  answer      Boolean
+  explanation String?
+
+  oxQuizSet OxQuizSet @relation(fields: [oxQuizSetId], references: [id], onDelete: Cascade)
+  answers   OxAnswer[]
+}
+
+model OxAnswer {
+  id         String   @id @default(uuid())
+  attemptId  String
+  questionId String
+  selected   Boolean?
+  isCorrect  Boolean  @default(false)
+
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question OxQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model VocabQuizSet {
+  id             String   @id @default(uuid())
+  title          String
+  thumbnail      String?
+  categoryId     String
+  difficulty     String   @default("보통")
+  totalQuestions Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  category  Category        @relation(fields: [categoryId], references: [id])
+  questions VocabQuestion[]
+  attempts  QuizAttempt[]
+}
+
+model VocabQuestion {
+  id             String @id @default(uuid())
+  vocabQuizSetId String
+  order          Int
+  word           String
+  choice1        String
+  choice2        String
+  choice3        String
+  choice4        String
+  answer         Int
+  explanation    String?
+
+  vocabQuizSet VocabQuizSet @relation(fields: [vocabQuizSetId], references: [id], onDelete: Cascade)
+  answers      VocabAnswer[]
+}
+
+model VocabAnswer {
+  id         String   @id @default(uuid())
+  attemptId  String
+  questionId String
+  selected   Int?
+  isCorrect  Boolean  @default(false)
+
+  attempt  QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question VocabQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id             String   @id @default(uuid())
+  userId         String
+  quizType       String
+  workbookId     String?
+  oxQuizSetId    String?
+  vocabQuizSetId String?
+  score          Int      @default(0)
+  totalScore     Int      @default(0)
+  timeTaken      Int      @default(0)
+  completedAt    DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id])
+  workbook     Workbook?     @relation(fields: [workbookId], references: [id])
+  oxQuizSet    OxQuizSet?    @relation(fields: [oxQuizSetId], references: [id])
+  vocabQuizSet VocabQuizSet? @relation(fields: [vocabQuizSetId], references: [id])
+
+  problemAnswers ProblemAnswer[]
+  oxAnswers      OxAnswer[]
+  vocabAnswers   VocabAnswer[]
+}
+
+model Inquiry {
+  id        String   @id @default(uuid())
+  userId    String?
+  name      String
+  email     String
+  category  String
+  title     String
+  content   String
+  status    String   @default("접수")
+  reply     String?
+  createdAt DateTime @default(now())
+}
+
+model Bookmark {
+  id              String   @id @default(uuid())
+  userId          String
+  quizType        String
+  workbookId      String?
+  oxQuizSetId     String?
+  vocabQuizSetId  String?
+  problemId       String?
+  oxQuestionId    String?
+  vocabQuestionId String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  userId     String
+  workbookId String
+  rating     Int
+  content    String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  workbook Workbook @relation(fields: [workbookId], references: [id])
+}
