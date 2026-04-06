@@ -83,16 +83,8 @@ export default function LoginPage() {
   }, []);
 
   function handleKakaoLogin() {
-    console.log("webkit:", window.webkit);
-    console.log("messageHandlers:", window.webkit?.messageHandlers);
-    console.log("kakaoLogin:", window.webkit?.messageHandlers?.kakaoLogin);
-    console.log("appleLogin:", window.webkit?.messageHandlers?.appleLogin);
-
-    if (window.webkit?.messageHandlers?.kakaoLogin) {
-      window.webkit.messageHandlers.kakaoLogin.postMessage("login");
-    } else {
-      window.location.href = "/api/auth/kakao";
-    }
+    alert("appleLogin 있음: " + !!window.webkit?.messageHandlers?.appleLogin);
+    alert("kakaoLogin 있음: " + !!window.webkit?.messageHandlers?.kakaoLogin);
   }
 
   function handleAppleLogin() {
