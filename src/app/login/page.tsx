@@ -83,8 +83,10 @@ export default function LoginPage() {
   }, []);
 
   function handleKakaoLogin() {
-    // 디버깅용 alert
-    alert("클릭됨! webkit: " + !!window.webkit?.messageHandlers?.kakaoLogin);
+    console.log("webkit:", window.webkit);
+    console.log("messageHandlers:", window.webkit?.messageHandlers);
+    console.log("kakaoLogin:", window.webkit?.messageHandlers?.kakaoLogin);
+    console.log("appleLogin:", window.webkit?.messageHandlers?.appleLogin);
 
     if (window.webkit?.messageHandlers?.kakaoLogin) {
       window.webkit.messageHandlers.kakaoLogin.postMessage("login");
