@@ -8,10 +8,13 @@ declare global {
     webkit?: {
       messageHandlers?: {
         kakaoLogin?: { postMessage: (msg: string) => void };
+        appleLogin?: { postMessage: (msg: unknown) => void };
       };
     };
     onKakaoLoginSuccess?: (token: string) => void;
     onKakaoLoginFail?: () => void;
+    onAppleLoginSuccess?: (payload: { identityToken: string; firstName?: string; lastName?: string }) => void;
+    onAppleLoginFail?: () => void;
   }
 }
 
@@ -19,7 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 앱에서 네이티브 카카오 로그인 성공 시 호출되는 콜백
+    // 카카오 네이티브 로그인 콜백
     window.onKakaoLoginSuccess = async (token: string) => {
       try {
         const res = await fetch("/api/auth/kakao/sdk", {
@@ -41,9 +44,41 @@ export default function LoginPage() {
       alert("로그인에 실패했습니다.");
     };
 
+    // 애플 네이티브 로그인 콜백
+    const handleAppleSuccess = async (e: Event) => {
+      const { identityToken, firstName, lastName } = (e as CustomEvent).detail || {};
+      try {
+        const res = await fetch("/api/auth/apple/native-callback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identityToken, firstName, lastName }),
+        });
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          alert("로그인에 실패했습니다.");
+        }
+      } catch {
+        alert("로그인 중 오류가 발생했습니다.");
+      }
+    };
+
+    window.onAppleLoginSuccess = (payload) => {
+      window.dispatchEvent(new CustomEvent("appleLoginSuccess", { detail: payload }));
+    };
+
+    window.onAppleLoginFail = () => {
+      alert("로그인에 실패했습니다.");
+    };
+
+    window.addEventListener("appleLoginSuccess", handleAppleSuccess);
+
     return () => {
       delete window.onKakaoLoginSuccess;
       delete window.onKakaoLoginFail;
+      delete window.onAppleLoginSuccess;
+      delete window.onAppleLoginFail;
+      window.removeEventListener("appleLoginSuccess", handleAppleSuccess);
     };
   }, []);
 
@@ -51,12 +86,18 @@ export default function LoginPage() {
     // 디버깅용 alert
     alert("클릭됨! webkit: " + !!window.webkit?.messageHandlers?.kakaoLogin);
 
-    // 앱 환경: 네이티브 브릿지로 카카오 로그인 요청
     if (window.webkit?.messageHandlers?.kakaoLogin) {
       window.webkit.messageHandlers.kakaoLogin.postMessage("login");
     } else {
-      // 웹 환경: REST API 리다이렉트
       window.location.href = "/api/auth/kakao";
+    }
+  }
+
+  function handleAppleLogin() {
+    if (window.webkit?.messageHandlers?.appleLogin) {
+      window.webkit.messageHandlers.appleLogin.postMessage({});
+    } else {
+      window.location.href = "/api/auth/apple";
     }
   }
 
@@ -112,7 +153,7 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={() => { window.location.href = "/api/auth/apple"; }}
+          onClick={handleAppleLogin}
           className="press"
           style={{
             display: "flex",
