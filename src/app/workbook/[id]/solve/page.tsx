@@ -48,6 +48,11 @@ export default function SolvePage() {
   const touchEndX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   // Timer
   useEffect(() => {
     const timer = setInterval(() => {

@@ -48,6 +48,11 @@ export default function OxQuizSolvePage() {
   const touchEndX = useRef(0);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
     fetch(`/api/ox-quiz/${id}`)
       .then((res) => res.json())
       .then((data) => {

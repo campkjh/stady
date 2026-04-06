@@ -67,6 +67,11 @@ export default function VocabQuizSolvePage() {
   }, [quiz, currentIndex]);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
     fetch(`/api/vocab-quiz/${id}`)
       .then((res) => res.json())
       .then((data) => {
