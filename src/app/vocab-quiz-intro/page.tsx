@@ -91,24 +91,41 @@ export default function VocabQuizListPage() {
         </p>
       </div>
 
-      <div style={{ padding: "0 20px 60px", display: "flex", flexDirection: "column", gap: 12 }}>
-        {quizSets.map((qs) => (
-          <button
-            key={qs.id}
-            type="button"
-            onClick={() => router.push(`/vocab-quiz/${qs.id}`)}
-            className="press"
-            style={{ width: "100%", padding: "18px 24px", borderRadius: 16, backgroundColor: "#fff", border: "none", fontSize: 16, fontWeight: 600, color: "#111", textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
-          >
-            {qs.title}
-          </button>
-        ))}
-        {quizSets.length === 0 && (
-          <p style={{ textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 14 }}>등록된 단어 퀴즈가 없습니다.</p>
-        )}
+      <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
+        <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
+          {quizSets.map((qs, i) => (
+            <button
+              key={qs.id}
+              type="button"
+              onClick={() => router.push(`/vocab-quiz/${qs.id}`)}
+              className="press"
+              style={{
+                width: "100%", padding: "18px 24px", borderRadius: 16, backgroundColor: "#fff",
+                border: "none", fontSize: 16, fontWeight: 600, color: "#111", textAlign: "center",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)", flexShrink: 0,
+                animation: `quizItemFadeUp 0.5s ${0.08 * i}s both`,
+              }}
+            >
+              {qs.title}
+            </button>
+          ))}
+          {quizSets.length === 0 && (
+            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 14 }}>등록된 단어 퀴즈가 없습니다.</p>
+          )}
+        </div>
+        <div style={{
+          position: "absolute", bottom: 40, left: 20, right: 20, height: 48,
+          background: "linear-gradient(to top, #7C5CFC, transparent)",
+          pointerEvents: "none",
+        }} />
       </div>
 
       <style>{`
+        @keyframes quizItemFadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .quiz-list-scroll::-webkit-scrollbar { display: none; }
         @keyframes slotSpin0 {
           0% { transform: translateY(0); }
           18% { transform: translateY(${-SLOT_EMOJIS.length * 80}px); }
