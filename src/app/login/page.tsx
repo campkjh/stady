@@ -48,6 +48,9 @@ export default function LoginPage() {
   }, []);
 
   function handleKakaoLogin() {
+    // 디버깅용 alert
+    alert("클릭됨! webkit: " + !!window.webkit?.messageHandlers?.kakaoLogin);
+
     // 앱 환경: 네이티브 브릿지로 카카오 로그인 요청
     if (window.webkit?.messageHandlers?.kakaoLogin) {
       window.webkit.messageHandlers.kakaoLogin.postMessage("login");
