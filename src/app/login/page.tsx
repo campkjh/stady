@@ -23,8 +23,7 @@ declare global {
 function isInApp(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent.toLowerCase();
-  return /kakaotalk|line|instagram|fbav|fban|twitterbot|naver|zumapp|everytime|webview|wv\)/.test(ua)
-    || /iphone|ipad|ipod|android/.test(ua) && !/safari/.test(ua);
+  return /kakaotalk|line|instagram|fbav|fban|twitterbot|naver|zumapp|everytime/.test(ua);
 }
 
 export default function LoginPage() {
