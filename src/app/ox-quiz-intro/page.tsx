@@ -19,6 +19,11 @@ export default function OxQuizListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
     fetch("/api/ox-quiz")
       .then((res) => res.json())
       .then((data) => {
@@ -30,7 +35,7 @@ export default function OxQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#3787FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, backgroundColor: "#3787FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
@@ -39,7 +44,7 @@ export default function OxQuizListPage() {
   const emojiSet = [...EMOJIS, ...EMOJIS];
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#3787FF", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#3787FF", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => router.back()}

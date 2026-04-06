@@ -18,6 +18,11 @@ export default function VocabQuizListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  useEffect(() => {
     fetch("/api/vocab-quiz")
       .then((res) => res.json())
       .then((data) => {
@@ -29,14 +34,14 @@ export default function VocabQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#7C5CFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, backgroundColor: "#7C5CFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#7C5CFC", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#7C5CFC", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => router.back()}
