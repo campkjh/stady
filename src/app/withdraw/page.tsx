@@ -19,10 +19,11 @@ export default function WithdrawPage() {
   const [step, setStep] = useState<"reason" | "confirm" | "done">("reason");
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
+  const [email, setEmail] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -33,47 +34,55 @@ export default function WithdrawPage() {
           setNickname(data.user.nickname);
         } else {
           setIsLoggedIn(false);
-          router.replace("/login");
         }
       })
-      .catch(() => {
-        setIsLoggedIn(false);
-        router.replace("/login");
-      });
-  }, [router]);
+      .catch(() => setIsLoggedIn(false));
+  }, []);
 
   async function handleWithdraw() {
+    if (!isLoggedIn && !email.trim()) {
+      setAlertMsg("이메일을 입력해 주세요.");
+      return;
+    }
+
     setLoading(true);
     try {
       const reasonLabel = REASONS.find((r) => r.id === selectedReason)?.label || selectedReason;
       const res = await fetch("/api/auth/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reasonLabel, detail }),
+        body: JSON.stringify({
+          reason: reasonLabel,
+          detail,
+          ...(!isLoggedIn && { email: email.trim() }),
+        }),
       });
 
       if (res.ok) {
         setStep("done");
       } else {
-        setShowAlert(true);
+        const data = await res.json();
+        setAlertMsg(data.error || "오류가 발생했습니다.");
       }
     } catch {
-      setShowAlert(true);
+      setAlertMsg("오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
   }
 
-  if (isLoggedIn === null || isLoggedIn === false) return null;
+  const canProceed = selectedReason && (isLoggedIn || email.trim());
+
+  if (isLoggedIn === null) return null;
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff" }}>
-      {showAlert && (
+      {alertMsg && (
         <AlertModal
-          title="오류가 발생했습니다"
-          subtitle="잠시 후 다시 시도해 주세요"
-          buttons={[{ label: "확인", bgColor: "#3787FF", color: "#fff", onClick: () => setShowAlert(false) }]}
-          onClose={() => setShowAlert(false)}
+          title={alertMsg}
+          subtitle=""
+          buttons={[{ label: "확인", bgColor: "#3787FF", color: "#fff", onClick: () => setAlertMsg(null) }]}
+          onClose={() => setAlertMsg(null)}
         />
       )}
 
@@ -133,12 +142,34 @@ export default function WithdrawPage() {
         <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>
-              {nickname}님,<br />정말 떠나시는 건가요?
+              {isLoggedIn ? `${nickname}님,\n` : ""}정말 떠나시는 건가요?
             </h2>
             <p style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6 }}>
               탈퇴 사유를 알려주시면 더 나은 서비스를 만드는 데<br />소중히 참고하겠습니다.
             </p>
           </div>
+
+          {/* Email input for non-logged-in users */}
+          {!isLoggedIn && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+                가입한 이메일 주소
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@email.com"
+                style={{
+                  width: "100%", height: 48, padding: "0 14px",
+                  borderRadius: 12, border: "1.5px solid #E5E7EB",
+                  fontSize: 14, outline: "none", boxSizing: "border-box",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#3787FF"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
+              />
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {REASONS.map((reason) => {
@@ -181,7 +212,7 @@ export default function WithdrawPage() {
                 width: "100%", marginTop: 12, padding: "12px 14px",
                 borderRadius: 12, border: "1.5px solid #E5E7EB",
                 fontSize: 14, lineHeight: 1.6, resize: "none", height: 100,
-                outline: "none",
+                outline: "none", boxSizing: "border-box",
               }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "#3787FF"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
@@ -190,14 +221,14 @@ export default function WithdrawPage() {
 
           <button
             type="button"
-            disabled={!selectedReason}
+            disabled={!canProceed}
             onClick={() => setStep("confirm")}
             style={{
               width: "100%", height: 52, marginTop: 28, borderRadius: 12,
-              backgroundColor: selectedReason ? "#111" : "#E5E7EB",
-              color: selectedReason ? "#fff" : "#9CA3AF",
+              backgroundColor: canProceed ? "#111" : "#E5E7EB",
+              color: canProceed ? "#fff" : "#9CA3AF",
               fontSize: 16, fontWeight: 600, border: "none",
-              cursor: selectedReason ? "pointer" : "default",
+              cursor: canProceed ? "pointer" : "default",
               transition: "all 0.2s ease",
             }}
           >
@@ -224,12 +255,12 @@ export default function WithdrawPage() {
           }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
-                { icon: "user", label: "계정 정보", desc: "이메일, 닉네임, 프로필 이미지" },
-                { icon: "book", label: "학습 기록", desc: "문제집 풀이 기록, 점수, 소요 시간" },
-                { icon: "bookmark", label: "북마크 · 오답 노트", desc: "저장한 모든 북마크 데이터" },
-                { icon: "message", label: "문의 내역", desc: "고객센터에 남긴 모든 문의" },
+                { label: "계정 정보", desc: "이메일, 닉네임, 프로필 이미지" },
+                { label: "학습 기록", desc: "문제집 풀이 기록, 점수, 소요 시간" },
+                { label: "북마크 · 오답 노트", desc: "저장한 모든 북마크 데이터" },
+                { label: "문의 내역", desc: "고객센터에 남긴 모든 문의" },
               ].map((item) => (
-                <div key={item.icon} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div key={item.label} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10, backgroundColor: "#FEE2E2",
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
