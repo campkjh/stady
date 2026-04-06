@@ -1,68 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 
 declare global {
   interface Window {
-    Kakao?: {
-      init: (key: string) => void;
-      isInitialized: () => boolean;
-      Auth: {
-        authorize: (options: { redirectUri: string }) => void;
-        login: (options: {
-          success: (authObj: { access_token: string }) => void;
-          fail: (err: unknown) => void;
-        }) => void;
+    webkit?: {
+      messageHandlers?: {
+        kakaoLogin?: { postMessage: (msg: string) => void };
       };
     };
+    onKakaoLoginSuccess?: (token: string) => void;
+    onKakaoLoginFail?: () => void;
   }
-}
-
-function isInApp(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent.toLowerCase();
-  return /kakaotalk|line|instagram|fbav|fban|twitterbot|naver|zumapp|everytime/.test(ua);
 }
 
 export default function LoginPage() {
   const router = useRouter();
-  const [sdkReady, setSdkReady] = useState(false);
-  const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY || "";
 
-  function initKakaoSDK() {
-    if (window.Kakao && !window.Kakao.isInitialized()) {
-      window.Kakao.init(kakaoKey);
-    }
-    setSdkReady(true);
-  }
+  useEffect(() => {
+    // 앱에서 네이티브 카카오 로그인 성공 시 호출되는 콜백
+    window.onKakaoLoginSuccess = async (token: string) => {
+      try {
+        const res = await fetch("/api/auth/kakao/sdk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: token }),
+        });
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          alert("로그인에 실패했습니다.");
+        }
+      } catch {
+        alert("로그인 중 오류가 발생했습니다.");
+      }
+    };
+
+    window.onKakaoLoginFail = () => {
+      alert("로그인에 실패했습니다.");
+    };
+
+    return () => {
+      delete window.onKakaoLoginSuccess;
+      delete window.onKakaoLoginFail;
+    };
+  }, []);
 
   function handleKakaoLogin() {
-    if (isInApp() && sdkReady && window.Kakao) {
-      // 앱 환경: SDK 로그인 (팝업/앱 전환)
-      window.Kakao.Auth.login({
-        success: async (authObj) => {
-          try {
-            const res = await fetch("/api/auth/kakao/sdk", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ accessToken: authObj.access_token }),
-            });
-            if (res.ok) {
-              router.push("/");
-            } else {
-              alert("로그인에 실패했습니다.");
-            }
-          } catch {
-            alert("로그인 중 오류가 발생했습니다.");
-          }
-        },
-        fail: () => {
-          // SDK 실패 시 REST API 방식으로 폴백
-          window.location.href = "/api/auth/kakao";
-        },
-      });
+    // 앱 환경: 네이티브 브릿지로 카카오 로그인 요청
+    if (window.webkit?.messageHandlers?.kakaoLogin) {
+      window.webkit.messageHandlers.kakaoLogin.postMessage("login");
     } else {
       // 웹 환경: REST API 리다이렉트
       window.location.href = "/api/auth/kakao";
@@ -79,13 +67,6 @@ export default function LoginPage() {
       padding: "40px 20px",
       backgroundColor: "#fff",
     }}>
-      <Script
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"
-        integrity="sha384-DKYJZ8NLiK8MN4/C5P2ezmFnkrWAhBXjQKe7sIIBUoy1BwMkJagkIcVOOGVrMt3"
-        crossOrigin="anonymous"
-        onLoad={initKakaoSDK}
-      />
-
       {/* Student Icon */}
       <div style={{ marginBottom: 24 }}>
         <img src="/icons/student.svg" alt="" style={{ width: 64, height: 64 }} />
