@@ -153,7 +153,7 @@ export default function SolvePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center" style={{ position: "fixed", inset: 0 }}>
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -161,7 +161,7 @@ export default function SolvePage() {
 
   if (!workbook || problems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col items-center justify-center gap-4" style={{ position: "fixed", inset: 0 }}>
         <p className="text-gray-500">문제를 불러올 수 없습니다.</p>
         <button
           onClick={() => router.back()}
@@ -195,7 +195,7 @@ export default function SolvePage() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto" }}>
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-3">
         <button onClick={() => router.back()} className="p-2 -ml-2">
