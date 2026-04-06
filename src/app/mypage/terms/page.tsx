@@ -2,10 +2,9 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 
 const TERMS_ITEMS = [
-  { label: "개인정보 수집 및 이용약관", href: "/mypage/terms/privacy" },
+  { label: "개인정보처리방침", href: "/mypage/terms/privacy" },
   { label: "서비스 이용약관", href: "/mypage/terms/service" },
-  { label: "개인정보 제 3자 제공 동의", href: "/mypage/terms/third-party" },
-  { label: "환불규정에 대한 약관", href: "/mypage/terms/refund" },
+  { label: "개인정보 제3자 제공 동의", href: "/mypage/terms/third-party" },
 ];
 
 export default function TermsPage() {

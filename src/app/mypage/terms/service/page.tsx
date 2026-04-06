@@ -53,10 +53,6 @@ export default function ServiceTermsPage() {
                   <td className={`${tdClass} font-medium`}>콘텐츠</td>
                   <td className={tdClass}>서비스 내에서 제공되는 문제집, 퀴즈, 해설 등 일체의 학습 자료</td>
                 </tr>
-                <tr>
-                  <td className={`${tdClass} font-medium`}>인앱 결제</td>
-                  <td className={tdClass}>Apple App Store 또는 Google Play Store를 통해 이루어지는 앱 내 유료 콘텐츠 구매</td>
-                </tr>
               </tbody>
             </table>
           </section>
@@ -122,22 +118,7 @@ export default function ServiceTermsPage() {
 
           {/* 제6조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 6조 (인앱 결제 및 유료 서비스)</h2>
-            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-[13px]">
-              <p className="font-medium text-amber-900">Apple App Store / Google Play Store 결제 안내</p>
-              <ul className="mt-2 list-disc pl-5 space-y-1 text-amber-800">
-                <li>유료 콘텐츠는 Apple App Store 또는 Google Play Store의 인앱 결제를 통해 구매할 수 있습니다.</li>
-                <li>결제 금액은 각 스토어의 결제 시스템을 통해 청구되며, 결제 관련 정보는 각 스토어의 정책에 따라 관리됩니다.</li>
-                <li>구독형 서비스의 경우, 구독 기간 종료 최소 24시간 전에 자동 갱신을 해지하지 않으면 자동으로 갱신됩니다.</li>
-                <li>구독 관리 및 자동 갱신 해지는 각 스토어의 계정 설정에서 가능합니다.</li>
-                <li>무료 체험 기간이 제공되는 경우, 미사용 기간은 구독 구매 시 소멸됩니다.</li>
-              </ul>
-            </div>
-          </section>
-
-          {/* 제7조 */}
-          <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 7조 (이용자의 의무)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 6조 (이용자의 의무)</h2>
             <p>이용자는 다음 각 호의 행위를 하여서는 안 됩니다.</p>
             <ul className="mt-2 list-disc pl-5 space-y-1">
               <li>허위 정보를 등록하는 행위</li>
@@ -150,9 +131,9 @@ export default function ServiceTermsPage() {
             </ul>
           </section>
 
-          {/* 제8조 */}
+          {/* 제7조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 8조 (지적재산권)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 7조 (지적재산권)</h2>
             <p>
               1. 서비스 내에서 제공되는 모든 콘텐츠(문제, 해설, 이미지, 디자인 등)에 대한 지적재산권은 회사에 귀속됩니다.
             </p>
@@ -164,9 +145,9 @@ export default function ServiceTermsPage() {
             </p>
           </section>
 
-          {/* 제9조 */}
+          {/* 제8조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 9조 (회원 탈퇴 및 자격 제한)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 8조 (회원 탈퇴 및 자격 제한)</h2>
             <p>1. 회원은 회사에 언제든지 탈퇴를 요청할 수 있으며, 회사는 즉시 회원탈퇴를 처리합니다.</p>
             <p>2. 회원이 다음 각 호의 사유에 해당하는 경우, 회사는 회원자격을 제한·정지 또는 상실시킬 수 있습니다.</p>
             <ul className="mt-1 list-disc pl-5 space-y-1">
@@ -177,9 +158,9 @@ export default function ServiceTermsPage() {
             </ul>
           </section>
 
-          {/* 제10조 */}
+          {/* 제9조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 10조 (서비스의 변경 및 중단)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 9조 (서비스의 변경 및 중단)</h2>
             <p>1. 회사는 상당한 이유가 있는 경우 운영상·기술상의 필요에 따라 서비스를 변경할 수 있습니다.</p>
             <p>2. 다음의 경우 서비스의 전부 또는 일부를 일시적으로 중단할 수 있습니다.</p>
             <ul className="mt-1 list-disc pl-5 space-y-1">
@@ -190,18 +171,18 @@ export default function ServiceTermsPage() {
             <p className="mt-2">3. 서비스 중단 시 사전에 공지하며, 불가피한 경우 사후에 공지할 수 있습니다.</p>
           </section>
 
-          {/* 제11조 */}
+          {/* 제10조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 11조 (면책조항)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 10조 (면책조항)</h2>
             <p>1. 회사는 천재지변 또는 이에 준하는 불가항력으로 인하여 서비스를 제공할 수 없는 경우에는 서비스 제공에 관한 책임이 면제됩니다.</p>
             <p>2. 회사는 이용자의 귀책사유로 인한 서비스 이용의 장애에 대하여는 책임을 지지 않습니다.</p>
             <p>3. 회사는 이용자가 서비스를 이용하여 기대하는 학습 효과 등에 대하여 책임을 지지 않습니다.</p>
             <p>4. 회사는 이용자 간 또는 이용자와 제3자 간에 서비스를 매개로 하여 발생한 분쟁에 대해 개입할 의무가 없으며, 이로 인한 손해에 대해 책임을 지지 않습니다.</p>
           </section>
 
-          {/* 제12조 */}
+          {/* 제11조 */}
           <section>
-            <h2 className="mb-2 font-semibold text-gray-900">제 12조 (분쟁 해결 및 관할)</h2>
+            <h2 className="mb-2 font-semibold text-gray-900">제 11조 (분쟁 해결 및 관할)</h2>
             <p>1. 본 약관은 대한민국 법률에 따라 규율되고 해석됩니다.</p>
             <p>2. 서비스 이용과 관련하여 회사와 이용자 사이에 분쟁이 발생한 경우, 양 당사자는 분쟁의 해결을 위해 성실히 협의합니다.</p>
             <p>3. 협의에 의해 해결되지 않은 분쟁은 민사소송법에 따른 관할 법원에 소를 제기할 수 있습니다.</p>
