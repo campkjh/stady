@@ -1,16 +1,7 @@
-"use client";
+import BackHeader from "@/components/BackHeader";
+import Accordion from "@/components/Accordion";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-interface Notice {
-  id: number;
-  title: string;
-  date: string;
-  detail: string;
-}
-
-const NOTICES: Notice[] = [
+const NOTICES = [
   {
     id: 1,
     title: "서비스 업데이트 안내",
@@ -49,138 +40,27 @@ const NOTICES: Notice[] = [
 ];
 
 export default function NoticePage() {
-  const router = useRouter();
-  const [openId, setOpenId] = useState<number | null>(null);
+  const items = NOTICES.map((notice) => ({
+    id: notice.id,
+    header: (
+      <div>
+        <p style={{ fontSize: 15, fontWeight: 600, color: "#111", marginBottom: 4 }}>
+          {notice.title}
+        </p>
+        <p style={{ fontSize: 13, color: "#9CA3AF" }}>{notice.date}</p>
+      </div>
+    ),
+    content: (
+      <div style={{ padding: "0 0 16px", fontSize: 14, lineHeight: 1.6, color: "#4B5563" }}>
+        {notice.detail}
+      </div>
+    ),
+  }));
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff" }}>
-      {/* Header */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          backgroundColor: "#fff",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "8px 10px",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="press"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 40,
-            height: 40,
-            flexShrink: 0,
-            background: "none",
-            border: "none",
-          }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#111"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>
-          공지사항
-        </h1>
-      </div>
-
-      {/* Notice List */}
-      <div style={{ padding: "0 20px" }}>
-        {NOTICES.map((notice) => {
-          const isOpen = openId === notice.id;
-          return (
-            <div key={notice.id}>
-              <button
-                type="button"
-                className="press"
-                onClick={() => setOpenId(isOpen ? null : notice.id)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "16px 0",
-                  background: "none",
-                  border: "none",
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: "#111",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {notice.title}
-                  </p>
-                  <p style={{ fontSize: 13, color: "#9CA3AF" }}>
-                    {notice.date}
-                  </p>
-                </div>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#9CA3AF"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    flexShrink: 0,
-                    marginLeft: 12,
-                    transition: "transform 0.2s ease",
-                    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              <div
-                style={{
-                  overflow: "hidden",
-                  maxHeight: isOpen ? 200 : 0,
-                  transition: "max-height 0.3s ease",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "0 0 16px",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: "#4B5563",
-                  }}
-                >
-                  {notice.detail}
-                </div>
-              </div>
-              <div
-                style={{ height: 1, backgroundColor: "#F3F4F6" }}
-              />
-            </div>
-          );
-        })}
-      </div>
+      <BackHeader title="공지사항" />
+      <Accordion items={items} />
     </div>
   );
 }

@@ -1,15 +1,7 @@
-"use client";
+import BackHeader from "@/components/BackHeader";
+import Accordion from "@/components/Accordion";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-interface FAQ {
-  id: number;
-  question: string;
-  answer: string;
-}
-
-const FAQS: FAQ[] = [
+const FAQS = [
   {
     id: 1,
     question: "문제집은 어떻게 풀 수 있나요?",
@@ -55,165 +47,26 @@ const FAQS: FAQ[] = [
 ];
 
 export default function FAQPage() {
-  const router = useRouter();
-  const [openId, setOpenId] = useState<number | null>(null);
+  const items = FAQS.map((faq) => ({
+    id: faq.id,
+    header: (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#4A90D9", flexShrink: 0 }}>Q.</span>
+        <p style={{ fontSize: 15, fontWeight: 600, color: "#111" }}>{faq.question}</p>
+      </div>
+    ),
+    content: (
+      <div style={{ padding: "0 0 16px 30px", fontSize: 14, lineHeight: 1.6, color: "#4B5563", display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#F59E0B", flexShrink: 0 }}>A.</span>
+        <span>{faq.answer}</span>
+      </div>
+    ),
+  }));
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff" }}>
-      {/* Header */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          backgroundColor: "#fff",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "8px 10px",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="press"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 40,
-            height: 40,
-            flexShrink: 0,
-            background: "none",
-            border: "none",
-          }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#111"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>
-          자주묻는 질문
-        </h1>
-      </div>
-
-      {/* FAQ List */}
-      <div style={{ padding: "0 20px" }}>
-        {FAQS.map((faq) => {
-          const isOpen = openId === faq.id;
-          return (
-            <div key={faq.id}>
-              <button
-                type="button"
-                className="press"
-                onClick={() => setOpenId(isOpen ? null : faq.id)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "16px 0",
-                  background: "none",
-                  border: "none",
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-              >
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: "#4A90D9",
-                      flexShrink: 0,
-                    }}
-                  >
-                    Q.
-                  </span>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: "#111",
-                    }}
-                  >
-                    {faq.question}
-                  </p>
-                </div>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#9CA3AF"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    flexShrink: 0,
-                    marginLeft: 12,
-                    transition: "transform 0.2s ease",
-                    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              <div
-                style={{
-                  overflow: "hidden",
-                  maxHeight: isOpen ? 200 : 0,
-                  transition: "max-height 0.3s ease",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "0 0 16px 30px",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: "#4B5563",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "#F59E0B",
-                      flexShrink: 0,
-                    }}
-                  >
-                    A.
-                  </span>
-                  <span>{faq.answer}</span>
-                </div>
-              </div>
-              <div
-                style={{ height: 1, backgroundColor: "#F3F4F6" }}
-              />
-            </div>
-          );
-        })}
-      </div>
+      <BackHeader title="자주묻는 질문" />
+      <Accordion items={items} />
     </div>
   );
 }
