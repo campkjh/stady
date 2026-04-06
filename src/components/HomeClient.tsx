@@ -11,6 +11,7 @@ interface Category {
   name: string;
   icon: string;
   order: number;
+  isPopular: boolean;
 }
 
 interface Workbook {
@@ -176,6 +177,7 @@ export default function HomeClient({
                 onClick={() => router.push(`/category?id=${cat.id}`)}
                 className="cat-btn"
                 style={{
+                  position: "relative",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -184,6 +186,15 @@ export default function HomeClient({
                   border: "none",
                 }}
               >
+                {cat.isPopular && (
+                  <span style={{
+                    position: "absolute", top: -4, right: 0, zIndex: 1,
+                    padding: "1px 6px", borderRadius: 20,
+                    backgroundColor: "#FF3B5C", color: "#fff",
+                    fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
+                    lineHeight: "16px",
+                  }}>인기</span>
+                )}
                 <div className="cat-circle" style={{
                   width: "100%",
                   aspectRatio: "1/1",

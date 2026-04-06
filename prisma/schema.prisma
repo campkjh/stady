@@ -24,10 +24,11 @@ model User {
 }
 
 model Category {
-  id    String @id @default(uuid())
-  name  String
-  icon  String @default("📚")
-  order Int    @default(0)
+  id        String  @id @default(uuid())
+  name      String
+  icon      String  @default("📚")
+  order     Int     @default(0)
+  isPopular Boolean @default(false)
 
   workbooks Workbook[]
   oxSets    OxQuizSet[]
