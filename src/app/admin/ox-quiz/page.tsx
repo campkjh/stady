@@ -14,6 +14,7 @@ interface OxQuizSet {
   categoryId: string;
   difficulty: string;
   totalQuestions: number;
+  isPopular: boolean;
   createdAt: string;
   category: Category;
 }
@@ -272,13 +273,14 @@ export default function OxQuizManagement() {
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>난이도</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
                   등록된 OX 퀴즈 세트가 없습니다.
                 </td>
               </tr>
@@ -300,6 +302,27 @@ export default function OxQuizManagement() {
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{set.totalQuestions}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                    <button
+                      onClick={async () => {
+                        await fetch(`/api/ox-quiz/${set.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ isPopular: !set.isPopular }),
+                          credentials: "include",
+                        });
+                        fetchQuizSets();
+                      }}
+                      style={{
+                        padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        backgroundColor: set.isPopular ? "#FF3B5C" : "#F3F4F6",
+                        color: set.isPopular ? "#fff" : "#9CA3AF",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {set.isPopular ? "인기" : "OFF"}
+                    </button>
+                  </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={() => openQuestions(set)}

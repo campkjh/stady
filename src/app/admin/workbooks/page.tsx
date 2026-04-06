@@ -14,6 +14,7 @@ interface Workbook {
   categoryId: string;
   totalQuestions: number;
   questionPerPage: number;
+  isPopular: boolean;
   createdAt: string;
   category: Category;
 }
@@ -368,13 +369,14 @@ export default function WorkbookManagement() {
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>페이지당</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {workbooks.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
                   등록된 문제집이 없습니다.
                 </td>
               </tr>
@@ -396,6 +398,27 @@ export default function WorkbookManagement() {
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{wb.totalQuestions}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{wb.questionPerPage}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                    <button
+                      onClick={async () => {
+                        await fetch(`/api/workbooks/${wb.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ isPopular: !wb.isPopular }),
+                          credentials: "include",
+                        });
+                        fetchWorkbooks();
+                      }}
+                      style={{
+                        padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        backgroundColor: wb.isPopular ? "#FF3B5C" : "#F3F4F6",
+                        color: wb.isPopular ? "#fff" : "#9CA3AF",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {wb.isPopular ? "인기" : "OFF"}
+                    </button>
+                  </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={() => openProblems(wb)}

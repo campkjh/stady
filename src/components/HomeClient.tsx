@@ -20,6 +20,7 @@ interface Workbook {
   categoryId: string;
   totalQuestions: number;
   questionPerPage: number;
+  isPopular: boolean;
   category: Category;
 }
 
@@ -28,6 +29,7 @@ interface OxQuizSet {
   title: string;
   thumbnail: string | null;
   totalQuestions: number;
+  isPopular: boolean;
   category: Category;
 }
 
@@ -36,6 +38,7 @@ interface VocabQuizSet {
   title: string;
   thumbnail: string | null;
   totalQuestions: number;
+  isPopular: boolean;
   category: Category;
 }
 
@@ -245,6 +248,13 @@ export default function HomeClient({
                     ) : (
                       <Image src="/icons/book-cover.svg" alt="" width={60} height={80} style={{ width: "60%", height: "auto", opacity: 0.8 }} />
                     )}
+                    {wb.isPopular && (
+                      <span style={{
+                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
+                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
+                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                      }}>인기</span>
+                    )}
                   </div>
                   <div style={{ paddingTop: 8 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -277,9 +287,16 @@ export default function HomeClient({
                 >
                   <div
                     className={`flex items-center justify-center bg-gradient-to-br ${getGradient(i + 3)}`}
-                    style={{ aspectRatio: "1/1", borderRadius: 12 }}
+                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12 }}
                   >
                     <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>OX</span>
+                    {ox.isPopular && (
+                      <span style={{
+                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
+                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
+                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                      }}>인기</span>
+                    )}
                   </div>
                   <div style={{ paddingTop: 8 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -311,9 +328,16 @@ export default function HomeClient({
                 >
                   <div
                     className={`flex items-center justify-center bg-gradient-to-br ${getGradient(i + 5)}`}
-                    style={{ aspectRatio: "1/1", borderRadius: 12 }}
+                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12 }}
                   >
                     <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Aa</span>
+                    {vq.isPopular && (
+                      <span style={{
+                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
+                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
+                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                      }}>인기</span>
+                    )}
                   </div>
                   <div style={{ paddingTop: 8 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

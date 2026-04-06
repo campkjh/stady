@@ -41,6 +41,7 @@ model Workbook {
   categoryId      String
   totalQuestions  Int      @default(0)
   questionPerPage Int      @default(12)
+  isPopular       Boolean  @default(false)
   createdAt       DateTime @default(now())
 
   category Category  @relation(fields: [categoryId], references: [id])
@@ -86,6 +87,7 @@ model OxQuizSet {
   categoryId     String
   difficulty     String   @default("보통")
   totalQuestions Int      @default(0)
+  isPopular      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   category  Category     @relation(fields: [categoryId], references: [id])
@@ -123,6 +125,7 @@ model VocabQuizSet {
   categoryId     String
   difficulty     String   @default("보통")
   totalQuestions Int      @default(0)
+  isPopular      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   category  Category        @relation(fields: [categoryId], references: [id])
