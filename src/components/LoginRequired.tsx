@@ -31,7 +31,14 @@ export default function LoginRequired() {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 320 }}>
         <button
           type="button"
-          onClick={() => window.location.href = "/api/auth/kakao"}
+          onClick={() => {
+            // iOS 네이티브 로그인 화면 표시
+            if (window.webkit?.messageHandlers?.showNativeLogin) {
+              window.webkit.messageHandlers.showNativeLogin.postMessage({});
+            } else {
+              window.location.href = "/api/auth/kakao";
+            }
+          }}
           className="press"
           style={{
             display: "flex",
@@ -57,7 +64,14 @@ export default function LoginRequired() {
 
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={() => {
+            // iOS 네이티브 로그인 화면 표시
+            if (window.webkit?.messageHandlers?.showNativeLogin) {
+              window.webkit.messageHandlers.showNativeLogin.postMessage({});
+            } else {
+              router.push("/login");
+            }
+          }}
           className="press"
           style={{
             display: "flex",

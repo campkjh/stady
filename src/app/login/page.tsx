@@ -9,6 +9,7 @@ declare global {
       messageHandlers?: {
         kakaoLogin?: { postMessage: (msg: string) => void };
         appleLogin?: { postMessage: (msg: unknown) => void };
+        showNativeLogin?: { postMessage: (msg: unknown) => void };  // ← 추가
       };
     };
     onKakaoLoginSuccess?: (token: string) => void;
@@ -87,13 +88,11 @@ export default function LoginPage() {
 
   function handleKakaoLogin() {
     console.log("🔍 카카오 로그인 버튼 클릭");
-    console.log("webkit 존재:", !!window.webkit);
-    console.log("messageHandlers 존재:", !!window.webkit?.messageHandlers);
-    console.log("kakaoLogin 존재:", !!window.webkit?.messageHandlers?.kakaoLogin);
 
-    if (window.webkit?.messageHandlers?.kakaoLogin) {
-      console.log("✅ 네이티브 카카오 로그인 호출");
-      window.webkit.messageHandlers.kakaoLogin.postMessage("login");
+    // iOS 네이티브 로그인 화면 표시
+    if (window.webkit?.messageHandlers?.showNativeLogin) {
+      console.log("✅ 네이티브 로그인 화면 표시");
+      window.webkit.messageHandlers.showNativeLogin.postMessage({});
     } else {
       console.log("🌐 웹 카카오 로그인으로 리다이렉트");
       window.location.href = "/api/auth/kakao";
@@ -101,8 +100,10 @@ export default function LoginPage() {
   }
 
   function handleAppleLogin() {
-    if (window.webkit?.messageHandlers?.appleLogin) {
-      window.webkit.messageHandlers.appleLogin.postMessage({});
+    // iOS 네이티브 로그인 화면 표시 (카카오랑 동일)
+    if (window.webkit?.messageHandlers?.showNativeLogin) {
+      console.log("✅ 네이티브 로그인 화면 표시");
+      window.webkit.messageHandlers.showNativeLogin.postMessage({});
     } else {
       window.location.href = "/api/auth/apple";
     }
