@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 declare global {
@@ -21,6 +21,16 @@ declare global {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isNativeApp, setIsNativeApp] = useState(false);
+
+  useEffect(() => {
+    // iOS 네이티브 앱 감지
+    if (window.webkit?.messageHandlers?.showNativeLogin) {
+      setIsNativeApp(true);
+      // 자동으로 네이티브 로그인 화면 표시
+      window.webkit.messageHandlers.showNativeLogin.postMessage({});
+    }
+  }, []);
 
   useEffect(() => {
     // 페이지 이동 후에도 콜백이 제대로 등록되도록 다시 설정
@@ -109,6 +119,35 @@ export default function LoginPage() {
     }
   }
 
+  // iOS 네이티브 앱에서는 간단한 UI만 표시 (팝업이 올라올 것이므로)
+  if (isNativeApp) {
+    return (
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        padding: "40px 20px",
+        backgroundColor: "#fff",
+      }}>
+        {/* Student Icon */}
+        <div style={{ marginBottom: 24 }}>
+          <img src="/icons/student.svg" alt="" style={{ width: 64, height: 64 }} />
+        </div>
+
+        {/* Title */}
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", marginBottom: 4, textAlign: "center" }}>
+          스타디
+        </h1>
+        <p style={{ fontSize: 14, color: "#9CA3AF", textAlign: "center" }}>
+          학습의 시작, 스타디와 함께!
+        </p>
+      </div>
+    );
+  }
+
+  // 웹 브라우저에서는 기존 로그인 버튼 표시
   return (
     <div style={{
       display: "flex",
