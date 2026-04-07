@@ -22,6 +22,18 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // 디버깅: messageHandler 체크
+    console.log("🔍 로그인 페이지 로드됨");
+    console.log("webkit:", window.webkit);
+    console.log("messageHandlers:", window.webkit?.messageHandlers);
+    console.log("kakaoLogin handler:", window.webkit?.messageHandlers?.kakaoLogin);
+    console.log("appleLogin handler:", window.webkit?.messageHandlers?.appleLogin);
+
+    // alert로도 확인
+    setTimeout(() => {
+      alert(`MessageHandler 체크:\nkakao: ${!!window.webkit?.messageHandlers?.kakaoLogin}\napple: ${!!window.webkit?.messageHandlers?.appleLogin}`);
+    }, 1000);
+
     // 카카오 네이티브 로그인 콜백
     window.onKakaoLoginSuccess = async (token: string) => {
       try {
