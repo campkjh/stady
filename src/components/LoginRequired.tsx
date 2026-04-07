@@ -16,33 +16,47 @@ export default function LoginRequired() {
     }
   }, []);
 
-  // iOS 네이티브 앱에서는 간단한 로딩만 표시
+  // iOS 네이티브 앱에서는 간단한 페이지 레이아웃만 보여줌
+  // 네이티브 로그인 팝업이 그 위에 올라옴
   if (isNativeApp) {
     return (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        backgroundColor: "#fff",
-      }}>
-        <div style={{ textAlign: "center" }}>
+      <div style={{ background: "#fff", minHeight: "100vh", padding: "28px 16px 20px" }}>
+        {/* 프로필 스켈레톤 */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          marginBottom: 32,
+        }}>
           <div style={{
-            width: 40,
-            height: 40,
-            border: "3px solid #f3f3f3",
-            borderTop: "3px solid #3498db",
+            width: 56,
+            height: 56,
             borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto",
+            background: "#F3F4F6",
           }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ width: 120, height: 18, background: "#F3F4F6", borderRadius: 4, marginBottom: 6 }} />
+            <div style={{ width: 160, height: 14, background: "#F3F4F6", borderRadius: 4 }} />
+          </div>
         </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+
+        {/* 메뉴 스켈레톤 */}
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "15px 0",
+          }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: "#F3F4F6",
+            }} />
+            <div style={{ width: 100, height: 16, background: "#F3F4F6", borderRadius: 4 }} />
+          </div>
+        ))}
       </div>
     );
   }
