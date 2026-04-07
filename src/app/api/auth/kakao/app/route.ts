@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set("userId", user.id, {
       httpOnly: true,
+      secure: true,
+      sameSite: "none",
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
