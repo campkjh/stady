@@ -1,9 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginRequired() {
   const router = useRouter();
+
+  useEffect(() => {
+    // iOS 앱이면 자동으로 네이티브 로그인 화면 표시
+    if (window.webkit?.messageHandlers?.showNativeLogin) {
+      console.log("✅ 자동으로 네이티브 로그인 화면 표시");
+      window.webkit.messageHandlers.showNativeLogin.postMessage({});
+    }
+  }, []);
 
   return (
     <div style={{
