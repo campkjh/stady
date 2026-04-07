@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, isNewUser });
     response.cookies.set("userId", user.id, {
       httpOnly: true,
+      secure: true,
+      sameSite: "none",
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
