@@ -3,20 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-declare global {
-  interface Window {
-    webkit?: {
-      messageHandlers?: {
-        kakaoLogin?: { postMessage: (msg: string) => void };
-        appleLogin?: { postMessage: (msg: unknown) => void };
-      };
-    };
-    onKakaoLoginSuccess?: (token: string) => void;
-    onKakaoLoginFail?: () => void;
-    onAppleLoginSuccess?: (payload: { identityToken: string; firstName?: string; lastName?: string }) => void;
-    onAppleLoginFail?: () => void;
-  }
-}
+// Window 타입은 login/page.tsx에서 정의됨
 
 export function NativeAuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
