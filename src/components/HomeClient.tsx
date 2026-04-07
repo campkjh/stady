@@ -109,7 +109,7 @@ export default function HomeClient({
   }, []);
 
   return (
-    <div style={{ width: "100%", overflow: "hidden" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflow: "hidden" }}>
       {showWelcome && userName && (
         <WelcomeOverlay nickname={userName} onComplete={handleWelcomeComplete} />
       )}
