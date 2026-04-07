@@ -1,19 +1,53 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginRequired() {
   const router = useRouter();
+  const [isNativeApp, setIsNativeApp] = useState(false);
 
   useEffect(() => {
     // iOS 앱이면 자동으로 네이티브 로그인 화면 표시
     if (window.webkit?.messageHandlers?.showNativeLogin) {
       console.log("✅ 자동으로 네이티브 로그인 화면 표시");
+      setIsNativeApp(true);
       window.webkit.messageHandlers.showNativeLogin.postMessage({});
     }
   }, []);
 
+  // iOS 네이티브 앱에서는 간단한 로딩만 표시
+  if (isNativeApp) {
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        backgroundColor: "#fff",
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            border: "3px solid #f3f3f3",
+            borderTop: "3px solid #3498db",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto",
+          }} />
+        </div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // 웹 브라우저에서는 기존 UI 표시
   return (
     <div style={{
       display: "flex",
