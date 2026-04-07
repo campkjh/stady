@@ -21,16 +21,21 @@ declare global {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isNativeApp, setIsNativeApp] = useState(false);
+  // 초기값부터 webkit 체크 (깜빡임 방지)
+  const [isNativeApp] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!window.webkit?.messageHandlers?.showNativeLogin;
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // iOS 네이티브 앱 감지
-    if (window.webkit?.messageHandlers?.showNativeLogin) {
-      setIsNativeApp(true);
-      // 자동으로 네이티브 로그인 화면 표시
-      window.webkit.messageHandlers.showNativeLogin.postMessage({});
+    // iOS 앱이면 자동으로 네이티브 로그인 화면 표시
+    if (isNativeApp) {
+      console.log("✅ 자동으로 네이티브 로그인 화면 표시 (login page)");
+      window.webkit!.messageHandlers!.showNativeLogin!.postMessage({});
     }
-  }, []);
+  }, [isNativeApp]);
 
   useEffect(() => {
     // 페이지 이동 후에도 콜백이 제대로 등록되도록 다시 설정

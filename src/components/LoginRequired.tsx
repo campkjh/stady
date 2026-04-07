@@ -5,16 +5,21 @@ import { useRouter } from "next/navigation";
 
 export default function LoginRequired() {
   const router = useRouter();
-  const [isNativeApp, setIsNativeApp] = useState(false);
+  // 초기값부터 webkit 체크 (깜빡임 방지)
+  const [isNativeApp] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!window.webkit?.messageHandlers?.showNativeLogin;
+    }
+    return false;
+  });
 
   useEffect(() => {
     // iOS 앱이면 자동으로 네이티브 로그인 화면 표시
-    if (window.webkit?.messageHandlers?.showNativeLogin) {
+    if (isNativeApp) {
       console.log("✅ 자동으로 네이티브 로그인 화면 표시");
-      setIsNativeApp(true);
-      window.webkit.messageHandlers.showNativeLogin.postMessage({});
+      window.webkit!.messageHandlers!.showNativeLogin!.postMessage({});
     }
-  }, []);
+  }, [isNativeApp]);
 
   // iOS 네이티브 앱에서는 간단한 페이지 레이아웃만 보여줌
   // 네이티브 로그인 팝업이 그 위에 올라옴
