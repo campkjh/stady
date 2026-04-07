@@ -92,7 +92,7 @@ export default function MyPage() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {}
-    router.push("/login");
+    window.location.href = "/";
   }
 
   return (
