@@ -21,78 +21,7 @@ declare global {
 export default function LoginPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    // 디버깅: messageHandler 체크
-    console.log("🔍 로그인 페이지 로드됨");
-    console.log("webkit:", window.webkit);
-    console.log("messageHandlers:", window.webkit?.messageHandlers);
-    console.log("kakaoLogin handler:", window.webkit?.messageHandlers?.kakaoLogin);
-    console.log("appleLogin handler:", window.webkit?.messageHandlers?.appleLogin);
-
-    // alert로도 확인
-    setTimeout(() => {
-      alert(`MessageHandler 체크:\nkakao: ${!!window.webkit?.messageHandlers?.kakaoLogin}\napple: ${!!window.webkit?.messageHandlers?.appleLogin}`);
-    }, 1000);
-
-    // 카카오 네이티브 로그인 콜백
-    window.onKakaoLoginSuccess = async (token: string) => {
-      try {
-        const res = await fetch("/api/auth/kakao/sdk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken: token }),
-        });
-        if (res.ok) {
-          window.location.href = "/";
-        } else {
-          alert("로그인에 실패했습니다.");
-        }
-      } catch {
-        alert("로그인 중 오류가 발생했습니다.");
-      }
-    };
-
-    window.onKakaoLoginFail = () => {
-      alert("로그인에 실패했습니다.");
-    };
-
-    // 애플 네이티브 로그인 콜백
-    const handleAppleSuccess = async (e: Event) => {
-      const { identityToken, firstName, lastName } = (e as CustomEvent).detail || {};
-      try {
-        const res = await fetch("/api/auth/apple/native-callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ identityToken, firstName, lastName }),
-        });
-        if (res.ok) {
-          window.location.href = "/";
-        } else {
-          alert("로그인에 실패했습니다.");
-        }
-      } catch {
-        alert("로그인 중 오류가 발생했습니다.");
-      }
-    };
-
-    window.onAppleLoginSuccess = (payload) => {
-      window.dispatchEvent(new CustomEvent("appleLoginSuccess", { detail: payload }));
-    };
-
-    window.onAppleLoginFail = () => {
-      alert("로그인에 실패했습니다.");
-    };
-
-    window.addEventListener("appleLoginSuccess", handleAppleSuccess);
-
-    return () => {
-      delete window.onKakaoLoginSuccess;
-      delete window.onKakaoLoginFail;
-      delete window.onAppleLoginSuccess;
-      delete window.onAppleLoginFail;
-      window.removeEventListener("appleLoginSuccess", handleAppleSuccess);
-    };
-  }, []);
+  // 네이티브 콜백은 이제 NativeAuthProvider에서 전역으로 처리됨
 
   function handleKakaoLogin() {
     console.log("🔍 카카오 로그인 버튼 클릭");

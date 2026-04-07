@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,9 @@ export default function RootLayout({
           overflowX: "hidden",
         }}
       >
-        {children}
+        <NativeAuthProvider>
+          {children}
+        </NativeAuthProvider>
       </body>
     </html>
   );
