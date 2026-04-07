@@ -83,8 +83,18 @@ export default function LoginPage() {
   }, []);
 
   function handleKakaoLogin() {
-    alert("appleLogin 있음: " + !!window.webkit?.messageHandlers?.appleLogin);
-    alert("kakaoLogin 있음: " + !!window.webkit?.messageHandlers?.kakaoLogin);
+    console.log("🔍 카카오 로그인 버튼 클릭");
+    console.log("webkit 존재:", !!window.webkit);
+    console.log("messageHandlers 존재:", !!window.webkit?.messageHandlers);
+    console.log("kakaoLogin 존재:", !!window.webkit?.messageHandlers?.kakaoLogin);
+
+    if (window.webkit?.messageHandlers?.kakaoLogin) {
+      console.log("✅ 네이티브 카카오 로그인 호출");
+      window.webkit.messageHandlers.kakaoLogin.postMessage("login");
+    } else {
+      console.log("🌐 웹 카카오 로그인으로 리다이렉트");
+      window.location.href = "/api/auth/kakao";
+    }
   }
 
   function handleAppleLogin() {
