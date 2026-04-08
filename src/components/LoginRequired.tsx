@@ -5,19 +5,26 @@ import { useRouter } from "next/navigation";
 
 export default function LoginRequired() {
   const router = useRouter();
-  // 초기값부터 webkit 체크 (깜빡임 방지)
+  // 초기값부터 iOS/Android 네이티브 앱 체크 (깜빡임 방지)
   const [isNativeApp] = useState(() => {
     if (typeof window !== 'undefined') {
-      return !!window.webkit?.messageHandlers?.showNativeLogin;
+      // iOS webkit 또는 Android JavascriptInterface 체크
+      return !!(window.webkit?.messageHandlers?.showNativeLogin || (window as any).Android?.showNativeLogin);
     }
     return false;
   });
 
   useEffect(() => {
-    // iOS 앱이면 자동으로 네이티브 로그인 화면 표시
+    // 네이티브 앱이면 자동으로 네이티브 로그인 화면 표시
     if (isNativeApp) {
       console.log("✅ 자동으로 네이티브 로그인 화면 표시");
-      window.webkit!.messageHandlers!.showNativeLogin!.postMessage({});
+      if (window.webkit?.messageHandlers?.showNativeLogin) {
+        // iOS
+        window.webkit.messageHandlers.showNativeLogin.postMessage({});
+      } else if ((window as any).Android?.showNativeLogin) {
+        // Android
+        (window as any).Android.showNativeLogin();
+      }
     }
   }, [isNativeApp]);
 
@@ -94,10 +101,15 @@ export default function LoginRequired() {
         <button
           type="button"
           onClick={() => {
-            // iOS 네이티브 로그인 화면 표시
+            // 네이티브 로그인 화면 표시
             if (window.webkit?.messageHandlers?.showNativeLogin) {
+              // iOS
               window.webkit.messageHandlers.showNativeLogin.postMessage({});
+            } else if ((window as any).Android?.showNativeLogin) {
+              // Android
+              (window as any).Android.showNativeLogin();
             } else {
+              // 웹 브라우저
               window.location.href = "/api/auth/kakao";
             }
           }}
@@ -127,10 +139,15 @@ export default function LoginRequired() {
         <button
           type="button"
           onClick={() => {
-            // iOS 네이티브 로그인 화면 표시
+            // 네이티브 로그인 화면 표시
             if (window.webkit?.messageHandlers?.showNativeLogin) {
+              // iOS
               window.webkit.messageHandlers.showNativeLogin.postMessage({});
+            } else if ((window as any).Android?.showNativeLogin) {
+              // Android
+              (window as any).Android.showNativeLogin();
             } else {
+              // 웹 브라우저
               router.push("/login");
             }
           }}
