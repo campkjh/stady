@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 
 interface Category {
   id: string;
@@ -48,6 +49,9 @@ export default function VocabQuizManagement() {
   const [selectedSet, setSelectedSet] = useState<VocabQuizSet | null>(null);
   const [questions, setQuestions] = useState<VocabQuestion[]>([]);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<{ word: string; correct: string; wrong1: string; wrong2: string; wrong3: string }[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [questionData, setQuestionData] = useState({
     word: "",
     choice1: "",
@@ -138,6 +142,64 @@ export default function VocabQuizManagement() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = ev.target?.result;
+        const wb = XLSX.read(data, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1 }) as string[][];
+
+        // 헤더 행(첫 번째 행) 제외, 빈 행 제거
+        const words = rows
+          .slice(1)
+          .filter((row) => row[1] && row[2])
+          .map((row) => ({
+            word: String(row[1] ?? "").trim(),
+            correct: String(row[2] ?? "").trim(),
+            wrong1: String(row[3] ?? "").trim(),
+            wrong2: String(row[4] ?? "").trim(),
+            wrong3: String(row[5] ?? "").trim(),
+          }))
+          .filter((w) => w.word && w.correct && w.wrong1 && w.wrong2 && w.wrong3);
+
+        setImportPreview(words);
+      } catch {
+        alert("파일을 읽는 중 오류가 발생했습니다.");
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleBulkImport = async () => {
+    if (!selectedSet || !importPreview) return;
+    setImporting(true);
+    try {
+      const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/bulk-import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words: importPreview }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`${data.inserted}개의 단어를 성공적으로 가져왔습니다.`);
+        setImportPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        openQuestions(selectedSet);
+        fetchQuizSets();
+      } else {
+        alert(data.error || "오류가 발생했습니다.");
+      }
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -397,22 +459,89 @@ export default function VocabQuizManagement() {
 
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
                 <p style={{ fontSize: 14, color: "#8A909C" }}>총 {questions.length}개 문제</p>
-                <button
-                  className="press"
-                  onClick={() => setShowQuestionForm(!showQuestionForm)}
-                  style={{
-                    padding: "8px 16px",
-                    background: showQuestionForm ? "#fff" : "#3787FF",
-                    color: showQuestionForm ? "#2B313D" : "#fff",
-                    border: showQuestionForm ? "1px solid #E5E7EB" : "none",
-                    borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  }}
-                >
-                  {showQuestionForm ? "취소" : "+ 문제 추가"}
-                </button>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {/* Excel 일괄 가져오기 */}
+                  <label
+                    style={{
+                      padding: "8px 16px",
+                      background: "#10B981",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      display: "inline-block",
+                    }}
+                  >
+                    📥 Excel 가져오기
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                  <button
+                    className="press"
+                    onClick={() => setShowQuestionForm(!showQuestionForm)}
+                    style={{
+                      padding: "8px 16px",
+                      background: showQuestionForm ? "#fff" : "#3787FF",
+                      color: showQuestionForm ? "#2B313D" : "#fff",
+                      border: showQuestionForm ? "1px solid #E5E7EB" : "none",
+                      borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    }}
+                  >
+                    {showQuestionForm ? "취소" : "+ 문제 추가"}
+                  </button>
+                </div>
               </div>
+
+              {/* Excel 미리보기 */}
+              {importPreview && (
+                <div style={{
+                  background: "#F0FDF4", border: "1px solid #A7F3D0", borderRadius: 12,
+                  padding: 16, marginBottom: 16,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#065F46" }}>
+                      📊 {importPreview.length}개 단어 감지됨 — 가져오기 전 확인하세요
+                    </p>
+                    <button
+                      onClick={() => { setImportPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      style={{ background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 18 }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  {/* 미리보기 최대 5개 */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+                    {importPreview.slice(0, 5).map((w, i) => (
+                      <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 13, border: "1px solid #D1FAE5" }}>
+                        <span style={{ fontWeight: 700, color: "#2B313D" }}>{w.word}</span>
+                        <span style={{ color: "#10B981", marginLeft: 8 }}>{w.correct}</span>
+                        <span style={{ color: "#9CA3AF", marginLeft: 8 }}>/ {w.wrong1} / {w.wrong2} / {w.wrong3}</span>
+                      </div>
+                    ))}
+                    {importPreview.length > 5 && (
+                      <p style={{ fontSize: 12, color: "#6B7280", textAlign: "center" }}>... 외 {importPreview.length - 5}개</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleBulkImport}
+                    disabled={importing}
+                    className="press"
+                    style={{
+                      padding: "9px 20px", background: "#10B981", color: "#fff",
+                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      cursor: importing ? "not-allowed" : "pointer", opacity: importing ? 0.6 : 1,
+                    }}
+                  >
+                    {importing ? "가져오는 중..." : `${importPreview.length}개 단어 일괄 추가`}
+                  </button>
+                </div>
+              )}
 
               {/* Add Question Form */}
               {showQuestionForm && (
