@@ -155,6 +155,7 @@ export default function HomeClient({
                 alt=""
                 width={80}
                 height={53}
+                unoptimized
                 style={{ position: "absolute", top: 16, left: 12 }}
               />
               <div style={{ position: "absolute", bottom: 12, left: 12 }}>
@@ -206,7 +207,7 @@ export default function HomeClient({
                   justifyContent: "center",
                 }}>
                   {cat.icon.startsWith("/") ? (
-                    <Image src={cat.icon} alt={cat.name} width={48} height={48} style={{ width: "64%", height: "64%", objectFit: "contain" }} />
+                    <Image src={cat.icon} alt={cat.name} width={48} height={48} unoptimized style={{ width: "64%", height: "64%", objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: 20 }}>{cat.icon}</span>
                   )}
@@ -231,7 +232,7 @@ export default function HomeClient({
             </h2>
             {workbooks.length === 0 ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0" }}>
-                <Image src="/icons/emoji-empty.svg" alt="" width={52} height={52} style={{ marginBottom: 12 }} />
+                <Image src="/icons/emoji-empty.svg" alt="" width={52} height={52} unoptimized style={{ marginBottom: 12 }} />
                 <p style={{ fontSize: 14, color: "#9CA3AF" }}>지금 풀고 계신 문제집이 없습니다</p>
               </div>
             ) : (
@@ -257,7 +258,7 @@ export default function HomeClient({
                     {wb.thumbnail ? (
                       <Image src={wb.thumbnail} alt="" fill sizes="33vw" style={{ objectFit: "cover" }} unoptimized />
                     ) : (
-                      <Image src="/icons/book-cover.svg" alt="" width={60} height={80} style={{ width: "60%", height: "auto", opacity: 0.8 }} />
+                      <Image src="/icons/book-cover.svg" alt="" width={60} height={80} unoptimized style={{ width: "60%", height: "auto", opacity: 0.8 }} />
                     )}
                     {wb.isPopular && (
                       <span style={{

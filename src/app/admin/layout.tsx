@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           {/* Logo */}
           <div style={{ padding: "24px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            <Image src="/icons/stady-logo.svg" alt="Stady" width={80} height={28} style={{ filter: "brightness(0) invert(1)" }} />
+            <Image src="/icons/stady-logo.svg" alt="Stady" width={80} height={28} unoptimized style={{ filter: "brightness(0) invert(1)" }} />
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>관리자 패널</p>
           </div>
 
