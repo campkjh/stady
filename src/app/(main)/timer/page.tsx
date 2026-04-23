@@ -15,6 +15,14 @@ interface TimerUser {
   isMe: boolean;
 }
 
+const PRIMARY = "#3787FF";
+const PRIMARY_DARK = "#1F5EDC";
+const PRIMARY_SOFT = "#E8F0FE";
+const PRIMARY_SOFTER = "#F4F8FF";
+const ACCENT_BG = "#D3E4FF";
+const TEXT_MUTED = "#9CA3AF";
+const OFFLINE_FILL = "#E5E7EB";
+
 function formatTime(sec: number): string {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
@@ -77,26 +85,18 @@ export default function TimerPage() {
     };
   }, [isLoggedIn]);
 
-  // Tick my timer
   useEffect(() => {
     if (!isRunning) return;
-    intervalRef.current = setInterval(() => {
-      setMyElapsed((p) => p + 1);
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    intervalRef.current = setInterval(() => setMyElapsed((p) => p + 1), 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
 
-  // Ping every 30s
   useEffect(() => {
     if (!isRunning) return;
     pingRef.current = setInterval(() => {
       fetch("/api/timer/ping", { method: "POST" }).catch(() => {});
     }, 30000);
-    return () => {
-      if (pingRef.current) clearInterval(pingRef.current);
-    };
+    return () => { if (pingRef.current) clearInterval(pingRef.current); };
   }, [isRunning]);
 
   const start = async () => {
@@ -122,7 +122,15 @@ export default function TimerPage() {
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
   const myTodayTotal = (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed;
 
-  const activeUsers = useMemo(() => users.filter((u) => u.isActive), [users]);
+  // Sort: active (by elapsed desc) → inactive (by today total desc) → never studied
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+      if (a.isActive && b.isActive) return b.activeElapsedSeconds - a.activeElapsedSeconds;
+      return b.todayTotalSeconds - a.todayTotalSeconds;
+    });
+  }, [users]);
+
   const todayRanking = useMemo(
     () => [...users].filter((u) => u.todayTotalSeconds > 0).sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds),
     [users]
@@ -144,28 +152,27 @@ export default function TimerPage() {
       {/* My Timer Card */}
       <div style={{ padding: "4px 20px 24px" }}>
         <div style={{
-          background: "linear-gradient(135deg, #FFF7EC 0%, #FFEBD6 100%)",
-          border: "1px solid #FFE1C0",
+          background: `linear-gradient(135deg, ${PRIMARY_SOFTER} 0%, ${PRIMARY_SOFT} 100%)`,
+          border: `1px solid ${ACCENT_BG}`,
           borderRadius: 24,
           padding: "22px 22px 20px",
           position: "relative",
           overflow: "hidden",
         }}>
-          {/* Decorative dots */}
           <div style={{
             position: "absolute", top: -20, right: -20, width: 120, height: 120,
-            borderRadius: "50%", background: "rgba(255,140,63,0.08)",
+            borderRadius: "50%", background: "rgba(55,135,255,0.08)",
           }} />
           <div style={{
             position: "absolute", bottom: -30, right: 30, width: 80, height: 80,
-            borderRadius: "50%", background: "rgba(255,140,63,0.06)",
+            borderRadius: "50%", background: "rgba(55,135,255,0.06)",
           }} />
 
-          <p style={{ fontSize: 13, color: "#B36A2B", fontWeight: 600, marginBottom: 6, position: "relative" }}>
+          <p style={{ fontSize: 13, color: PRIMARY_DARK, fontWeight: 600, marginBottom: 6, position: "relative" }}>
             오늘 공부 시간
           </p>
-          <p style={{ fontSize: 13, color: "#9A6430", marginBottom: 14, position: "relative" }}>
-            누적 <span style={{ fontWeight: 700, color: "#6B3B0D" }}>{formatShort(myTodayTotal)}</span>
+          <p style={{ fontSize: 13, color: "#4A6BB0", marginBottom: 14, position: "relative" }}>
+            누적 <span style={{ fontWeight: 700, color: "#0F3A8E" }}>{formatShort(myTodayTotal)}</span>
           </p>
 
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 18, position: "relative" }}>
@@ -177,15 +184,14 @@ export default function TimerPage() {
             </span>
           </div>
 
-          {/* Subject + control */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "12px 14px", borderRadius: 14,
-            background: "#fff", border: "1px solid #FFE1C0",
+            background: "#fff", border: `1px solid ${ACCENT_BG}`,
             position: "relative",
           }}>
             <div style={{
-              width: 26, height: 26, borderRadius: 6, background: "#FF8C3F",
+              width: 26, height: 26, borderRadius: 6, background: PRIMARY,
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
@@ -226,11 +232,11 @@ export default function TimerPage() {
               className="press"
               style={{
                 width: 38, height: 38, borderRadius: "50%",
-                background: isRunning ? "#111" : "#FF8C3F",
+                background: isRunning ? "#111" : PRIMARY,
                 border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
-                boxShadow: "0 4px 12px rgba(255,140,63,0.3)",
+                boxShadow: `0 4px 12px rgba(55,135,255,0.3)`,
               }}
             >
               {isRunning ? (
@@ -248,47 +254,43 @@ export default function TimerPage() {
         </div>
       </div>
 
-      {/* Active Users Section */}
+      {/* All Users (lit / unlit) */}
       <div style={{ padding: "0 20px 40px" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>지금 공부중인 유저</h2>
-          <span style={{ fontSize: 13, color: "#FF8C3F", fontWeight: 600 }}>
-            {activeCount}명
+          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>공부 현황</h2>
+          <span style={{ fontSize: 13, color: TEXT_MUTED }}>
+            <span style={{ color: PRIMARY, fontWeight: 700 }}>{activeCount}</span> / {totalCount}명 공부 중
           </span>
         </div>
 
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: "#FF8C3F", borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
+            <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
             <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : activeUsers.length === 0 ? (
+        ) : sortedUsers.length === 0 ? (
           <div style={{
             padding: "32px 20px", borderRadius: 16,
             background: "#F9FAFB", border: "1px solid #F3F4F6",
             textAlign: "center",
           }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>
-              지금 공부 중인 유저가 없어요
-            </p>
-            <p style={{ fontSize: 12, color: "#9CA3AF" }}>
-              먼저 시작해볼까요?
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280" }}>
+              아직 등록된 유저가 없습니다
             </p>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {activeUsers.map((u) => (
+            {sortedUsers.map((u) => (
               <UserCard key={u.userId} user={u} />
             ))}
           </div>
         )}
 
-        {/* Today's ranking for all users with time */}
         {todayRanking.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
               <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>오늘 공부 시간</h2>
-              <span style={{ fontSize: 13, color: "#9CA3AF" }}>전체 {totalCount}명</span>
+              <span style={{ fontSize: 13, color: TEXT_MUTED }}>누적 기록</span>
             </div>
             <div style={{
               borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden",
@@ -301,6 +303,17 @@ export default function TimerPage() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes litPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(55,135,255,0.45); }
+          50% { box-shadow: 0 0 0 10px rgba(55,135,255,0); }
+        }
+        @keyframes dotPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.85; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -316,70 +329,71 @@ function UserCard({ user }: { user: TimerUser }) {
   }, [user.userId, user.activeElapsedSeconds, user.isActive]);
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
+  const lit = user.isActive;
 
   return (
-    <div style={{
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-    }}>
-      {/* Avatar bubble */}
-      <div style={{
-        position: "relative",
-        width: "100%",
-        aspectRatio: "1/1",
-      }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      {/* Avatar bubble - 점등식 */}
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
         <div style={{
           width: "100%", height: "100%", borderRadius: "50%",
-          background: user.isActive ? "#FFF4E6" : "#F5F6F8",
-          border: user.isMe ? "2.5px solid #FF8C3F" : user.isActive ? "2px solid #FFD4A8" : "2px solid #EEF0F3",
+          background: lit
+            ? "linear-gradient(135deg, #D3E4FF 0%, #E8F0FE 100%)"
+            : "#F3F4F6",
+          border: user.isMe
+            ? `2.5px solid ${PRIMARY}`
+            : lit
+              ? `2px solid ${PRIMARY}`
+              : "2px solid #E5E7EB",
           display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden",
           transition: "all 0.3s ease",
+          animation: lit ? "litPulse 2.4s ease-in-out infinite" : "none",
+          filter: lit ? "none" : "grayscale(0.5) brightness(1.04)",
         }}>
           {user.avatar ? (
-            <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : user.isActive ? (
-            // Person studying icon
-            <svg width="52%" height="52%" viewBox="0 0 60 60" fill="none">
-              <circle cx="30" cy="22" r="9" fill="#FF8C3F" />
-              <path d="M14 48 Q14 36 30 36 Q46 36 46 48 Z" fill="#FF8C3F" />
-              <rect x="20" y="42" width="20" height="3" rx="1.5" fill="#FFE1C0" />
-            </svg>
+            <img
+              src={user.avatar}
+              alt=""
+              style={{
+                width: "100%", height: "100%", objectFit: "cover",
+                opacity: lit ? 1 : 0.45,
+                filter: lit ? "none" : "grayscale(1)",
+              }}
+            />
           ) : (
-            // Empty desk icon
-            <svg width="52%" height="52%" viewBox="0 0 60 60" fill="none" stroke="#BDC2CB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="18" cy="16" r="3" />
-              <path d="M18 19 V28 M14 28 H22" />
-              <path d="M12 42 H48" />
-              <path d="M14 42 V52 M46 42 V52" />
-              <path d="M22 32 H44 V42" strokeLinejoin="miter" />
+            <svg width="54%" height="54%" viewBox="0 0 60 60" fill="none">
+              <circle cx="30" cy="22" r="9" fill={lit ? PRIMARY : "#C8CDD5"} />
+              <path d="M14 48 Q14 36 30 36 Q46 36 46 48 Z" fill={lit ? PRIMARY : "#C8CDD5"} />
+              <rect x="20" y="42" width="20" height="3" rx="1.5" fill={lit ? "#B7D0FF" : "#E5E7EB"} />
             </svg>
           )}
         </div>
-        {user.isActive && (
-          <div style={{
-            position: "absolute", top: 0, right: 0,
-            width: 12, height: 12, borderRadius: "50%",
-            background: "#22C55E", border: "2px solid #fff",
-          }} />
-        )}
+        {/* Status dot */}
+        <div style={{
+          position: "absolute", top: 2, right: 2,
+          width: 14, height: 14, borderRadius: "50%",
+          background: lit ? PRIMARY : OFFLINE_FILL,
+          border: "2.5px solid #fff",
+          animation: lit ? "dotPulse 1.8s ease-in-out infinite" : "none",
+          boxShadow: lit ? `0 0 8px ${PRIMARY}` : "none",
+        }} />
       </div>
 
-      {/* Name */}
       <p style={{
         fontSize: 13, fontWeight: 700,
-        color: user.isActive ? "#111" : "#9CA3AF",
+        color: lit ? "#111" : "#9CA3AF",
         maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
         {user.nickname}
       </p>
 
-      {/* Timer or today total */}
       <p style={{
         fontSize: 12, fontWeight: 700,
-        color: user.isActive ? "#FF8C3F" : "#BDC2CB",
+        color: lit ? PRIMARY : "#BDC2CB",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {user.isActive ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
+        {lit ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
       </p>
     </div>
   );
@@ -403,7 +417,7 @@ function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isL
       display: "flex", alignItems: "center", gap: 12,
       padding: "12px 16px",
       borderBottom: isLast ? "none" : "1px solid #F3F4F6",
-      background: user.isMe ? "#FFF7EC" : "#fff",
+      background: user.isMe ? PRIMARY_SOFTER : "#fff",
     }}>
       <span style={{
         fontSize: 13, fontWeight: 800, color: rankColor,
@@ -414,16 +428,16 @@ function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isL
       </span>
       <div style={{
         width: 32, height: 32, borderRadius: "50%",
-        background: user.isActive ? "#FFF4E6" : "#F3F4F6",
+        background: user.isActive ? PRIMARY_SOFT : "#F3F4F6",
         display: "flex", alignItems: "center", justifyContent: "center",
         overflow: "hidden",
-        border: user.isActive ? "2px solid #FFD4A8" : "none",
+        border: user.isActive ? `2px solid ${ACCENT_BG}` : "none",
         flexShrink: 0,
       }}>
         {user.avatar ? (
           <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={user.isActive ? "#FF8C3F" : "#9CA3AF"} strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={user.isActive ? PRIMARY : "#9CA3AF"} strokeWidth="2">
             <circle cx="12" cy="8" r="4" />
             <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
           </svg>
@@ -435,24 +449,22 @@ function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isL
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {user.nickname}
-          {user.isMe && <span style={{ marginLeft: 6, fontSize: 11, color: "#FF8C3F" }}>나</span>}
+          {user.isMe && <span style={{ marginLeft: 6, fontSize: 11, color: PRIMARY }}>나</span>}
         </p>
         {user.isActive && user.subject && (
-          <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>{user.subject}</p>
+          <p style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 1 }}>{user.subject}</p>
         )}
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <p style={{
           fontSize: 14, fontWeight: 700,
-          color: user.isActive ? "#FF8C3F" : "#111",
+          color: user.isActive ? PRIMARY : "#111",
           fontVariantNumeric: "tabular-nums",
         }}>
           {formatShort(totalToday)}
         </p>
         {user.isActive && (
-          <p style={{
-            fontSize: 10, color: "#22C55E", marginTop: 1, fontWeight: 600,
-          }}>
+          <p style={{ fontSize: 10, color: PRIMARY, marginTop: 1, fontWeight: 600 }}>
             ● 공부 중
           </p>
         )}
