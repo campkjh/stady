@@ -285,11 +285,43 @@ export default function OxQuizSolvePage() {
       >
         {currentQuestion ? (
           <>
-            {/* Question counter + bookmark */}
+            {/* Question counter + nav + bookmark */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <button
+                type="button"
+                onClick={goPrev}
+                disabled={currentIndex === 0}
+                className="press"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 28, height: 28, borderRadius: "50%",
+                  border: "1px solid #E5E7EB", background: "#fff",
+                  opacity: currentIndex === 0 ? 0.3 : 1,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
               <span style={{ fontSize: 14, color: "#9CA3AF" }}>
                 {currentIndex + 1} / {filteredQuestions.length}
               </span>
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={currentIndex >= filteredQuestions.length - 1}
+                className="press"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 28, height: 28, borderRadius: "50%",
+                  border: "1px solid #E5E7EB", background: "#fff",
+                  opacity: currentIndex >= filteredQuestions.length - 1 ? 0.3 : 1,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
               <button
                 type="button"
                 onClick={async () => {

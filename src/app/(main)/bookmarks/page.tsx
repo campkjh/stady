@@ -145,12 +145,12 @@ export default function BookmarksPage() {
               >
                 {getQuizTypeLabel(bookmark.quizType)}
               </span>
-              <p className="text-sm font-semibold text-gray-900 line-clamp-1">
-                {bookmark.title || "문제"}
+              <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                {bookmark.subtitle || bookmark.title || "문제"}
               </p>
-              {bookmark.subtitle && (
-                <p className="mt-1 text-xs text-gray-500 line-clamp-2">
-                  {bookmark.subtitle}
+              {bookmark.subtitle && bookmark.title && (
+                <p className="mt-1 text-xs text-gray-500 line-clamp-1">
+                  {bookmark.title}
                 </p>
               )}
               <p className="mt-1 text-xs text-gray-400">

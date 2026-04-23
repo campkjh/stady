@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import AlertModal from "@/components/AlertModal";
 
 interface OxQuizSet {
   id: string;
@@ -10,8 +9,6 @@ interface OxQuizSet {
   difficulty: string;
   totalQuestions: number;
 }
-
-const EMOJIS = ["👀", "✌️", "🤷‍♀️", "😱", "🤔", "🎉", "💪", "🔥", "⭐", "🏆"];
 
 export default function OxQuizListPage() {
   const router = useRouter();
@@ -35,16 +32,14 @@ export default function OxQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ position: "fixed", inset: 0, backgroundColor: "#3787FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, backgroundColor: "#7BC5E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
   }
 
-  const emojiSet = [...EMOJIS, ...EMOJIS];
-
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#3787FF", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#7BC5E8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => router.back()}
@@ -56,34 +51,33 @@ export default function OxQuizListPage() {
         </svg>
       </button>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0 40px" }}>
-        {/* Marquee Emojis - 가로 무한 루프 */}
-        <div style={{ width: "100%", overflow: "hidden", marginBottom: 60 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px 20px" }}>
+        {/* OX Blocks */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 48, animation: "oxBlockAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1)" }}>
           <div style={{
-            display: "flex",
-            gap: 32,
-            animation: "marqueeWave 12s linear infinite",
-            width: "max-content",
+            width: 120, height: 120, borderRadius: 24,
+            backgroundColor: "#2E75E3",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 12px 28px rgba(46,117,227,0.35)",
+            animation: "oxBounceL 2.2s ease-in-out infinite",
           }}>
-            {emojiSet.map((emoji, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: 56,
-                  flexShrink: 0,
-                  animation: `emojiWave 2.5s ease-in-out ${i * 0.25}s infinite`,
-                }}
-              >
-                {emoji}
-              </span>
-            ))}
+            <span style={{ fontSize: 90, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>O</span>
+          </div>
+          <div style={{
+            width: 120, height: 120, borderRadius: 24,
+            backgroundColor: "#E8453C",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 12px 28px rgba(232,69,60,0.35)",
+            animation: "oxBounceR 2.2s ease-in-out 0.3s infinite",
+          }}>
+            <span style={{ fontSize: 90, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>X</span>
           </div>
         </div>
 
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 8 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 12 }}>
           하루에 한 번 OX퀴즈
         </h1>
-        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", textAlign: "center" }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.9)", textAlign: "center" }}>
           로그인하시고 도전해보세요!
         </p>
       </div>
@@ -97,9 +91,9 @@ export default function OxQuizListPage() {
               onClick={() => router.push(`/ox-quiz/${qs.id}`)}
               className="press"
               style={{
-                width: "100%", padding: "18px 24px", borderRadius: 16, backgroundColor: "#fff",
-                border: "none", fontSize: 16, fontWeight: 600, color: "#111", textAlign: "center",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)", flexShrink: 0,
+                width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "#fff",
+                border: "none", fontSize: 16, fontWeight: 700, color: "#2B313D", textAlign: "center",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                 animation: `quizItemFadeUp 0.5s ${0.08 * i}s both`,
               }}
             >
@@ -107,30 +101,34 @@ export default function OxQuizListPage() {
             </button>
           ))}
           {quizSets.length === 0 && (
-            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 14 }}>등록된 OX 퀴즈가 없습니다.</p>
+            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.85)", fontSize: 14 }}>등록된 OX 퀴즈가 없습니다.</p>
           )}
         </div>
         <div style={{
           position: "absolute", bottom: 40, left: 20, right: 20, height: 48,
-          background: "linear-gradient(to top, #3787FF, transparent)",
+          background: "linear-gradient(to top, #7BC5E8, transparent)",
           pointerEvents: "none",
         }} />
       </div>
 
       <style>{`
+        @keyframes oxBlockAppear {
+          from { opacity: 0; transform: scale(0.7); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes oxBounceL {
+          0%, 100% { transform: translateY(0) rotate(-2deg); }
+          50% { transform: translateY(-8px) rotate(-4deg); }
+        }
+        @keyframes oxBounceR {
+          0%, 100% { transform: translateY(0) rotate(2deg); }
+          50% { transform: translateY(-8px) rotate(4deg); }
+        }
         @keyframes quizItemFadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .quiz-list-scroll::-webkit-scrollbar { display: none; }
-        @keyframes marqueeWave {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @keyframes emojiWave {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-12px); }
-        }
       `}</style>
     </div>
   );
