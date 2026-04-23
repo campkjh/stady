@@ -150,7 +150,7 @@ export default function TimerPage() {
         <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 14 }}>타이머</h1>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 24, borderBottom: "1px solid #F3F4F6" }}>
+        <div style={{ position: "relative", display: "flex", gap: 24, borderBottom: "1px solid #F3F4F6" }}>
           {[
             { key: "status", label: "공부 현황" },
             { key: "ranking", label: "오늘 공부 시간" },
@@ -161,24 +161,29 @@ export default function TimerPage() {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key as "status" | "ranking")}
+                data-tab={tab.key}
                 style={{
                   position: "relative", padding: "10px 0",
                   background: "none", border: "none", cursor: "pointer",
                   fontSize: 15, fontWeight: 700,
                   color: isActive ? PRIMARY : TEXT_MUTED,
-                  transition: "color 0.2s ease",
+                  transition: "color 0.25s ease",
                 }}
               >
                 {tab.label}
-                {isActive && (
-                  <span style={{
-                    position: "absolute", left: 0, right: 0, bottom: -1,
-                    height: 2.5, background: PRIMARY, borderRadius: 2,
-                  }} />
-                )}
               </button>
             );
           })}
+          {/* Sliding indicator */}
+          <span
+            style={{
+              position: "absolute", bottom: -1, height: 2.5,
+              background: PRIMARY, borderRadius: 2,
+              left: activeTab === "status" ? 0 : "calc(5ch + 24px)",
+              width: activeTab === "status" ? "5ch" : "8ch",
+              transition: "left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+          />
         </div>
       </div>
 
@@ -295,7 +300,7 @@ export default function TimerPage() {
             <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : activeTab === "status" ? (
-          <>
+          <div key="status" className="timer-tab-panel">
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
               <span style={{ color: PRIMARY, fontWeight: 700 }}>{activeCount}</span> / {totalCount}명 공부 중
             </p>
@@ -316,9 +321,9 @@ export default function TimerPage() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         ) : (
-          <>
+          <div key="ranking" className="timer-tab-panel">
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
               누적 기록 <span style={{ color: PRIMARY, fontWeight: 700 }}>{todayRanking.length}명</span>
             </p>
@@ -343,7 +348,7 @@ export default function TimerPage() {
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -355,6 +360,13 @@ export default function TimerPage() {
         @keyframes dotPulse {
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.15); opacity: 0.85; }
+        }
+        @keyframes tabPanelIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .timer-tab-panel {
+          animation: tabPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
       `}</style>
     </div>
