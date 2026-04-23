@@ -47,6 +47,7 @@ export default function TimerPage() {
   const [subject, setSubject] = useState("공부중");
   const [editingSubject, setEditingSubject] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"status" | "ranking">("status");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
@@ -144,9 +145,41 @@ export default function TimerPage() {
       {/* Header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 10, backgroundColor: "#fff",
-        padding: "20px 20px 12px",
+        padding: "20px 20px 0",
       }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>타이머</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 14 }}>타이머</h1>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 24, borderBottom: "1px solid #F3F4F6" }}>
+          {[
+            { key: "status", label: "공부 현황" },
+            { key: "ranking", label: "오늘 공부 시간" },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key as "status" | "ranking")}
+                style={{
+                  position: "relative", padding: "10px 0",
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: 15, fontWeight: 700,
+                  color: isActive ? PRIMARY : TEXT_MUTED,
+                  transition: "color 0.2s ease",
+                }}
+              >
+                {tab.label}
+                {isActive && (
+                  <span style={{
+                    position: "absolute", left: 0, right: 0, bottom: -1,
+                    height: 2.5, background: PRIMARY, borderRadius: 2,
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* My Timer Card */}
@@ -254,53 +287,63 @@ export default function TimerPage() {
         </div>
       </div>
 
-      {/* All Users (lit / unlit) */}
-      <div style={{ padding: "0 20px 40px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>공부 현황</h2>
-          <span style={{ fontSize: 13, color: TEXT_MUTED }}>
-            <span style={{ color: PRIMARY, fontWeight: 700 }}>{activeCount}</span> / {totalCount}명 공부 중
-          </span>
-        </div>
-
+      {/* Tab content */}
+      <div style={{ padding: "20px 20px 40px" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
             <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
             <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : sortedUsers.length === 0 ? (
-          <div style={{
-            padding: "32px 20px", borderRadius: 16,
-            background: "#F9FAFB", border: "1px solid #F3F4F6",
-            textAlign: "center",
-          }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280" }}>
-              아직 등록된 유저가 없습니다
+        ) : activeTab === "status" ? (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
+              <span style={{ color: PRIMARY, fontWeight: 700 }}>{activeCount}</span> / {totalCount}명 공부 중
             </p>
-          </div>
+            {sortedUsers.length === 0 ? (
+              <div style={{
+                padding: "32px 20px", borderRadius: 16,
+                background: "#F9FAFB", border: "1px solid #F3F4F6",
+                textAlign: "center",
+              }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280" }}>
+                  아직 등록된 유저가 없습니다
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                {sortedUsers.map((u) => (
+                  <UserCard key={u.userId} user={u} />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {sortedUsers.map((u) => (
-              <UserCard key={u.userId} user={u} />
-            ))}
-          </div>
-        )}
-
-        {todayRanking.length > 0 && (
-          <div style={{ marginTop: 32 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>오늘 공부 시간</h2>
-              <span style={{ fontSize: 13, color: TEXT_MUTED }}>누적 기록</span>
-            </div>
-            <div style={{
-              borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden",
-              background: "#fff",
-            }}>
-              {todayRanking.map((u, i) => (
-                <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} />
-              ))}
-            </div>
-          </div>
+          <>
+            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
+              누적 기록 <span style={{ color: PRIMARY, fontWeight: 700 }}>{todayRanking.length}명</span>
+            </p>
+            {todayRanking.length === 0 ? (
+              <div style={{
+                padding: "32px 20px", borderRadius: 16,
+                background: "#F9FAFB", border: "1px solid #F3F4F6",
+                textAlign: "center",
+              }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>
+                  아직 오늘 공부한 기록이 없어요
+                </p>
+                <p style={{ fontSize: 12, color: "#9CA3AF" }}>첫 번째 기록을 남겨보세요!</p>
+              </div>
+            ) : (
+              <div style={{
+                borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden",
+                background: "#fff",
+              }}>
+                {todayRanking.map((u, i) => (
+                  <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
