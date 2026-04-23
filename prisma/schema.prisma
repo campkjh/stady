@@ -21,6 +21,22 @@ model User {
   attempts  QuizAttempt[]
   bookmarks Bookmark[]
   reviews   Review[]
+  studySessions StudySession[]
+}
+
+model StudySession {
+  id         String    @id @default(uuid())
+  userId     String
+  subject    String    @default("공부중")
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  lastPingAt DateTime  @default(now())
+  totalSeconds Int     @default(0)
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([endedAt])
 }
 
 model Category {

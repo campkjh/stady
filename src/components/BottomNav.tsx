@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import AlertModal from "@/components/AlertModal";
 
 const ACTIVE_COLOR = "#3787FF";
 const INACTIVE_COLOR = "#2B313D";
@@ -51,7 +50,6 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [showCommunityAlert, setShowCommunityAlert] = useState(false);
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -60,16 +58,6 @@ export default function BottomNav() {
 
   return (
     <>
-    {showCommunityAlert && (
-      <AlertModal
-        title="아직은 준비중입니다!"
-        subtitle="조금만 기다려주세요"
-        buttons={[
-          { label: "확인", bgColor: "#3787FF", color: "#fff", onClick: () => setShowCommunityAlert(false) },
-        ]}
-        onClose={() => setShowCommunityAlert(false)}
-      />
-    )}
     <nav style={{
       position: "fixed",
       bottom: 0,
@@ -92,30 +80,28 @@ export default function BottomNav() {
       }}>
         {tabs.map((tab, tabIdx) => (
           <React.Fragment key={tab.href}>
-            {/* Community tab inserted after 검색 (index 1) */}
+            {/* Timer tab inserted after 검색 (index 1) */}
             {tabIdx === 2 && (
               <li>
-                <button
-                  type="button"
-                  onClick={() => setShowCommunityAlert(true)}
+                <Link
+                  href="/timer"
                   style={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     gap: 2,
-                    background: "none",
-                    border: "none",
-                    opacity: 0.44,
+                    textDecoration: "none",
+                    opacity: isActive("/timer") ? 1 : 0.44,
                   }}
                 >
                   <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-                    <path d="M10.699 14.6333C12.8537 14.6333 14.6005 12.8865 14.6005 10.7317C14.6005 8.57688 12.8537 6.83008 10.699 6.83008C8.54417 6.83008 6.79736 8.57688 6.79736 10.7317C6.79736 12.8865 8.54417 14.6333 10.699 14.6333Z" fill={INACTIVE_COLOR}/>
-                    <path d="M10.6995 15.8262C5.45604 15.8262 3.41602 19.4015 3.41602 21.0646C3.41602 22.7277 7.7578 23.1704 10.6995 23.1704C13.6412 23.1704 17.983 22.7277 17.983 21.0646C17.983 19.4015 15.9436 15.8262 10.6995 15.8262Z" fill={INACTIVE_COLOR}/>
-                    <path d="M19.3 14.6333C21.4548 14.6333 23.2016 12.8865 23.2016 10.7317C23.2016 8.57688 21.4548 6.83008 19.3 6.83008C17.1452 6.83008 15.3984 8.57688 15.3984 10.7317C15.3984 12.8865 17.1452 14.6333 19.3 14.6333Z" fill={INACTIVE_COLOR}/>
-                    <path d="M19.3001 15.8262C14.0566 15.8262 12.0166 19.4015 12.0166 21.0646C12.0166 22.7277 16.3584 23.1704 19.3001 23.1704C22.2418 23.1704 26.5835 22.7277 26.5835 21.0646C26.5835 19.4015 24.5442 15.8262 19.3001 15.8262Z" fill={INACTIVE_COLOR}/>
+                    <circle cx="15" cy="16.5" r="8" stroke={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" fill="none" />
+                    <path d="M15 12V16.5L18 18.5" stroke={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M12.5 5.5H17.5" stroke={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" strokeLinecap="round" />
+                    <path d="M15 5.5V8" stroke={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
-                  <span style={{ fontSize: 10, fontWeight: 500, color: INACTIVE_COLOR }}>커뮤니티</span>
-                </button>
+                  <span style={{ fontSize: 10, fontWeight: 500, color: isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR }}>타이머</span>
+                </Link>
               </li>
             )}
             <li>
