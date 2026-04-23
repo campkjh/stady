@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import LoginRequired from "@/components/LoginRequired";
 
-interface Session {
-  id: string;
+interface TimerUser {
   userId: string;
-  subject: string;
-  startedAt: string;
-  elapsedSeconds: number;
-  user: { id: string; nickname: string; avatar: string | null };
+  nickname: string;
+  avatar: string | null;
+  isActive: boolean;
+  subject: string | null;
+  activeStartedAt: string | null;
+  activeElapsedSeconds: number;
+  todayTotalSeconds: number;
   isMe: boolean;
 }
-
-const AVATAR_ICONS = ["🔥", "📚", "✏️", "💻", "🧠", "🎯", "💡", "🌟", "🚀", "📖", "✨", "⚡"];
 
 function formatTime(sec: number): string {
   const h = Math.floor(sec / 3600);
@@ -23,20 +22,23 @@ function formatTime(sec: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function getUserEmoji(userId: string): string {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) | 0;
-  return AVATAR_ICONS[Math.abs(hash) % AVATAR_ICONS.length];
+function formatShort(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${h}시간 ${m}분`;
+  return `${m}분`;
 }
 
 export default function TimerPage() {
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [mySession, setMySession] = useState<Session | null>(null);
+  const [users, setUsers] = useState<TimerUser[]>([]);
+  const [activeCount, setActiveCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
   const [myElapsed, setMyElapsed] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("공부중");
+  const [editingSubject, setEditingSubject] = useState(false);
+  const [loading, setLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
@@ -48,15 +50,19 @@ export default function TimerPage() {
       .catch(() => setIsLoggedIn(false));
   }, []);
 
-  const fetchSessions = async () => {
+  const fetchData = async () => {
     try {
       const res = await fetch("/api/timer/sessions");
       const data = await res.json();
-      setSessions(data.sessions || []);
-      setMySession(data.mySession || null);
+      setUsers(data.users || []);
+      setActiveCount(data.activeCount || 0);
+      setTotalCount(data.totalCount || 0);
       if (data.mySession) {
-        setMyElapsed(data.mySession.elapsedSeconds);
-        setSubject(data.mySession.subject);
+        setIsRunning(true);
+        setMyElapsed(data.mySession.activeElapsedSeconds);
+        setSubject(data.mySession.subject || "공부중");
+      } else {
+        setIsRunning(false);
       }
     } catch {}
     setLoading(false);
@@ -64,37 +70,34 @@ export default function TimerPage() {
 
   useEffect(() => {
     if (isLoggedIn !== true) return;
-    fetchSessions();
-    pollRef.current = setInterval(fetchSessions, 10000);
+    fetchData();
+    pollRef.current = setInterval(fetchData, 15000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [isLoggedIn]);
 
-  // Tick my timer every second
+  // Tick my timer
   useEffect(() => {
-    if (!mySession) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
-    }
+    if (!isRunning) return;
     intervalRef.current = setInterval(() => {
-      setMyElapsed((prev) => prev + 1);
+      setMyElapsed((p) => p + 1);
     }, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [mySession?.id]);
+  }, [isRunning]);
 
-  // Ping every 30s while active
+  // Ping every 30s
   useEffect(() => {
-    if (!mySession) return;
+    if (!isRunning) return;
     pingRef.current = setInterval(() => {
       fetch("/api/timer/ping", { method: "POST" }).catch(() => {});
     }, 30000);
     return () => {
       if (pingRef.current) clearInterval(pingRef.current);
     };
-  }, [mySession?.id]);
+  }, [isRunning]);
 
   const start = async () => {
     const res = await fetch("/api/timer/start", {
@@ -103,132 +106,164 @@ export default function TimerPage() {
       body: JSON.stringify({ subject: subject || "공부중" }),
     });
     if (res.ok) {
-      const data = await res.json();
-      setMySession({ ...data.session, elapsedSeconds: 0, user: { id: "", nickname: "", avatar: null }, isMe: true });
+      setIsRunning(true);
       setMyElapsed(0);
-      fetchSessions();
+      fetchData();
     }
   };
 
   const stop = async () => {
     await fetch("/api/timer/stop", { method: "POST" });
-    setMySession(null);
+    setIsRunning(false);
     setMyElapsed(0);
-    fetchSessions();
+    fetchData();
   };
+
+  const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
+  const myTodayTotal = (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed;
 
   if (isLoggedIn === null) return null;
   if (isLoggedIn === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111", color: "#fff", paddingBottom: 40 }}>
+    <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Header */}
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "16px 16px 12px", position: "sticky", top: 0, backgroundColor: "#111", zIndex: 10,
+        position: "sticky", top: 0, zIndex: 10, backgroundColor: "#fff",
+        padding: "20px 20px 12px",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>타이머</h1>
-        </div>
-        <span style={{ fontSize: 13, color: "#9CA3AF" }}>{sessions.length}명 접속 중</span>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111" }}>타이머</h1>
       </div>
 
       {/* My Timer Card */}
-      <div style={{ padding: "0 16px 16px" }}>
+      <div style={{ padding: "4px 20px 24px" }}>
         <div style={{
-          backgroundColor: "#1C1C1E", borderRadius: 20, padding: "20px 20px 24px",
-          display: "flex", flexDirection: "column", gap: 12,
+          background: "linear-gradient(135deg, #FFF7EC 0%, #FFEBD6 100%)",
+          border: "1px solid #FFE1C0",
+          borderRadius: 24,
+          padding: "22px 22px 20px",
+          position: "relative",
+          overflow: "hidden",
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 6 }}>현재 집중 시간</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{
-                  fontSize: 40, fontWeight: 700, letterSpacing: -1,
-                  color: mySession ? "#FF8C3F" : "#fff",
-                  fontVariantNumeric: "tabular-nums",
-                }}>
-                  {formatTime(myElapsed)}
-                </span>
-                {mySession ? (
-                  <button
-                    type="button"
-                    onClick={stop}
-                    style={{
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: "#2C2C2E", border: "none",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={start}
-                    style={{
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: "#FF8C3F", border: "none",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><polygon points="6,4 20,12 6,20" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
-            <div style={{ fontSize: 40, opacity: 0.85 }}>{mySession ? "🔥" : "🛋️"}</div>
+          {/* Decorative dots */}
+          <div style={{
+            position: "absolute", top: -20, right: -20, width: 120, height: 120,
+            borderRadius: "50%", background: "rgba(255,140,63,0.08)",
+          }} />
+          <div style={{
+            position: "absolute", bottom: -30, right: 30, width: 80, height: 80,
+            borderRadius: "50%", background: "rgba(255,140,63,0.06)",
+          }} />
+
+          <p style={{ fontSize: 13, color: "#B36A2B", fontWeight: 600, marginBottom: 6, position: "relative" }}>
+            오늘 공부 시간
+          </p>
+          <p style={{ fontSize: 13, color: "#9A6430", marginBottom: 14, position: "relative" }}>
+            누적 <span style={{ fontWeight: 700, color: "#6B3B0D" }}>{formatShort(myTodayTotal)}</span>
+          </p>
+
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 18, position: "relative" }}>
+            <span style={{
+              fontSize: 44, fontWeight: 800, color: "#111", letterSpacing: -1.5,
+              fontVariantNumeric: "tabular-nums", lineHeight: 1,
+            }}>
+              {formatTime(myElapsed)}
+            </span>
           </div>
 
-          {/* Subject input */}
+          {/* Subject + control */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
-            padding: "12px 14px", borderRadius: 12,
-            background: "#0F0F10", border: "1px solid #2C2C2E",
+            padding: "12px 14px", borderRadius: 14,
+            background: "#fff", border: "1px solid #FFE1C0",
+            position: "relative",
           }}>
-            <div style={{ width: 24, height: 24, borderRadius: 4, background: "#FF8C3F", flexShrink: 0 }} />
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={!!mySession}
-              placeholder="공부 주제"
+            <div style={{
+              width: 26, height: 26, borderRadius: 6, background: "#FF8C3F",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 3h6l2 4H2z"/><path d="M12 3h10v18H2V11"/><path d="M2 11h20"/>
+              </svg>
+            </div>
+            {editingSubject && !isRunning ? (
+              <input
+                type="text"
+                autoFocus
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                onBlur={() => setEditingSubject(false)}
+                onKeyDown={(e) => { if (e.key === "Enter") setEditingSubject(false); }}
+                maxLength={30}
+                style={{
+                  flex: 1, fontSize: 15, fontWeight: 600, color: "#111",
+                  background: "none", border: "none", outline: "none",
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => { if (!isRunning) setEditingSubject(true); }}
+                style={{
+                  flex: 1, fontSize: 15, fontWeight: 600, color: "#111",
+                  background: "none", border: "none", textAlign: "left",
+                  padding: 0, cursor: isRunning ? "default" : "pointer",
+                }}
+              >
+                {subject}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={isRunning ? stop : start}
+              className="press"
               style={{
-                flex: 1, fontSize: 14, fontWeight: 600, color: "#fff",
-                background: "none", border: "none", outline: "none",
+                width: 38, height: 38, borderRadius: "50%",
+                background: isRunning ? "#111" : "#FF8C3F",
+                border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+                boxShadow: "0 4px 12px rgba(255,140,63,0.3)",
               }}
-            />
-            <span style={{ fontSize: 12, color: "#9CA3AF" }}>
-              {mySession ? `${Math.floor(myElapsed / 60)}분` : ""}
-            </span>
+            >
+              {isRunning ? (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff">
+                  <rect x="6" y="5" width="4" height="14" rx="1"/>
+                  <rect x="14" y="5" width="4" height="14" rx="1"/>
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff">
+                  <polygon points="6,4 20,12 6,20" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       </div>
 
       {/* Dreamers Section */}
-      <div style={{ padding: "8px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>꿈꾸는 사람들</h2>
-            <p style={{ fontSize: 13, color: "#FF8C3F", marginTop: 2, fontWeight: 600 }}>
-              {sessions.length}명 공부중
-            </p>
-          </div>
+      <div style={{ padding: "0 20px 40px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>꿈꾸는 사람들</h2>
+          <span style={{ fontSize: 13, color: "#9CA3AF" }}>
+            {activeCount}명 공부중 · 전체 {totalCount}명
+          </span>
         </div>
 
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <div style={{ width: 24, height: 24, border: "2px solid #2C2C2E", borderTopColor: "#FF8C3F", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: "#FF8C3F", borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
+            <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : sessions.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#6B7280", fontSize: 14 }}>
-            지금 공부 중인 사람이 없어요.<br />첫 번째로 시작해보세요!
+        ) : users.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#9CA3AF", fontSize: 14 }}>
+            아직 회원이 없습니다.
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-            {sessions.map((s) => (
-              <TimerUserCard key={s.id} session={s} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {users.map((u) => (
+              <UserCard key={u.userId} user={u} />
             ))}
           </div>
         )}
@@ -237,47 +272,81 @@ export default function TimerPage() {
   );
 }
 
-function TimerUserCard({ session }: { session: Session }) {
-  const [sec, setSec] = useState(session.elapsedSeconds);
+function UserCard({ user }: { user: TimerUser }) {
+  const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
-    setSec(session.elapsedSeconds);
-    const t = setInterval(() => setSec((p) => p + 1), 1000);
+    setElapsed(user.activeElapsedSeconds);
+    if (!user.isActive) return;
+    const t = setInterval(() => setElapsed((p) => p + 1), 1000);
     return () => clearInterval(t);
-  }, [session.id, session.elapsedSeconds]);
+  }, [user.userId, user.activeElapsedSeconds, user.isActive]);
 
-  const emoji = getUserEmoji(session.userId);
+  const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
 
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-      padding: 8, borderRadius: 14,
-      border: session.isMe ? "2px solid #FF8C3F" : "2px solid transparent",
-      background: session.isMe ? "rgba(255,140,63,0.05)" : "transparent",
     }}>
+      {/* Avatar bubble */}
       <div style={{
-        width: 56, height: 56, borderRadius: 12,
-        background: "#1C1C1E",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 28,
+        position: "relative",
+        width: "100%",
+        aspectRatio: "1/1",
       }}>
-        {session.user.avatar ? (
-          <img src={session.user.avatar} alt="" style={{ width: "100%", height: "100%", borderRadius: 12, objectFit: "cover" }} />
-        ) : (
-          emoji
+        <div style={{
+          width: "100%", height: "100%", borderRadius: "50%",
+          background: user.isActive ? "#FFF4E6" : "#F5F6F8",
+          border: user.isMe ? "2.5px solid #FF8C3F" : user.isActive ? "2px solid #FFD4A8" : "2px solid #EEF0F3",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden",
+          transition: "all 0.3s ease",
+        }}>
+          {user.avatar ? (
+            <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : user.isActive ? (
+            // Person studying icon
+            <svg width="52%" height="52%" viewBox="0 0 60 60" fill="none">
+              <circle cx="30" cy="22" r="9" fill="#FF8C3F" />
+              <path d="M14 48 Q14 36 30 36 Q46 36 46 48 Z" fill="#FF8C3F" />
+              <rect x="20" y="42" width="20" height="3" rx="1.5" fill="#FFE1C0" />
+            </svg>
+          ) : (
+            // Empty desk icon
+            <svg width="52%" height="52%" viewBox="0 0 60 60" fill="none" stroke="#BDC2CB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="16" r="3" />
+              <path d="M18 19 V28 M14 28 H22" />
+              <path d="M12 42 H48" />
+              <path d="M14 42 V52 M46 42 V52" />
+              <path d="M22 32 H44 V42" strokeLinejoin="miter" />
+            </svg>
+          )}
+        </div>
+        {user.isActive && (
+          <div style={{
+            position: "absolute", top: 0, right: 0,
+            width: 12, height: 12, borderRadius: "50%",
+            background: "#22C55E", border: "2px solid #fff",
+          }} />
         )}
       </div>
+
+      {/* Name */}
       <p style={{
-        fontSize: 12, fontWeight: 600, color: "#FF8C3F",
+        fontSize: 13, fontWeight: 700,
+        color: user.isActive ? "#111" : "#9CA3AF",
         maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
-        {session.user.nickname}
+        {user.nickname}
       </p>
+
+      {/* Timer or today total */}
       <p style={{
-        fontSize: 12, fontWeight: 700, color: "#FF8C3F",
+        fontSize: 12, fontWeight: 700,
+        color: user.isActive ? "#FF8C3F" : "#BDC2CB",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {formatTime(sec)}
+        {user.isActive ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
       </p>
     </div>
   );
