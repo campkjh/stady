@@ -15,9 +15,11 @@ export async function POST() {
       return NextResponse.json({ session: null });
     }
 
+    const now = new Date();
+    const elapsedSec = Math.floor((now.getTime() - active.startedAt.getTime()) / 1000);
     const session = await prisma.studySession.update({
       where: { id: active.id },
-      data: { lastPingAt: new Date() },
+      data: { lastPingAt: now, totalSeconds: elapsedSec },
     });
 
     return NextResponse.json({ session });

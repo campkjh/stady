@@ -122,6 +122,12 @@ export default function TimerPage() {
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
   const myTodayTotal = (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed;
 
+  const activeUsers = useMemo(() => users.filter((u) => u.isActive), [users]);
+  const todayRanking = useMemo(
+    () => [...users].filter((u) => u.todayTotalSeconds > 0).sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds),
+    [users]
+  );
+
   if (isLoggedIn === null) return null;
   if (isLoggedIn === false) return <LoginRequired />;
 
@@ -242,12 +248,12 @@ export default function TimerPage() {
         </div>
       </div>
 
-      {/* Dreamers Section */}
+      {/* Active Users Section */}
       <div style={{ padding: "0 20px 40px" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>꿈꾸는 사람들</h2>
-          <span style={{ fontSize: 13, color: "#9CA3AF" }}>
-            {activeCount}명 공부중 · 전체 {totalCount}명
+          <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>지금 공부중인 유저</h2>
+          <span style={{ fontSize: 13, color: "#FF8C3F", fontWeight: 600 }}>
+            {activeCount}명
           </span>
         </div>
 
@@ -256,15 +262,42 @@ export default function TimerPage() {
             <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: "#FF8C3F", borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
             <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : users.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#9CA3AF", fontSize: 14 }}>
-            아직 회원이 없습니다.
+        ) : activeUsers.length === 0 ? (
+          <div style={{
+            padding: "32px 20px", borderRadius: 16,
+            background: "#F9FAFB", border: "1px solid #F3F4F6",
+            textAlign: "center",
+          }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>
+              지금 공부 중인 유저가 없어요
+            </p>
+            <p style={{ fontSize: 12, color: "#9CA3AF" }}>
+              먼저 시작해볼까요?
+            </p>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {users.map((u) => (
+            {activeUsers.map((u) => (
               <UserCard key={u.userId} user={u} />
             ))}
+          </div>
+        )}
+
+        {/* Today's ranking for all users with time */}
+        {todayRanking.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>오늘 공부 시간</h2>
+              <span style={{ fontSize: 13, color: "#9CA3AF" }}>전체 {totalCount}명</span>
+            </div>
+            <div style={{
+              borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden",
+              background: "#fff",
+            }}>
+              {todayRanking.map((u, i) => (
+                <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -348,6 +381,82 @@ function UserCard({ user }: { user: TimerUser }) {
       }}>
         {user.isActive ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
       </p>
+    </div>
+  );
+}
+
+function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isLast: boolean }) {
+  const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
+
+  useEffect(() => {
+    setElapsed(user.activeElapsedSeconds);
+    if (!user.isActive) return;
+    const t = setInterval(() => setElapsed((p) => p + 1), 1000);
+    return () => clearInterval(t);
+  }, [user.userId, user.activeElapsedSeconds, user.isActive]);
+
+  const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
+  const rankColor = rank === 1 ? "#F59E0B" : rank === 2 ? "#94A3B8" : rank === 3 ? "#CD7F32" : "#D1D5DB";
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "12px 16px",
+      borderBottom: isLast ? "none" : "1px solid #F3F4F6",
+      background: user.isMe ? "#FFF7EC" : "#fff",
+    }}>
+      <span style={{
+        fontSize: 13, fontWeight: 800, color: rankColor,
+        width: 20, textAlign: "center", flexShrink: 0,
+        fontVariantNumeric: "tabular-nums",
+      }}>
+        {rank}
+      </span>
+      <div style={{
+        width: 32, height: 32, borderRadius: "50%",
+        background: user.isActive ? "#FFF4E6" : "#F3F4F6",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        overflow: "hidden",
+        border: user.isActive ? "2px solid #FFD4A8" : "none",
+        flexShrink: 0,
+      }}>
+        {user.avatar ? (
+          <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={user.isActive ? "#FF8C3F" : "#9CA3AF"} strokeWidth="2">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+          </svg>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: 14, fontWeight: 700, color: "#111",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {user.nickname}
+          {user.isMe && <span style={{ marginLeft: 6, fontSize: 11, color: "#FF8C3F" }}>나</span>}
+        </p>
+        {user.isActive && user.subject && (
+          <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>{user.subject}</p>
+        )}
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <p style={{
+          fontSize: 14, fontWeight: 700,
+          color: user.isActive ? "#FF8C3F" : "#111",
+          fontVariantNumeric: "tabular-nums",
+        }}>
+          {formatShort(totalToday)}
+        </p>
+        {user.isActive && (
+          <p style={{
+            fontSize: 10, color: "#22C55E", marginTop: 1, fontWeight: 600,
+          }}>
+            ● 공부 중
+          </p>
+        )}
+      </div>
     </div>
   );
 }
