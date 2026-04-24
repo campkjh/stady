@@ -387,10 +387,34 @@ export default function VocabQuizSolvePage() {
             </div>
 
             {/* Question text */}
-            <div className="mb-8">
+            <div className="mb-4">
               <h2 className="text-xl font-bold leading-relaxed">
                 &ldquo;{currentQuestion.word}&rdquo;의 뜻으로 알맞은 것은?
               </h2>
+            </div>
+
+            {/* Left/right tap zones for prev/next */}
+            <div style={{ display: "flex", minHeight: 56, marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                disabled={currentIndex === 0}
+                aria-label="이전 문제"
+                style={{
+                  flex: 1, background: "none", border: "none",
+                  cursor: currentIndex === 0 ? "default" : "pointer",
+                }}
+              />
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                disabled={currentIndex >= quiz.questions.length - 1}
+                aria-label="다음 문제"
+                style={{
+                  flex: 1, background: "none", border: "none",
+                  cursor: currentIndex >= quiz.questions.length - 1 ? "default" : "pointer",
+                }}
+              />
             </div>
 
             {/* Choice buttons */}

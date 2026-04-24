@@ -345,11 +345,36 @@ export default function OxQuizSolvePage() {
               </button>
             </div>
 
-            {/* Question text */}
-            <div className="mb-8 flex-1">
+            {/* Question text + tap zones below */}
+            <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
               <h2 className="text-xl font-bold leading-relaxed">
                 Q. {currentQuestion.question}?
               </h2>
+              {/* Left/right tap zones for prev/next */}
+              <div style={{ flex: 1, display: "flex", marginTop: 12, minHeight: 80 }}>
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  disabled={currentIndex === 0}
+                  aria-label="이전 문제"
+                  style={{
+                    flex: 1, background: "none", border: "none",
+                    cursor: currentIndex === 0 ? "default" : "pointer",
+                    opacity: currentIndex === 0 ? 0 : 1,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={currentIndex >= filteredQuestions.length - 1}
+                  aria-label="다음 문제"
+                  style={{
+                    flex: 1, background: "none", border: "none",
+                    cursor: currentIndex >= filteredQuestions.length - 1 ? "default" : "pointer",
+                    opacity: currentIndex >= filteredQuestions.length - 1 ? 0 : 1,
+                  }}
+                />
+              </div>
             </div>
 
             {/* Answer buttons */}
