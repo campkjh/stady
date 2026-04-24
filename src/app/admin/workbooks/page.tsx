@@ -69,6 +69,9 @@ export default function WorkbookManagement() {
   const [selectedWorkbook, setSelectedWorkbook] = useState<Workbook | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [showProblemForm, setShowProblemForm] = useState(false);
+  const [editingProblemId, setEditingProblemId] = useState<string | null>(null);
+  const [editAnswer, setEditAnswer] = useState(1);
+  const [editExplanation, setEditExplanation] = useState("");
 
   // Problem form state
   const [questionFile, setQuestionFile] = useState<File | null>(null);
@@ -756,17 +759,101 @@ export default function WorkbookManagement() {
                           </div>
                         )}
                         {/* 정답 표시 */}
-                        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{
-                            fontSize: 12, fontWeight: 600, color: "#3787FF",
-                            background: "#EBF3FF", borderRadius: 4, padding: "2px 8px",
-                          }}>
-                            정답: {p.answer}번
-                          </span>
-                          {p.explanation && (
-                            <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {p.explanation}</span>
-                          )}
-                        </div>
+                        {editingProblemId === p.id ? (
+                          <div style={{ marginTop: 12, padding: 12, background: "#F9FAFB", borderRadius: 8, border: "1px solid #E5E7EB" }}>
+                            <label style={labelStyle}>정답 번호</label>
+                            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => setEditAnswer(n)}
+                                  style={{
+                                    width: 36, height: 36, borderRadius: 8,
+                                    border: `2px solid ${editAnswer === n ? "#3787FF" : "#E5E7EB"}`,
+                                    background: editAnswer === n ? "#3787FF" : "#fff",
+                                    color: editAnswer === n ? "#fff" : "#2B313D",
+                                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                                  }}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                            <label style={labelStyle}>해설</label>
+                            <textarea
+                              value={editExplanation}
+                              onChange={(e) => setEditExplanation(e.target.value)}
+                              rows={3}
+                              style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
+                              placeholder="해설 입력"
+                            />
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!selectedWorkbook) return;
+                                  const res = await fetch(`/api/workbooks/${selectedWorkbook.id}/problems/${p.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ answer: editAnswer, explanation: editExplanation || null }),
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    setEditingProblemId(null);
+                                    openProblems(selectedWorkbook);
+                                  } else alert("저장 실패");
+                                }}
+                                style={{
+                                  padding: "8px 16px", borderRadius: 6, border: "none",
+                                  background: "#3787FF", color: "#fff",
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                저장
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProblemId(null)}
+                                style={{
+                                  padding: "8px 16px", borderRadius: 6,
+                                  border: "1px solid #E5E7EB", background: "#fff",
+                                  color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{
+                              fontSize: 12, fontWeight: 600, color: "#3787FF",
+                              background: "#EBF3FF", borderRadius: 4, padding: "2px 8px",
+                            }}>
+                              정답: {p.answer}번
+                            </span>
+                            {p.explanation && (
+                              <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {p.explanation}</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingProblemId(p.id);
+                                setEditAnswer(p.answer);
+                                setEditExplanation(p.explanation || "");
+                              }}
+                              style={{
+                                marginLeft: "auto",
+                                background: "none", border: "none",
+                                color: "#3787FF", fontSize: 12, fontWeight: 600,
+                                cursor: "pointer", padding: "2px 8px",
+                              }}
+                            >
+                              편집
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

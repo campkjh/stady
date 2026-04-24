@@ -49,6 +49,8 @@ export default function VocabQuizManagement() {
   const [selectedSet, setSelectedSet] = useState<VocabQuizSet | null>(null);
   const [questions, setQuestions] = useState<VocabQuestion[]>([]);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editQData, setEditQData] = useState({ word: "", choice1: "", choice2: "", choice3: "", choice4: "", answer: 1, explanation: "" });
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState<{ word: string; correct: string; wrong1: string; wrong2: string; wrong3: string }[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -648,46 +650,160 @@ export default function VocabQuizManagement() {
                         {q.order}
                       </span>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: "#2B313D", marginBottom: 8 }}>{q.word}</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                          {[q.choice1, q.choice2, q.choice3, q.choice4].map((c, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                fontSize: 12,
-                                padding: "4px 8px",
-                                borderRadius: 6,
-                                background: i + 1 === q.answer ? "#3787FF" : "#fff",
-                                color: i + 1 === q.answer ? "#fff" : "#8A909C",
-                                border: i + 1 === q.answer ? "none" : "1px solid #E5E7EB",
-                              }}
-                            >
-                              {i + 1}. {c}
-                            </span>
-                          ))}
-                        </div>
-                        {q.explanation && (
-                          <p style={{ fontSize: 12, color: "#8A909C", marginTop: 8 }}>해설: {q.explanation}</p>
+                        {editingQuestionId === q.id ? (
+                          <div>
+                            <label style={labelStyle}>단어</label>
+                            <input
+                              type="text"
+                              value={editQData.word}
+                              onChange={(e) => setEditQData({ ...editQData, word: e.target.value })}
+                              style={{ ...inputStyle, marginBottom: 8 }}
+                            />
+                            <label style={labelStyle}>선택지</label>
+                            {[1, 2, 3, 4].map((n) => (
+                              <div key={n} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditQData({ ...editQData, answer: n })}
+                                  style={{
+                                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                    border: `2px solid ${editQData.answer === n ? "#3787FF" : "#E5E7EB"}`,
+                                    background: editQData.answer === n ? "#3787FF" : "#fff",
+                                    color: editQData.answer === n ? "#fff" : "#2B313D",
+                                    fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                  }}
+                                >
+                                  {n}
+                                </button>
+                                <input
+                                  type="text"
+                                  value={editQData[`choice${n}` as "choice1"]}
+                                  onChange={(e) => setEditQData({ ...editQData, [`choice${n}`]: e.target.value })}
+                                  style={{ ...inputStyle }}
+                                />
+                              </div>
+                            ))}
+                            <label style={{ ...labelStyle, marginTop: 8 }}>해설</label>
+                            <textarea
+                              value={editQData.explanation}
+                              onChange={(e) => setEditQData({ ...editQData, explanation: e.target.value })}
+                              rows={2}
+                              style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
+                            />
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!selectedSet) return;
+                                  const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/questions/${q.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      word: editQData.word,
+                                      choice1: editQData.choice1,
+                                      choice2: editQData.choice2,
+                                      choice3: editQData.choice3,
+                                      choice4: editQData.choice4,
+                                      answer: editQData.answer,
+                                      explanation: editQData.explanation || null,
+                                    }),
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    setEditingQuestionId(null);
+                                    openQuestions(selectedSet);
+                                  } else alert("저장 실패");
+                                }}
+                                style={{
+                                  padding: "7px 14px", borderRadius: 6, border: "none",
+                                  background: "#3787FF", color: "#fff",
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                저장
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingQuestionId(null)}
+                                style={{
+                                  padding: "7px 14px", borderRadius: 6,
+                                  border: "1px solid #E5E7EB", background: "#fff",
+                                  color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: "#2B313D", marginBottom: 8 }}>{q.word}</p>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                              {[q.choice1, q.choice2, q.choice3, q.choice4].map((c, i) => (
+                                <span
+                                  key={i}
+                                  style={{
+                                    fontSize: 12,
+                                    padding: "4px 8px",
+                                    borderRadius: 6,
+                                    background: i + 1 === q.answer ? "#3787FF" : "#fff",
+                                    color: i + 1 === q.answer ? "#fff" : "#8A909C",
+                                    border: i + 1 === q.answer ? "none" : "1px solid #E5E7EB",
+                                  }}
+                                >
+                                  {i + 1}. {c}
+                                </span>
+                              ))}
+                            </div>
+                            {q.explanation && (
+                              <p style={{ fontSize: 12, color: "#8A909C", marginTop: 8 }}>해설: {q.explanation}</p>
+                            )}
+                          </>
                         )}
                       </div>
-                      <button
-                        onClick={async () => {
-                          if (!selectedSet) return;
-                          if (!confirm(`"${q.word}" 단어를 삭제하시겠습니까?`)) return;
-                          const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
-                          if (res.ok) {
-                            openQuestions(selectedSet);
-                            fetchQuizSets();
-                          } else alert("삭제 실패");
-                        }}
-                        style={{
-                          background: "none", border: "none",
-                          color: "#EF4444", fontSize: 12, fontWeight: 600,
-                          cursor: "pointer", padding: "2px 8px", flexShrink: 0,
-                        }}
-                      >
-                        삭제
-                      </button>
+                      {editingQuestionId !== q.id && (
+                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                          <button
+                            onClick={() => {
+                              setEditingQuestionId(q.id);
+                              setEditQData({
+                                word: q.word,
+                                choice1: q.choice1,
+                                choice2: q.choice2,
+                                choice3: q.choice3,
+                                choice4: q.choice4,
+                                answer: q.answer,
+                                explanation: q.explanation || "",
+                              });
+                            }}
+                            style={{
+                              background: "none", border: "none",
+                              color: "#3787FF", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "2px 8px",
+                            }}
+                          >
+                            편집
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!selectedSet) return;
+                              if (!confirm(`"${q.word}" 단어를 삭제하시겠습니까?`)) return;
+                              const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
+                              if (res.ok) {
+                                openQuestions(selectedSet);
+                                fetchQuizSets();
+                              } else alert("삭제 실패");
+                            }}
+                            style={{
+                              background: "none", border: "none",
+                              color: "#EF4444", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "2px 8px",
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

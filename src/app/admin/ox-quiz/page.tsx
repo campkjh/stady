@@ -44,6 +44,10 @@ export default function OxQuizManagement() {
   const [selectedSet, setSelectedSet] = useState<OxQuizSet | null>(null);
   const [questions, setQuestions] = useState<OxQuestion[]>([]);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editQText, setEditQText] = useState("");
+  const [editQAnswer, setEditQAnswer] = useState(true);
+  const [editQExplanation, setEditQExplanation] = useState("");
   const [questionData, setQuestionData] = useState({
     question: "",
     answer: true,
@@ -483,38 +487,147 @@ export default function OxQuizManagement() {
                         {q.order}
                       </span>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: "#2B313D", marginBottom: 8 }}>{q.question}</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{
-                            fontSize: 12, padding: "3px 10px", borderRadius: 6, fontWeight: 600,
-                            background: q.answer ? "#EBF3FF" : "#FEF2F2",
-                            color: q.answer ? "#3787FF" : "#DC2626",
-                          }}>
-                            {q.answer ? "O (참)" : "X (거짓)"}
-                          </span>
-                          {q.explanation && (
-                            <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {q.explanation}</span>
-                          )}
-                        </div>
+                        {editingQuestionId === q.id ? (
+                          <div>
+                            <label style={labelStyle}>문제</label>
+                            <textarea
+                              value={editQText}
+                              onChange={(e) => setEditQText(e.target.value)}
+                              rows={2}
+                              style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
+                            />
+                            <label style={labelStyle}>정답</label>
+                            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => setEditQAnswer(true)}
+                                style={{
+                                  padding: "8px 20px", borderRadius: 8,
+                                  border: `2px solid ${editQAnswer ? "#3787FF" : "#E5E7EB"}`,
+                                  background: editQAnswer ? "#3787FF" : "#fff",
+                                  color: editQAnswer ? "#fff" : "#2B313D",
+                                  fontSize: 14, fontWeight: 700, cursor: "pointer",
+                                }}
+                              >
+                                O
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditQAnswer(false)}
+                                style={{
+                                  padding: "8px 20px", borderRadius: 8,
+                                  border: `2px solid ${!editQAnswer ? "#EF4444" : "#E5E7EB"}`,
+                                  background: !editQAnswer ? "#EF4444" : "#fff",
+                                  color: !editQAnswer ? "#fff" : "#2B313D",
+                                  fontSize: 14, fontWeight: 700, cursor: "pointer",
+                                }}
+                              >
+                                X
+                              </button>
+                            </div>
+                            <label style={labelStyle}>해설</label>
+                            <textarea
+                              value={editQExplanation}
+                              onChange={(e) => setEditQExplanation(e.target.value)}
+                              rows={2}
+                              style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
+                              placeholder="해설 입력"
+                            />
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!selectedSet) return;
+                                  const res = await fetch(`/api/ox-quiz/${selectedSet.id}/questions/${q.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      question: editQText, answer: editQAnswer,
+                                      explanation: editQExplanation || null,
+                                    }),
+                                    credentials: "include",
+                                  });
+                                  if (res.ok) {
+                                    setEditingQuestionId(null);
+                                    openQuestions(selectedSet);
+                                  } else alert("저장 실패");
+                                }}
+                                style={{
+                                  padding: "7px 14px", borderRadius: 6, border: "none",
+                                  background: "#3787FF", color: "#fff",
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                저장
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingQuestionId(null)}
+                                style={{
+                                  padding: "7px 14px", borderRadius: 6,
+                                  border: "1px solid #E5E7EB", background: "#fff",
+                                  color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#2B313D", marginBottom: 8 }}>{q.question}</p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{
+                                fontSize: 12, padding: "3px 10px", borderRadius: 6, fontWeight: 600,
+                                background: q.answer ? "#EBF3FF" : "#FEF2F2",
+                                color: q.answer ? "#3787FF" : "#DC2626",
+                              }}>
+                                {q.answer ? "O (참)" : "X (거짓)"}
+                              </span>
+                              {q.explanation && (
+                                <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {q.explanation}</span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <button
-                        onClick={async () => {
-                          if (!selectedSet) return;
-                          if (!confirm(`${q.order}번 문제를 삭제하시겠습니까?`)) return;
-                          const res = await fetch(`/api/ox-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
-                          if (res.ok) {
-                            openQuestions(selectedSet);
-                            fetchQuizSets();
-                          } else alert("삭제 실패");
-                        }}
-                        style={{
-                          background: "none", border: "none",
-                          color: "#EF4444", fontSize: 12, fontWeight: 600,
-                          cursor: "pointer", padding: "2px 8px", flexShrink: 0,
-                        }}
-                      >
-                        삭제
-                      </button>
+                      {editingQuestionId !== q.id && (
+                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                          <button
+                            onClick={() => {
+                              setEditingQuestionId(q.id);
+                              setEditQText(q.question);
+                              setEditQAnswer(q.answer);
+                              setEditQExplanation(q.explanation || "");
+                            }}
+                            style={{
+                              background: "none", border: "none",
+                              color: "#3787FF", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "2px 8px",
+                            }}
+                          >
+                            편집
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!selectedSet) return;
+                              if (!confirm(`${q.order}번 문제를 삭제하시겠습니까?`)) return;
+                              const res = await fetch(`/api/ox-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
+                              if (res.ok) {
+                                openQuestions(selectedSet);
+                                fetchQuizSets();
+                              } else alert("삭제 실패");
+                            }}
+                            style={{
+                              background: "none", border: "none",
+                              color: "#EF4444", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "2px 8px",
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
