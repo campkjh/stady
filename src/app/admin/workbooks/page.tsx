@@ -61,9 +61,10 @@ export default function WorkbookManagement() {
   const [formData, setFormData] = useState({
     title: "",
     categoryId: "",
-    totalQuestions: 0,
     questionPerPage: 12,
   });
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedWorkbook, setSelectedWorkbook] = useState<Workbook | null>(null);
@@ -76,14 +77,18 @@ export default function WorkbookManagement() {
   // Problem form state
   const [questionFile, setQuestionFile] = useState<File | null>(null);
   const [questionPreview, setQuestionPreview] = useState<string | null>(null);
+  const [questionUrl, setQuestionUrl] = useState<string | null>(null);
   const [choicesFile, setChoicesFile] = useState<File | null>(null);
   const [choicesPreview, setChoicesPreview] = useState<string | null>(null);
+  const [choicesUrl, setChoicesUrl] = useState<string | null>(null);
   const [answer, setAnswer] = useState(1);
   const [explanation, setExplanation] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   const questionInputRef = useRef<HTMLInputElement>(null);
   const choicesInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchWorkbooks();
@@ -106,20 +111,29 @@ export default function WorkbookManagement() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      let thumbnailUrl: string | undefined;
+      if (thumbnailFile) {
+        thumbnailUrl = await uploadImage(thumbnailFile);
+      }
       const res = await fetch("/api/workbooks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, thumbnail: thumbnailUrl }),
         credentials: "include",
       });
       if (res.ok) {
         setShowForm(false);
-        setFormData({ title: "", categoryId: "", totalQuestions: 0, questionPerPage: 12 });
+        setFormData({ title: "", categoryId: "", questionPerPage: 12 });
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
         fetchWorkbooks();
       } else {
         const data = await res.json();
         alert(data.error || "오류가 발생했습니다.");
       }
+    } catch (err) {
+      console.error(err);
+      alert("썸네일 업로드 중 오류가 발생했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -135,10 +149,47 @@ export default function WorkbookManagement() {
   const resetProblemForm = () => {
     setQuestionFile(null);
     setQuestionPreview(null);
+    setQuestionUrl(null);
     setChoicesFile(null);
     setChoicesPreview(null);
+    setChoicesUrl(null);
     setAnswer(1);
     setExplanation("");
+  };
+
+  const generateAIExplanation = async () => {
+    if (!questionFile || !choicesFile) {
+      alert("AI 해설을 위해 먼저 문제 이미지와 선택지 이미지를 선택해주세요.");
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      // 이미지를 먼저 업로드 (재사용 가능하도록 state에 저장)
+      let qUrl = questionUrl;
+      let cUrl = choicesUrl;
+      if (!qUrl) {
+        qUrl = await uploadImage(questionFile);
+        setQuestionUrl(qUrl);
+      }
+      if (!cUrl) {
+        cUrl = await uploadImage(choicesFile);
+        setChoicesUrl(cUrl);
+      }
+
+      const res = await fetch("/api/admin/ai-explanation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionImage: qUrl, choicesImage: cUrl, answer: Number(answer) }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "AI 해설 생성 실패");
+      setExplanation(data.explanation || "");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "AI 해설 생성 실패");
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   const handleFileSelect = (
@@ -168,17 +219,15 @@ export default function WorkbookManagement() {
 
     setUploading(true);
     try {
-      const [questionUrl, choicesUrl] = await Promise.all([
-        uploadImage(questionFile),
-        uploadImage(choicesFile),
-      ]);
+      const qUrl = questionUrl ?? (await uploadImage(questionFile));
+      const cUrl = choicesUrl ?? (await uploadImage(choicesFile));
 
       const res = await fetch(`/api/workbooks/${selectedWorkbook.id}/problems`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          questionImage: questionUrl,
-          choicesImage: choicesUrl,
+          questionImage: qUrl,
+          choicesImage: cUrl,
           answer: Number(answer),
           explanation: explanation || null,
         }),
@@ -281,7 +330,7 @@ export default function WorkbookManagement() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D", marginBottom: 20 }}>새 문제집</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
               <input
@@ -311,18 +360,6 @@ export default function WorkbookManagement() {
               </select>
             </div>
             <div>
-              <label style={labelStyle}>총 문제 수</label>
-              <input
-                type="number"
-                value={formData.totalQuestions}
-                onChange={(e) => setFormData({ ...formData, totalQuestions: Number(e.target.value) })}
-                style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
-                min={0}
-              />
-            </div>
-            <div>
               <label style={labelStyle}>페이지당 문제 수</label>
               <input
                 type="number"
@@ -334,6 +371,49 @@ export default function WorkbookManagement() {
                 min={1}
               />
             </div>
+          </div>
+
+          {/* Thumbnail */}
+          <div style={{ marginBottom: 4 }}>
+            <label style={labelStyle}>썸네일 <span style={{ color: "#8A909C", fontWeight: 400 }}>선택</span></label>
+            {thumbnailPreview ? (
+              <div style={{ position: "relative", width: 180, borderRadius: 12, overflow: "hidden", border: "1px solid #E5E7EB" }}>
+                <img src={thumbnailPreview} alt="썸네일" style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
+                <button
+                  type="button"
+                  onClick={() => { setThumbnailFile(null); setThumbnailPreview(null); }}
+                  style={{
+                    position: "absolute", top: 8, right: 8, width: 28, height: 28,
+                    borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff",
+                    border: "none", cursor: "pointer", fontSize: 16,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{ ...imageDropStyle, width: 180, padding: 24 }}
+                onClick={() => thumbnailInputRef.current?.click()}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#3787FF"; e.currentTarget.style.background = "#EBF3FF"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#D1D5DB"; e.currentTarget.style.background = "#FAFBFC"; }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 6px" }}>
+                  <rect x="3" y="3" width="18" height="18" rx="3" stroke="#9CA3AF" strokeWidth="1.5"/>
+                  <circle cx="8.5" cy="8.5" r="2" stroke="#9CA3AF" strokeWidth="1.5"/>
+                  <path d="M3 16L8 11L13 16M13 14L16 11L21 16" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <p style={{ fontSize: 12, color: "#8A909C", fontWeight: 500 }}>썸네일 업로드</p>
+              </div>
+            )}
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleFileSelect(e.target.files?.[0], setThumbnailFile, setThumbnailPreview)}
+            />
           </div>
           <button
             type="submit"
@@ -612,42 +692,73 @@ export default function WorkbookManagement() {
                     />
                   </div>
 
-                  {/* 정답 & 해설 */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                    <div>
-                      <label style={labelStyle}>정답 번호 <span style={{ color: "#EF4444" }}>*</span></label>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => setAnswer(n)}
-                            style={{
-                              width: 40, height: 40, borderRadius: 10,
-                              border: `2px solid ${answer === n ? "#3787FF" : "#E5E7EB"}`,
-                              background: answer === n ? "#3787FF" : "#fff",
-                              color: answer === n ? "#fff" : "#2B313D",
-                              fontSize: 15, fontWeight: 700, cursor: "pointer",
-                              transition: "all 0.15s",
-                            }}
-                          >
-                            {n}
-                          </button>
-                        ))}
-                      </div>
+                  {/* 정답 */}
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={labelStyle}>정답 번호 <span style={{ color: "#EF4444" }}>*</span></label>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setAnswer(n)}
+                          style={{
+                            width: 40, height: 40, borderRadius: 10,
+                            border: `2px solid ${answer === n ? "#3787FF" : "#E5E7EB"}`,
+                            background: answer === n ? "#3787FF" : "#fff",
+                            color: answer === n ? "#fff" : "#2B313D",
+                            fontSize: 15, fontWeight: 700, cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {n}
+                        </button>
+                      ))}
                     </div>
-                    <div>
-                      <label style={labelStyle}>해설 <span style={{ color: "#8A909C", fontWeight: 400 }}>선택</span></label>
-                      <input
-                        type="text"
-                        value={explanation}
-                        onChange={(e) => setExplanation(e.target.value)}
-                        style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
-                        placeholder="해설을 입력하세요"
-                      />
+                  </div>
+
+                  {/* 해설 */}
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <label style={{ ...labelStyle, marginBottom: 0 }}>
+                        해설 <span style={{ color: "#8A909C", fontWeight: 400 }}>선택</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={generateAIExplanation}
+                        disabled={generatingAI || !questionFile || !choicesFile}
+                        className="press"
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          padding: "6px 12px", borderRadius: 8, border: "none",
+                          background: (generatingAI || !questionFile || !choicesFile) ? "#E5E7EB" : "linear-gradient(135deg, #3787FF, #7B5BFF)",
+                          color: (generatingAI || !questionFile || !choicesFile) ? "#9CA3AF" : "#fff",
+                          fontSize: 12, fontWeight: 700,
+                          cursor: (generatingAI || !questionFile || !choicesFile) ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {generatingAI ? (
+                          <>
+                            <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "aiSpin 0.8s linear infinite" }} />
+                            <style>{`@keyframes aiSpin { to { transform: rotate(360deg); } }`}</style>
+                            생성 중
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: 10, fontWeight: 800 }}>AI</span>
+                            해설 자동 생성
+                          </>
+                        )}
+                      </button>
                     </div>
+                    <textarea
+                      value={explanation}
+                      onChange={(e) => setExplanation(e.target.value)}
+                      rows={4}
+                      style={{ ...inputStyle, resize: "vertical" }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                      placeholder="해설을 직접 입력하거나 AI 해설 자동 생성 버튼을 눌러주세요"
+                    />
                   </div>
 
                   <button
