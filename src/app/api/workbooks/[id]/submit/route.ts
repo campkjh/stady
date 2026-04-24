@@ -37,10 +37,10 @@ export async function POST(
 
     // Score each answer
     let score = 0;
-    const answerData: { problemId: string; selected: number | null; isCorrect: boolean }[] = [];
+    const answerData: { problemId: string; selected: number | null; isCorrect: boolean; dwellSeconds: number }[] = [];
     const wrongProblemIds: string[] = [];
 
-    for (const ans of answers as { problemId: string; selected: number | null }[]) {
+    for (const ans of answers as { problemId: string; selected: number | null; dwellSeconds?: number }[]) {
       const correctAnswer = problemMap.get(ans.problemId);
       const isCorrect = correctAnswer !== undefined && ans.selected === correctAnswer;
       if (isCorrect) score++;
@@ -50,6 +50,7 @@ export async function POST(
         problemId: ans.problemId,
         selected: ans.selected ?? null,
         isCorrect,
+        dwellSeconds: Math.max(0, Math.min(3600, ans.dwellSeconds ?? 0)),
       });
     }
 

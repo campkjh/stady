@@ -1,10 +1,40 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const user = await requireUser();
+    const { searchParams } = new URL(request.url);
+    const attemptId = searchParams.get("attemptId");
+
+    if (attemptId) {
+      const attempt = await prisma.quizAttempt.findFirst({
+        where: { id: attemptId, userId: user.id },
+        include: {
+          workbook: { select: { id: true, title: true, thumbnail: true } },
+          problemAnswers: {
+            include: {
+              problem: {
+                select: {
+                  id: true, order: true, questionText: true, passageImage: true,
+                  questionImage: true, answer: true, explanation: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!attempt) {
+        return NextResponse.json({ error: "기록을 찾을 수 없습니다." }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        attempt,
+        answers: attempt.problemAnswers,
+      });
+    }
 
     const attempts = await prisma.quizAttempt.findMany({
       where: { userId: user.id },

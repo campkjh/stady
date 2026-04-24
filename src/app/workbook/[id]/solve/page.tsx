@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 interface Problem {
@@ -24,10 +24,14 @@ interface Workbook {
   problems: Problem[];
 }
 
-const CIRCLE_LABELS = ["①", "②", "③", "④", "⑤"];
-
 function isImageUrl(str: string) {
   return str.startsWith("http://") || str.startsWith("https://");
+}
+
+function formatMMSS(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 export default function SolvePage() {
@@ -39,99 +43,99 @@ export default function SolvePage() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<string, number>>(new Map());
+  const [dwellTimes, setDwellTimes] = useState<Map<string, number>>(new Map());
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<"assistant" | "ai">("assistant");
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
-  // Swipe state
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const enterTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // Timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsed((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setElapsed((p) => p + 1), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  // Fetch workbook
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch(`/api/workbooks/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch");
+        if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         setWorkbook(data.workbook);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      } catch {}
+      setLoading(false);
     }
     fetchData();
   }, [id]);
 
   const problems = workbook?.problems || [];
   const currentProblem = problems[currentIndex];
-  const allAnswered = problems.length > 0 && answers.size === problems.length;
 
-  function formatTimer(seconds: number) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
+  // Track dwell time on problem change
+  useEffect(() => {
+    enterTimeRef.current = Date.now();
+  }, [currentIndex]);
 
-  function selectAnswer(problemId: string, choiceIndex: number) {
-    setAnswers((prev) => {
+  const commitDwell = useCallback((problemId: string) => {
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((now - enterTimeRef.current) / 1000));
+    setDwellTimes((prev) => {
       const next = new Map(prev);
-      next.set(problemId, choiceIndex);
+      next.set(problemId, (next.get(problemId) || 0) + diff);
       return next;
     });
-  }
+    enterTimeRef.current = now;
+  }, []);
 
-  const goTo = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < problems.length) {
-        setCurrentIndex(index);
-      }
-    },
-    [problems.length]
-  );
+  const goTo = useCallback((index: number) => {
+    if (index < 0 || index >= problems.length || !currentProblem) return;
+    commitDwell(currentProblem.id);
+    setCurrentIndex(index);
+    setShowExplanation(false);
+  }, [problems.length, currentProblem, commitDwell]);
 
-  // Swipe handlers
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
-    touchEndX.current = e.touches[0].clientX;
-  }
+  const selectAnswer = (problemId: string, choiceNum: number) => {
+    if (answers.has(problemId)) return; // 이미 답했으면 재선택 불가
+    setAnswers((prev) => {
+      const next = new Map(prev);
+      next.set(problemId, choiceNum);
+      return next;
+    });
+    // dwellTime 즉시 반영 후 해설 오픈
+    commitDwell(problemId);
+    setShowExplanation(true);
+  };
 
-  function onTouchMove(e: React.TouchEvent) {
-    touchEndX.current = e.touches[0].clientX;
-  }
-
-  function onTouchEnd() {
-    const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50;
-    if (diff > threshold) {
+  const goNext = () => {
+    if (currentIndex < problems.length - 1) {
       goTo(currentIndex + 1);
-    } else if (diff < -threshold) {
-      goTo(currentIndex - 1);
     }
-  }
+  };
 
   async function handleSubmit() {
-    if (!workbook || submitting) return;
+    if (!workbook || submitting || !currentProblem) return;
+    commitDwell(currentProblem.id);
     setSubmitting(true);
+
+    // 최신 dwellTimes를 즉시 사용하기 위해 setState 반영 후 호출
+    // React는 async 불가, 직접 Map 계산
+    const finalDwell = new Map(dwellTimes);
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((now - enterTimeRef.current) / 1000));
+    if (currentProblem) {
+      finalDwell.set(currentProblem.id, (finalDwell.get(currentProblem.id) || 0) + diff);
+    }
 
     const answerPayload = problems.map((p) => ({
       problemId: p.id,
       selected: answers.get(p.id) ?? null,
+      dwellSeconds: finalDwell.get(p.id) ?? 0,
     }));
 
     try {
@@ -140,21 +144,32 @@ export default function SolvePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: answerPayload, timeTaken: elapsed }),
       });
-
-      if (!res.ok) throw new Error("Submit failed");
+      if (!res.ok) throw new Error("submit failed");
       const data = await res.json();
-
-      // Navigate to result page with query params
-      router.push(
-        `/workbook/${id}/result?score=${data.score}&total=${data.totalScore}&time=${elapsed}&attemptId=${data.attempt.id}`
-      );
-    } catch (err) {
-      console.error(err);
+      router.push(`/workbook/${id}/result?score=${data.score}&total=${data.totalScore}&time=${elapsed}&attemptId=${data.attempt.id}`);
+    } catch {
       alert("제출 중 오류가 발생했습니다.");
-    } finally {
       setSubmitting(false);
     }
   }
+
+  const score = useMemo(() => {
+    let s = 0;
+    for (const p of problems) {
+      const a = answers.get(p.id);
+      if (a !== undefined && a === p.answer) s++;
+    }
+    return s;
+  }, [answers, problems]);
+
+  const answeredCount = answers.size;
+  const allAnswered = problems.length > 0 && answeredCount === problems.length;
+  const selectedAnswer = currentProblem ? answers.get(currentProblem.id) : undefined;
+  const isAnswered = selectedAnswer !== undefined;
+  const isCorrect = isAnswered && currentProblem ? selectedAnswer === currentProblem.answer : false;
+
+  // Single-image choice mode detection
+  const hasChoiceImage = currentProblem && isImageUrl(currentProblem.choice1) && currentProblem.choice2 === "_";
 
   if (loading) {
     return (
@@ -164,230 +179,110 @@ export default function SolvePage() {
     );
   }
 
-  if (!workbook || problems.length === 0) {
+  if (!workbook || problems.length === 0 || !currentProblem) {
     return (
       <div className="flex flex-col items-center justify-center gap-4" style={{ position: "fixed", inset: 0 }}>
         <p className="text-gray-500">문제를 불러올 수 없습니다.</p>
-        <button
-          onClick={() => router.back()}
-          className="text-primary font-medium"
-        >
-          돌아가기
-        </button>
+        <button onClick={() => router.back()} className="text-primary font-medium">돌아가기</button>
       </div>
     );
   }
 
-  // 단일 이미지 선택지 모드: choice1이 URL이고 choice2가 "_"인 경우
-  const isSingleImageMode = currentProblem
-    ? isImageUrl(currentProblem.choice1) && currentProblem.choice2 === "_"
-    : false;
-
-  const choices = currentProblem
-    ? isSingleImageMode
-      ? []
-      : [
-          currentProblem.choice1,
-          currentProblem.choice2,
-          currentProblem.choice3,
-          currentProblem.choice4,
-          ...(currentProblem.choice5 && currentProblem.choice5 !== "_" ? [currentProblem.choice5] : []),
-        ]
-    : [];
-
-  const selectedAnswer = currentProblem
-    ? answers.get(currentProblem.id)
-    : undefined;
+  const choiceLabels = ["①", "②", "③", "④", "⑤"];
+  const textChoices = !hasChoiceImage ? [
+    currentProblem.choice1,
+    currentProblem.choice2,
+    currentProblem.choice3,
+    currentProblem.choice4,
+    ...(currentProblem.choice5 && currentProblem.choice5 !== "_" ? [currentProblem.choice5] : []),
+  ] : [];
 
   return (
-    <div className="bg-white flex flex-col" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto" }}>
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      maxWidth: 500, margin: "0 auto", background: "#fff",
+      display: "flex", flexDirection: "column",
+    }}>
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <button onClick={() => router.back()} className="p-2 -ml-2">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 18l-6-6 6-6" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #F3F4F6", flexShrink: 0 }}>
+        <button onClick={() => router.back()} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
-        {/* Timer */}
-        <div className="flex items-center gap-1.5 bg-gray-50 rounded-full px-4 py-1.5">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#6B7280"
-            strokeWidth="2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F3F4F6", padding: "6px 12px", borderRadius: 20 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", fontVariantNumeric: "tabular-nums" }}>{formatMMSS(elapsed)}</span>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#3787FF" }}>{score}점</span>
+        </div>
+
+        <button onClick={() => setShowDrawer(true)} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
-          <span className="text-sm font-medium text-gray-700 tabular-nums">
-            {formatTimer(elapsed)}
-          </span>
-        </div>
+        </button>
+      </div>
 
-        {/* Problem count + nav */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => goTo(currentIndex - 1)}
-            disabled={currentIndex === 0}
-            className="press"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 28, height: 28, borderRadius: "50%",
-              border: "1px solid #E5E7EB", background: "#fff",
-              opacity: currentIndex === 0 ? 0.3 : 1,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <span className="text-sm text-gray-400">
-            {currentIndex + 1}/{problems.length}
-          </span>
-          <button
-            type="button"
-            onClick={() => goTo(currentIndex + 1)}
-            disabled={currentIndex >= problems.length - 1}
-            className="press"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 28, height: 28, borderRadius: "50%",
-              border: "1px solid #E5E7EB", background: "#fff",
-              opacity: currentIndex >= problems.length - 1 ? 0.3 : 1,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+      {/* Progress */}
+      <div style={{ padding: "10px 16px 6px", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <span style={{ fontSize: 12, color: "#9CA3AF" }}>{currentIndex + 1} / {problems.length}</span>
+          <span style={{ fontSize: 12, color: "#9CA3AF" }}>답변 {answeredCount} · 정답 {score}</span>
+        </div>
+        <div style={{ height: 4, background: "#F3F4F6", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${((currentIndex + 1) / problems.length) * 100}%`, background: "#3787FF", transition: "width 0.3s" }} />
         </div>
       </div>
 
-      {/* Problem Navigation Dots */}
-      <div className="px-4 pb-3">
-        <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
-          {problems.map((p, i) => {
-            const isActive = i === currentIndex;
-            const isAnswered = answers.has(p.id);
-            return (
-              <button
-                key={p.id}
-                onClick={() => goTo(i)}
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 transition-colors ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : isAnswered
-                      ? "bg-primary/20 text-primary"
-                      : "bg-gray-100 text-gray-400"
-                }`}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Problem Content - Swipeable */}
-      <div
-        ref={containerRef}
-        className="flex-1 px-4 overflow-y-auto"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        {/* Passage Image */}
+      {/* Problem area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
         {currentProblem.passageImage && (
-          <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
-            <img
-              src={currentProblem.passageImage}
-              alt="지문"
-              className="w-full"
-            />
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6" }}>
+            <img src={currentProblem.passageImage} alt="지문" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
-        {/* Question Image */}
         {currentProblem.questionImage && (
-          <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
-            <img
-              src={currentProblem.questionImage}
-              alt="문제"
-              className="w-full"
-            />
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6" }}>
+            <img src={currentProblem.questionImage} alt="문제" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
-        {/* Question Text */}
         {currentProblem.questionText && (
-          <div className="mb-6">
-            <p className="text-base font-medium text-gray-900 leading-relaxed">
-              {currentProblem.questionText}
-            </p>
-          </div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#111", lineHeight: 1.6, marginBottom: 14 }}>
+            {currentProblem.questionText}
+          </p>
         )}
 
-        {/* Choices */}
-        {isSingleImageMode ? (
-          <div className="pb-4">
-            {/* 선택지 이미지 */}
-            <div className="mb-4 rounded-xl overflow-hidden border border-gray-100">
-              <img
-                src={currentProblem.choice1}
-                alt="선택지"
-                className="w-full"
-              />
-            </div>
-            {/* 번호 버튼 */}
-            <div className="flex gap-2 justify-center">
-              {[1, 2, 3, 4, 5].map((n) => {
-                const isSelected = selectedAnswer === n;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => selectAnswer(currentProblem.id, n)}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold transition-colors ${
-                      isSelected
-                        ? "bg-primary text-white border-2 border-primary"
-                        : "bg-white text-gray-700 border-2 border-gray-200 active:bg-gray-50"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3 pb-4">
-            {choices.map((choice, i) => {
-              const choiceNum = i + 1;
-              const isSelected = selectedAnswer === choiceNum;
+        {/* Text choices (if no image) */}
+        {!hasChoiceImage && textChoices.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {textChoices.map((choice, i) => {
+              const n = i + 1;
+              const isSelected = selectedAnswer === n;
+              const isAns = isAnswered && n === currentProblem.answer;
+              const isWrongPick = isAnswered && isSelected && !isCorrect;
               return (
                 <button
                   key={i}
-                  onClick={() => selectAnswer(currentProblem.id, choiceNum)}
-                  className={`w-full text-left px-4 py-3.5 rounded-xl border transition-colors ${
-                    isSelected
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 bg-white text-gray-700 active:bg-gray-50"
-                  }`}
+                  onClick={() => selectAnswer(currentProblem.id, n)}
+                  disabled={isAnswered}
+                  className="press"
+                  style={{
+                    textAlign: "left", padding: "14px 16px", borderRadius: 14,
+                    border: `1.5px solid ${isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#E5E7EB"}`,
+                    background: isAns ? "#EAF2FF" : isWrongPick ? "#FEF2F2" : isSelected ? "#EAF2FF" : "#fff",
+                    fontSize: 14, color: "#111", display: "flex", gap: 10, cursor: isAnswered ? "default" : "pointer",
+                    transition: "all 0.15s ease",
+                  }}
                 >
-                  <span className="font-medium mr-2">{CIRCLE_LABELS[i]}</span>
-                  <span className="text-sm">{choice}</span>
+                  <span style={{ fontWeight: 700, color: isAns ? "#3787FF" : isWrongPick ? "#EF4444" : "#6B7280" }}>{choiceLabels[i]}</span>
+                  <span>{choice}</span>
                 </button>
               );
             })}
@@ -395,45 +290,255 @@ export default function SolvePage() {
         )}
       </div>
 
-      {/* Bottom Tabs */}
-      <div className="border-t border-gray-100">
-        {/* Tab buttons */}
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab("assistant")}
-            className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${
-              activeTab === "assistant"
-                ? "text-primary border-b-2 border-primary"
-                : "text-gray-400"
-            }`}
-          >
-            어시스턴트
-          </button>
-          <button
-            onClick={() => setActiveTab("ai")}
-            className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${
-              activeTab === "ai"
-                ? "text-primary border-b-2 border-primary"
-                : "text-gray-400"
-            }`}
-          >
-            스타디 AI 해설보기
-          </button>
-        </div>
-
-        {/* Grade button (shows when all answered) */}
-        {allAnswered && (
-          <div className="px-4 py-3">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full h-14 bg-primary text-white rounded-2xl text-base font-semibold active:bg-blue-600 transition-colors disabled:opacity-50"
-            >
-              {submitting ? "채점 중..." : "채점하기"}
-            </button>
+      {/* Floating choice image group (bottom sheet) */}
+      {hasChoiceImage && (
+        <div style={{
+          position: "absolute", left: 12, right: 12, bottom: 88,
+          background: "#fff", borderRadius: 20,
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.12)", border: "1px solid #E5E7EB",
+          overflow: "hidden",
+          maxHeight: "48vh", display: "flex", flexDirection: "column",
+        }}>
+          {/* Number buttons */}
+          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #F3F4F6", background: "#FAFBFC" }}>
+            {[1, 2, 3, 4, 5].map((n) => {
+              const isSelected = selectedAnswer === n;
+              const isAns = isAnswered && n === currentProblem.answer;
+              const isWrongPick = isAnswered && isSelected && !isCorrect;
+              return (
+                <button
+                  key={n}
+                  onClick={() => selectAnswer(currentProblem.id, n)}
+                  disabled={isAnswered}
+                  className="press"
+                  style={{
+                    flex: 1, height: 40, borderRadius: 10,
+                    border: `1.5px solid ${isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#E5E7EB"}`,
+                    background: isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#fff",
+                    color: (isSelected || isAns || isWrongPick) ? "#fff" : "#374151",
+                    fontSize: 15, fontWeight: 700, cursor: isAnswered ? "default" : "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {n}
+                </button>
+              );
+            })}
           </div>
+          {/* Choice image (aspect ratio preserved by img) */}
+          <div style={{ overflow: "auto", flex: 1, background: "#F9FAFB" }}>
+            <img src={currentProblem.choice1} alt="선택지" style={{ width: "100%", display: "block" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Bottom bar */}
+      <div style={{
+        position: "absolute", left: 0, right: 0, bottom: 0,
+        padding: "10px 14px calc(10px + env(safe-area-inset-bottom, 0px))",
+        borderTop: "1px solid #F3F4F6", background: "#fff",
+        display: "flex", gap: 8, flexShrink: 0,
+      }}>
+        <button
+          onClick={() => goTo(currentIndex - 1)}
+          disabled={currentIndex === 0}
+          className="press"
+          style={{
+            flex: "0 0 auto", height: 48, padding: "0 18px", borderRadius: 12,
+            background: "#F3F4F6", border: "none", fontSize: 14, fontWeight: 600, color: "#374151",
+            opacity: currentIndex === 0 ? 0.4 : 1,
+          }}
+        >
+          이전
+        </button>
+        {allAnswered && currentIndex === problems.length - 1 ? (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="press"
+            style={{
+              flex: 1, height: 48, borderRadius: 12,
+              background: "#3787FF", border: "none", fontSize: 15, fontWeight: 700, color: "#fff",
+              opacity: submitting ? 0.6 : 1,
+            }}
+          >
+            {submitting ? "채점 중..." : "채점하기"}
+          </button>
+        ) : (
+          <button
+            onClick={goNext}
+            disabled={currentIndex >= problems.length - 1}
+            className="press"
+            style={{
+              flex: 1, height: 48, borderRadius: 12,
+              background: isAnswered ? "#3787FF" : "#E5E7EB",
+              border: "none", fontSize: 15, fontWeight: 700,
+              color: isAnswered ? "#fff" : "#9CA3AF",
+              opacity: currentIndex >= problems.length - 1 ? 0.4 : 1,
+            }}
+          >
+            다음
+          </button>
         )}
       </div>
+
+      {/* Explanation modal (slides up from bottom) */}
+      {showExplanation && isAnswered && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
+          <div
+            onClick={() => setShowExplanation(false)}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }}
+          />
+          <div style={{
+            position: "absolute", left: 0, right: 0, bottom: 0,
+            maxWidth: 500, margin: "0 auto",
+            background: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
+            animation: "explanationSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            maxHeight: "70vh", overflowY: "auto",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  padding: "4px 12px", borderRadius: 20,
+                  background: isCorrect ? "#E8F0FE" : "#FEE2E2",
+                  color: isCorrect ? "#3787FF" : "#EF4444",
+                  fontSize: 13, fontWeight: 700,
+                }}>
+                  {isCorrect ? "정답!" : "오답"}
+                </span>
+                <span style={{ fontSize: 13, color: "#6B7280" }}>
+                  정답 <b style={{ color: "#111" }}>{currentProblem.answer}번</b>
+                </span>
+              </div>
+              <button
+                onClick={() => setShowExplanation(false)}
+                style={{ width: 32, height: 32, borderRadius: "50%", background: "#F3F4F6", border: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 8 }}>해설</h3>
+            {currentProblem.explanation ? (
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#374151", whiteSpace: "pre-wrap" }}>
+                {currentProblem.explanation}
+              </p>
+            ) : (
+              <p style={{ fontSize: 13, color: "#9CA3AF" }}>해설이 아직 준비되지 않았습니다.</p>
+            )}
+
+            {currentIndex < problems.length - 1 && (
+              <button
+                onClick={() => { setShowExplanation(false); goNext(); }}
+                className="press"
+                style={{
+                  width: "100%", marginTop: 18, height: 48, borderRadius: 12,
+                  background: "#3787FF", border: "none", color: "#fff",
+                  fontSize: 15, fontWeight: 700,
+                }}
+              >
+                다음 문제
+              </button>
+            )}
+          </div>
+          <style>{`
+            @keyframes explanationSlide {
+              from { transform: translateY(100%); }
+              to { transform: translateY(0); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* Hamburger drawer */}
+      {showDrawer && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 210 }}>
+          <div
+            onClick={() => setShowDrawer(false)}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }}
+          />
+          <div style={{
+            position: "absolute", top: 0, right: 0, bottom: 0,
+            width: "82%", maxWidth: 360, background: "#fff",
+            animation: "drawerSlide 0.25s ease",
+            boxShadow: "-6px 0 24px rgba(0,0,0,0.12)",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ padding: "18px 18px 12px", borderBottom: "1px solid #F3F4F6" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>문제 목록</h3>
+                <button onClick={() => setShowDrawer(false)} style={{ background: "none", border: "none" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: 14, fontSize: 13 }}>
+                <span style={{ color: "#6B7280" }}>전체 <b style={{ color: "#111" }}>{problems.length}</b></span>
+                <span style={{ color: "#3787FF" }}>정답 <b>{score}</b></span>
+                <span style={{ color: "#EF4444" }}>오답 <b>{answers.size - score}</b></span>
+                <span style={{ color: "#9CA3AF" }}>미답 <b>{problems.length - answers.size}</b></span>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
+              {problems.map((p, idx) => {
+                const sel = answers.get(p.id);
+                const hasAnswered = sel !== undefined;
+                const correct = hasAnswered && sel === p.answer;
+                const isCurrent = idx === currentIndex;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => { goTo(idx); setShowDrawer(false); }}
+                    className="press"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      width: "100%", padding: "12px 14px", borderRadius: 12,
+                      background: isCurrent ? "#F0F5FF" : "transparent",
+                      border: "none", textAlign: "left", cursor: "pointer",
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{
+                      width: 28, height: 28, borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 700, color: "#fff",
+                      background: !hasAnswered ? "#D1D5DB" : correct ? "#3787FF" : "#EF4444",
+                      flexShrink: 0,
+                    }}>
+                      {idx + 1}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        문제 {idx + 1}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                        {hasAnswered ? `${sel}번 선택` : "아직 풀지 않음"}
+                      </p>
+                    </div>
+                    {hasAnswered && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: correct ? "#3787FF" : "#EF4444",
+                        padding: "2px 8px", borderRadius: 10,
+                        background: correct ? "#E8F0FE" : "#FEE2E2",
+                      }}>
+                        {correct ? "정답" : "오답"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <style>{`
+            @keyframes drawerSlide {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
