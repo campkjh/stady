@@ -81,11 +81,15 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const workbook = await prisma.workbook.update({
-      where: { id },
-      data: { isPopular: body.isPopular },
-    });
+    const data: Record<string, unknown> = {};
+    if (body.isPopular !== undefined) data.isPopular = body.isPopular;
+    if (body.title !== undefined) data.title = body.title;
+    if (body.categoryId !== undefined) data.categoryId = body.categoryId;
+    if (body.totalQuestions !== undefined) data.totalQuestions = body.totalQuestions;
+    if (body.questionPerPage !== undefined) data.questionPerPage = body.questionPerPage;
+    if (body.thumbnail !== undefined) data.thumbnail = body.thumbnail;
 
+    const workbook = await prisma.workbook.update({ where: { id }, data });
     return NextResponse.json({ workbook });
   } catch (error) {
     if (error instanceof Error) {
@@ -94,5 +98,33 @@ export async function PATCH(
     }
     console.error("Workbook PATCH error:", error);
     return NextResponse.json({ error: "수정 중 오류가 발생했습니다." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireAdmin();
+    const { id } = await params;
+
+    await prisma.$transaction([
+      prisma.problemAnswer.deleteMany({ where: { problem: { workbookId: id } } }),
+      prisma.problem.deleteMany({ where: { workbookId: id } }),
+      prisma.review.deleteMany({ where: { workbookId: id } }),
+      prisma.bookmark.deleteMany({ where: { workbookId: id } }),
+      prisma.quizAttempt.deleteMany({ where: { workbookId: id } }),
+      prisma.workbook.delete({ where: { id } }),
+    ]);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "Unauthorized") return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      if (error.message === "Forbidden") return NextResponse.json({ error: "관리자 권한이 필요합니다." }, { status: 403 });
+    }
+    console.error("Workbook DELETE error:", error);
+    return NextResponse.json({ error: "삭제 중 오류가 발생했습니다." }, { status: 500 });
   }
 }

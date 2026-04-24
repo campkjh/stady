@@ -420,20 +420,33 @@ export default function WorkbookManagement() {
                     </button>
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    <button
-                      onClick={() => openProblems(wb)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#3787FF",
-                        fontWeight: 600,
-                        fontSize: 13,
-                        cursor: "pointer",
-                        padding: "4px 8px",
-                      }}
-                    >
-                      문제 관리
-                    </button>
+                    <div style={{ display: "inline-flex", gap: 8 }}>
+                      <button
+                        onClick={() => openProblems(wb)}
+                        style={{
+                          background: "none", border: "none",
+                          color: "#3787FF", fontWeight: 600, fontSize: 13,
+                          cursor: "pointer", padding: "4px 8px",
+                        }}
+                      >
+                        문제 관리
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`"${wb.title}" 문제집을 삭제하시겠습니까? 관련 문제와 풀이 기록도 모두 삭제됩니다.`)) return;
+                          const res = await fetch(`/api/workbooks/${wb.id}`, { method: "DELETE", credentials: "include" });
+                          if (res.ok) fetchWorkbooks();
+                          else alert("삭제 실패");
+                        }}
+                        style={{
+                          background: "none", border: "none",
+                          color: "#EF4444", fontWeight: 600, fontSize: 13,
+                          cursor: "pointer", padding: "4px 8px",
+                        }}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -677,6 +690,25 @@ export default function WorkbookManagement() {
                       }}>
                         {p.order}번
                       </span>
+                      <button
+                        onClick={async () => {
+                          if (!selectedWorkbook) return;
+                          if (!confirm(`${p.order}번 문제를 삭제하시겠습니까?`)) return;
+                          const res = await fetch(`/api/workbooks/${selectedWorkbook.id}/problems/${p.id}`, { method: "DELETE", credentials: "include" });
+                          if (res.ok) {
+                            openProblems(selectedWorkbook);
+                            fetchWorkbooks();
+                          } else alert("삭제 실패");
+                        }}
+                        style={{
+                          background: "none", border: "none",
+                          color: "#EF4444", fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", padding: "2px 8px", marginLeft: "auto",
+                          flexShrink: 0, order: 2,
+                        }}
+                      >
+                        삭제
+                      </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {/* 문제 이미지 */}
                         {p.questionImage && (

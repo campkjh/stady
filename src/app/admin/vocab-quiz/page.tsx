@@ -405,15 +405,31 @@ export default function VocabQuizManagement() {
                     </button>
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    <button
-                      onClick={() => openQuestions(set)}
-                      style={{
-                        background: "none", border: "none", color: "#3787FF",
-                        fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
-                      }}
-                    >
-                      문제 관리
-                    </button>
+                    <div style={{ display: "inline-flex", gap: 8 }}>
+                      <button
+                        onClick={() => openQuestions(set)}
+                        style={{
+                          background: "none", border: "none", color: "#3787FF",
+                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
+                        }}
+                      >
+                        문제 관리
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 단어와 기록도 모두 삭제됩니다.`)) return;
+                          const res = await fetch(`/api/vocab-quiz/${set.id}`, { method: "DELETE", credentials: "include" });
+                          if (res.ok) fetchQuizSets();
+                          else alert("삭제 실패");
+                        }}
+                        style={{
+                          background: "none", border: "none", color: "#EF4444",
+                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
+                        }}
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -654,6 +670,24 @@ export default function VocabQuizManagement() {
                           <p style={{ fontSize: 12, color: "#8A909C", marginTop: 8 }}>해설: {q.explanation}</p>
                         )}
                       </div>
+                      <button
+                        onClick={async () => {
+                          if (!selectedSet) return;
+                          if (!confirm(`"${q.word}" 단어를 삭제하시겠습니까?`)) return;
+                          const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
+                          if (res.ok) {
+                            openQuestions(selectedSet);
+                            fetchQuizSets();
+                          } else alert("삭제 실패");
+                        }}
+                        style={{
+                          background: "none", border: "none",
+                          color: "#EF4444", fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", padding: "2px 8px", flexShrink: 0,
+                        }}
+                      >
+                        삭제
+                      </button>
                     </div>
                   </div>
                 ))}
