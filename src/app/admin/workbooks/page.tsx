@@ -11,6 +11,7 @@ interface Category {
 interface Workbook {
   id: string;
   title: string;
+  thumbnail: string | null;
   categoryId: string;
   totalQuestions: number;
   questionPerPage: number;
@@ -69,6 +70,11 @@ export default function WorkbookManagement() {
   const [selectedWorkbook, setSelectedWorkbook] = useState<Workbook | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [showProblemForm, setShowProblemForm] = useState(false);
+  const [editingWorkbookId, setEditingWorkbookId] = useState<string | null>(null);
+  const [editWbData, setEditWbData] = useState({ title: "", categoryId: "" });
+  const [editWbThumbFile, setEditWbThumbFile] = useState<File | null>(null);
+  const [editWbThumbPreview, setEditWbThumbPreview] = useState<string | null>(null);
+  const editWbThumbInputRef = useRef<HTMLInputElement>(null);
   const [editingProblemId, setEditingProblemId] = useState<string | null>(null);
   const [editAnswer, setEditAnswer] = useState(1);
   const [editExplanation, setEditExplanation] = useState("");
@@ -450,20 +456,41 @@ export default function WorkbookManagement() {
                 </td>
               </tr>
             ) : (
-              workbooks.map((wb, idx) => (
+              workbooks.map((wb, idx) => {
+                const isEditing = editingWorkbookId === wb.id;
+                return (
                 <tr
                   key={wb.id}
                   style={{
                     borderBottom: "1px solid #F3F4F6",
-                    background: idx % 2 === 1 ? "#FAFBFC" : "#fff",
+                    background: isEditing ? "#EBF3FF" : idx % 2 === 1 ? "#FAFBFC" : "#fff",
                     transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#F5F7FA"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "#FAFBFC" : "#fff"}
                 >
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{wb.title}</td>
+                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editWbData.title}
+                        onChange={(e) => setEditWbData({ ...editWbData, title: e.target.value })}
+                        style={{ ...inputStyle, padding: "6px 10px" }}
+                      />
+                    ) : wb.title}
+                  </td>
                   <td style={{ padding: "14px 16px", color: "#8A909C" }}>
-                    {wb.category.icon} {wb.category.name}
+                    {isEditing ? (
+                      <select
+                        value={editWbData.categoryId}
+                        onChange={(e) => setEditWbData({ ...editWbData, categoryId: e.target.value })}
+                        style={{ ...inputStyle, padding: "6px 10px", appearance: "auto" }}
+                      >
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>{wb.category.icon} {wb.category.name}</>
+                    )}
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{wb.totalQuestions}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
@@ -488,40 +515,127 @@ export default function WorkbookManagement() {
                     </button>
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", gap: 8 }}>
-                      <button
-                        onClick={() => openProblems(wb)}
-                        style={{
-                          background: "none", border: "none",
-                          color: "#3787FF", fontWeight: 600, fontSize: 13,
-                          cursor: "pointer", padding: "4px 8px",
-                        }}
-                      >
-                        문제 관리
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`"${wb.title}" 문제집을 삭제하시겠습니까? 관련 문제와 풀이 기록도 모두 삭제됩니다.`)) return;
-                          const res = await fetch(`/api/workbooks/${wb.id}`, { method: "DELETE", credentials: "include" });
-                          if (res.ok) fetchWorkbooks();
-                          else alert("삭제 실패");
-                        }}
-                        style={{
-                          background: "none", border: "none",
-                          color: "#EF4444", fontWeight: 600, fontSize: 13,
-                          cursor: "pointer", padding: "4px 8px",
-                        }}
-                      >
-                        삭제
-                      </button>
-                    </div>
+                    {isEditing ? (
+                      <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => editWbThumbInputRef.current?.click()}
+                          style={{
+                            padding: "4px 10px", borderRadius: 6,
+                            background: "#F3F4F6", border: "1px solid #E5E7EB",
+                            color: "#374151", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >
+                          {editWbThumbFile ? "변경됨" : "썸네일"}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            let thumbUrl: string | undefined;
+                            if (editWbThumbFile) {
+                              thumbUrl = await uploadImage(editWbThumbFile);
+                            }
+                            const body: Record<string, unknown> = {
+                              title: editWbData.title,
+                              categoryId: editWbData.categoryId,
+                            };
+                            if (thumbUrl) body.thumbnail = thumbUrl;
+                            const res = await fetch(`/api/workbooks/${wb.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(body),
+                              credentials: "include",
+                            });
+                            if (res.ok) {
+                              setEditingWorkbookId(null);
+                              setEditWbThumbFile(null);
+                              setEditWbThumbPreview(null);
+                              fetchWorkbooks();
+                            } else alert("저장 실패");
+                          }}
+                          style={{
+                            padding: "4px 10px", borderRadius: 6, border: "none",
+                            background: "#3787FF", color: "#fff",
+                            fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >
+                          저장
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingWorkbookId(null);
+                            setEditWbThumbFile(null);
+                            setEditWbThumbPreview(null);
+                          }}
+                          style={{
+                            padding: "4px 10px", borderRadius: 6,
+                            background: "none", border: "1px solid #E5E7EB",
+                            color: "#6B7280", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "inline-flex", gap: 8 }}>
+                        <button
+                          onClick={() => openProblems(wb)}
+                          style={{
+                            background: "none", border: "none",
+                            color: "#3787FF", fontWeight: 600, fontSize: 13,
+                            cursor: "pointer", padding: "4px 8px",
+                          }}
+                        >
+                          문제 관리
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingWorkbookId(wb.id);
+                            setEditWbData({ title: wb.title, categoryId: wb.categoryId });
+                            setEditWbThumbFile(null);
+                            setEditWbThumbPreview(null);
+                          }}
+                          style={{
+                            background: "none", border: "none",
+                            color: "#3787FF", fontWeight: 600, fontSize: 13,
+                            cursor: "pointer", padding: "4px 8px",
+                          }}
+                        >
+                          편집
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`"${wb.title}" 문제집을 삭제하시겠습니까? 관련 문제와 풀이 기록도 모두 삭제됩니다.`)) return;
+                            const res = await fetch(`/api/workbooks/${wb.id}`, { method: "DELETE", credentials: "include" });
+                            if (res.ok) fetchWorkbooks();
+                            else alert("삭제 실패");
+                          }}
+                          style={{
+                            background: "none", border: "none",
+                            color: "#EF4444", fontWeight: 600, fontSize: 13,
+                            cursor: "pointer", padding: "4px 8px",
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Hidden input for workbook edit thumbnail */}
+      <input
+        ref={editWbThumbInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => handleFileSelect(e.target.files?.[0], setEditWbThumbFile, setEditWbThumbPreview)}
+      />
 
       {/* Problem Management Modal */}
       {selectedWorkbook && (
