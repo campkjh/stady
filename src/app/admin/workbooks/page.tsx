@@ -61,7 +61,6 @@ export default function WorkbookManagement() {
   const [formData, setFormData] = useState({
     title: "",
     categoryId: "",
-    questionPerPage: 12,
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -123,7 +122,7 @@ export default function WorkbookManagement() {
       });
       if (res.ok) {
         setShowForm(false);
-        setFormData({ title: "", categoryId: "", questionPerPage: 12 });
+        setFormData({ title: "", categoryId: "" });
         setThumbnailFile(null);
         setThumbnailPreview(null);
         fetchWorkbooks();
@@ -359,18 +358,6 @@ export default function WorkbookManagement() {
                 ))}
               </select>
             </div>
-            <div>
-              <label style={labelStyle}>페이지당 문제 수</label>
-              <input
-                type="number"
-                value={formData.questionPerPage}
-                onChange={(e) => setFormData({ ...formData, questionPerPage: Number(e.target.value) })}
-                style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
-                min={1}
-              />
-            </div>
           </div>
 
           {/* Thumbnail */}
@@ -451,7 +438,6 @@ export default function WorkbookManagement() {
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>제목</th>
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>페이지당</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>관리</th>
             </tr>
@@ -459,7 +445,7 @@ export default function WorkbookManagement() {
           <tbody>
             {workbooks.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={5} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
                   등록된 문제집이 없습니다.
                 </td>
               </tr>
@@ -480,7 +466,6 @@ export default function WorkbookManagement() {
                     {wb.category.icon} {wb.category.name}
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{wb.totalQuestions}</td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{wb.questionPerPage}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={async () => {
