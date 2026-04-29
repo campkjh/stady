@@ -8,6 +8,7 @@ import AlertModal from "@/components/AlertModal";
 interface OxQuestion {
   id: string;
   order: number;
+  section?: string | null;
   question: string;
   answer: boolean;
   explanation?: string;
@@ -347,6 +348,16 @@ export default function OxQuizSolvePage() {
 
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
+              {currentQuestion.section && (
+                <span style={{
+                  alignSelf: "flex-start",
+                  fontSize: 12, fontWeight: 700, color: "#3787FF",
+                  background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                  marginBottom: 10,
+                }}>
+                  {currentQuestion.section}
+                </span>
+              )}
               <h2 className="text-xl font-bold leading-relaxed">
                 Q. {currentQuestion.question}?
               </h2>
@@ -552,53 +563,73 @@ export default function OxQuizSolvePage() {
               </button>
             </div>
             <div ref={listScrollRef} style={{ padding: 8 }}>
-              {filteredQuestions.map((q) => {
+              {filteredQuestions.map((q, fIdx) => {
                 const idx = quiz.questions.findIndex((qq) => qq.id === q.id);
                 const ans = answers.get(q.id);
                 const status = ans ? (ans.isCorrect ? "correct" : "wrong") : "unanswered";
+                const prevSection = fIdx > 0 ? filteredQuestions[fIdx - 1].section : undefined;
+                const showSectionHeader = !!q.section && q.section !== prevSection;
+                const sectionTotal = q.section
+                  ? filteredQuestions.filter((x) => x.section === q.section).length
+                  : 0;
                 return (
-                  <button
-                    key={q.id}
-                    type="button"
-                    data-active={currentIndex === idx}
-                    onClick={() => { setCurrentIndex(idx); setShowList(false); }}
-                    className="press"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      width: "100%",
-                      padding: "12px",
-                      background: currentIndex === idx ? "#F0F5FF" : "none",
-                      border: "none",
-                      borderRadius: 10,
-                      textAlign: "left",
-                    }}
-                  >
-                    <span style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "#fff",
-                      backgroundColor: status === "correct" ? "#3787FF" : status === "wrong" ? "#E85D5D" : "#D1D5DB",
-                      flexShrink: 0,
-                    }}>
-                      {q.order}
-                    </span>
-                    <span style={{ fontSize: 13, color: "#111", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {q.question}
-                    </span>
-                    {ans && (
-                      <span style={{ fontSize: 12, color: ans.selected ? "#3787FF" : "#E85D5D", fontWeight: 600, flexShrink: 0 }}>
-                        {ans.selected ? "O" : "X"}
-                      </span>
+                  <div key={q.id}>
+                    {showSectionHeader && (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "10px 12px 4px", marginTop: fIdx === 0 ? 0 : 8,
+                      }}>
+                        <span style={{
+                          fontSize: 12, fontWeight: 700, color: "#3787FF",
+                          background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                        }}>
+                          {q.section}
+                        </span>
+                        <span style={{ fontSize: 11, color: "#9CA3AF" }}>{sectionTotal}문항</span>
+                      </div>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      data-active={currentIndex === idx}
+                      onClick={() => { setCurrentIndex(idx); setShowList(false); }}
+                      className="press"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        width: "100%",
+                        padding: "12px",
+                        background: currentIndex === idx ? "#F0F5FF" : "none",
+                        border: "none",
+                        borderRadius: 10,
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#fff",
+                        backgroundColor: status === "correct" ? "#3787FF" : status === "wrong" ? "#E85D5D" : "#D1D5DB",
+                        flexShrink: 0,
+                      }}>
+                        {q.order}
+                      </span>
+                      <span style={{ fontSize: 13, color: "#111", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.question}
+                      </span>
+                      {ans && (
+                        <span style={{ fontSize: 12, color: ans.selected ? "#3787FF" : "#E85D5D", fontWeight: 600, flexShrink: 0 }}>
+                          {ans.selected ? "O" : "X"}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 );
               })}
             </div>

@@ -15,6 +15,7 @@ export async function PATCH(
     if (body.question !== undefined) data.question = body.question;
     if (body.answer !== undefined) data.answer = body.answer;
     if (body.explanation !== undefined) data.explanation = body.explanation;
+    if (body.section !== undefined) data.section = body.section || null;
 
     const question = await prisma.oxQuestion.update({ where: { id: questionId }, data });
     return NextResponse.json({ question });

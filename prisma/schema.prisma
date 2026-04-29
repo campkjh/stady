@@ -117,6 +117,7 @@ model OxQuestion {
   id          String  @id @default(uuid())
   oxQuizSetId String
   order       Int
+  section     String?
   question    String
   answer      Boolean
   explanation String?

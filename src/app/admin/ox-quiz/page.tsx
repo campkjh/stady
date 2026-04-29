@@ -22,6 +22,7 @@ interface OxQuizSet {
 interface OxQuestion {
   id: string;
   order: number;
+  section: string | null;
   question: string;
   answer: boolean;
   explanation: string | null;
@@ -48,10 +49,12 @@ export default function OxQuizManagement() {
   const [editQText, setEditQText] = useState("");
   const [editQAnswer, setEditQAnswer] = useState(true);
   const [editQExplanation, setEditQExplanation] = useState("");
+  const [editQSection, setEditQSection] = useState("");
   const [questionData, setQuestionData] = useState({
     question: "",
     answer: true,
     explanation: "",
+    section: "",
   });
 
   useEffect(() => {
@@ -114,7 +117,7 @@ export default function OxQuizManagement() {
       });
       if (res.ok) {
         setShowQuestionForm(false);
-        setQuestionData({ question: "", answer: true, explanation: "" });
+        setQuestionData({ question: "", answer: true, explanation: "", section: "" });
         openQuestions(selectedSet);
         fetchQuizSets();
       } else {
@@ -422,6 +425,18 @@ export default function OxQuizManagement() {
                   border: "1px solid #E5E7EB",
                 }}>
                   <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>섹션 (선택)</label>
+                    <input
+                      type="text"
+                      value={questionData.section}
+                      onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
+                      style={inputStyle}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                      placeholder="예: 이론 윤리학"
+                    />
+                  </div>
+                  <div style={{ marginBottom: 14 }}>
                     <label style={labelStyle}>질문</label>
                     <textarea
                       value={questionData.question}
@@ -474,8 +489,29 @@ export default function OxQuizManagement() {
 
               {/* Questions List */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {questions.map((q) => (
-                  <div key={q.id} style={{
+                {questions.map((q, idx) => {
+                  const prevSection = idx > 0 ? questions[idx - 1].section : undefined;
+                  const showSectionHeader = q.section && q.section !== prevSection;
+                  const sectionCount = q.section
+                    ? questions.filter((x) => x.section === q.section).length
+                    : 0;
+                  return (
+                  <div key={q.id}>
+                  {showSectionHeader && (
+                    <div style={{
+                      marginTop: idx === 0 ? 0 : 14, marginBottom: 8,
+                      display: "flex", alignItems: "center", gap: 8,
+                    }}>
+                      <span style={{
+                        fontSize: 13, fontWeight: 700, color: "#3787FF",
+                        background: "#EBF3FF", borderRadius: 6, padding: "4px 10px",
+                      }}>
+                        {q.section}
+                      </span>
+                      <span style={{ fontSize: 12, color: "#8A909C" }}>{sectionCount}문항</span>
+                    </div>
+                  )}
+                  <div style={{
                     background: "#F9FAFB", borderRadius: 10, padding: "14px 16px",
                     border: "1px solid #F3F4F6",
                   }}>
@@ -489,6 +525,14 @@ export default function OxQuizManagement() {
                       <div style={{ flex: 1 }}>
                         {editingQuestionId === q.id ? (
                           <div>
+                            <label style={labelStyle}>섹션 (선택)</label>
+                            <input
+                              type="text"
+                              value={editQSection}
+                              onChange={(e) => setEditQSection(e.target.value)}
+                              style={{ ...inputStyle, marginBottom: 10 }}
+                              placeholder="예: 이론 윤리학"
+                            />
                             <label style={labelStyle}>문제</label>
                             <textarea
                               value={editQText}
@@ -544,6 +588,7 @@ export default function OxQuizManagement() {
                                     body: JSON.stringify({
                                       question: editQText, answer: editQAnswer,
                                       explanation: editQExplanation || null,
+                                      section: editQSection || null,
                                     }),
                                     credentials: "include",
                                   });
@@ -576,7 +621,15 @@ export default function OxQuizManagement() {
                         ) : (
                           <>
                             <p style={{ fontSize: 14, fontWeight: 600, color: "#2B313D", marginBottom: 8 }}>{q.question}</p>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              {q.section && (
+                                <span style={{
+                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
+                                  background: "#F3F4F6", color: "#6B7280",
+                                }}>
+                                  {q.section}
+                                </span>
+                              )}
                               <span style={{
                                 fontSize: 12, padding: "3px 10px", borderRadius: 6, fontWeight: 600,
                                 background: q.answer ? "#EBF3FF" : "#FEF2F2",
@@ -599,6 +652,7 @@ export default function OxQuizManagement() {
                               setEditQText(q.question);
                               setEditQAnswer(q.answer);
                               setEditQExplanation(q.explanation || "");
+                              setEditQSection(q.section || "");
                             }}
                             style={{
                               background: "none", border: "none",
@@ -630,7 +684,9 @@ export default function OxQuizManagement() {
                       )}
                     </div>
                   </div>
-                ))}
+                  </div>
+                  );
+                })}
                 {questions.length === 0 && (
                   <p style={{ textAlign: "center", color: "#8A909C", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}

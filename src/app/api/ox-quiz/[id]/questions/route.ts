@@ -33,7 +33,7 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { question, answer, explanation } = body;
+    const { question, answer, explanation, section } = body;
 
     if (!question || answer === undefined || answer === null) {
       return NextResponse.json(
@@ -53,6 +53,7 @@ export async function POST(
       data: {
         oxQuizSetId: id,
         order,
+        section: section || null,
         question,
         answer: Boolean(answer),
         explanation: explanation || null,
