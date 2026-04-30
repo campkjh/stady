@@ -16,6 +16,8 @@ interface Bookmark {
   createdAt: string;
   title: string;
   subtitle: string;
+  word: string | null;
+  meaning: string | null;
 }
 
 const TABS = [
@@ -60,32 +62,6 @@ export default function BookmarksPage() {
 
   if (isLoggedIn === false) return <LoginRequired />;
 
-  function getQuizTypeLabel(quizType: string) {
-    switch (quizType) {
-      case "workbook":
-        return "문제집";
-      case "ox":
-        return "OX퀴즈";
-      case "vocab":
-        return "영단어";
-      default:
-        return quizType;
-    }
-  }
-
-  function getQuizTypeColor(quizType: string) {
-    switch (quizType) {
-      case "workbook":
-        return "bg-blue-100 text-blue-700";
-      case "ox":
-        return "bg-green-100 text-green-700";
-      case "vocab":
-        return "bg-purple-100 text-purple-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  }
-
   function handleNavigate(bookmark: Bookmark) {
     if (bookmark.quizType === "workbook" && bookmark.workbookId) {
       router.push(`/workbook/${bookmark.workbookId}`);
@@ -95,6 +71,10 @@ export default function BookmarksPage() {
       router.push(`/vocab-quiz/${bookmark.vocabQuizSetId}`);
     }
   }
+
+  // Split: vocab vs others
+  const vocabBookmarks = bookmarks.filter((b) => b.quizType === "vocab");
+  const otherBookmarks = bookmarks.filter((b) => b.quizType !== "vocab");
 
   return (
     <div className="px-4 pt-6">
@@ -131,33 +111,65 @@ export default function BookmarksPage() {
           <p style={{ fontSize: 13, color: "#9CA3AF" }}>책갈피에 다양한 문제집을 넣어보세요!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {bookmarks.map((bookmark) => (
-            <button
-              key={bookmark.id}
-              onClick={() => handleNavigate(bookmark)}
-              className="flex flex-col items-start rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition-shadow hover:shadow-md"
-            >
-              <span
-                className={`mb-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${getQuizTypeColor(
-                  bookmark.quizType
-                )}`}
-              >
-                {getQuizTypeLabel(bookmark.quizType)}
-              </span>
-              <p className="text-sm font-semibold text-gray-900 line-clamp-2">
-                {bookmark.subtitle || bookmark.title || "문제"}
-              </p>
-              {bookmark.subtitle && bookmark.title && (
-                <p className="mt-1 text-xs text-gray-500 line-clamp-1">
-                  {bookmark.title}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-gray-400">
-                {new Date(bookmark.createdAt).toLocaleDateString("ko-KR")}
-              </p>
-            </button>
-          ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 16 }}>
+          {/* Vocab section: en | ko list */}
+          {vocabBookmarks.length > 0 && (
+            <div style={{
+              borderRadius: 14, border: "1px solid #F3F4F6",
+              background: "#fff", overflow: "hidden",
+            }}>
+              {vocabBookmarks.map((bm, i) => (
+                <button
+                  key={bm.id}
+                  onClick={() => handleNavigate(bm)}
+                  className="press"
+                  style={{
+                    display: "flex", alignItems: "center",
+                    width: "100%", padding: "14px 16px",
+                    background: "none", border: "none", cursor: "pointer",
+                    borderBottom: i === vocabBookmarks.length - 1 ? "none" : "1px solid #F3F4F6",
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{
+                    flex: 1, fontSize: 15, fontWeight: 700, color: "#111",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {bm.word || bm.subtitle}
+                  </span>
+                  <span style={{
+                    flex: 1, fontSize: 14, color: "#6B7280", textAlign: "right",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    paddingLeft: 12,
+                  }}>
+                    {bm.meaning || ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Others section: card grid */}
+          {otherBookmarks.length > 0 && (
+            <div className="grid grid-cols-2 gap-3">
+              {otherBookmarks.map((bookmark) => (
+                <button
+                  key={bookmark.id}
+                  onClick={() => handleNavigate(bookmark)}
+                  className="flex flex-col items-start rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition-shadow hover:shadow-md"
+                >
+                  <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                    {bookmark.subtitle || bookmark.title || "문제"}
+                  </p>
+                  {bookmark.subtitle && bookmark.title && (
+                    <p className="mt-1 text-xs text-gray-500 line-clamp-1">
+                      {bookmark.title}
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

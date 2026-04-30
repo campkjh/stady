@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
       bookmarks.map(async (bm) => {
         let title = "";
         let subtitle = "";
+        let word: string | null = null;
+        let meaning: string | null = null;
 
         if (bm.quizType === "workbook" && bm.workbookId) {
           const wb = await prisma.workbook.findUnique({ where: { id: bm.workbookId } });
@@ -43,11 +45,16 @@ export async function GET(request: NextRequest) {
           title = vSet?.title || "";
           if (bm.vocabQuestionId) {
             const q = await prisma.vocabQuestion.findUnique({ where: { id: bm.vocabQuestionId } });
-            subtitle = q?.word || "";
+            if (q) {
+              word = q.word;
+              const choices = [q.choice1, q.choice2, q.choice3, q.choice4];
+              meaning = choices[q.answer - 1] || null;
+              subtitle = q.word;
+            }
           }
         }
 
-        return { ...bm, title, subtitle };
+        return { ...bm, title, subtitle, word, meaning };
       })
     );
 
