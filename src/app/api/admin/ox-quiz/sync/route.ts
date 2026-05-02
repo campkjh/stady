@@ -64,8 +64,6 @@ export async function POST() {
             });
 
         await tx.oxAnswer.deleteMany({ where: { question: { oxQuizSetId: set.id } } });
-        await tx.bookmark.deleteMany({ where: { oxQuizSetId: set.id } });
-        await tx.quizAttempt.deleteMany({ where: { oxQuizSetId: set.id } });
         await tx.oxQuestion.deleteMany({ where: { oxQuizSetId: set.id } });
 
         await tx.oxQuestion.createMany({

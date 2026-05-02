@@ -100,7 +100,7 @@ export default function OxQuizManagement() {
 
   const handleSyncOxData = async () => {
     if (syncingOx) return;
-    if (!confirm("생활과윤리 OX 퀴즈를 1013문항 기준으로 다시 동기화할까요? 기존 풀이 기록과 책갈피는 초기화됩니다.")) return;
+    if (!confirm("생활과윤리 OX 퀴즈를 1013문항 기준으로 다시 동기화할까요? 기존 풀이 기록과 책갈피는 가능한 한 보존됩니다.")) return;
 
     setSyncingOx(true);
     try {
