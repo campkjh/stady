@@ -56,6 +56,17 @@ const navItems = [
     ),
   },
   {
+    href: "/admin/banners",
+    label: "배너 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2.5" y="4" width="15" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M5 12L8 9L10.5 11.5L12 10L15 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="13.5" cy="7.5" r="1" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
     href: "/admin/inquiries",
     label: "문의 관리",
     icon: (

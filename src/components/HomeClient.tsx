@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -56,32 +56,14 @@ function getGradient(index: number) {
   return GRADIENTS[index % GRADIENTS.length];
 }
 
-const BANNER_ITEMS = [
-  {
-    title: "매일매일\nOX 퀴즈",
-    icon: "/icons/banner-ox.svg",
-    bg: "#3787FF",
-    href: "/ox-quiz-intro",
-  },
-  {
-    title: "영단어\n퀴즈",
-    icon: "/icons/banner-vocab.svg",
-    bg: "#A58CFF",
-    href: "/vocab-quiz-intro",
-  },
-  {
-    title: "새로운\n공지사항",
-    icon: "/icons/banner-notice.svg",
-    bg: "#5AD39F",
-    href: "/notice",
-  },
-  {
-    title: "스타디\n자주묻는 질문",
-    icon: "/icons/banner-faq.svg",
-    bg: "#FF9CB2",
-    href: "/faq",
-  },
-];
+interface HomeBanner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  linkUrl: string | null;
+  bgColor: string;
+}
 
 interface HomeClientProps {
   userName: string | null;
@@ -102,10 +84,27 @@ export default function HomeClient({
 }: HomeClientProps) {
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(isNewUser);
+  const [banners, setBanners] = useState<HomeBanner[]>([]);
 
   const handleWelcomeComplete = useCallback(() => {
     setShowWelcome(false);
     document.cookie = "isNewUser=; path=/; max-age=0";
+  }, []);
+
+  const openBanner = useCallback((linkUrl: string | null) => {
+    if (!linkUrl) return;
+    if (linkUrl.startsWith("http://") || linkUrl.startsWith("https://")) {
+      window.location.href = linkUrl;
+      return;
+    }
+    router.push(linkUrl);
+  }, [router]);
+
+  useEffect(() => {
+    fetch("/api/banners")
+      .then((res) => res.json())
+      .then((data) => setBanners(data.banners || []))
+      .catch(() => setBanners([]));
   }, []);
 
   return (
@@ -126,50 +125,8 @@ export default function HomeClient({
         </button>
       </div>
 
-      {/* Banner Cards */}
-      <div
-        className="fade-in-up fade-in-up-1"
-        style={{ overflowX: "auto", overflowY: "hidden", padding: "0 10px 20px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div style={{ display: "flex", gap: 12, width: "max-content" }}>
-          {BANNER_ITEMS.map((item) => (
-            <button
-              key={item.title}
-              type="button"
-              onClick={() => router.push(item.href)}
-              className="press-deep"
-              style={{
-                position: "relative",
-                width: 140,
-                height: 140,
-                backgroundColor: item.bg,
-                borderRadius: 24,
-                border: "none",
-                textAlign: "left",
-                flexShrink: 0,
-                overflow: "hidden",
-              }}
-            >
-              <Image
-                src={item.icon}
-                alt=""
-                width={80}
-                height={53}
-                unoptimized
-                style={{ position: "absolute", top: 16, left: 12 }}
-              />
-              <div style={{ position: "absolute", bottom: 12, left: 12 }}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: "#fff", whiteSpace: "pre-line", lineHeight: 1.3 }}>
-                  {item.title}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Category Grid */}
-      <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 20px" }}>
+      <div className="fade-in-up fade-in-up-1" style={{ padding: "0 10px 16px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {categories.map((cat) => (
               <button
@@ -219,6 +176,62 @@ export default function HomeClient({
           ))}
         </div>
       </div>
+
+      {/* Slide Banner */}
+      {banners.length > 0 && (
+        <div
+          className="fade-in-up fade-in-up-2"
+          style={{
+            overflowX: "auto",
+            overflowY: "hidden",
+            padding: "0 10px 20px",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            scrollSnapType: "x mandatory",
+          }}
+        >
+          <div style={{ display: "flex", gap: 10, width: "max-content" }}>
+            {banners.map((banner) => (
+              <button
+                key={banner.id}
+                type="button"
+                onClick={() => openBanner(banner.linkUrl)}
+                className="press-deep"
+                style={{
+                  position: "relative",
+                  width: "calc(100vw - 20px)",
+                  maxWidth: 480,
+                  aspectRatio: "2/1",
+                  border: "none",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  textAlign: "left",
+                  background: banner.bgColor || "#3787FF",
+                  scrollSnapAlign: "center",
+                  cursor: banner.linkUrl ? "pointer" : "default",
+                }}
+              >
+                {banner.imageUrl && (
+                  <img src={banner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                )}
+                <div style={{ position: "absolute", inset: 0, background: banner.imageUrl ? "linear-gradient(90deg, rgba(0,0,0,0.54), rgba(0,0,0,0.08))" : "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
+                <div style={{ position: "absolute", left: 18, right: 18, bottom: 16 }}>
+                  <p style={{ fontSize: 20, fontWeight: 900, color: "#fff", lineHeight: 1.25, whiteSpace: "pre-line" }}>
+                    {banner.title}
+                  </p>
+                  {banner.subtitle && (
+                    <p style={{ marginTop: 5, fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.86)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {banner.subtitle}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Divider */}
       <div style={{ height: 8, backgroundColor: "#F9FAFB" }} />
