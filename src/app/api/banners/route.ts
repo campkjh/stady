@@ -56,6 +56,24 @@ async function ensureBannerTable() {
       "#EAF3FF"
     );
   }
+
+  const defaultSlideRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "id" FROM "HomeBanner" WHERE "imageUrl" = '/banners/referral-slide.png' LIMIT 1`
+  );
+  if (defaultSlideRows.length === 0) {
+    await prisma.$executeRawUnsafe(
+      `
+        INSERT INTO "HomeBanner" ("id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "bannerType", "sortOrder", "isActive")
+        VALUES ($1, $2, $3, $4, $5, $6, 'slide', -90, true)
+      `,
+      randomUUID(),
+      "스타디 1달 오픈베타 이벤트!",
+      "친구를 초대할수록 더 커지는 혜택",
+      "/banners/referral-slide.png",
+      "/timer",
+      "#EAF3FF"
+    );
+  }
 }
 
 function normalizeBanner(row: BannerRow) {
