@@ -34,6 +34,7 @@ export default function OxQuizManagement() {
   const [quizSets, setQuizSets] = useState<OxQuizSet[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [syncingOx, setSyncingOx] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     categoryId: "",
@@ -94,6 +95,29 @@ export default function OxQuizManagement() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSyncOxData = async () => {
+    if (syncingOx) return;
+    if (!confirm("생활과윤리 OX 퀴즈를 1013문항 기준으로 다시 동기화할까요? 기존 풀이 기록과 책갈피는 초기화됩니다.")) return;
+
+    setSyncingOx(true);
+    try {
+      const res = await fetch("/api/admin/ox-quiz/sync", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "동기화 중 오류가 발생했습니다.");
+        return;
+      }
+      await fetchQuizSets();
+      if (selectedSet) await openQuestions(selectedSet);
+      alert(`동기화 완료: ${data.syncedSets}개 중분류, ${data.syncedQuestions}문항`);
+    } finally {
+      setSyncingOx(false);
     }
   };
 
@@ -174,22 +198,42 @@ export default function OxQuizManagement() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2B313D" }}>OX 퀴즈 관리</h1>
           <p style={{ fontSize: 14, color: "#8A909C", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
         </div>
-        <button
-          className="press"
-          onClick={() => setShowForm(!showForm)}
-          style={{
-            padding: "10px 20px",
-            background: showForm ? "#fff" : "#3787FF",
-            color: showForm ? "#2B313D" : "#fff",
-            border: showForm ? "1px solid #E5E7EB" : "none",
-            borderRadius: 10,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {showForm ? "취소" : "+ 퀴즈 세트 추가"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            className="press"
+            onClick={handleSyncOxData}
+            disabled={syncingOx}
+            style={{
+              padding: "10px 16px",
+              background: "#111827",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: syncingOx ? "default" : "pointer",
+              opacity: syncingOx ? 0.6 : 1,
+            }}
+          >
+            {syncingOx ? "동기화 중..." : "1013문항 동기화"}
+          </button>
+          <button
+            className="press"
+            onClick={() => setShowForm(!showForm)}
+            style={{
+              padding: "10px 20px",
+              background: showForm ? "#fff" : "#3787FF",
+              color: showForm ? "#2B313D" : "#fff",
+              border: showForm ? "1px solid #E5E7EB" : "none",
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {showForm ? "취소" : "+ 퀴즈 세트 추가"}
+          </button>
+        </div>
       </div>
 
       {/* Create Form */}
