@@ -16,6 +16,7 @@ export default function OxQuizListPage() {
   const router = useRouter();
   const [quizSets, setQuizSets] = useState<OxQuizSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -40,11 +41,20 @@ export default function OxQuizListPage() {
     );
   }
 
+  const groups = quizSets.reduce<{ name: string; items: OxQuizSet[] }[]>((acc, qs) => {
+    const name = qs.category?.name ? `${qs.category.name} OX 퀴즈` : "OX 퀴즈";
+    const group = acc.find((item) => item.name === name);
+    if (group) group.items.push(qs);
+    else acc.push({ name, items: [qs] });
+    return acc;
+  }, []);
+  const selectedGroup = groups.find((group) => group.name === selectedGroupName) ?? null;
+
   return (
     <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#7BC5E8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
-        onClick={() => router.back()}
+        onClick={() => selectedGroup ? setSelectedGroupName(null) : router.back()}
         className="press"
         style={{ position: "absolute", top: 16, left: 16, background: "none", border: "none", zIndex: 10 }}
       >
@@ -86,78 +96,89 @@ export default function OxQuizListPage() {
 
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
         <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
-          {(() => {
-            const groups = quizSets.reduce<{ name: string; items: OxQuizSet[] }[]>((acc, qs) => {
-              const name = qs.category?.name ? `${qs.category.name} OX 퀴즈` : "OX 퀴즈";
-              const group = acc.find((item) => item.name === name);
-              if (group) group.items.push(qs);
-              else acc.push({ name, items: [qs] });
-              return acc;
-            }, []);
+          {!selectedGroup && groups.map((group, index) => {
+            const totalQuestions = group.items.reduce((sum, item) => sum + item.totalQuestions, 0);
+            return (
+              <button
+                key={group.name}
+                type="button"
+                onClick={() => setSelectedGroupName(group.name)}
+                className="press"
+                style={{
+                  width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "#fff",
+                  border: "none", color: "#2B313D", textAlign: "center",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
+                  animation: `quizItemFadeUp 0.5s ${0.06 * index}s both`,
+                }}
+              >
+                <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>{group.name}</span>
+                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "#8A909C" }}>
+                  {group.items.length}개 중분류 · {totalQuestions}문항
+                </span>
+              </button>
+            );
+          })}
 
-            let runningIdx = 0;
-            return groups.map((group) => (
-              <div key={group.name}>
-                <p style={{
-                  fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.95)",
-                  margin: "4px 4px 8px", letterSpacing: 0.2,
-                }}>
-                  {group.name}
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-                  {group.items.map((qs) => {
-                    const animIdx = runningIdx++;
-                    const sections = Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[];
-                    return (
-                      <button
-                        key={qs.id}
-                        type="button"
-                        onClick={() => router.push(`/ox-quiz/${qs.id}`)}
-                        className="press"
-                        style={{
-                          width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",
-                          border: "none", color: "#2B313D", textAlign: "left",
-                          boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
-                          animation: `quizItemFadeUp 0.5s ${0.06 * animIdx}s both`,
-                        }}
-                      >
-                        <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>
-                          {qs.title}
+          {selectedGroup && (
+            <div>
+              <p style={{
+                fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.95)",
+                margin: "4px 4px 8px", letterSpacing: 0.2,
+              }}>
+                {selectedGroup.name}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                {selectedGroup.items.map((qs, index) => {
+                  const sections = Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[];
+                  return (
+                    <button
+                      key={qs.id}
+                      type="button"
+                      onClick={() => router.push(`/ox-quiz/${qs.id}`)}
+                      className="press"
+                      style={{
+                        width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",
+                        border: "none", color: "#2B313D", textAlign: "left",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
+                        animation: `quizItemFadeUp 0.5s ${0.06 * index}s both`,
+                      }}
+                    >
+                      <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>
+                        {qs.title}
+                      </span>
+                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "#8A909C", textAlign: "center" }}>
+                        {sections.length}개 소분류 · {qs.totalQuestions}문항
+                      </span>
+                      {sections.length > 0 && (
+                        <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
+                          {sections.slice(0, 4).map((section) => (
+                            <span
+                              key={section}
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: 999,
+                                backgroundColor: "#EBF3FF",
+                                color: "#3787FF",
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {section}
+                            </span>
+                          ))}
+                          {sections.length > 4 && (
+                            <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "#F3F4F6", color: "#8A909C", fontSize: 11, fontWeight: 700 }}>
+                              +{sections.length - 4}
+                            </span>
+                          )}
                         </span>
-                        <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "#8A909C", textAlign: "center" }}>
-                          {sections.length}개 소분류 · {qs.totalQuestions}문항
-                        </span>
-                        {sections.length > 0 && (
-                          <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
-                            {sections.slice(0, 4).map((section) => (
-                              <span
-                                key={section}
-                                style={{
-                                  padding: "4px 8px",
-                                  borderRadius: 999,
-                                  backgroundColor: "#EBF3FF",
-                                  color: "#3787FF",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {section}
-                              </span>
-                            ))}
-                            {sections.length > 4 && (
-                              <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "#F3F4F6", color: "#8A909C", fontSize: 11, fontWeight: 700 }}>
-                                +{sections.length - 4}
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            ));
-          })()}
+            </div>
+          )}
           {quizSets.length === 0 && (
             <p style={{ textAlign: "center", color: "rgba(255,255,255,0.85)", fontSize: 14 }}>등록된 OX 퀴즈가 없습니다.</p>
           )}

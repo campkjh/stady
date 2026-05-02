@@ -18,6 +18,7 @@ interface OxQuizSet {
   title: string;
   difficulty: string;
   totalQuestions: number;
+  category?: { id: string; name: string } | null;
   questions: OxQuestion[];
 }
 
@@ -196,6 +197,11 @@ export default function OxQuizSolvePage() {
 
   const answered = currentQuestion ? answers.get(currentQuestion.id) : null;
   const isBookmarked = currentQuestion ? bookmarkedQuestionIds.has(currentQuestion.id) : false;
+  const breadcrumb = [
+    quiz.category?.name,
+    quiz.title,
+    currentQuestion?.section,
+  ].filter(Boolean).join(" > ");
 
   return (
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
@@ -211,7 +217,18 @@ export default function OxQuizSolvePage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 className="flex-1 truncate text-lg font-bold">{quiz.title}</h1>
+        <div className="flex-1" style={{ minWidth: 0 }}>
+          <h1 style={{
+            fontSize: 14,
+            fontWeight: 800,
+            color: "#111",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}>
+            {breadcrumb}
+          </h1>
+        </div>
         <button
           type="button"
           onClick={() => setShowList(true)}
