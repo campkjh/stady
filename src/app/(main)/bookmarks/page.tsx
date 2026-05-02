@@ -179,13 +179,10 @@ export default function BookmarksPage() {
   if (isLoggedIn === false) return <LoginRequired />;
 
   function handleNavigate(bookmark: Bookmark) {
-    if (bookmark.quizType === "workbook" && bookmark.workbookId) {
-      router.push(`/workbook/${bookmark.workbookId}`);
-    } else if (bookmark.quizType === "ox" && bookmark.oxQuizSetId) {
-      router.push(`/ox-quiz/${bookmark.oxQuizSetId}`);
-    } else if (bookmark.quizType === "vocab" && bookmark.vocabQuizSetId) {
-      router.push(`/vocab-quiz/${bookmark.vocabQuizSetId}`);
-    }
+    const targetId = bookmark.problemId || bookmark.oxQuestionId || bookmark.vocabQuestionId;
+    const query = new URLSearchParams({ type: bookmark.quizType });
+    if (targetId) query.set("id", targetId);
+    router.push(`/wrong-note?${query.toString()}`);
   }
 
   async function handleDeleteVocabBookmark(bookmark: Bookmark) {
