@@ -9,6 +9,7 @@ interface Banner {
   imageUrl: string | null;
   linkUrl: string | null;
   bgColor: string;
+  bannerType: "slide" | "modal";
   sortOrder: number;
   isActive: boolean;
 }
@@ -19,6 +20,7 @@ const emptyForm = {
   imageUrl: "",
   linkUrl: "",
   bgColor: "#3787FF",
+  bannerType: "slide" as "slide" | "modal",
   sortOrder: 0,
   isActive: true,
 };
@@ -81,6 +83,7 @@ export default function AdminBannersPage() {
       imageUrl: banner.imageUrl || "",
       linkUrl: banner.linkUrl || "",
       bgColor: banner.bgColor || "#3787FF",
+      bannerType: banner.bannerType || "slide",
       sortOrder: banner.sortOrder || 0,
       isActive: banner.isActive,
     });
@@ -106,7 +109,7 @@ export default function AdminBannersPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827" }}>배너 관리</h1>
-          <p style={{ marginTop: 4, fontSize: 14, color: "#8A909C" }}>홈 카테고리 아래 2:1 슬라이드 배너를 관리합니다.</p>
+          <p style={{ marginTop: 4, fontSize: 14, color: "#8A909C" }}>홈 카테고리 아래 슬라이드 배너와 첫 진입 모달 배너를 관리합니다.</p>
         </div>
         {editingId && (
           <button type="button" onClick={resetForm} style={ghostButtonStyle}>새 배너</button>
@@ -117,6 +120,30 @@ export default function AdminBannersPage() {
         <h2 style={{ fontSize: 17, fontWeight: 800, color: "#111827", marginBottom: 18 }}>
           {editingId ? "배너 수정" : "배너 추가"}
         </h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {[
+            { value: "slide" as const, label: "슬라이드 배너" },
+            { value: "modal" as const, label: "진입 모달 배너" },
+          ].map((type) => (
+            <button
+              key={type.value}
+              type="button"
+              onClick={() => setForm({ ...form, bannerType: type.value })}
+              style={{
+                height: 38,
+                padding: "0 14px",
+                borderRadius: 999,
+                border: form.bannerType === type.value ? "none" : "1px solid #E5E7EB",
+                background: form.bannerType === type.value ? "#111827" : "#fff",
+                color: form.bannerType === type.value ? "#fff" : "#6B7280",
+                fontSize: 13,
+                fontWeight: 800,
+              }}
+            >
+              {type.label}
+            </button>
+          ))}
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <Field label="제목">
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required style={inputStyle} placeholder={"예: 생활과윤리 OX 1013문항"} />
@@ -167,6 +194,9 @@ export default function AdminBannersPage() {
                   <p style={{ color: "#fff", fontSize: 20, fontWeight: 900 }}>{banner.title}</p>
                   {banner.subtitle && <p style={{ color: "rgba(255,255,255,0.86)", fontSize: 13, marginTop: 4 }}>{banner.subtitle}</p>}
                 </div>
+                <span style={{ position: "absolute", top: 12, left: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 800 }}>
+                  {banner.bannerType === "modal" ? "모달" : "슬라이드"}
+                </span>
                 {!banner.isActive && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 800 }}>숨김</span>}
               </div>
               <div style={{ padding: 14, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>

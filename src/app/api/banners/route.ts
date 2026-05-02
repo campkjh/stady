@@ -12,6 +12,7 @@ interface BannerRow {
   imageUrl: string | null;
   linkUrl: string | null;
   bgColor: string;
+  bannerType: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
@@ -26,11 +27,16 @@ async function ensureBannerTable() {
       "imageUrl" TEXT,
       "linkUrl" TEXT,
       "bgColor" TEXT NOT NULL DEFAULT '#3787FF',
+      "bannerType" TEXT NOT NULL DEFAULT 'slide',
       "sortOrder" INTEGER NOT NULL DEFAULT 0,
       "isActive" BOOLEAN NOT NULL DEFAULT true,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "HomeBanner"
+    ADD COLUMN IF NOT EXISTS "bannerType" TEXT NOT NULL DEFAULT 'slide'
   `);
 }
 
@@ -42,6 +48,7 @@ function normalizeBanner(row: BannerRow) {
     imageUrl: row.imageUrl,
     linkUrl: row.linkUrl,
     bgColor: row.bgColor,
+    bannerType: row.bannerType,
     sortOrder: row.sortOrder,
     isActive: row.isActive,
     createdAt: row.createdAt,
@@ -57,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     const rows = await prisma.$queryRawUnsafe<BannerRow[]>(
       `
-        SELECT "id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "sortOrder", "isActive", "createdAt"
+        SELECT "id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "bannerType", "sortOrder", "isActive", "createdAt"
         FROM "HomeBanner"
         ${includeInactive ? "" : `WHERE "isActive" = true`}
         ORDER BY "sortOrder" ASC, "createdAt" DESC
@@ -83,8 +90,8 @@ export async function POST(request: NextRequest) {
 
     await prisma.$executeRawUnsafe(
       `
-        INSERT INTO "HomeBanner" ("id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "sortOrder", "isActive")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO "HomeBanner" ("id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "bannerType", "sortOrder", "isActive")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
       randomUUID(),
       title,
@@ -92,6 +99,7 @@ export async function POST(request: NextRequest) {
       body.imageUrl ? body.imageUrl.toString() : null,
       body.linkUrl ? body.linkUrl.toString() : null,
       body.bgColor ? body.bgColor.toString() : "#3787FF",
+      body.bannerType === "modal" ? "modal" : "slide",
       Number(body.sortOrder || 0),
       body.isActive !== false
     );
@@ -122,7 +130,7 @@ export async function PATCH(request: NextRequest) {
       `
         UPDATE "HomeBanner"
         SET "title" = $2, "subtitle" = $3, "imageUrl" = $4, "linkUrl" = $5,
-            "bgColor" = $6, "sortOrder" = $7, "isActive" = $8, "updatedAt" = CURRENT_TIMESTAMP
+            "bgColor" = $6, "bannerType" = $7, "sortOrder" = $8, "isActive" = $9, "updatedAt" = CURRENT_TIMESTAMP
         WHERE "id" = $1
       `,
       body.id.toString(),
@@ -131,6 +139,7 @@ export async function PATCH(request: NextRequest) {
       body.imageUrl ? body.imageUrl.toString() : null,
       body.linkUrl ? body.linkUrl.toString() : null,
       body.bgColor ? body.bgColor.toString() : "#3787FF",
+      body.bannerType === "modal" ? "modal" : "slide",
       Number(body.sortOrder || 0),
       body.isActive !== false
     );

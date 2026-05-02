@@ -63,6 +63,7 @@ interface HomeBanner {
   imageUrl: string | null;
   linkUrl: string | null;
   bgColor: string;
+  bannerType: "slide" | "modal";
 }
 
 interface HomeClientProps {
@@ -85,6 +86,7 @@ export default function HomeClient({
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(isNewUser);
   const [banners, setBanners] = useState<HomeBanner[]>([]);
+  const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
 
   const handleWelcomeComplete = useCallback(() => {
     setShowWelcome(false);
@@ -103,9 +105,25 @@ export default function HomeClient({
   useEffect(() => {
     fetch("/api/banners")
       .then((res) => res.json())
-      .then((data) => setBanners(data.banners || []))
+      .then((data) => {
+        const nextBanners = (data.banners || []) as HomeBanner[];
+        setBanners(nextBanners);
+        const modal = nextBanners.find((banner) => banner.bannerType === "modal");
+        if (!modal) return;
+        const hiddenUntil = Number(localStorage.getItem(`home_popup_hidden_until_${modal.id}`) || 0);
+        if (Date.now() > hiddenUntil) setPopupBanner(modal);
+      })
       .catch(() => setBanners([]));
   }, []);
+
+  const hidePopupForThreeDays = useCallback(() => {
+    if (!popupBanner) return;
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    localStorage.setItem(`home_popup_hidden_until_${popupBanner.id}`, String(Date.now() + threeDays));
+    setPopupBanner(null);
+  }, [popupBanner]);
+
+  const slideBanners = banners.filter((banner) => banner.bannerType !== "modal");
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflow: "hidden" }}>
@@ -178,7 +196,7 @@ export default function HomeClient({
       </div>
 
       {/* Slide Banner */}
-      {banners.length > 0 && (
+      {slideBanners.length > 0 && (
         <div
           className="fade-in-up fade-in-up-2"
           style={{
@@ -192,7 +210,7 @@ export default function HomeClient({
           }}
         >
           <div style={{ display: "flex", gap: 10, width: "max-content" }}>
-            {banners.map((banner) => (
+            {slideBanners.map((banner) => (
               <button
                 key={banner.id}
                 type="button"
@@ -235,6 +253,46 @@ export default function HomeClient({
 
       {/* Divider */}
       <div style={{ height: 8, backgroundColor: "#F9FAFB" }} />
+
+      {popupBanner && !showWelcome && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.48)" }} onClick={() => setPopupBanner(null)} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 420, borderRadius: 18, overflow: "hidden", background: "#fff", boxShadow: "0 20px 60px rgba(15,23,42,0.24)" }}>
+            <button
+              type="button"
+              onClick={() => setPopupBanner(null)}
+              aria-label="닫기"
+              style={{ position: "absolute", top: 10, right: 10, zIndex: 3, width: 32, height: 32, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.52)", color: "#fff", fontSize: 20, lineHeight: "32px" }}
+            >
+              ×
+            </button>
+            <button
+              type="button"
+              onClick={() => openBanner(popupBanner.linkUrl)}
+              style={{ position: "relative", width: "100%", aspectRatio: "2/1", border: "none", background: popupBanner.bgColor || "#3787FF", textAlign: "left", overflow: "hidden" }}
+            >
+              {popupBanner.imageUrl && (
+                <img src={popupBanner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              )}
+              <div style={{ position: "absolute", inset: 0, background: popupBanner.imageUrl ? "linear-gradient(90deg, rgba(0,0,0,0.58), rgba(0,0,0,0.08))" : "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
+              <div style={{ position: "absolute", left: 22, right: 54, bottom: 20 }}>
+                <p style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1.22, whiteSpace: "pre-line" }}>{popupBanner.title}</p>
+                {popupBanner.subtitle && (
+                  <p style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.88)", fontWeight: 700 }}>{popupBanner.subtitle}</p>
+                )}
+              </div>
+            </button>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7" }}>
+              <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14, fontWeight: 800 }}>
+                3일간 안보기
+              </button>
+              <button type="button" onClick={() => setPopupBanner(null)} style={{ height: 48, border: "none", background: "#fff", color: "#111827", fontSize: 14, fontWeight: 900 }}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="fade-in-up fade-in-up-3" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
