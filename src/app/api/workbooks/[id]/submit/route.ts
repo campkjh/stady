@@ -62,7 +62,7 @@ export async function POST(
           quizType: "workbook",
           workbookId: id,
           score,
-          totalScore: workbook.problems.length,
+          totalScore: answerData.length,
           timeTaken: timeTaken || 0,
           problemAnswers: {
             create: answerData,
@@ -97,7 +97,7 @@ export async function POST(
       return created;
     });
 
-    return NextResponse.json({ attempt, score, totalScore: workbook.problems.length });
+    return NextResponse.json({ attempt, score, totalScore: answerData.length });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

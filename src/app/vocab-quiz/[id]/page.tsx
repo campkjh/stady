@@ -24,6 +24,12 @@ interface VocabQuizSet {
   questions: VocabQuestion[];
 }
 
+interface BookmarkItem {
+  quizType: string;
+  vocabQuizSetId: string | null;
+  vocabQuestionId: string | null;
+}
+
 export default function VocabQuizSolvePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -40,6 +46,7 @@ export default function VocabQuizSolvePage() {
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [showList, setShowList] = useState(false);
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
+  const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
   const listScrollRef = useRef<HTMLDivElement>(null);
   const [showResult, setShowResult] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -77,14 +84,48 @@ export default function VocabQuizSolvePage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setBookmarkMode({
+      enabled: params.get("bookmark") === "1",
+      focusId: params.get("id"),
+    });
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
     fetch(`/api/vocab-quiz/${id}`)
       .then((res) => res.json())
-      .then((data) => {
-        setQuiz(data.vocabQuizSet);
+      .then(async (data) => {
+        let nextQuiz = data.vocabQuizSet as VocabQuizSet;
+
+        if (bookmarkMode.enabled) {
+          const bmRes = await fetch("/api/bookmarks?quizType=vocab");
+          const bmData = await bmRes.json();
+          const bookmarkedIds = new Set(
+            ((bmData.bookmarks || []) as BookmarkItem[])
+              .filter((bm) => bm.vocabQuizSetId === id && bm.vocabQuestionId)
+              .map((bm) => bm.vocabQuestionId as string)
+          );
+          setBookmarkedQuestionIds(bookmarkedIds);
+          nextQuiz = {
+            ...nextQuiz,
+            title: `${nextQuiz.title} 책갈피`,
+            totalQuestions: bookmarkedIds.size,
+            questions: nextQuiz.questions.filter((question) => bookmarkedIds.has(question.id)),
+          };
+        }
+
+        setQuiz(nextQuiz);
+        if (bookmarkMode.focusId) {
+          const focusIndex = nextQuiz.questions.findIndex((question) => question.id === bookmarkMode.focusId);
+          if (focusIndex >= 0) setCurrentIndex(focusIndex);
+        } else {
+          setCurrentIndex(0);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, bookmarkMode]);
 
   const submitQuiz = useCallback(async () => {
     if (submitted || !quiz) return;

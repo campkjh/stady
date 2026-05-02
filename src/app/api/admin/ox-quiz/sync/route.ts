@@ -63,19 +63,37 @@ export async function POST() {
               select: { id: true },
             });
 
-        await tx.oxAnswer.deleteMany({ where: { question: { oxQuizSetId: set.id } } });
-        await tx.oxQuestion.deleteMany({ where: { oxQuizSetId: set.id } });
+        const existingQuestions = await tx.oxQuestion.findMany({
+          where: { oxQuizSetId: set.id },
+          select: { id: true, order: true },
+        });
+        const questionByOrder = new Map(existingQuestions.map((question) => [question.order, question.id]));
 
-        await tx.oxQuestion.createMany({
-          data: questions.map((q, index) => ({
-            oxQuizSetId: set.id,
-            order: index + 1,
+        for (const [index, q] of questions.entries()) {
+          const order = index + 1;
+          const payload = {
+            order,
             section: q.s || null,
             question: q.q,
             answer: q.a === "O",
             explanation: q.e || null,
-          })),
-        });
+          };
+          const questionId = questionByOrder.get(order);
+          if (questionId) {
+            await tx.oxQuestion.update({ where: { id: questionId }, data: payload });
+          } else {
+            await tx.oxQuestion.create({ data: { oxQuizSetId: set.id, ...payload } });
+          }
+        }
+
+        const extraQuestionIds = existingQuestions
+          .filter((question) => question.order > questions.length)
+          .map((question) => question.id);
+
+        if (extraQuestionIds.length > 0) {
+          await tx.oxAnswer.deleteMany({ where: { questionId: { in: extraQuestionIds } } });
+          await tx.oxQuestion.deleteMany({ where: { id: { in: extraQuestionIds } } });
+        }
       });
 
       syncedSets++;

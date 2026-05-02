@@ -180,9 +180,16 @@ export default function BookmarksPage() {
 
   function handleNavigate(bookmark: Bookmark) {
     const targetId = bookmark.problemId || bookmark.oxQuestionId || bookmark.vocabQuestionId;
-    const query = new URLSearchParams({ type: bookmark.quizType });
+    const query = new URLSearchParams({ bookmark: "1" });
     if (targetId) query.set("id", targetId);
-    router.push(`/wrong-note?${query.toString()}`);
+
+    if (bookmark.quizType === "workbook" && bookmark.workbookId) {
+      router.push(`/workbook/${bookmark.workbookId}/solve?${query.toString()}`);
+    } else if (bookmark.quizType === "ox" && bookmark.oxQuizSetId) {
+      router.push(`/ox-quiz/${bookmark.oxQuizSetId}?${query.toString()}`);
+    } else if (bookmark.quizType === "vocab" && bookmark.vocabQuizSetId) {
+      router.push(`/vocab-quiz/${bookmark.vocabQuizSetId}?${query.toString()}`);
+    }
   }
 
   async function handleDeleteVocabBookmark(bookmark: Bookmark) {

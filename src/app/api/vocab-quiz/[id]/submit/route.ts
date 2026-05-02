@@ -58,7 +58,7 @@ export async function POST(
           quizType: "vocab",
           vocabQuizSetId: id,
           score,
-          totalScore: vocabQuizSet.questions.length,
+          totalScore: answerData.length,
           timeTaken: timeTaken || 0,
           vocabAnswers: {
             create: answerData,
@@ -93,7 +93,7 @@ export async function POST(
       return created;
     });
 
-    return NextResponse.json({ attempt, score, totalScore: vocabQuizSet.questions.length });
+    return NextResponse.json({ attempt, score, totalScore: answerData.length });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

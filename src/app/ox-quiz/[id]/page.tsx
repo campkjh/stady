@@ -22,6 +22,12 @@ interface OxQuizSet {
   questions: OxQuestion[];
 }
 
+interface BookmarkItem {
+  quizType: string;
+  oxQuizSetId: string | null;
+  oxQuestionId: string | null;
+}
+
 type TabFilter = "all" | "correct" | "wrong";
 
 export default function OxQuizSolvePage() {
@@ -42,6 +48,7 @@ export default function OxQuizSolvePage() {
   const [navigating, setNavigating] = useState(false);
   const [bookmarkToast, setBookmarkToast] = useState(false);
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
+  const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
   const [startTime] = useState(Date.now());
   const listScrollRef = useRef<HTMLDivElement>(null);
 
@@ -55,14 +62,48 @@ export default function OxQuizSolvePage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setBookmarkMode({
+      enabled: params.get("bookmark") === "1",
+      focusId: params.get("id"),
+    });
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
     fetch(`/api/ox-quiz/${id}`)
       .then((res) => res.json())
-      .then((data) => {
-        setQuiz(data.oxQuizSet);
+      .then(async (data) => {
+        let nextQuiz = data.oxQuizSet as OxQuizSet;
+
+        if (bookmarkMode.enabled) {
+          const bmRes = await fetch("/api/bookmarks?quizType=ox");
+          const bmData = await bmRes.json();
+          const bookmarkedIds = new Set(
+            ((bmData.bookmarks || []) as BookmarkItem[])
+              .filter((bm) => bm.oxQuizSetId === id && bm.oxQuestionId)
+              .map((bm) => bm.oxQuestionId as string)
+          );
+          setBookmarkedQuestionIds(bookmarkedIds);
+          nextQuiz = {
+            ...nextQuiz,
+            title: `${nextQuiz.title} 책갈피`,
+            totalQuestions: bookmarkedIds.size,
+            questions: nextQuiz.questions.filter((question) => bookmarkedIds.has(question.id)),
+          };
+        }
+
+        setQuiz(nextQuiz);
+        if (bookmarkMode.focusId) {
+          const focusIndex = nextQuiz.questions.findIndex((question) => question.id === bookmarkMode.focusId);
+          if (focusIndex >= 0) setCurrentIndex(focusIndex);
+        } else {
+          setCurrentIndex(0);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, bookmarkMode]);
 
   const filteredQuestions = quiz
     ? quiz.questions.filter((q) => {

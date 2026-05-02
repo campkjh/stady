@@ -25,6 +25,12 @@ interface Workbook {
   problems: Problem[];
 }
 
+interface BookmarkItem {
+  quizType: string;
+  workbookId: string | null;
+  problemId: string | null;
+}
+
 function isImageUrl(str: string) {
   return str.startsWith("http://") || str.startsWith("https://");
 }
@@ -49,6 +55,7 @@ export default function SolvePage() {
   const [submitting, setSubmitting] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
 
   const enterTimeRef = useRef<number>(Date.now());
 
@@ -63,17 +70,49 @@ export default function SolvePage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setBookmarkMode({
+      enabled: params.get("bookmark") === "1",
+      focusId: params.get("id"),
+    });
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
         const res = await fetch(`/api/workbooks/${id}`);
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
-        setWorkbook(data.workbook);
+        let nextWorkbook = data.workbook as Workbook;
+
+        if (bookmarkMode.enabled) {
+          const bmRes = await fetch("/api/bookmarks?quizType=workbook");
+          const bmData = await bmRes.json();
+          const bookmarkedIds = new Set(
+            ((bmData.bookmarks || []) as BookmarkItem[])
+              .filter((bm) => bm.workbookId === id && bm.problemId)
+              .map((bm) => bm.problemId as string)
+          );
+          nextWorkbook = {
+            ...nextWorkbook,
+            title: `${nextWorkbook.title} 책갈피`,
+            problems: nextWorkbook.problems.filter((problem) => bookmarkedIds.has(problem.id)),
+          };
+        }
+
+        setWorkbook(nextWorkbook);
+        if (bookmarkMode.focusId) {
+          const focusIndex = nextWorkbook.problems.findIndex((problem) => problem.id === bookmarkMode.focusId);
+          if (focusIndex >= 0) setCurrentIndex(focusIndex);
+        } else {
+          setCurrentIndex(0);
+        }
       } catch {}
       setLoading(false);
     }
     fetchData();
-  }, [id]);
+  }, [id, bookmarkMode]);
 
   const problems = workbook?.problems || [];
   const currentProblem = problems[currentIndex];
