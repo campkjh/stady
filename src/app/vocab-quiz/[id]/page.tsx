@@ -37,6 +37,7 @@ export default function VocabQuizSolvePage() {
   const [submitted, setSubmitted] = useState(false);
   const [startTime] = useState(Date.now());
   const [bookmarkToast, setBookmarkToast] = useState(false);
+  const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [showList, setShowList] = useState(false);
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
   const listScrollRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,11 @@ export default function VocabQuizSolvePage() {
           vocabQuizSetId: quiz.id,
           vocabQuestionId: currentQuestion.id,
         }),
+      });
+      setBookmarkedQuestionIds((prev) => {
+        const next = new Set(prev);
+        next.add(currentQuestion.id);
+        return next;
       });
       setBookmarkToast(true);
       setTimeout(() => setBookmarkToast(false), 2000);
@@ -200,6 +206,7 @@ export default function VocabQuizSolvePage() {
   }
 
   const answered = currentQuestion ? answers.get(currentQuestion.id) : null;
+  const isBookmarked = currentQuestion ? bookmarkedQuestionIds.has(currentQuestion.id) : false;
 
   return (
     <div
@@ -381,6 +388,32 @@ export default function VocabQuizSolvePage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBookmark(); }}
+                className="press"
+                style={{
+                  marginLeft: "auto",
+                  height: 32,
+                  padding: "0 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${isBookmarked ? "#3787FF" : "#E5E7EB"}`,
+                  background: isBookmarked ? "#3787FF" : "#fff",
+                  color: isBookmarked ? "#fff" : "#6B7280",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  transition: "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+                  <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="currentColor"/>
+                </svg>
+                책갈피
+              </button>
             </div>
 
             {/* Question text */}
@@ -443,45 +476,6 @@ export default function VocabQuizSolvePage() {
                     <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>{currentQuestion.explanation}</p>
                   </div>
                 )}
-                {!answered.isCorrect && (
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      if (!quiz) return;
-                      try {
-                        await fetch("/api/bookmarks", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ quizType: "vocab", vocabQuizSetId: quiz.id, vocabQuestionId: currentQuestion.id }),
-                        });
-                        setBookmarkToast(true);
-                        setTimeout(() => setBookmarkToast(false), 2000);
-                      } catch {}
-                    }}
-                    className="press"
-                    style={{
-                      width: "100%",
-                      height: 44,
-                      borderRadius: 12,
-                      backgroundColor: "#F2F3F5",
-                      border: "none",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#51535C",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      marginTop: 4,
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 30 30" fill="#51535C">
-                      <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z"/>
-                    </svg>
-                    책갈피에 추가하기
-                  </button>
-                )}
               </div>
             )}
             <style>{`
@@ -499,21 +493,10 @@ export default function VocabQuizSolvePage() {
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid #F3F4F6", position: "relative", zIndex: 20, background: "#fff" }}>
-        <button
-          type="button"
-          onClick={handleBookmark}
-          className="press"
-          style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}
-        >
-          <svg width="24" height="24" viewBox="0 0 30 30" fill="none">
-            <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="#9CA3AF"/>
-          </svg>
-        </button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid #F3F4F6", position: "relative", zIndex: 20, background: "#fff" }}>
         <div className="text-center text-xs text-gray-300">
           ← 좌우로 스와이프하여 이동 →
         </div>
-        <div style={{ width: 24 }} />
       </div>
 
       {/* Swipe Guide */}

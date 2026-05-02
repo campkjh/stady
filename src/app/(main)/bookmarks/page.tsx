@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { TouchEvent } from "react";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 
@@ -26,6 +27,121 @@ const TABS = [
   { label: "OX퀴즈", value: "ox" },
   { label: "영단어", value: "vocab" },
 ];
+
+function SwipeableVocabBookmarkItem({
+  bookmark,
+  isLast,
+  onNavigate,
+  onDelete,
+}: {
+  bookmark: Bookmark;
+  isLast: boolean;
+  onNavigate: (bookmark: Bookmark) => void;
+  onDelete: (bookmark: Bookmark) => void;
+}) {
+  const [offsetX, setOffsetX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef(0);
+  const movedRef = useRef(false);
+  const maxOffset = -88;
+
+  function handleTouchStart(e: TouchEvent) {
+    startXRef.current = e.touches[0].clientX;
+    movedRef.current = false;
+    setIsDragging(true);
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    const diff = e.touches[0].clientX - startXRef.current;
+    if (Math.abs(diff) > 6) movedRef.current = true;
+    if (diff < 0) {
+      setOffsetX(Math.max(maxOffset, diff));
+    } else if (offsetX < 0) {
+      setOffsetX(Math.min(0, maxOffset + diff));
+    }
+  }
+
+  function handleTouchEnd() {
+    setIsDragging(false);
+    setOffsetX(offsetX < -44 ? maxOffset : 0);
+  }
+
+  function handleClick() {
+    if (movedRef.current) return;
+    if (offsetX < 0) {
+      setOffsetX(0);
+      return;
+    }
+    onNavigate(bookmark);
+  }
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderBottom: isLast ? "none" : "1px solid #F3F4F6",
+        background: "#EF4444",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onDelete(bookmark)}
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 88,
+          border: "none",
+          background: "#EF4444",
+          color: "#fff",
+          fontSize: 14,
+          fontWeight: 800,
+        }}
+      >
+        삭제
+      </button>
+      <button
+        type="button"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
+        className="press"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          alignItems: "center",
+          width: "100%",
+          padding: "14px 16px",
+          background: "#fff",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          transform: `translateX(${offsetX}px)`,
+          transition: isDragging ? "none" : "transform 0.18s ease",
+          touchAction: "pan-y",
+        }}
+      >
+        <span style={{
+          flex: 1, fontSize: 15, fontWeight: 700, color: "#111",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
+          {bookmark.word || bookmark.subtitle}
+        </span>
+        <span style={{
+          flex: 1, fontSize: 14, color: "#6B7280", textAlign: "right",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          paddingLeft: 12,
+        }}>
+          {bookmark.meaning || ""}
+        </span>
+      </button>
+    </div>
+  );
+}
 
 export default function BookmarksPage() {
   const router = useRouter();
@@ -69,6 +185,18 @@ export default function BookmarksPage() {
       router.push(`/ox-quiz/${bookmark.oxQuizSetId}`);
     } else if (bookmark.quizType === "vocab" && bookmark.vocabQuizSetId) {
       router.push(`/vocab-quiz/${bookmark.vocabQuizSetId}`);
+    }
+  }
+
+  async function handleDeleteVocabBookmark(bookmark: Bookmark) {
+    setBookmarks((prev) => prev.filter((item) => item.id !== bookmark.id));
+    try {
+      const res = await fetch(`/api/bookmarks?id=${bookmark.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+    } catch {
+      setBookmarks((prev) => [bookmark, ...prev]);
     }
   }
 
@@ -119,32 +247,13 @@ export default function BookmarksPage() {
               background: "#fff", overflow: "hidden",
             }}>
               {vocabBookmarks.map((bm, i) => (
-                <button
+                <SwipeableVocabBookmarkItem
                   key={bm.id}
-                  onClick={() => handleNavigate(bm)}
-                  className="press"
-                  style={{
-                    display: "flex", alignItems: "center",
-                    width: "100%", padding: "14px 16px",
-                    background: "none", border: "none", cursor: "pointer",
-                    borderBottom: i === vocabBookmarks.length - 1 ? "none" : "1px solid #F3F4F6",
-                    textAlign: "left",
-                  }}
-                >
-                  <span style={{
-                    flex: 1, fontSize: 15, fontWeight: 700, color: "#111",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {bm.word || bm.subtitle}
-                  </span>
-                  <span style={{
-                    flex: 1, fontSize: 14, color: "#6B7280", textAlign: "right",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    paddingLeft: 12,
-                  }}>
-                    {bm.meaning || ""}
-                  </span>
-                </button>
+                  bookmark={bm}
+                  isLast={i === vocabBookmarks.length - 1}
+                  onNavigate={handleNavigate}
+                  onDelete={handleDeleteVocabBookmark}
+                />
               ))}
             </div>
           )}

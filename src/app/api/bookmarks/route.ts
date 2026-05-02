@@ -139,3 +139,36 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await requireUser();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "북마크 ID는 필수입니다." },
+        { status: 400 }
+      );
+    }
+
+    await prisma.bookmark.deleteMany({
+      where: {
+        id,
+        userId: user.id,
+      },
+    });
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+    }
+    console.error("Bookmarks DELETE error:", error);
+    return NextResponse.json(
+      { error: "북마크 삭제 중 오류가 발생했습니다." },
+      { status: 500 }
+    );
+  }
+}
