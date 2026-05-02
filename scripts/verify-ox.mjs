@@ -2,19 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
 const prisma = new PrismaClient();
 
-const TITLES = [
-  "윤리학의 분류",
-  "동양 윤리",
-  "서양 윤리",
-  "동양 죽음관",
-  "서양 죽음관",
-  "동양 직업관",
-  "서양 직업관",
-  "분배 정의",
-];
-
 async function main() {
   const raw = JSON.parse(readFileSync(new URL("./ox-import-data.json", import.meta.url), "utf8"));
+  const titles = raw.order;
   const cat = await prisma.category.findFirst({ where: { name: "생활과윤리" } });
   if (!cat) {
     console.log("MISSING category: 생활과윤리");
@@ -23,10 +13,10 @@ async function main() {
   }
 
   console.log(`category: ${cat?.name} (${cat?.id})`);
-  const expectedTotal = TITLES.reduce((sum, title) => sum + raw.groups[title].length, 0);
+  const expectedTotal = titles.reduce((sum, title) => sum + raw.groups[title].length, 0);
   let totalQ = 0;
   let hasMismatch = false;
-  for (const title of TITLES) {
+  for (const title of titles) {
     const expected = raw.groups[title];
     const set = await prisma.oxQuizSet.findFirst({
       where: { title, categoryId: cat.id },
