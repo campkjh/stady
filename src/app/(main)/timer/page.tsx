@@ -15,6 +15,13 @@ interface TimerUser {
   isMe: boolean;
 }
 
+interface FriendRequest {
+  id: string;
+  userId: string;
+  nickname: string;
+  avatar: string | null;
+}
+
 const PRIMARY = "#3787FF";
 const PRIMARY_DARK = "#1F5EDC";
 const PRIMARY_SOFT = "#E8F0FE";
@@ -47,7 +54,11 @@ export default function TimerPage() {
   const [subject, setSubject] = useState("공부중");
   const [editingSubject, setEditingSubject] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"status" | "ranking">("status");
+  const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends">("status");
+  const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
+  const [friends, setFriends] = useState<TimerUser[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
@@ -77,14 +88,48 @@ export default function TimerPage() {
     setLoading(false);
   };
 
+  const fetchFriends = async () => {
+    try {
+      const res = await fetch("/api/timer/friends");
+      if (!res.ok) return;
+      const data = await res.json();
+      setIncomingRequests(data.incoming || []);
+      setOutgoingRequests(data.outgoing || []);
+      setFriends(data.friends || []);
+    } catch {}
+  };
+
   useEffect(() => {
     if (isLoggedIn !== true) return;
     fetchData();
-    pollRef.current = setInterval(fetchData, 15000);
+    fetchFriends();
+    pollRef.current = setInterval(() => {
+      fetchData();
+      fetchFriends();
+    }, 15000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [isLoggedIn]);
+
+  const sendFriendRequest = async (userId: string) => {
+    await fetch("/api/timer/friends", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    setSelectedUser(null);
+    fetchFriends();
+  };
+
+  const respondFriendRequest = async (requestId: string, action: "accept" | "reject") => {
+    await fetch("/api/timer/friends", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestId, action }),
+    });
+    fetchFriends();
+  };
 
   useEffect(() => {
     if (!isRunning) return;
@@ -154,13 +199,14 @@ export default function TimerPage() {
           {[
             { key: "status", label: "공부 현황" },
             { key: "ranking", label: "오늘 공부 시간" },
+            { key: "friends", label: `친구${incomingRequests.length > 0 ? ` ${incomingRequests.length}` : ""}` },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as "status" | "ranking")}
+                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends")}
                 data-tab={tab.key}
                 style={{
                   position: "relative", padding: "10px 0",
@@ -179,8 +225,8 @@ export default function TimerPage() {
             style={{
               position: "absolute", bottom: -1, height: 2.5,
               background: PRIMARY, borderRadius: 2,
-              left: activeTab === "status" ? 0 : "calc(5ch + 24px)",
-              width: activeTab === "status" ? "5ch" : "8ch",
+              left: activeTab === "status" ? 0 : activeTab === "ranking" ? "calc(5ch + 24px)" : "calc(13ch + 48px)",
+              width: activeTab === "status" ? "5ch" : activeTab === "ranking" ? "8ch" : "4ch",
               transition: "left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           />
@@ -317,12 +363,12 @@ export default function TimerPage() {
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
                 {sortedUsers.map((u) => (
-                  <UserCard key={u.userId} user={u} />
+                  <UserCard key={u.userId} user={u} onOpen={() => setSelectedUser(u)} />
                 ))}
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === "ranking" ? (
           <div key="ranking" className="timer-tab-panel">
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
               누적 기록 <span style={{ color: PRIMARY, fontWeight: 700 }}>{todayRanking.length}명</span>
@@ -344,13 +390,89 @@ export default function TimerPage() {
                 background: "#fff",
               }}>
                 {todayRanking.map((u, i) => (
-                  <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} />
+                  <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} onOpen={() => setSelectedUser(u)} />
                 ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div key="friends" className="timer-tab-panel">
+            {incomingRequests.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>들어온 친구 요청</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {incomingRequests.map((request) => (
+                    <FriendRequestRow
+                      key={request.id}
+                      request={request}
+                      onAccept={() => respondFriendRequest(request.id, "accept")}
+                      onReject={() => respondFriendRequest(request.id, "reject")}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {outgoingRequests.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>보낸 요청</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {outgoingRequests.map((request) => (
+                    <div key={request.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "#F9FAFB", border: "1px solid #F3F4F6" }}>
+                      <Avatar user={request} size={36} />
+                      <b style={{ flex: 1, fontSize: 14, color: "#111" }}>{request.nickname}</b>
+                      <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>대기중</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>친구 타이머</p>
+            {friends.length === 0 ? (
+              <div style={{ padding: "32px 20px", borderRadius: 16, background: "#F9FAFB", border: "1px solid #F3F4F6", textAlign: "center" }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#6B7280", marginBottom: 4 }}>아직 친구가 없어요</p>
+                <p style={{ fontSize: 12, color: TEXT_MUTED }}>공부 현황에서 프로필을 눌러 친구 요청을 보내보세요.</p>
+              </div>
+            ) : (
+              <div style={{ borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden", background: "#fff" }}>
+                {friends
+                  .sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds)
+                  .map((friend, index) => (
+                    <RankingRow key={friend.userId} user={friend} rank={index + 1} isLast={index === friends.length - 1} />
+                  ))}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {selectedUser && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={() => setSelectedUser(null)} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "#fff", borderRadius: 22, padding: 22, textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.18)" }}>
+            <div style={{ width: 86, height: 86, margin: "0 auto 12px" }}>
+              <Avatar user={selectedUser} size={86} />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111", marginBottom: 4 }}>{selectedUser.nickname}</h2>
+            <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 18 }}>
+              오늘 {formatShort(selectedUser.todayTotalSeconds)}
+              {selectedUser.isActive ? ` · ${selectedUser.subject || "공부중"}` : ""}
+            </p>
+            {selectedUser.isMe ? (
+              <button type="button" onClick={() => setSelectedUser(null)} style={modalSecondaryButtonStyle}>닫기</button>
+            ) : friends.some((friend) => friend.userId === selectedUser.userId) ? (
+              <button type="button" onClick={() => { setActiveTab("friends"); setSelectedUser(null); }} style={modalPrimaryButtonStyle}>친구 타이머 보기</button>
+            ) : incomingRequests.some((request) => request.userId === selectedUser.userId) ? (
+              <button type="button" onClick={() => { setActiveTab("friends"); setSelectedUser(null); }} style={modalPrimaryButtonStyle}>받은 요청 확인하기</button>
+            ) : outgoingRequests.some((request) => request.userId === selectedUser.userId) ? (
+              <button type="button" onClick={() => setSelectedUser(null)} style={modalSecondaryButtonStyle}>요청 대기중</button>
+            ) : (
+              <button type="button" onClick={() => sendFriendRequest(selectedUser.userId)} style={modalPrimaryButtonStyle}>친구 요청 보내기</button>
+            )}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes litPulse {
@@ -373,7 +495,19 @@ export default function TimerPage() {
   );
 }
 
-function UserCard({ user }: { user: TimerUser }) {
+function Avatar({ user, size }: { user: { nickname?: string; avatar: string | null }; size: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {user.avatar ? (
+        <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <span style={{ fontSize: Math.max(14, Math.floor(size * 0.36)), fontWeight: 900, color: PRIMARY }}>{user.nickname?.charAt(0) || "?"}</span>
+      )}
+    </div>
+  );
+}
+
+function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
@@ -387,7 +521,7 @@ function UserCard({ user }: { user: TimerUser }) {
   const lit = user.isActive;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+    <button type="button" onClick={onOpen} className="press" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, minWidth: 0 }}>
       {/* Avatar bubble - 점등식 */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
         <div style={{
@@ -450,11 +584,44 @@ function UserCard({ user }: { user: TimerUser }) {
       }}>
         {lit ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
       </p>
+    </button>
+  );
+}
+
+function FriendRequestRow({ request, onAccept, onReject }: { request: FriendRequest; onAccept: () => void; onReject: () => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "#fff", border: "1px solid #E5E7EB" }}>
+      <Avatar user={request} size={38} />
+      <b style={{ flex: 1, fontSize: 14, color: "#111" }}>{request.nickname}</b>
+      <button type="button" onClick={onReject} style={{ height: 32, padding: "0 10px", borderRadius: 10, border: "none", background: "#F3F4F6", color: "#6B7280", fontSize: 12, fontWeight: 800 }}>거절</button>
+      <button type="button" onClick={onAccept} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "none", background: PRIMARY, color: "#fff", fontSize: 12, fontWeight: 800 }}>수락</button>
     </div>
   );
 }
 
-function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isLast: boolean }) {
+const modalPrimaryButtonStyle = {
+  width: "100%",
+  height: 48,
+  borderRadius: 14,
+  border: "none",
+  background: PRIMARY,
+  color: "#fff",
+  fontSize: 15,
+  fontWeight: 800,
+};
+
+const modalSecondaryButtonStyle = {
+  width: "100%",
+  height: 48,
+  borderRadius: 14,
+  border: "none",
+  background: "#F3F4F6",
+  color: "#6B7280",
+  fontSize: 15,
+  fontWeight: 800,
+};
+
+function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: number; isLast: boolean; onOpen?: () => void }) {
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
@@ -468,11 +635,12 @@ function RankingRow({ user, rank, isLast }: { user: TimerUser; rank: number; isL
   const rankColor = rank === 1 ? "#F59E0B" : rank === 2 ? "#94A3B8" : rank === 3 ? "#CD7F32" : "#D1D5DB";
 
   return (
-    <div style={{
+    <div onClick={onOpen} style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "12px 16px",
       borderBottom: isLast ? "none" : "1px solid #F3F4F6",
       background: user.isMe ? PRIMARY_SOFTER : "#fff",
+      cursor: onOpen ? "pointer" : "default",
     }}>
       <span style={{
         fontSize: 13, fontWeight: 800, color: rankColor,

@@ -49,6 +49,7 @@ export default function OxQuizSolvePage() {
   const [bookmarkToast, setBookmarkToast] = useState(false);
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
+  const [resultModalQuestionId, setResultModalQuestionId] = useState<string | null>(null);
   const [startTime] = useState(Date.now());
   const listScrollRef = useRef<HTMLDivElement>(null);
 
@@ -168,6 +169,7 @@ export default function OxQuizSolvePage() {
     const newAnswers = new Map(answers);
     newAnswers.set(currentQuestion.id, { selected, isCorrect });
     setAnswers(newAnswers);
+    setResultModalQuestionId(currentQuestion.id);
 
     // Check if all questions answered
     if (quiz && newAnswers.size === quiz.questions.length) {
@@ -177,12 +179,14 @@ export default function OxQuizSolvePage() {
   };
 
   const goNext = () => {
+    setResultModalQuestionId(null);
     if (currentIndex < filteredQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const goPrev = () => {
+    setResultModalQuestionId(null);
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
@@ -238,6 +242,8 @@ export default function OxQuizSolvePage() {
 
   const answered = currentQuestion ? answers.get(currentQuestion.id) : null;
   const isBookmarked = currentQuestion ? bookmarkedQuestionIds.has(currentQuestion.id) : false;
+  const modalQuestion = quiz.questions.find((question) => question.id === resultModalQuestionId) ?? null;
+  const modalAnswer = modalQuestion ? answers.get(modalQuestion.id) : null;
   const breadcrumb = [
     quiz.category?.name,
     quiz.title,
@@ -726,6 +732,20 @@ export default function OxQuizSolvePage() {
       )}
 
       {/* Swipe Guide Overlay */}
+      {modalQuestion && modalAnswer && (
+        <ResultOverlay
+          isCorrect={modalAnswer.isCorrect}
+          answerText={modalQuestion.answer ? "O" : "X"}
+          explanation={modalQuestion.explanation}
+          onClose={() => setResultModalQuestionId(null)}
+          onPrev={goPrev}
+          onNext={goNext}
+          prevDisabled={currentIndex === 0}
+          nextDisabled={currentIndex >= filteredQuestions.length - 1}
+        />
+      )}
+
+      {/* Swipe Guide Overlay */}
       {showSwipeGuide && (
         <div
           onClick={() => setShowSwipeGuide(false)}
@@ -829,6 +849,54 @@ export default function OxQuizSolvePage() {
           <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
         </div>
       )}
+    </div>
+  );
+}
+
+function ResultOverlay({
+  isCorrect,
+  answerText,
+  explanation,
+  onClose,
+  onPrev,
+  onNext,
+  prevDisabled,
+  nextDisabled,
+}: {
+  isCorrect: boolean;
+  answerText: string;
+  explanation?: string;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  prevDisabled: boolean;
+  nextDisabled: boolean;
+}) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 420, background: "#fff", display: "flex", flexDirection: "column", maxWidth: 500, margin: "0 auto" }}>
+      <button type="button" onClick={onPrev} disabled={prevDisabled} aria-label="이전 문제" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "34%", border: "none", background: "transparent", opacity: prevDisabled ? 0.3 : 1 }} />
+      <button type="button" onClick={onNext} disabled={nextDisabled} aria-label="다음 문제" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "34%", border: "none", background: "transparent", opacity: nextDisabled ? 0.3 : 1 }} />
+      <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, pointerEvents: "none" }}>
+        <img src={isCorrect ? "/icons/quiz-o.svg" : "/icons/quiz-x.svg"} alt={isCorrect ? "O" : "X"} style={{ width: 116, height: 116, marginBottom: 20 }} />
+        <h2 style={{ fontSize: 30, fontWeight: 900, color: isCorrect ? "#3787FF" : "#E85D5D", marginBottom: 8 }}>
+          {isCorrect ? "정답" : "오답"}
+        </h2>
+        <p style={{ fontSize: 15, color: "#6B7280", fontWeight: 700, marginBottom: explanation ? 18 : 0 }}>
+          정답은 {answerText}
+        </p>
+        {explanation && (
+          <div style={{ width: "100%", borderRadius: 16, background: "#F9FAFB", border: "1px solid #EEF2F7", padding: 16, maxHeight: 220, overflowY: "auto", pointerEvents: "auto" }}>
+            <p style={{ fontSize: 14, lineHeight: 1.7, color: "#4B5563" }}>{explanation}</p>
+          </div>
+        )}
+        <button type="button" onClick={onClose} style={{ marginTop: 20, height: 44, padding: "0 22px", borderRadius: 999, border: "none", background: "#111827", color: "#fff", fontSize: 14, fontWeight: 800, pointerEvents: "auto" }}>
+          닫기
+        </button>
+      </div>
+      <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", padding: "0 18px calc(20px + env(safe-area-inset-bottom, 0px))", pointerEvents: "none" }}>
+        <span style={{ fontSize: 13, color: prevDisabled ? "#D1D5DB" : "#9CA3AF", fontWeight: 800 }}>이전</span>
+        <span style={{ fontSize: 13, color: nextDisabled ? "#D1D5DB" : "#9CA3AF", fontWeight: 800 }}>다음</span>
+      </div>
     </div>
   );
 }
