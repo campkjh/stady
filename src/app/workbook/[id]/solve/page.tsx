@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import SideTapNavigation from "@/components/SideTapNavigation";
 
 interface Problem {
   id: string;
@@ -118,6 +119,12 @@ export default function SolvePage() {
     }
   };
 
+  const goPrev = () => {
+    if (currentIndex > 0) {
+      goTo(currentIndex - 1);
+    }
+  };
+
   async function handleSubmit() {
     if (!workbook || submitting || !currentProblem) return;
     commitDwell(currentProblem.id);
@@ -201,10 +208,10 @@ export default function SolvePage() {
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       maxWidth: 500, margin: "0 auto", background: "#fff",
-      display: "flex", flexDirection: "column",
+      display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       {/* Top Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #F3F4F6", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #F3F4F6", flexShrink: 0, position: "relative", zIndex: 20, background: "#fff" }}>
         <button onClick={() => router.back()} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
@@ -229,7 +236,7 @@ export default function SolvePage() {
       </div>
 
       {/* Progress */}
-      <div style={{ padding: "10px 16px 6px", flexShrink: 0 }}>
+      <div style={{ padding: "10px 16px 6px", flexShrink: 0, position: "relative", zIndex: 20, background: "#fff" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>{currentIndex + 1} / {problems.length}</span>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>답변 {answeredCount} · 정답 {score}</span>
@@ -239,29 +246,36 @@ export default function SolvePage() {
         </div>
       </div>
 
+      <SideTapNavigation
+        onPrev={goPrev}
+        onNext={goNext}
+        prevDisabled={currentIndex === 0}
+        nextDisabled={currentIndex >= problems.length - 1}
+      />
+
       {/* Problem area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
         {currentProblem.passageImage && (
-          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6" }}>
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6", position: "relative", zIndex: 10 }}>
             <img src={currentProblem.passageImage} alt="지문" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
         {currentProblem.questionImage && (
-          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6" }}>
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6", position: "relative", zIndex: 10 }}>
             <img src={currentProblem.questionImage} alt="문제" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
         {currentProblem.questionText && (
-          <p style={{ fontSize: 15, fontWeight: 600, color: "#111", lineHeight: 1.6, marginBottom: 14 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#111", lineHeight: 1.6, marginBottom: 14, position: "relative", zIndex: 10 }}>
             {currentProblem.questionText}
           </p>
         )}
 
         {/* Text choices (if no image) */}
         {!hasChoiceImage && textChoices.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, position: "relative", zIndex: 10 }}>
             {textChoices.map((choice, i) => {
               const n = i + 1;
               const isSelected = selectedAnswer === n;
@@ -297,7 +311,7 @@ export default function SolvePage() {
           background: "#fff", borderRadius: 20,
           boxShadow: "0 -8px 32px rgba(0,0,0,0.12)", border: "1px solid #E5E7EB",
           overflow: "hidden",
-          maxHeight: "48vh", display: "flex", flexDirection: "column",
+          maxHeight: "48vh", display: "flex", flexDirection: "column", zIndex: 10,
         }}>
           {/* Number buttons */}
           <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #F3F4F6", background: "#FAFBFC" }}>
@@ -337,10 +351,10 @@ export default function SolvePage() {
         position: "absolute", left: 0, right: 0, bottom: 0,
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom, 0px))",
         borderTop: "1px solid #F3F4F6", background: "#fff",
-        display: "flex", gap: 8, flexShrink: 0,
+        display: "flex", gap: 8, flexShrink: 0, zIndex: 20,
       }}>
         <button
-          onClick={() => goTo(currentIndex - 1)}
+          onClick={goPrev}
           disabled={currentIndex === 0}
           className="press"
           style={{

@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import BackButton from "@/components/BackButton";
-import AlertModal from "@/components/AlertModal";
+import SideTapNavigation from "@/components/SideTapNavigation";
 
 interface VocabQuestion {
   id: string;
@@ -205,22 +204,13 @@ export default function VocabQuizSolvePage() {
   return (
     <div
       className="flex flex-col bg-white"
-      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto" }}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={() => {
-        // 답변 후 아무 곳 클릭하면 다음 문제로
-        if (answered && quiz) {
-          const nextIdx = currentIndex + 1;
-          if (nextIdx < quiz.questions.length) {
-            setCurrentIndex(nextIdx);
-          }
-        }
-      }}
     >
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 pt-4 pb-2">
+      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
         <button
           type="button"
           onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
@@ -334,7 +324,7 @@ export default function VocabQuizSolvePage() {
       )}
 
       {/* Progress bar */}
-      <div className="mx-4 h-1.5 overflow-hidden rounded-full bg-gray-100">
+      <div className="mx-4 h-1.5 overflow-hidden rounded-full bg-gray-100" style={{ position: "relative", zIndex: 20 }}>
         <div
           className="h-full rounded-full bg-blue-500 transition-all duration-300"
           style={{
@@ -343,12 +333,19 @@ export default function VocabQuizSolvePage() {
         />
       </div>
 
+      <SideTapNavigation
+        onPrev={goPrev}
+        onNext={goNext}
+        prevDisabled={currentIndex === 0}
+        nextDisabled={currentIndex >= quiz.questions.length - 1}
+      />
+
       {/* Question area */}
       <div className="flex flex-1 flex-col px-4 py-6 overflow-y-auto" style={{ minHeight: 0 }}>
         {currentQuestion ? (
           <>
             {/* Question counter + nav */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, position: "relative", zIndex: 20 }}>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goPrev(); }}
@@ -387,38 +384,14 @@ export default function VocabQuizSolvePage() {
             </div>
 
             {/* Question text */}
-            <div className="mb-4">
+            <div className="mb-4" style={{ position: "relative", zIndex: 10 }}>
               <h2 className="text-xl font-bold leading-relaxed">
                 &ldquo;{currentQuestion.word}&rdquo;의 뜻으로 알맞은 것은?
               </h2>
             </div>
 
-            {/* Left/right tap zones for prev/next */}
-            <div style={{ display: "flex", minHeight: 56, marginBottom: 16 }}>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                disabled={currentIndex === 0}
-                aria-label="이전 문제"
-                style={{
-                  flex: 1, background: "none", border: "none",
-                  cursor: currentIndex === 0 ? "default" : "pointer",
-                }}
-              />
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); goNext(); }}
-                disabled={currentIndex >= quiz.questions.length - 1}
-                aria-label="다음 문제"
-                style={{
-                  flex: 1, background: "none", border: "none",
-                  cursor: currentIndex >= quiz.questions.length - 1 ? "default" : "pointer",
-                }}
-              />
-            </div>
-
             {/* Choice buttons */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3" style={{ position: "relative", zIndex: 10 }}>
               {getChoices(currentQuestion).map((choice) => {
                 const isSelected = answered?.selected === choice.num;
                 const isCorrectChoice =
@@ -526,7 +499,7 @@ export default function VocabQuizSolvePage() {
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid #F3F4F6" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid #F3F4F6", position: "relative", zIndex: 20, background: "#fff" }}>
         <button
           type="button"
           onClick={handleBookmark}

@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import BackButton from "@/components/BackButton";
-import AlertModal from "@/components/AlertModal";
+import SideTapNavigation from "@/components/SideTapNavigation";
 
 interface OxQuestion {
   id: string;
@@ -197,9 +196,9 @@ export default function OxQuizSolvePage() {
   const answered = currentQuestion ? answers.get(currentQuestion.id) : null;
 
   return (
-    <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto" }}>
+    <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 pt-4 pb-2">
+      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
         <button
           type="button"
           onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
@@ -226,7 +225,7 @@ export default function OxQuizSolvePage() {
       </header>
 
       {/* Tab filter */}
-      <div style={{ display: "flex", gap: 12, padding: "8px 16px", justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: 12, padding: "8px 16px", justifyContent: "center", position: "relative", zIndex: 20 }}>
         {[
           { key: "all" as TabFilter, icon: "/icons/emoji-solved.svg", label: "풀은문제", count: answers.size },
           { key: "correct" as TabFilter, icon: "/icons/emoji-correct.svg", label: "맞춘문제", count: Array.from(answers.values()).filter(a => a.isCorrect).length },
@@ -276,6 +275,13 @@ export default function OxQuizSolvePage() {
         ))}
       </div>
 
+      <SideTapNavigation
+        onPrev={goPrev}
+        onNext={goNext}
+        prevDisabled={currentIndex === 0}
+        nextDisabled={currentIndex >= filteredQuestions.length - 1}
+      />
+
       {/* Question area */}
       <div
         className="flex flex-1 flex-col px-4 py-6 overflow-y-auto"
@@ -287,7 +293,7 @@ export default function OxQuizSolvePage() {
         {currentQuestion ? (
           <>
             {/* Question counter + nav + bookmark */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, position: "relative", zIndex: 20 }}>
               <button
                 type="button"
                 onClick={goPrev}
@@ -348,48 +354,25 @@ export default function OxQuizSolvePage() {
 
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
-              {currentQuestion.section && (
-                <span style={{
-                  alignSelf: "flex-start",
-                  fontSize: 12, fontWeight: 700, color: "#3787FF",
-                  background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
-                  marginBottom: 10,
-                }}>
-                  {currentQuestion.section}
-                </span>
-              )}
-              <h2 className="text-xl font-bold leading-relaxed">
-                Q. {currentQuestion.question}?
-              </h2>
-              {/* Left/right tap zones for prev/next */}
-              <div style={{ flex: 1, display: "flex", marginTop: 12, minHeight: 80 }}>
-                <button
-                  type="button"
-                  onClick={goPrev}
-                  disabled={currentIndex === 0}
-                  aria-label="이전 문제"
-                  style={{
-                    flex: 1, background: "none", border: "none",
-                    cursor: currentIndex === 0 ? "default" : "pointer",
-                    opacity: currentIndex === 0 ? 0 : 1,
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={currentIndex >= filteredQuestions.length - 1}
-                  aria-label="다음 문제"
-                  style={{
-                    flex: 1, background: "none", border: "none",
-                    cursor: currentIndex >= filteredQuestions.length - 1 ? "default" : "pointer",
-                    opacity: currentIndex >= filteredQuestions.length - 1 ? 0 : 1,
-                  }}
-                />
+              <div style={{ position: "relative", zIndex: 10 }}>
+                {currentQuestion.section && (
+                  <span style={{
+                    display: "inline-flex",
+                    fontSize: 12, fontWeight: 700, color: "#3787FF",
+                    background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                    marginBottom: 10,
+                  }}>
+                    {currentQuestion.section}
+                  </span>
+                )}
+                <h2 className="text-xl font-bold leading-relaxed">
+                  Q. {currentQuestion.question}?
+                </h2>
               </div>
             </div>
 
             {/* Answer buttons */}
-            <div style={{ display: "flex", gap: 16, flexShrink: 0, width: "100%" }}>
+            <div style={{ display: "flex", gap: 16, flexShrink: 0, width: "100%", position: "relative", zIndex: 10 }}>
               <button
                 onClick={() => handleAnswer(true)}
                 disabled={!!answered}
@@ -457,6 +440,8 @@ export default function OxQuizSolvePage() {
                 alignItems: "center",
                 gap: 12,
                 marginTop: 24,
+                position: "relative",
+                zIndex: 10,
                 animation: "resultFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
               }}>
                 <img
