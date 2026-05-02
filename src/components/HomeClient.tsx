@@ -269,18 +269,29 @@ export default function HomeClient({
             <button
               type="button"
               onClick={() => openBanner(popupBanner.linkUrl)}
-              style={{ position: "relative", width: "100%", aspectRatio: "2/1", border: "none", background: popupBanner.bgColor || "#3787FF", textAlign: "left", overflow: "hidden" }}
+              style={{
+                position: "relative",
+                width: "100%",
+                border: "none",
+                background: popupBanner.bgColor || "#3787FF",
+                textAlign: "left",
+                overflow: "hidden",
+                padding: 0,
+              }}
             >
-              {popupBanner.imageUrl && (
-                <img src={popupBanner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              {popupBanner.imageUrl ? (
+                <img src={popupBanner.imageUrl} alt={popupBanner.title} style={{ display: "block", width: "100%", maxHeight: "78vh", objectFit: "contain", background: popupBanner.bgColor || "#fff" }} />
+              ) : (
+                <div style={{ position: "relative", width: "100%", aspectRatio: "2/1" }}>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
+                  <div style={{ position: "absolute", left: 22, right: 54, bottom: 20 }}>
+                    <p style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1.22, whiteSpace: "pre-line" }}>{popupBanner.title}</p>
+                    {popupBanner.subtitle && (
+                      <p style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.88)", fontWeight: 700 }}>{popupBanner.subtitle}</p>
+                    )}
+                  </div>
+                </div>
               )}
-              <div style={{ position: "absolute", inset: 0, background: popupBanner.imageUrl ? "linear-gradient(90deg, rgba(0,0,0,0.58), rgba(0,0,0,0.08))" : "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
-              <div style={{ position: "absolute", left: 22, right: 54, bottom: 20 }}>
-                <p style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1.22, whiteSpace: "pre-line" }}>{popupBanner.title}</p>
-                {popupBanner.subtitle && (
-                  <p style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.88)", fontWeight: 700 }}>{popupBanner.subtitle}</p>
-                )}
-              </div>
             </button>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7" }}>
               <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14, fontWeight: 800 }}>
