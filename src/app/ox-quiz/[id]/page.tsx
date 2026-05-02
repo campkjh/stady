@@ -40,6 +40,7 @@ export default function OxQuizSolvePage() {
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
   const [navigating, setNavigating] = useState(false);
   const [bookmarkToast, setBookmarkToast] = useState(false);
+  const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [startTime] = useState(Date.now());
   const listScrollRef = useRef<HTMLDivElement>(null);
 
@@ -194,6 +195,7 @@ export default function OxQuizSolvePage() {
   }
 
   const answered = currentQuestion ? answers.get(currentQuestion.id) : null;
+  const isBookmarked = currentQuestion ? bookmarkedQuestionIds.has(currentQuestion.id) : false;
 
   return (
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
@@ -339,16 +341,37 @@ export default function OxQuizSolvePage() {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id }),
                     });
+                    setBookmarkedQuestionIds((prev) => {
+                      const next = new Set(prev);
+                      next.add(currentQuestion.id);
+                      return next;
+                    });
                     setBookmarkToast(true);
                     setTimeout(() => setBookmarkToast(false), 2000);
                   } catch {}
                 }}
                 className="press"
-                style={{ background: "none", border: "none", padding: 2 }}
+                style={{
+                  marginLeft: "auto",
+                  height: 32,
+                  padding: "0 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${isBookmarked ? "#3787FF" : "#E5E7EB"}`,
+                  background: isBookmarked ? "#3787FF" : "#fff",
+                  color: isBookmarked ? "#fff" : "#6B7280",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  transition: "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease",
+                }}
               >
-                <svg width="16" height="16" viewBox="0 0 30 30" fill="none">
-                  <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="#B0B8C1"/>
+                <svg width="14" height="14" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+                  <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="currentColor"/>
                 </svg>
+                책갈피
               </button>
             </div>
 
