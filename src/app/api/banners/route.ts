@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, requireAdmin } from "@/lib/auth";
+import { REFERRAL_EVENT_PATH } from "@/lib/referrals";
 
 export const runtime = "nodejs";
 
@@ -52,7 +53,7 @@ async function ensureBannerTable() {
       "스타디 1달 오픈베타 이벤트!",
       "친구를 초대할수록 더 커지는 혜택",
       "/banners/referral-event.png",
-      "/timer",
+      REFERRAL_EVENT_PATH,
       "#EAF3FF"
     );
   }
@@ -70,10 +71,20 @@ async function ensureBannerTable() {
       "스타디 1달 오픈베타 이벤트!",
       "친구를 초대할수록 더 커지는 혜택",
       "/banners/referral-slide.png",
-      "/timer",
+      REFERRAL_EVENT_PATH,
       "#EAF3FF"
     );
   }
+
+  await prisma.$executeRawUnsafe(
+    `
+      UPDATE "HomeBanner"
+      SET "linkUrl" = $1, "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "imageUrl" IN ('/banners/referral-event.png', '/banners/referral-slide.png')
+        AND ("linkUrl" IS NULL OR "linkUrl" = '/timer')
+    `,
+    REFERRAL_EVENT_PATH
+  );
 }
 
 function normalizeBanner(row: BannerRow) {

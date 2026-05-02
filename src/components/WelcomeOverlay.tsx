@@ -40,6 +40,10 @@ interface WelcomeOverlayProps {
 export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayProps) {
   const [step, setStep] = useState<"greeting" | "question" | "thanks">("greeting");
   const [fadingOut, setFadingOut] = useState(false);
+  const [inviteCode, setInviteCode] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("stady_pending_invite_code") || "";
+  });
 
   useEffect(() => {
     // 스크롤 방지
@@ -59,11 +63,14 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
 
   const handleSelect = async (source: string) => {
     try {
-      await fetch("/api/auth/signup-source", {
+      const res = await fetch("/api/auth/signup-source", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source }),
+        body: JSON.stringify({ source, inviteCode: inviteCode.trim() }),
       });
+      if (res.ok && inviteCode.trim()) {
+        localStorage.removeItem("stady_pending_invite_code");
+      }
     } catch {
       // ignore errors
     }
@@ -133,6 +140,25 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
                 maxWidth: 320,
               }}
             >
+              <input
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                placeholder="초대코드가 있다면 입력"
+                autoCapitalize="characters"
+                style={{
+                  height: 44,
+                  borderRadius: 22,
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  background: "rgba(255,255,255,0.95)",
+                  color: "#111827",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  outline: "none",
+                  textAlign: "center",
+                  animation: "welcomeFadeInUp 0.5s 0.08s both",
+                }}
+              />
               {SOURCE_OPTIONS.map((option, i) => (
                 <button
                   key={option}

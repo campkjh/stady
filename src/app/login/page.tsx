@@ -31,6 +31,13 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    const invite = new URLSearchParams(window.location.search).get("invite");
+    if (invite) {
+      localStorage.setItem("stady_pending_invite_code", invite);
+    }
+  }, []);
+
+  useEffect(() => {
     // 네이티브 앱이면 자동으로 네이티브 로그인 화면 표시
     if (isNativeApp) {
       console.log("✅ 자동으로 네이티브 로그인 화면 표시 (login page)");
