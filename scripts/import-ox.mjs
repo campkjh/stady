@@ -48,19 +48,28 @@ async function main() {
       continue;
     }
 
-    if (existing && force) {
-      console.log(`REPLACE "${title}" — deleting existing set ${existing.id}`);
-      await prisma.oxQuizSet.delete({ where: { id: existing.id } });
-    }
-
-    const set = await prisma.oxQuizSet.create({
-      data: {
-        title,
-        categoryId: category.id,
-        difficulty,
-        totalQuestions: questions.length,
-      },
-    });
+    const set = existing && force
+      ? await prisma.$transaction(async (tx) => {
+          console.log(`REPLACE QUESTIONS "${title}" — preserving set ${existing.id}`);
+          await tx.oxAnswer.deleteMany({ where: { question: { oxQuizSetId: existing.id } } });
+          await tx.bookmark.deleteMany({ where: { oxQuizSetId: existing.id } });
+          await tx.oxQuestion.deleteMany({ where: { oxQuizSetId: existing.id } });
+          return tx.oxQuizSet.update({
+            where: { id: existing.id },
+            data: {
+              difficulty,
+              totalQuestions: questions.length,
+            },
+          });
+        })
+      : await prisma.oxQuizSet.create({
+          data: {
+            title,
+            categoryId: category.id,
+            difficulty,
+            totalQuestions: questions.length,
+          },
+        });
 
     await prisma.oxQuestion.createMany({
       data: questions.map((q, i) => ({

@@ -12,7 +12,13 @@ export async function GET(request: NextRequest) {
 
     const oxQuizSets = await prisma.oxQuizSet.findMany({
       where,
-      include: { category: true },
+      include: {
+        category: true,
+        questions: {
+          select: { section: true },
+          orderBy: { order: "asc" },
+        },
+      },
       orderBy: { createdAt: "asc" },
     });
 

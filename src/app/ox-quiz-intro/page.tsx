@@ -8,6 +8,8 @@ interface OxQuizSet {
   title: string;
   difficulty: string;
   totalQuestions: number;
+  category?: { id: string; name: string } | null;
+  questions?: { section: string | null }[];
 }
 
 export default function OxQuizListPage() {
@@ -85,22 +87,13 @@ export default function OxQuizListPage() {
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
         <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
           {(() => {
-            // Group quiz sets by parent topic (parsed from title)
-            const groups: { name: string; items: OxQuizSet[] }[] = [];
-            const findOrCreateGroup = (name: string) => {
-              let g = groups.find((x) => x.name === name);
-              if (!g) { g = { name, items: [] }; groups.push(g); }
-              return g;
-            };
-            for (const qs of quizSets) {
-              const t = qs.title;
-              if (t.includes("윤리학의 분류")) findOrCreateGroup("윤리학").items.push(qs);
-              else if (t.includes("죽음관")) findOrCreateGroup("죽음관").items.push(qs);
-              else if (t.includes("직업관")) findOrCreateGroup("직업관").items.push(qs);
-              else if (t.includes("분배")) findOrCreateGroup("분배 정의").items.push(qs);
-              else if (t.includes("동양 윤리") || t.includes("서양 윤리")) findOrCreateGroup("동·서양 윤리").items.push(qs);
-              else findOrCreateGroup("기타").items.push(qs);
-            }
+            const groups = quizSets.reduce<{ name: string; items: OxQuizSet[] }[]>((acc, qs) => {
+              const name = qs.category?.name ? `${qs.category.name} OX 퀴즈` : "OX 퀴즈";
+              const group = acc.find((item) => item.name === name);
+              if (group) group.items.push(qs);
+              else acc.push({ name, items: [qs] });
+              return acc;
+            }, []);
 
             let runningIdx = 0;
             return groups.map((group) => (
@@ -114,6 +107,7 @@ export default function OxQuizListPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                   {group.items.map((qs) => {
                     const animIdx = runningIdx++;
+                    const sections = Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[];
                     return (
                       <button
                         key={qs.id}
@@ -121,13 +115,42 @@ export default function OxQuizListPage() {
                         onClick={() => router.push(`/ox-quiz/${qs.id}`)}
                         className="press"
                         style={{
-                          width: "100%", padding: "18px 22px", borderRadius: 18, backgroundColor: "#fff",
-                          border: "none", fontSize: 15, fontWeight: 700, color: "#2B313D", textAlign: "center",
+                          width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",
+                          border: "none", color: "#2B313D", textAlign: "left",
                           boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                           animation: `quizItemFadeUp 0.5s ${0.06 * animIdx}s both`,
                         }}
                       >
-                        {qs.title}
+                        <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>
+                          {qs.title}
+                        </span>
+                        <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "#8A909C", textAlign: "center" }}>
+                          {sections.length}개 소분류 · {qs.totalQuestions}문항
+                        </span>
+                        {sections.length > 0 && (
+                          <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
+                            {sections.slice(0, 4).map((section) => (
+                              <span
+                                key={section}
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: 999,
+                                  backgroundColor: "#EBF3FF",
+                                  color: "#3787FF",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {section}
+                              </span>
+                            ))}
+                            {sections.length > 4 && (
+                              <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "#F3F4F6", color: "#8A909C", fontSize: 11, fontWeight: 700 }}>
+                                +{sections.length - 4}
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
