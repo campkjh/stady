@@ -266,14 +266,113 @@ export default function TimerPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
-      {/* Header */}
+      {/* Timer Hero */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 10, backgroundColor: "#fff",
-        padding: "20px 20px 0",
+        position: "relative",
+        overflow: "hidden",
+        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, #fff 100%)`,
+        padding: "20px 20px 28px",
       }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 14 }}>타이머</h1>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 34%)" }} />
+        <header style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
+          <span style={{ padding: "7px 10px", borderRadius: 999, background: isRunning ? "#111827" : "#E8EEF8", color: isRunning ? "#fff" : "#5B6472", fontSize: 12, fontWeight: 900 }}>
+            {isRunning ? "공부 중" : "대기 중"}
+          </span>
+        </header>
 
-        {/* Tabs */}
+        <div style={{ position: "relative", textAlign: "center" }}>
+          <p style={{ fontSize: 13, color: "#4A6BB0", fontWeight: 800, marginBottom: 10 }}>
+            오늘 {formatShort(myTodayTotal)}
+          </p>
+          <p style={{
+            fontSize: 58,
+            fontWeight: 900,
+            color: "#111827",
+            letterSpacing: 0,
+            fontVariantNumeric: "tabular-nums",
+            lineHeight: 1,
+            marginBottom: 18,
+          }}>
+            {formatTime(myElapsed)}
+          </p>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 34, marginBottom: 22 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6l2 4H2z"/><path d="M12 3h10v18H2V11"/><path d="M2 11h20"/>
+            </svg>
+            {editingSubject && !isRunning ? (
+              <input
+                type="text"
+                autoFocus
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                onBlur={() => setEditingSubject(false)}
+                onKeyDown={(e) => { if (e.key === "Enter") setEditingSubject(false); }}
+                maxLength={30}
+                style={{
+                  width: 190,
+                  fontSize: 17,
+                  fontWeight: 900,
+                  color: "#111827",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: `2px solid ${PRIMARY}`,
+                  outline: "none",
+                  textAlign: "center",
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => { if (!isRunning) setEditingSubject(true); }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#111827",
+                  fontSize: 17,
+                  fontWeight: 900,
+                  padding: 0,
+                  cursor: isRunning ? "default" : "pointer",
+                }}
+              >
+                {subject}
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={isRunning ? stop : start}
+            className="press"
+            style={{
+              width: 78,
+              height: 78,
+              borderRadius: "50%",
+              background: isRunning ? "#111827" : PRIMARY,
+              border: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: isRunning ? "0 16px 34px rgba(17,24,39,0.18)" : "0 16px 34px rgba(55,135,255,0.32)",
+            }}
+          >
+            {isRunning ? (
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="#fff">
+                <rect x="6" y="5" width="4" height="14" rx="1"/>
+                <rect x="14" y="5" width="4" height="14" rx="1"/>
+              </svg>
+            ) : (
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: 3 }}>
+                <polygon points="7,4 20,12 7,20" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ position: "sticky", top: 0, zIndex: 10, backgroundColor: "#fff", padding: "0 20px" }}>
         <div style={{ position: "relative", display: "flex", gap: 22, borderBottom: "1px solid #F3F4F6", overflowX: "auto", scrollbarWidth: "none" }}>
           {[
             { key: "status", label: "공부 현황" },
@@ -290,7 +389,7 @@ export default function TimerPage() {
                 onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends" | "badges" | "analysis")}
                 data-tab={tab.key}
                 style={{
-                  position: "relative", padding: "10px 0",
+                  position: "relative", padding: "12px 0 10px",
                   background: "none", border: "none", borderBottom: isActive ? `2.5px solid ${PRIMARY}` : "2.5px solid transparent", cursor: "pointer",
                   fontSize: 15, fontWeight: 700,
                   color: isActive ? PRIMARY : TEXT_MUTED,
@@ -303,111 +402,6 @@ export default function TimerPage() {
               </button>
             );
           })}
-        </div>
-      </div>
-
-      {/* My Timer Card */}
-      <div style={{ padding: "4px 20px 24px" }}>
-        <div style={{
-          background: `linear-gradient(135deg, ${PRIMARY_SOFTER} 0%, ${PRIMARY_SOFT} 100%)`,
-          border: `1px solid ${ACCENT_BG}`,
-          borderRadius: 24,
-          padding: "22px 22px 20px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            position: "absolute", top: -20, right: -20, width: 120, height: 120,
-            borderRadius: "50%", background: "rgba(55,135,255,0.08)",
-          }} />
-          <div style={{
-            position: "absolute", bottom: -30, right: 30, width: 80, height: 80,
-            borderRadius: "50%", background: "rgba(55,135,255,0.06)",
-          }} />
-
-          <p style={{ fontSize: 13, color: PRIMARY_DARK, fontWeight: 600, marginBottom: 6, position: "relative" }}>
-            오늘 공부 시간
-          </p>
-          <p style={{ fontSize: 13, color: "#4A6BB0", marginBottom: 14, position: "relative" }}>
-            누적 <span style={{ fontWeight: 700, color: "#0F3A8E" }}>{formatShort(myTodayTotal)}</span>
-          </p>
-
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 18, position: "relative" }}>
-            <span style={{
-              fontSize: 44, fontWeight: 800, color: "#111", letterSpacing: -1.5,
-              fontVariantNumeric: "tabular-nums", lineHeight: 1,
-            }}>
-              {formatTime(myElapsed)}
-            </span>
-          </div>
-
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "12px 14px", borderRadius: 14,
-            background: "#fff", border: `1px solid ${ACCENT_BG}`,
-            position: "relative",
-          }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: 6, background: PRIMARY,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 3h6l2 4H2z"/><path d="M12 3h10v18H2V11"/><path d="M2 11h20"/>
-              </svg>
-            </div>
-            {editingSubject && !isRunning ? (
-              <input
-                type="text"
-                autoFocus
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                onBlur={() => setEditingSubject(false)}
-                onKeyDown={(e) => { if (e.key === "Enter") setEditingSubject(false); }}
-                maxLength={30}
-                style={{
-                  flex: 1, fontSize: 15, fontWeight: 600, color: "#111",
-                  background: "none", border: "none", outline: "none",
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => { if (!isRunning) setEditingSubject(true); }}
-                style={{
-                  flex: 1, fontSize: 15, fontWeight: 600, color: "#111",
-                  background: "none", border: "none", textAlign: "left",
-                  padding: 0, cursor: isRunning ? "default" : "pointer",
-                }}
-              >
-                {subject}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={isRunning ? stop : start}
-              className="press"
-              style={{
-                width: 38, height: 38, borderRadius: "50%",
-                background: isRunning ? "#111" : PRIMARY,
-                border: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-                boxShadow: `0 4px 12px rgba(55,135,255,0.3)`,
-              }}
-            >
-              {isRunning ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff">
-                  <rect x="6" y="5" width="4" height="14" rx="1"/>
-                  <rect x="14" y="5" width="4" height="14" rx="1"/>
-                </svg>
-              ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff">
-                  <polygon points="6,4 20,12 6,20" />
-                </svg>
-              )}
-            </button>
-          </div>
         </div>
       </div>
 
