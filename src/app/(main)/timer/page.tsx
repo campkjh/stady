@@ -80,7 +80,7 @@ export default function TimerPage() {
   const [subject, setSubject] = useState("공부중");
   const [editingSubject, setEditingSubject] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends">("status");
+  const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges">("status");
   const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
@@ -223,41 +223,34 @@ export default function TimerPage() {
         <h1 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 14 }}>타이머</h1>
 
         {/* Tabs */}
-        <div style={{ position: "relative", display: "flex", gap: 24, borderBottom: "1px solid #F3F4F6" }}>
+        <div style={{ position: "relative", display: "flex", gap: 22, borderBottom: "1px solid #F3F4F6", overflowX: "auto", scrollbarWidth: "none" }}>
           {[
             { key: "status", label: "공부 현황" },
             { key: "ranking", label: "오늘 공부 시간" },
             { key: "friends", label: `친구${incomingRequests.length > 0 ? ` ${incomingRequests.length}` : ""}` },
+            { key: "badges", label: "뱃지" },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends")}
+                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends" | "badges")}
                 data-tab={tab.key}
                 style={{
                   position: "relative", padding: "10px 0",
-                  background: "none", border: "none", cursor: "pointer",
+                  background: "none", border: "none", borderBottom: isActive ? `2.5px solid ${PRIMARY}` : "2.5px solid transparent", cursor: "pointer",
                   fontSize: 15, fontWeight: 700,
                   color: isActive ? PRIMARY : TEXT_MUTED,
-                  transition: "color 0.25s ease",
+                  transition: "color 0.25s ease, border-color 0.25s ease",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
                 {tab.label}
               </button>
             );
           })}
-          {/* Sliding indicator */}
-          <span
-            style={{
-              position: "absolute", bottom: -1, height: 2.5,
-              background: PRIMARY, borderRadius: 2,
-              left: activeTab === "status" ? 0 : activeTab === "ranking" ? "calc(5ch + 24px)" : "calc(13ch + 48px)",
-              width: activeTab === "status" ? "5ch" : activeTab === "ranking" ? "8ch" : "4ch",
-              transition: "left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-          />
         </div>
       </div>
 
@@ -366,8 +359,6 @@ export default function TimerPage() {
         </div>
       </div>
 
-      <BadgeCollection stats={myStats} todaySeconds={myTodayTotal} />
-
       {/* Tab content */}
       <div style={{ padding: "20px 20px 40px" }}>
         {loading ? (
@@ -425,7 +416,7 @@ export default function TimerPage() {
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === "friends" ? (
           <div key="friends" className="timer-tab-panel">
             {incomingRequests.length > 0 && (
               <div style={{ marginBottom: 18 }}>
@@ -473,6 +464,10 @@ export default function TimerPage() {
                   ))}
               </div>
             )}
+          </div>
+        ) : (
+          <div key="badges" className="timer-tab-panel">
+            <BadgeCollection stats={myStats} todaySeconds={myTodayTotal} />
           </div>
         )}
       </div>
@@ -529,7 +524,7 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
   const unlockedCount = BADGES.filter((badge) => isBadgeUnlocked(badge, stats, todaySeconds)).length;
 
   return (
-    <section style={{ padding: "0 20px 8px" }}>
+    <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
           <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>내 뱃지</h2>
