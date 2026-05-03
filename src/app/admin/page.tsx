@@ -33,6 +33,27 @@ interface RecentInquiry {
   createdAt: string;
 }
 
+interface ReferralInvitee {
+  id: string;
+  nickname: string;
+  email: string;
+  invitedAt: string;
+}
+
+interface ReferralInviter {
+  inviterId: string;
+  nickname: string;
+  email: string;
+  inviteCode: string;
+  invitedCount: number;
+  invitees: ReferralInvitee[];
+}
+
+interface ReferralStats {
+  totalInvites: number;
+  inviters: ReferralInviter[];
+}
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -67,6 +88,7 @@ export default function AdminDashboard() {
   const [sourceStats, setSourceStats] = useState<SourceStat[]>([]);
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
   const [recentInquiries, setRecentInquiries] = useState<RecentInquiry[]>([]);
+  const [referralStats, setReferralStats] = useState<ReferralStats>({ totalInvites: 0, inviters: [] });
 
   useEffect(() => {
     fetch("/api/admin/stats", { credentials: "include" })
@@ -76,6 +98,7 @@ export default function AdminDashboard() {
         if (data.sources) setSourceStats(data.sources);
         if (data.recentUsers) setRecentUsers(data.recentUsers);
         if (data.recentInquiries) setRecentInquiries(data.recentInquiries);
+        if (data.referralStats) setReferralStats(data.referralStats);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -316,6 +339,78 @@ export default function AdminDashboard() {
                         </td>
                         <td style={{ padding: "10px 16px", textAlign: "right", color: "#8A909C", fontSize: 12 }}>
                           {formatDate(inq.createdAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Referral Event Stats */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{
+              background: "#fff",
+              borderRadius: 14,
+              border: "1px solid #E5E7EB",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+              overflow: "hidden",
+            }}>
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
+              }}>
+                <div>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D" }}>친구초대 이벤트 현황</h2>
+                  <p style={{ fontSize: 12, color: "#8A909C", marginTop: 3 }}>누가 몇 명을 초대했는지 확인합니다</p>
+                </div>
+                <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EBF3FF", color: "#3787FF", fontSize: 12, fontWeight: 800 }}>
+                  총 {referralStats.totalInvites}명
+                </span>
+              </div>
+              {referralStats.inviters.length === 0 ? (
+                <div style={{ padding: 32, textAlign: "center", color: "#8A909C", fontSize: 14 }}>
+                  아직 친구초대 기록이 없습니다.
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#F9FAFB" }}>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대한 회원</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대코드</th>
+                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대 수</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>가입한 친구</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referralStats.inviters.map((inviter) => (
+                      <tr key={inviter.inviterId} style={{ borderBottom: "1px solid #F3F4F6", verticalAlign: "top" }}>
+                        <td style={{ padding: "12px 16px" }}>
+                          <p style={{ fontWeight: 700, color: "#2B313D" }}>{inviter.nickname}</p>
+                          <p style={{ marginTop: 3, color: "#8A909C", fontSize: 12 }}>{inviter.email}</p>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: "#3787FF", background: "#EBF3FF", borderRadius: 8, padding: "5px 8px" }}>
+                            {inviter.inviteCode}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: "#111827" }}>{inviter.invitedCount}</span>
+                          <span style={{ marginLeft: 2, color: "#8A909C", fontSize: 12 }}>명</span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {inviter.invitees.map((invitee) => (
+                              <div key={invitee.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                                <div style={{ minWidth: 0 }}>
+                                  <span style={{ fontWeight: 700, color: "#2B313D" }}>{invitee.nickname}</span>
+                                  <span style={{ marginLeft: 6, color: "#8A909C", fontSize: 12 }}>{invitee.email}</span>
+                                </div>
+                                <span style={{ color: "#8A909C", fontSize: 12, flexShrink: 0 }}>{formatDate(invitee.invitedAt)}</span>
+                              </div>
+                            ))}
+                          </div>
                         </td>
                       </tr>
                     ))}
