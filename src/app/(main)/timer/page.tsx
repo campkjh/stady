@@ -106,8 +106,6 @@ export default function TimerPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [myElapsed, setMyElapsed] = useState(0);
-  const [subject, setSubject] = useState("공부중");
-  const [editingSubject, setEditingSubject] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges" | "analysis">("status");
   const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
@@ -138,7 +136,6 @@ export default function TimerPage() {
       if (data.mySession) {
         setIsRunning(true);
         setMyElapsed(data.mySession.activeElapsedSeconds);
-        setSubject(data.mySession.subject || "공부중");
       } else {
         setIsRunning(false);
       }
@@ -227,20 +224,35 @@ export default function TimerPage() {
     const res = await fetch("/api/timer/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject: subject || "공부중" }),
+      body: JSON.stringify({ subject: "공부중" }),
     });
     if (res.ok) {
       setIsRunning(true);
       setMyElapsed(0);
-      fetchData();
+      setUsers((prev) => prev.map((user) => user.isMe ? { ...user, isActive: true, subject: "공부중", activeElapsedSeconds: 0 } : user));
+      setTimeout(() => fetchData(), 350);
     }
   };
 
   const stop = async () => {
-    await fetch("/api/timer/stop", { method: "POST" });
+    const res = await fetch("/api/timer/stop", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    const finishedSeconds = Number(data.session?.totalSeconds || myElapsed || 0);
     setIsRunning(false);
     setMyElapsed(0);
-    fetchData();
+    setUsers((prev) => prev.map((user) => {
+      if (!user.isMe) return user;
+      const completedToday = user.todayTotalSeconds - user.activeElapsedSeconds + finishedSeconds;
+      return {
+        ...user,
+        isActive: false,
+        subject: null,
+        activeStartedAt: null,
+        activeElapsedSeconds: 0,
+        todayTotalSeconds: Math.max(0, completedToday),
+      };
+    }));
+    setTimeout(() => fetchData(), 350);
     if (analysis) fetchAnalysis();
   };
 
@@ -276,9 +288,6 @@ export default function TimerPage() {
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 34%)" }} />
         <header style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
           <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
-          <span style={{ padding: "7px 10px", borderRadius: 999, background: isRunning ? "#111827" : "#E8EEF8", color: isRunning ? "#fff" : "#5B6472", fontSize: 12, fontWeight: 900 }}>
-            {isRunning ? "공부 중" : "대기 중"}
-          </span>
         </header>
 
         <div style={{ position: "relative", textAlign: "center" }}>
@@ -287,7 +296,7 @@ export default function TimerPage() {
           </p>
           <p style={{
             fontSize: 58,
-            fontWeight: 900,
+            fontWeight: 700,
             color: "#111827",
             letterSpacing: 0,
             fontVariantNumeric: "tabular-nums",
@@ -296,50 +305,6 @@ export default function TimerPage() {
           }}>
             {formatTime(myElapsed)}
           </p>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 34, marginBottom: 22 }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 3h6l2 4H2z"/><path d="M12 3h10v18H2V11"/><path d="M2 11h20"/>
-            </svg>
-            {editingSubject && !isRunning ? (
-              <input
-                type="text"
-                autoFocus
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                onBlur={() => setEditingSubject(false)}
-                onKeyDown={(e) => { if (e.key === "Enter") setEditingSubject(false); }}
-                maxLength={30}
-                style={{
-                  width: 190,
-                  fontSize: 17,
-                  fontWeight: 900,
-                  color: "#111827",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: `2px solid ${PRIMARY}`,
-                  outline: "none",
-                  textAlign: "center",
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => { if (!isRunning) setEditingSubject(true); }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#111827",
-                  fontSize: 17,
-                  fontWeight: 900,
-                  padding: 0,
-                  cursor: isRunning ? "default" : "pointer",
-                }}
-              >
-                {subject}
-              </button>
-            )}
-          </div>
 
           <button
             type="button"
@@ -561,11 +526,12 @@ export default function TimerPage() {
           50% { transform: scale(1.15); opacity: 0.85; }
         }
         @keyframes tabPanelIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateX(16px) translateY(6px) scale(0.985); }
+          to { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
         }
         .timer-tab-panel {
-          animation: tabPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          animation: tabPanelIn 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: top center;
         }
       `}</style>
     </div>
