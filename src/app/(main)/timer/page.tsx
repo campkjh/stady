@@ -303,8 +303,8 @@ export default function TimerPage() {
 
   const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
   const expandedOpacity = 1 - compactProgress;
-  const heroHeight = 252 - compactProgress * 176;
-  const fixedHeroHeight = heroHeight + compactProgress * 34;
+  const heroHeight = 264 - compactProgress * 196;
+  const fixedHeroHeight = heroHeight + compactProgress * 20;
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -319,7 +319,7 @@ export default function TimerPage() {
         boxSizing: "border-box",
         overflow: "visible",
         background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, rgba(255,255,255,0.98) 100%)`,
-        padding: `${20 - compactProgress * 8}px 20px ${28 - compactProgress * 18}px`,
+        padding: `${20 - compactProgress * 8}px 20px ${40 - compactProgress * 28}px`,
       }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 40%)", opacity: expandedOpacity }} />
         <div style={{
