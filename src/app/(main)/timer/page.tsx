@@ -37,6 +37,8 @@ const ACCENT_BG = "#D3E4FF";
 const TEXT_MUTED = "#9CA3AF";
 const OFFLINE_FILL = "#E5E7EB";
 const LOCKED_BADGE_IMAGE = "/badges/locked.png";
+const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
+const DEFAULT_RESTING_AVATAR = "/timer/default-resting.png";
 
 const BADGES = [
   { id: "baking", title: "첫 반죽", image: "/badges/baking.png", condition: "누적 공부 10분 달성", type: "total", target: 10 * 60 },
@@ -599,13 +601,15 @@ function isBadgeUnlocked(
   return stats.completedSessionCount >= badge.target;
 }
 
-function Avatar({ user, size }: { user: { nickname?: string; avatar: string | null }; size: number }) {
+function Avatar({ user, size }: { user: { avatar: string | null; isActive?: boolean }; size: number }) {
+  const fallbackImage = user.isActive ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR;
+
   return (
     <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center" }}>
       {user.avatar ? (
         <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <span style={{ fontSize: Math.max(14, Math.floor(size * 0.36)), fontWeight: 900, color: PRIMARY }}>{user.nickname?.charAt(0) || "?"}</span>
+        <img src={fallbackImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
     </div>
   );
@@ -655,11 +659,7 @@ function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
               }}
             />
           ) : (
-            <svg width="54%" height="54%" viewBox="0 0 60 60" fill="none">
-              <circle cx="30" cy="22" r="9" fill={lit ? PRIMARY : "#C8CDD5"} />
-              <path d="M14 48 Q14 36 30 36 Q46 36 46 48 Z" fill={lit ? PRIMARY : "#C8CDD5"} />
-              <rect x="20" y="42" width="20" height="3" rx="1.5" fill={lit ? "#B7D0FF" : "#E5E7EB"} />
-            </svg>
+            <img src={lit ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: lit ? 1 : 0.62 }} />
           )}
         </div>
         {/* Status dot */}
@@ -764,10 +764,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
         {user.avatar ? (
           <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={user.isActive ? PRIMARY : "#9CA3AF"} strokeWidth="2">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
+          <img src={user.isActive ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: user.isActive ? 1 : 0.72 }} />
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
