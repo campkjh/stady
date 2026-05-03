@@ -318,7 +318,7 @@ export default function TimerPage() {
         height: fixedHeroHeight,
         boxSizing: "border-box",
         overflow: "visible",
-        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, rgba(255,255,255,0.98) 100%)`,
+        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, ${PRIMARY_SOFTER} 18%, #ffffff 80%, #ffffff 100%)`,
         padding: `${20 - compactProgress * 12}px 20px ${64 - compactProgress * 56}px`,
       }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 40%)", opacity: expandedOpacity }} />
