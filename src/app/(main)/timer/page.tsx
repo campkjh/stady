@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 
 interface TimerUser {
   userId: string;
   nickname: string;
   avatar: string | null;
+  statusMessage: string | null;
   isActive: boolean;
   subject: string | null;
   activeStartedAt: string | null;
@@ -20,6 +22,7 @@ interface FriendRequest {
   userId: string;
   nickname: string;
   avatar: string | null;
+  statusMessage?: string | null;
 }
 
 interface TimerStats {
@@ -100,6 +103,7 @@ function formatHours(sec: number): string {
 }
 
 export default function TimerPage() {
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [users, setUsers] = useState<TimerUser[]>([]);
   const [activeCount, setActiveCount] = useState(0);
@@ -262,6 +266,7 @@ export default function TimerPage() {
   // Sort: active (by elapsed desc) → inactive (by today total desc) → never studied
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
+      if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       if (a.isActive && b.isActive) return b.activeElapsedSeconds - a.activeElapsedSeconds;
       return b.todayTotalSeconds - a.todayTotalSeconds;
@@ -395,7 +400,12 @@ export default function TimerPage() {
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
                 {sortedUsers.map((u) => (
-                  <UserCard key={u.userId} user={u} onOpen={() => setSelectedUser(u)} />
+                  <UserCard
+                    key={u.userId}
+                    user={u}
+                    onOpen={() => setSelectedUser(u)}
+                    onStatusClick={u.isMe ? () => router.push("/mypage/profile") : undefined}
+                  />
                 ))}
               </div>
             )}
@@ -804,7 +814,7 @@ function Avatar({ user, size }: { user: { avatar: string | null; isActive?: bool
   );
 }
 
-function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
+function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: () => void; onStatusClick?: () => void }) {
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
@@ -816,9 +826,61 @@ function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
   const lit = user.isActive;
+  const statusText = user.statusMessage?.trim() || "상태메세지..";
+  const hasStatus = !!user.statusMessage?.trim();
 
   return (
-    <button type="button" onClick={onOpen} className="press" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, minWidth: 0 }}>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onOpen();
+      }}
+      className="press"
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, minWidth: 0, cursor: "pointer" }}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onStatusClick) onStatusClick();
+        }}
+        disabled={!onStatusClick}
+        style={{
+          position: "relative",
+          height: 26,
+          maxWidth: "100%",
+          padding: "0 9px",
+          borderRadius: 999,
+          border: "1px solid #E5E7EB",
+          background: "#fff",
+          color: hasStatus ? "#111827" : "#C7CCD5",
+          fontSize: 11,
+          fontWeight: 900,
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          boxShadow: "0 5px 12px rgba(17,24,39,0.06)",
+          cursor: onStatusClick ? "pointer" : "default",
+        }}
+      >
+        {statusText}
+        <span
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: -5,
+            width: 9,
+            height: 9,
+            background: "#fff",
+            borderRight: "1px solid #E5E7EB",
+            borderBottom: "1px solid #E5E7EB",
+            transform: "translateX(-50%) rotate(45deg)",
+          }}
+        />
+      </button>
       {/* Avatar bubble - 점등식 */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
         <div style={{
@@ -866,7 +928,21 @@ function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
         fontSize: 13, fontWeight: 700,
         color: lit ? "#111" : "#9CA3AF",
         maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
       }}>
+        {user.isMe && (
+          <span style={{
+            padding: "2px 5px",
+            borderRadius: 999,
+            background: PRIMARY,
+            color: "#fff",
+            fontSize: 9,
+            fontWeight: 900,
+            lineHeight: 1,
+          }}>
+            MY
+          </span>
+        )}
         {user.nickname}
       </p>
 
@@ -877,7 +953,7 @@ function UserCard({ user, onOpen }: { user: TimerUser; onOpen: () => void }) {
       }}>
         {lit ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
       </p>
-    </button>
+    </div>
   );
 }
 

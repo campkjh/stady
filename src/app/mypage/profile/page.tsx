@@ -7,6 +7,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [nickname, setNickname] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,6 +21,7 @@ export default function ProfilePage() {
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         setNickname(data.user.nickname ?? "");
+        setStatusMessage(data.user.statusMessage ?? "");
         setAvatar(data.user.avatar ?? null);
       } catch {
         // ignore
@@ -62,7 +64,7 @@ export default function ProfilePage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ nickname, avatar }),
+        body: JSON.stringify({ nickname, avatar, statusMessage }),
       });
       if (res.ok) {
         router.back();
@@ -165,6 +167,36 @@ export default function ProfilePage() {
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             placeholder="닉네임을 입력해주세요"
+            style={{
+              width: "100%",
+              height: 48,
+              padding: "0 16px",
+              borderRadius: 12,
+              border: "none",
+              background: "#F3F4F6",
+              fontSize: 15,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        {/* Status Message */}
+        <div style={{ width: "100%", marginTop: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#374151" }}>
+              상태메세지
+            </label>
+            <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 700 }}>
+              {statusMessage.length}/5
+            </span>
+          </div>
+          <input
+            type="text"
+            value={statusMessage}
+            maxLength={5}
+            onChange={(e) => setStatusMessage(e.target.value.slice(0, 5))}
+            placeholder="최대 5글자"
             style={{
               width: "100%",
               height: 48,

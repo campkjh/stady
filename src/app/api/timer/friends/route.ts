@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { ensureUserStatusMessageColumn } from "@/lib/user-status";
 
 export const runtime = "nodejs";
 
@@ -13,8 +14,15 @@ interface FriendRequestRow {
   createdAt: Date;
   requesterNickname?: string;
   requesterAvatar?: string | null;
+  requesterStatusMessage?: string | null;
   addresseeNickname?: string;
   addresseeAvatar?: string | null;
+  addresseeStatusMessage?: string | null;
+}
+
+interface StatusRow {
+  id: string;
+  statusMessage: string | null;
 }
 
 async function ensureFriendTable() {
@@ -36,6 +44,7 @@ async function ensureFriendTable() {
 
 async function getTimerUsers(userIds: string[]) {
   if (userIds.length === 0) return [];
+  await ensureUserStatusMessageColumn();
   const now = Date.now();
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -44,6 +53,10 @@ async function getTimerUsers(userIds: string[]) {
     where: { id: { in: userIds } },
     select: { id: true, nickname: true, avatar: true },
   });
+  const statusRows = await prisma.$queryRawUnsafe<StatusRow[]>(
+    `SELECT "id", "statusMessage" FROM "User"`
+  );
+  const statusByUserId = new Map(statusRows.map((row) => [row.id, row.statusMessage]));
 
   return Promise.all(
     users.map(async (user) => {
@@ -64,6 +77,7 @@ async function getTimerUsers(userIds: string[]) {
         userId: user.id,
         nickname: user.nickname,
         avatar: user.avatar,
+        statusMessage: statusByUserId.get(user.id) ?? null,
         isActive: !!active,
         subject: active?.subject || null,
         activeStartedAt: active?.startedAt || null,
@@ -79,11 +93,13 @@ export async function GET() {
   try {
     const user = await requireUser();
     await ensureFriendTable();
+    await ensureUserStatusMessageColumn();
 
     const incoming = await prisma.$queryRawUnsafe<FriendRequestRow[]>(
       `
         SELECT r."id", r."requesterId", r."addresseeId", r."status", r."createdAt",
-               u."nickname" AS "requesterNickname", u."avatar" AS "requesterAvatar"
+               u."nickname" AS "requesterNickname", u."avatar" AS "requesterAvatar",
+               u."statusMessage" AS "requesterStatusMessage"
         FROM "TimerFriendRequest" r
         JOIN "User" u ON u."id" = r."requesterId"
         WHERE r."addresseeId" = $1 AND r."status" = 'pending'
@@ -95,7 +111,8 @@ export async function GET() {
     const outgoing = await prisma.$queryRawUnsafe<FriendRequestRow[]>(
       `
         SELECT r."id", r."requesterId", r."addresseeId", r."status", r."createdAt",
-               u."nickname" AS "addresseeNickname", u."avatar" AS "addresseeAvatar"
+               u."nickname" AS "addresseeNickname", u."avatar" AS "addresseeAvatar",
+               u."statusMessage" AS "addresseeStatusMessage"
         FROM "TimerFriendRequest" r
         JOIN "User" u ON u."id" = r."addresseeId"
         WHERE r."requesterId" = $1 AND r."status" = 'pending'
@@ -121,6 +138,7 @@ export async function GET() {
         userId: row.requesterId,
         nickname: row.requesterNickname,
         avatar: row.requesterAvatar,
+        statusMessage: row.requesterStatusMessage,
         createdAt: row.createdAt,
       })),
       outgoing: outgoing.map((row) => ({
@@ -128,6 +146,7 @@ export async function GET() {
         userId: row.addresseeId,
         nickname: row.addresseeNickname,
         avatar: row.addresseeAvatar,
+        statusMessage: row.addresseeStatusMessage,
         createdAt: row.createdAt,
       })),
       friends,

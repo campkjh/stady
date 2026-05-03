@@ -14,6 +14,7 @@ model User {
   password  String
   nickname  String
   avatar    String?
+  statusMessage String?
   role         String   @default("user")
   signupSource String?
   createdAt    DateTime @default(now())

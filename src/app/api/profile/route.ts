@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { ensureUserStatusMessageColumn } from "@/lib/user-status";
+
+interface StatusRow {
+  statusMessage: string | null;
+}
 
 export async function GET() {
   try {
     const user = await requireUser();
+    await ensureUserStatusMessageColumn();
+    const statusRows = await prisma.$queryRawUnsafe<StatusRow[]>(
+      `SELECT "statusMessage" FROM "User" WHERE "id" = $1 LIMIT 1`,
+      user.id
+    );
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({
+      user: {
+        ...userWithoutPassword,
+        statusMessage: statusRows[0]?.statusMessage ?? null,
+      },
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
@@ -23,20 +38,42 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const user = await requireUser();
-    const { nickname, avatar } = await request.json();
+    await ensureUserStatusMessageColumn();
+    const { nickname, avatar, statusMessage } = await request.json();
 
     const data: Record<string, unknown> = {};
     if (nickname !== undefined) data.nickname = nickname;
     if (avatar !== undefined) data.avatar = avatar;
 
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data,
-    });
+    const updated = Object.keys(data).length > 0
+      ? await prisma.user.update({
+          where: { id: user.id },
+          data,
+        })
+      : user;
+
+    if (statusMessage !== undefined) {
+      const normalizedStatus = String(statusMessage).trim().slice(0, 5);
+      await prisma.$executeRawUnsafe(
+        `UPDATE "User" SET "statusMessage" = $1 WHERE "id" = $2`,
+        normalizedStatus || null,
+        user.id
+      );
+    }
+
+    const statusRows = await prisma.$queryRawUnsafe<StatusRow[]>(
+      `SELECT "statusMessage" FROM "User" WHERE "id" = $1 LIMIT 1`,
+      user.id
+    );
 
     const { password: _, ...userWithoutPassword } = updated;
 
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({
+      user: {
+        ...userWithoutPassword,
+        statusMessage: statusRows[0]?.statusMessage ?? null,
+      },
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

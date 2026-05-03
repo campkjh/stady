@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { ensureUserStatusMessageColumn } from "@/lib/user-status";
+
+interface TimerUserRow {
+  id: string;
+  nickname: string;
+  avatar: string | null;
+  statusMessage: string | null;
+}
 
 export async function GET() {
   try {
     const me = await getCurrentUser();
+    await ensureUserStatusMessageColumn();
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
 
     // Auto-close stale active sessions
@@ -20,10 +29,9 @@ export async function GET() {
     }
 
     // Get all users
-    const users = await prisma.user.findMany({
-      where: { role: "user" },
-      select: { id: true, nickname: true, avatar: true },
-    });
+    const users = await prisma.$queryRawUnsafe<TimerUserRow[]>(
+      `SELECT "id", "nickname", "avatar", "statusMessage" FROM "User" WHERE "role" = 'user'`
+    );
 
     const now = Date.now();
 
@@ -58,6 +66,7 @@ export async function GET() {
           userId: u.id,
           nickname: u.nickname,
           avatar: u.avatar,
+          statusMessage: u.statusMessage,
           isActive: !!active,
           subject: active?.subject || null,
           activeStartedAt: active?.startedAt || null,
