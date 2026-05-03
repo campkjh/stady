@@ -304,6 +304,7 @@ export default function TimerPage() {
   const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
   const expandedOpacity = 1 - compactProgress;
   const heroHeight = 252 - compactProgress * 176;
+  const fixedHeroHeight = heroHeight + compactProgress * 34;
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
@@ -314,16 +315,31 @@ export default function TimerPage() {
         left: 0,
         right: 0,
         zIndex: 30,
-        height: heroHeight,
+        height: fixedHeroHeight,
         boxSizing: "border-box",
-        overflow: "hidden",
-        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, #fff 100%)`,
+        overflow: "visible",
+        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, rgba(255,255,255,0.98) 100%)`,
         padding: `${20 - compactProgress * 8}px 20px ${28 - compactProgress * 18}px`,
-        boxShadow: compactProgress > 0.9 ? "0 8px 24px rgba(15,23,42,0.06)" : "none",
-        transition: "box-shadow 0.2s ease",
       }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 34%)" }} />
-        <header style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 * (1 - compactProgress) }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 40%)", opacity: expandedOpacity }} />
+        <div style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: fixedHeroHeight,
+          background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 56%, rgba(255,255,255,0) 100%)",
+          opacity: compactProgress,
+          pointerEvents: "none",
+        }} />
+        <header style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: 44,
+          marginBottom: 28 * (1 - compactProgress),
+        }}>
           <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
           <div style={{
             display: "flex",
@@ -345,9 +361,6 @@ export default function TimerPage() {
               {formatTime(myElapsed)}
             </span>
             <div style={{ position: "relative" }}>
-              {!isRunning && (
-                <TimerStartBubble message={startMessage} compact />
-              )}
               <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} compact />
             </div>
           </div>
