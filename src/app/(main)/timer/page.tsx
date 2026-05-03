@@ -303,16 +303,19 @@ export default function TimerPage() {
 
   const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
   const expandedOpacity = 1 - compactProgress;
-  const heroMinHeight = 252 - compactProgress * 176;
+  const heroHeight = 252 - compactProgress * 176;
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Timer Hero */}
       <div style={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 30,
-        minHeight: heroMinHeight,
+        height: heroHeight,
+        boxSizing: "border-box",
         overflow: "hidden",
         background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, #fff 100%)`,
         padding: `${20 - compactProgress * 8}px 20px ${28 - compactProgress * 18}px`,
@@ -381,8 +384,10 @@ export default function TimerPage() {
         </div>
       </div>
 
+      <div style={{ height: heroHeight }} />
+
       {/* Tabs */}
-      <div style={{ position: "sticky", top: 76, zIndex: 20, backgroundColor: "#fff", padding: "0 20px" }}>
+      <div style={{ position: "sticky", top: heroHeight, zIndex: 20, backgroundColor: "#fff", padding: "0 20px" }}>
         <div style={{ position: "relative", display: "flex", gap: 22, borderBottom: "1px solid #F3F4F6", overflowX: "auto", scrollbarWidth: "none" }}>
           {[
             { key: "status", label: "공부 현황" },
@@ -593,7 +598,7 @@ function TimerStartBubble({ message, compact = false }: { message: string; compa
     <div style={{
       position: "absolute",
       left: "50%",
-      bottom: compact ? 42 : 88,
+      bottom: compact ? 36 : 72,
       transform: "translateX(-50%)",
       minWidth: compact ? 92 : 112,
       padding: compact ? "7px 9px" : "8px 12px",
@@ -626,7 +631,7 @@ function TimerStartBubble({ message, compact = false }: { message: string; compa
 }
 
 function TimerControlButton({ isRunning, onClick, compact = false }: { isRunning: boolean; onClick: () => void; compact?: boolean }) {
-  const size = compact ? 38 : 78;
+  const size = compact ? 32 : 62;
   return (
     <button
       type="button"
@@ -647,12 +652,12 @@ function TimerControlButton({ isRunning, onClick, compact = false }: { isRunning
       }}
     >
       {isRunning ? (
-        <svg width={compact ? 14 : 23} height={compact ? 14 : 23} viewBox="0 0 24 24" fill="#fff">
+        <svg width={compact ? 12 : 19} height={compact ? 12 : 19} viewBox="0 0 24 24" fill="#fff">
           <rect x="6" y="5" width="4" height="14" rx="1"/>
           <rect x="14" y="5" width="4" height="14" rx="1"/>
         </svg>
       ) : (
-        <svg width={compact ? 15 : 25} height={compact ? 15 : 25} viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: compact ? 2 : 3 }}>
+        <svg width={compact ? 13 : 20} height={compact ? 13 : 20} viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: compact ? 2 : 3 }}>
           <polygon points="7,4 20,12 7,20" />
         </svg>
       )}
