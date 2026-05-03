@@ -60,6 +60,14 @@ const OFFLINE_FILL = "#E5E7EB";
 const LOCKED_BADGE_IMAGE = "/badges/locked.png";
 const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
 const DEFAULT_RESTING_AVATAR = "/timer/default-resting.png";
+const START_MESSAGES = [
+  "오늘도 화이팅!",
+  "도전해봐!",
+  "한 번 시작!",
+  "지금 딱 좋아!",
+  "가볍게 시작!",
+  "집중 가자!",
+];
 
 const BADGES = [
   { id: "baking", title: "첫 반죽", image: "/badges/baking.png", condition: "누적 공부 10분 달성", type: "total", target: 10 * 60 },
@@ -104,6 +112,8 @@ function formatHours(sec: number): string {
 
 export default function TimerPage() {
   const router = useRouter();
+  const [startMessage] = useState(() => START_MESSAGES[Math.floor(Math.random() * START_MESSAGES.length)]);
+  const [compactProgress, setCompactProgress] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [users, setUsers] = useState<TimerUser[]>([]);
   const [activeCount, setActiveCount] = useState(0);
@@ -128,6 +138,16 @@ export default function TimerPage() {
       .then((r) => r.json())
       .then((data) => setIsLoggedIn(!!data.user))
       .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const next = Math.min(1, Math.max(0, window.scrollY / 130));
+      setCompactProgress(next);
+    };
+    updateProgress();
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    return () => window.removeEventListener("scroll", updateProgress);
   }, []);
 
   const fetchData = async () => {
@@ -281,21 +301,64 @@ export default function TimerPage() {
   if (isLoggedIn === null) return null;
   if (isLoggedIn === false) return <LoginRequired />;
 
+  const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
+  const expandedOpacity = 1 - compactProgress;
+  const heroMinHeight = 252 - compactProgress * 176;
+
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Timer Hero */}
       <div style={{
-        position: "relative",
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+        minHeight: heroMinHeight,
         overflow: "hidden",
         background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, #fff 100%)`,
-        padding: "20px 20px 28px",
+        padding: `${20 - compactProgress * 8}px 20px ${28 - compactProgress * 18}px`,
+        boxShadow: compactProgress > 0.9 ? "0 8px 24px rgba(15,23,42,0.06)" : "none",
+        transition: "box-shadow 0.2s ease",
       }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 34%)" }} />
-        <header style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <header style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 * (1 - compactProgress) }}>
           <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            opacity: compactOpacity,
+            transform: `translateX(${18 - compactProgress * 18}px) scale(${0.94 + compactProgress * 0.06})`,
+            pointerEvents: compactProgress > 0.55 ? "auto" : "none",
+            transition: "opacity 0.12s linear",
+          }}>
+            <span style={{
+              fontSize: 19,
+              fontWeight: 800,
+              color: "#111827",
+              letterSpacing: 0,
+              fontVariantNumeric: "tabular-nums",
+              lineHeight: 1,
+            }}>
+              {formatTime(myElapsed)}
+            </span>
+            <div style={{ position: "relative" }}>
+              {!isRunning && (
+                <TimerStartBubble message={startMessage} compact />
+              )}
+              <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} compact />
+            </div>
+          </div>
         </header>
 
-        <div style={{ position: "relative", textAlign: "center" }}>
+        <div style={{
+          position: "relative",
+          textAlign: "center",
+          maxHeight: 176 * (1 - compactProgress),
+          opacity: expandedOpacity,
+          transform: `translateY(${-12 * compactProgress}px) scale(${1 - compactProgress * 0.12})`,
+          overflow: "hidden",
+          pointerEvents: compactProgress < 0.82 ? "auto" : "none",
+        }}>
           <p style={{ fontSize: 13, color: "#4A6BB0", fontWeight: 800, marginBottom: 10 }}>
             오늘 {formatShort(myTodayTotal)}
           </p>
@@ -311,38 +374,15 @@ export default function TimerPage() {
             {formatTime(myElapsed)}
           </p>
 
-          <button
-            type="button"
-            onClick={isRunning ? stop : start}
-            className="press"
-            style={{
-              width: 78,
-              height: 78,
-              borderRadius: "50%",
-              background: isRunning ? "#111827" : PRIMARY,
-              border: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: isRunning ? "0 16px 34px rgba(17,24,39,0.18)" : "0 16px 34px rgba(55,135,255,0.32)",
-            }}
-          >
-            {isRunning ? (
-              <svg width="23" height="23" viewBox="0 0 24 24" fill="#fff">
-                <rect x="6" y="5" width="4" height="14" rx="1"/>
-                <rect x="14" y="5" width="4" height="14" rx="1"/>
-              </svg>
-            ) : (
-              <svg width="25" height="25" viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: 3 }}>
-                <polygon points="7,4 20,12 7,20" />
-              </svg>
-            )}
-          </button>
+          <div style={{ position: "relative", display: "inline-flex", justifyContent: "center" }}>
+            {!isRunning && <TimerStartBubble message={startMessage} />}
+            <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} />
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, backgroundColor: "#fff", padding: "0 20px" }}>
+      <div style={{ position: "sticky", top: 76, zIndex: 20, backgroundColor: "#fff", padding: "0 20px" }}>
         <div style={{ position: "relative", display: "flex", gap: 22, borderBottom: "1px solid #F3F4F6", overflowX: "auto", scrollbarWidth: "none" }}>
           {[
             { key: "status", label: "공부 현황" },
@@ -545,6 +585,78 @@ export default function TimerPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+function TimerStartBubble({ message, compact = false }: { message: string; compact?: boolean }) {
+  return (
+    <div style={{
+      position: "absolute",
+      left: "50%",
+      bottom: compact ? 42 : 88,
+      transform: "translateX(-50%)",
+      minWidth: compact ? 92 : 112,
+      padding: compact ? "7px 9px" : "8px 12px",
+      borderRadius: 999,
+      background: "#fff",
+      border: "1px solid #DCE8FF",
+      color: PRIMARY_DARK,
+      fontSize: compact ? 11 : 12,
+      fontWeight: 900,
+      lineHeight: 1,
+      whiteSpace: "nowrap",
+      boxShadow: "0 10px 22px rgba(55,135,255,0.14)",
+      pointerEvents: "none",
+      zIndex: 2,
+    }}>
+      {message}
+      <span style={{
+        position: "absolute",
+        left: "50%",
+        bottom: -5,
+        width: 9,
+        height: 9,
+        background: "#fff",
+        borderRight: "1px solid #DCE8FF",
+        borderBottom: "1px solid #DCE8FF",
+        transform: "translateX(-50%) rotate(45deg)",
+      }} />
+    </div>
+  );
+}
+
+function TimerControlButton({ isRunning, onClick, compact = false }: { isRunning: boolean; onClick: () => void; compact?: boolean }) {
+  const size = compact ? 38 : 78;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: isRunning ? "#111827" : PRIMARY,
+        border: "none",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: compact
+          ? isRunning ? "0 8px 16px rgba(17,24,39,0.16)" : "0 8px 16px rgba(55,135,255,0.25)"
+          : isRunning ? "0 16px 34px rgba(17,24,39,0.18)" : "0 16px 34px rgba(55,135,255,0.32)",
+      }}
+    >
+      {isRunning ? (
+        <svg width={compact ? 14 : 23} height={compact ? 14 : 23} viewBox="0 0 24 24" fill="#fff">
+          <rect x="6" y="5" width="4" height="14" rx="1"/>
+          <rect x="14" y="5" width="4" height="14" rx="1"/>
+        </svg>
+      ) : (
+        <svg width={compact ? 15 : 25} height={compact ? 15 : 25} viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: compact ? 2 : 3 }}>
+          <polygon points="7,4 20,12 7,20" />
+        </svg>
+      )}
+    </button>
   );
 }
 
