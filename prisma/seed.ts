@@ -60,89 +60,6 @@ async function main() {
   const cat사회 = categories[2];
   const cat영어 = categories[7];
 
-  // Create workbooks
-  const workbook1 = await prisma.workbook.create({
-    data: {
-      title: "올리드 생활과 윤리",
-      categoryId: cat생활.id,
-      totalQuestions: 5,
-      questionPerPage: 12,
-    },
-  });
-
-  const workbook2 = await prisma.workbook.create({
-    data: {
-      title: "쎈 중등 수학 1-2",
-      categoryId: cat사회.id,
-      totalQuestions: 5,
-      questionPerPage: 12,
-    },
-  });
-
-  const workbook3 = await prisma.workbook.create({
-    data: {
-      title: "자이스토리",
-      categoryId: cat생활.id,
-      totalQuestions: 5,
-      questionPerPage: 12,
-    },
-  });
-
-  // Create problems for workbook1
-  const passages = [
-    "글을 읽고 그 의미를 이해하는 독해에는 글의 유형이나 독서 흥미 등의 다양한 요소가 영향을 미칠 수 있다. 이를 고려하여 독해 능력을 복잡한 과정으로 설명한 연구가 많다.",
-    "현대 사회에서 윤리적 소비란 소비자가 상품이나 서비스를 구매할 때 윤리적 가치를 고려하여 선택하는 행위를 말한다.",
-  ];
-
-  for (let i = 1; i <= 5; i++) {
-    await prisma.problem.create({
-      data: {
-        workbookId: workbook1.id,
-        order: i,
-        questionText: `다음 글을 읽고 물음에 답하시오. (문제 ${i})`,
-        passageImage: null,
-        choice1: `${i}번 문제 보기 ①`,
-        choice2: `${i}번 문제 보기 ②`,
-        choice3: `${i}번 문제 보기 ③`,
-        choice4: `${i}번 문제 보기 ④`,
-        choice5: `${i}번 문제 보기 ⑤`,
-        answer: ((i % 5) + 1),
-        explanation: `${i}번 문제의 정답은 ${(i % 5) + 1}번입니다. 이 문제는 지문의 핵심 내용을 파악하는 능력을 측정합니다.`,
-      },
-    });
-  }
-
-  // Create problems for workbook2 & 3
-  for (const wb of [workbook2, workbook3]) {
-    for (let i = 1; i <= 5; i++) {
-      await prisma.problem.create({
-        data: {
-          workbookId: wb.id,
-          order: i,
-          questionText: `${wb.title} - 문제 ${i}`,
-          choice1: "보기 ①",
-          choice2: "보기 ②",
-          choice3: "보기 ③",
-          choice4: "보기 ④",
-          choice5: "보기 ⑤",
-          answer: ((i % 5) + 1),
-          explanation: `정답: ${(i % 5) + 1}번`,
-        },
-      });
-    }
-  }
-
-  // Create quiz attempts for rankings
-  await prisma.quizAttempt.create({
-    data: { userId: user2.id, quizType: "workbook", workbookId: workbook1.id, score: 100, totalScore: 100, timeTaken: 792 },
-  });
-  await prisma.quizAttempt.create({
-    data: { userId: user3.id, quizType: "workbook", workbookId: workbook1.id, score: 100, totalScore: 100, timeTaken: 812 },
-  });
-  await prisma.quizAttempt.create({
-    data: { userId: user4.id, quizType: "workbook", workbookId: workbook1.id, score: 54, totalScore: 100, timeTaken: 2204 },
-  });
-
   // Create OX quiz sets
   const oxSet1 = await prisma.oxQuizSet.create({
     data: {
@@ -206,36 +123,6 @@ async function main() {
       },
     });
   }
-
-  // Create dummy reviews for workbook1
-  await prisma.review.createMany({
-    data: [
-      {
-        userId: user2.id,
-        workbookId: workbook1.id,
-        rating: 5,
-        content: "정말 유용한 문제집이에요! 시험 대비에 큰 도움이 되었습니다.",
-      },
-      {
-        userId: user3.id,
-        workbookId: workbook1.id,
-        rating: 4,
-        content: "문제 구성이 알차고 해설도 자세해서 좋았습니다. 다만 난이도가 조금 높은 편이에요.",
-      },
-      {
-        userId: user4.id,
-        workbookId: workbook1.id,
-        rating: 3,
-        content: "괜찮은 문제집입니다. 기본 개념을 다지기에 좋아요.",
-      },
-      {
-        userId: user2.id,
-        workbookId: workbook1.id,
-        rating: 5,
-        content: "두 번째로 풀었는데 점수가 많이 올랐어요. 반복 학습에 추천합니다!",
-      },
-    ],
-  });
 
   console.log("Seed complete!");
 }

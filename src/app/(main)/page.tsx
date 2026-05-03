@@ -1,8 +1,11 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
 import HomeClient from "@/components/HomeClient";
 
 export default async function HomePage() {
+  await ensureInitialWorkbookDataRemoved();
+
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;
 

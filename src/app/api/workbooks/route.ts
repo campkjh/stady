@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
 
 export async function GET(request: NextRequest) {
   try {
+    await ensureInitialWorkbookDataRemoved();
+
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("categoryId");
     const search = searchParams.get("search");
