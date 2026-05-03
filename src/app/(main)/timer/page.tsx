@@ -303,7 +303,7 @@ export default function TimerPage() {
 
   const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
   const expandedOpacity = 1 - compactProgress;
-  const heroHeight = 264 - compactProgress * 196;
+  const heroHeight = 292 - compactProgress * 256;
   const fixedHeroHeight = heroHeight + compactProgress * 20;
 
   return (
@@ -319,7 +319,7 @@ export default function TimerPage() {
         boxSizing: "border-box",
         overflow: "visible",
         background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, rgba(255,255,255,0.98) 100%)`,
-        padding: `${20 - compactProgress * 8}px 20px ${40 - compactProgress * 28}px`,
+        padding: `${20 - compactProgress * 12}px 20px ${64 - compactProgress * 56}px`,
       }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 40%)", opacity: expandedOpacity }} />
         <div style={{
@@ -337,7 +337,7 @@ export default function TimerPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: 44,
+          height: 44 - compactProgress * 8,
           marginBottom: 28 * (1 - compactProgress),
         }}>
           <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
