@@ -13,7 +13,8 @@ export async function getCurrentUser() {
   if (!userId) return null;
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (isMasterAdminEmail(user?.email)) {
+  if (!user) return null;
+  if (isMasterAdminEmail(user.email)) {
     return { ...user, role: "admin" };
   }
   return user;
