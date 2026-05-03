@@ -22,6 +22,13 @@ interface FriendRequest {
   avatar: string | null;
 }
 
+interface TimerStats {
+  totalStudySeconds: number;
+  activeDays: number;
+  streakDays: number;
+  completedSessionCount: number;
+}
+
 const PRIMARY = "#3787FF";
 const PRIMARY_DARK = "#1F5EDC";
 const PRIMARY_SOFT = "#E8F0FE";
@@ -29,6 +36,25 @@ const PRIMARY_SOFTER = "#F4F8FF";
 const ACCENT_BG = "#D3E4FF";
 const TEXT_MUTED = "#9CA3AF";
 const OFFLINE_FILL = "#E5E7EB";
+const LOCKED_BADGE_IMAGE = "/badges/locked.png";
+
+const BADGES = [
+  { id: "baking", title: "첫 반죽", image: "/badges/baking.png", condition: "누적 공부 10분 달성", type: "total", target: 10 * 60 },
+  { id: "garden", title: "새싹 물주기", image: "/badges/garden.png", condition: "누적 공부 30분 달성", type: "total", target: 30 * 60 },
+  { id: "cozy", title: "따뜻한 몰입", image: "/badges/cozy.png", condition: "누적 공부 1시간 달성", type: "total", target: 60 * 60 },
+  { id: "learning-rainbow", title: "탐구 스타터", image: "/badges/learning-rainbow.png", condition: "누적 공부 2시간 달성", type: "total", target: 2 * 60 * 60 },
+  { id: "focus-clock", title: "오늘의 집중", image: "/badges/focus-clock.png", condition: "오늘 공부 30분 달성", type: "today", target: 30 * 60 },
+  { id: "book-stack-purple", title: "책 위 휴식", image: "/badges/book-stack-purple.png", condition: "누적 공부 5시간 달성", type: "total", target: 5 * 60 * 60 },
+  { id: "reading-bolt", title: "번개 독서", image: "/badges/reading-bolt.png", condition: "누적 공부 10시간 달성", type: "total", target: 10 * 60 * 60 },
+  { id: "night-reading", title: "밤의 독서가", image: "/badges/night-reading.png", condition: "누적 공부 15시간 달성", type: "total", target: 15 * 60 * 60 },
+  { id: "seed-book", title: "성장의 씨앗", image: "/badges/seed-book.png", condition: "공부한 날 2일 달성", type: "activeDays", target: 2 },
+  { id: "book-stack-brown", title: "책탑 쌓기", image: "/badges/book-stack-brown.png", condition: "공부한 날 3일 달성", type: "activeDays", target: 3 },
+  { id: "hundred", title: "100분 트로피", image: "/badges/hundred.png", condition: "누적 공부 100분 달성", type: "total", target: 100 * 60 },
+  { id: "seven-day", title: "7일 행운", image: "/badges/seven-day.png", condition: "연속 공부 7일 달성", type: "streak", target: 7 },
+  { id: "crown-book", title: "왕관 독서", image: "/badges/crown-book.png", condition: "누적 공부 20시간 달성", type: "total", target: 20 * 60 * 60 },
+  { id: "check-note", title: "꼼꼼 체크", image: "/badges/check-note.png", condition: "완료한 타이머 10회 달성", type: "sessions", target: 10 },
+  { id: "thirty-day", title: "30일 인증", image: "/badges/thirty-day.png", condition: "연속 공부 30일 달성", type: "streak", target: 30 },
+] as const;
 
 function formatTime(sec: number): string {
   const h = Math.floor(sec / 3600);
@@ -59,6 +85,7 @@ export default function TimerPage() {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<TimerUser[]>([]);
+  const [myStats, setMyStats] = useState<TimerStats | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,6 +111,7 @@ export default function TimerPage() {
       } else {
         setIsRunning(false);
       }
+      setMyStats(data.myStats || null);
     } catch {}
     setLoading(false);
   };
@@ -338,6 +366,8 @@ export default function TimerPage() {
         </div>
       </div>
 
+      <BadgeCollection stats={myStats} todaySeconds={myTodayTotal} />
+
       {/* Tab content */}
       <div style={{ padding: "20px 20px 40px" }}>
         {loading ? (
@@ -493,6 +523,85 @@ export default function TimerPage() {
       `}</style>
     </div>
   );
+}
+
+function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; todaySeconds: number }) {
+  const unlockedCount = BADGES.filter((badge) => isBadgeUnlocked(badge, stats, todaySeconds)).length;
+
+  return (
+    <section style={{ padding: "0 20px 8px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>내 뱃지</h2>
+          <p style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>
+            {unlockedCount}/{BADGES.length} 해금
+          </p>
+        </div>
+        <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EEF5FF", color: PRIMARY, fontSize: 12, fontWeight: 900 }}>
+          연속 {stats?.streakDays || 0}일
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+        {BADGES.map((badge) => {
+          const unlocked = isBadgeUnlocked(badge, stats, todaySeconds);
+          return (
+            <div
+              key={badge.id}
+              style={{
+                minHeight: 154,
+                borderRadius: 16,
+                border: "1px solid #EEF2F7",
+                background: unlocked ? "#fff" : "#F9FAFB",
+                padding: 9,
+                textAlign: "center",
+                overflow: "hidden",
+                boxShadow: unlocked ? "0 8px 18px rgba(15,23,42,0.05)" : "none",
+              }}
+            >
+              <div style={{ position: "relative", width: "100%", aspectRatio: "1/1", marginBottom: 6 }}>
+                <img
+                  src={unlocked ? badge.image : LOCKED_BADGE_IMAGE}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    opacity: unlocked ? 1 : 0.42,
+                    filter: unlocked ? "none" : "grayscale(0.15)",
+                  }}
+                />
+                {!unlocked && (
+                  <span style={{ position: "absolute", left: "50%", bottom: 5, transform: "translateX(-50%)", padding: "4px 8px", borderRadius: 999, background: "rgba(17,24,39,0.76)", color: "#fff", fontSize: 11, fontWeight: 900, whiteSpace: "nowrap" }}>
+                    미해금
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, fontWeight: 900, color: unlocked ? "#111827" : "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {badge.title}
+              </p>
+              <p style={{ marginTop: 3, fontSize: 10.5, lineHeight: 1.25, color: TEXT_MUTED, fontWeight: 700 }}>
+                {badge.condition}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function isBadgeUnlocked(
+  badge: (typeof BADGES)[number],
+  stats: TimerStats | null,
+  todaySeconds: number
+) {
+  if (!stats) return false;
+  if (badge.type === "today") return todaySeconds >= badge.target;
+  if (badge.type === "total") return stats.totalStudySeconds >= badge.target;
+  if (badge.type === "activeDays") return stats.activeDays >= badge.target;
+  if (badge.type === "streak") return stats.streakDays >= badge.target;
+  return stats.completedSessionCount >= badge.target;
 }
 
 function Avatar({ user, size }: { user: { nickname?: string; avatar: string | null }; size: number }) {

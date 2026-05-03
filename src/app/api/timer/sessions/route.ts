@@ -77,15 +77,59 @@ export async function GET() {
 
     const activeCount = userCards.filter((u) => u.isActive).length;
     const mySession = userCards.find((u) => u.isMe && u.isActive) || null;
+    const myStats = me ? await getMyTimerStats(me.id, now) : null;
 
     return NextResponse.json({
       users: userCards,
       activeCount,
       totalCount: userCards.length,
       mySession,
+      myStats,
     });
   } catch (error) {
     console.error("Timer sessions error:", error);
     return NextResponse.json({ error: "세션 조회 중 오류가 발생했습니다." }, { status: 500 });
   }
+}
+
+function dayKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+async function getMyTimerStats(userId: string, now: number) {
+  const sessions = await prisma.studySession.findMany({
+    where: { userId },
+    select: { startedAt: true, endedAt: true, totalSeconds: true },
+  });
+
+  let activeElapsedSeconds = 0;
+  const dayKeys = new Set<string>();
+  const completedSessionCount = sessions.filter((session) => session.endedAt).length;
+  const completedTotalSeconds = sessions.reduce((sum, session) => sum + session.totalSeconds, 0);
+
+  for (const session of sessions) {
+    dayKeys.add(dayKey(session.startedAt));
+    if (!session.endedAt) {
+      activeElapsedSeconds += Math.max(0, Math.floor((now - session.startedAt.getTime()) / 1000));
+    }
+  }
+
+  let streakDays = 0;
+  for (let i = 0; i < 365; i++) {
+    const key = dayKey(new Date(now - i * 24 * 60 * 60 * 1000));
+    if (!dayKeys.has(key)) break;
+    streakDays += 1;
+  }
+
+  return {
+    totalStudySeconds: completedTotalSeconds + activeElapsedSeconds,
+    activeDays: dayKeys.size,
+    streakDays,
+    completedSessionCount,
+  };
 }
