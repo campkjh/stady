@@ -511,13 +511,8 @@ export default function VocabQuizSolvePage() {
             {/* Result indicator */}
             {answered && (
               <div style={{ marginTop: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "resultFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)", position: "relative", zIndex: 10 }}>
-                <img
-                  src={answered.isCorrect ? "/icons/quiz-o.svg" : "/icons/quiz-x.svg"}
-                  alt={answered.isCorrect ? "O" : "X"}
-                  style={{ width: 64, height: 64 }}
-                />
-                <p style={{ fontSize: 16, fontWeight: 700, color: answered.isCorrect ? "#3787FF" : "#E85D5D" }}>
-                  {answered.isCorrect ? "정답" : "아니다"}
+                <p style={{ fontSize: 28, fontWeight: 900, color: answered.isCorrect ? "#3787FF" : "#E85D5D" }}>
+                  {answered.isCorrect ? "정답" : "오답"}
                 </p>
                 {currentQuestion.explanation && (
                   <div style={{ width: "100%", padding: "14px 16px", borderRadius: 12, backgroundColor: "#F9FAFB", marginTop: 4 }}>
@@ -713,11 +708,10 @@ function ResultOverlay({
 }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 420, background: "#fff", display: "flex", flexDirection: "column", maxWidth: 500, margin: "0 auto" }}>
-      <button type="button" onClick={onPrev} disabled={prevDisabled} aria-label="이전 문제" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "34%", border: "none", background: "transparent", opacity: prevDisabled ? 0.3 : 1 }} />
-      <button type="button" onClick={onNext} disabled={nextDisabled} aria-label="다음 문제" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "34%", border: "none", background: "transparent", opacity: nextDisabled ? 0.3 : 1 }} />
+      <button type="button" onClick={onPrev} disabled={prevDisabled} aria-label="이전 문제" className="result-nav-zone" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "50%", border: "none", background: "transparent", opacity: prevDisabled ? 0.25 : 1 }} />
+      <button type="button" onClick={onNext} disabled={nextDisabled} aria-label="다음 문제" className="result-nav-zone" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "50%", border: "none", background: "transparent", opacity: nextDisabled ? 0.25 : 1 }} />
       <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, pointerEvents: "none" }}>
-        <img src={isCorrect ? "/icons/quiz-o.svg" : "/icons/quiz-x.svg"} alt={isCorrect ? "O" : "X"} style={{ width: 116, height: 116, marginBottom: 20 }} />
-        <h2 style={{ fontSize: 30, fontWeight: 900, color: isCorrect ? "#3787FF" : "#E85D5D", marginBottom: 8 }}>
+        <h2 style={{ fontSize: 44, fontWeight: 900, color: isCorrect ? "#3787FF" : "#E85D5D", marginBottom: 10 }}>
           {isCorrect ? "정답" : "오답"}
         </h2>
         <p style={{ fontSize: 15, color: "#6B7280", fontWeight: 700, marginBottom: explanation ? 18 : 0 }}>
@@ -736,6 +730,14 @@ function ResultOverlay({
         <span style={{ fontSize: 13, color: prevDisabled ? "#D1D5DB" : "#9CA3AF", fontWeight: 800 }}>이전</span>
         <span style={{ fontSize: 13, color: nextDisabled ? "#D1D5DB" : "#9CA3AF", fontWeight: 800 }}>다음</span>
       </div>
+      <style>{`
+        .result-nav-zone {
+          transition: background-color 0.12s ease;
+        }
+        .result-nav-zone:not(:disabled):active {
+          background-color: rgba(17, 24, 39, 0.08) !important;
+        }
+      `}</style>
     </div>
   );
 }
