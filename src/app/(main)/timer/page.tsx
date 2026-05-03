@@ -29,6 +29,24 @@ interface TimerStats {
   completedSessionCount: number;
 }
 
+interface TimerAnalysisDay {
+  date: string;
+  totalSeconds: number;
+  sessionCount: number;
+  memo: string;
+}
+
+interface TimerAnalysis {
+  days: TimerAnalysisDay[];
+  summary: {
+    totalSeconds: number;
+    activeDays: number;
+    averageSeconds: number;
+    bestDay: TimerAnalysisDay | null;
+    recent7TotalSeconds: number;
+  };
+}
+
 const PRIMARY = "#3787FF";
 const PRIMARY_DARK = "#1F5EDC";
 const PRIMARY_SOFT = "#E8F0FE";
@@ -72,6 +90,15 @@ function formatShort(sec: number): string {
   return `${m}분`;
 }
 
+function formatHours(sec: number): string {
+  if (sec <= 0) return "0시간";
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}시간 ${m}분`;
+  if (h > 0) return `${h}시간`;
+  return `${m}분`;
+}
+
 export default function TimerPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [users, setUsers] = useState<TimerUser[]>([]);
@@ -82,12 +109,14 @@ export default function TimerPage() {
   const [subject, setSubject] = useState("공부중");
   const [editingSubject, setEditingSubject] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges">("status");
+  const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges" | "analysis">("status");
   const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<TimerUser[]>([]);
   const [myStats, setMyStats] = useState<TimerStats | null>(null);
+  const [analysis, setAnalysis] = useState<TimerAnalysis | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
@@ -129,6 +158,19 @@ export default function TimerPage() {
     } catch {}
   };
 
+  const fetchAnalysis = async () => {
+    setAnalysisLoading(true);
+    try {
+      const res = await fetch("/api/timer/analysis");
+      if (!res.ok) return;
+      const data = await res.json();
+      setAnalysis(data);
+    } catch {
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isLoggedIn !== true) return;
     fetchData();
@@ -141,6 +183,12 @@ export default function TimerPage() {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn === true && activeTab === "analysis" && !analysis) {
+      fetchAnalysis();
+    }
+  }, [isLoggedIn, activeTab, analysis]);
 
   const sendFriendRequest = async (userId: string) => {
     await fetch("/api/timer/friends", {
@@ -193,6 +241,7 @@ export default function TimerPage() {
     setIsRunning(false);
     setMyElapsed(0);
     fetchData();
+    if (analysis) fetchAnalysis();
   };
 
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
@@ -231,13 +280,14 @@ export default function TimerPage() {
             { key: "ranking", label: "오늘 공부 시간" },
             { key: "friends", label: `친구${incomingRequests.length > 0 ? ` ${incomingRequests.length}` : ""}` },
             { key: "badges", label: "뱃지" },
+            { key: "analysis", label: "분석" },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends" | "badges")}
+                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends" | "badges" | "analysis")}
                 data-tab={tab.key}
                 style={{
                   position: "relative", padding: "10px 0",
@@ -468,9 +518,15 @@ export default function TimerPage() {
             )}
           </div>
         ) : (
+          activeTab === "badges" ? (
           <div key="badges" className="timer-tab-panel">
             <BadgeCollection stats={myStats} todaySeconds={myTodayTotal} />
           </div>
+          ) : (
+            <div key="analysis" className="timer-tab-panel">
+              <StudyAnalysis analysis={analysis} loading={analysisLoading} onRefresh={fetchAnalysis} />
+            </div>
+          )
         )}
       </div>
 
@@ -585,6 +641,179 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
         })}
       </div>
     </section>
+  );
+}
+
+function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalysis | null; loading: boolean; onRefresh: () => void }) {
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [memo, setMemo] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!analysis?.days.length) return;
+    const latest = analysis.days[analysis.days.length - 1];
+    setSelectedDate((prev) => prev || latest.date);
+  }, [analysis]);
+
+  const days = analysis?.days || [];
+  const selectedDay = days.find((day) => day.date === selectedDate) || days[days.length - 1] || null;
+
+  useEffect(() => {
+    setMemo(selectedDay?.memo || "");
+  }, [selectedDay?.date, selectedDay?.memo]);
+
+  const saveMemo = async () => {
+    if (!selectedDay) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/timer/analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: selectedDay.date, memo }),
+      });
+      if (res.ok) onRefresh();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading && !analysis) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
+        <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div style={{ padding: 28, borderRadius: 18, background: "#F9FAFB", border: "1px solid #F3F4F6", textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "#6B7280", fontWeight: 800 }}>분석 정보를 불러오지 못했어요.</p>
+        <button type="button" onClick={onRefresh} style={{ marginTop: 12, height: 38, padding: "0 14px", border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 900 }}>다시 불러오기</button>
+      </div>
+    );
+  }
+
+  const maxSeconds = Math.max(...analysis.days.map((day) => day.totalSeconds), 1);
+  const recent7 = analysis.days.slice(-7);
+  const topDays = [...analysis.days].sort((a, b) => b.totalSeconds - a.totalSeconds).slice(0, 5);
+  const firstDate = new Date(`${analysis.days[0]?.date || ""}T00:00:00`);
+  const leadingBlankCount = Number.isNaN(firstDate.getTime()) ? 0 : (firstDate.getDay() + 6) % 7;
+
+  return (
+    <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        <AnalysisStat label="최근 35일" value={formatHours(analysis.summary.totalSeconds)} />
+        <AnalysisStat label="공부한 날" value={`${analysis.summary.activeDays}일`} />
+        <AnalysisStat label="평균" value={formatHours(analysis.summary.averageSeconds)} />
+      </div>
+
+      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>공부 달력</h2>
+          <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 800 }}>최근 5주</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+          {["월", "화", "수", "목", "금", "토", "일"].map((day) => (
+            <span key={day} style={{ textAlign: "center", fontSize: 11, color: TEXT_MUTED, fontWeight: 900 }}>{day}</span>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+          {Array.from({ length: leadingBlankCount }).map((_, index) => (
+            <span key={`blank-${index}`} />
+          ))}
+          {analysis.days.map((day) => {
+            const active = day.date === selectedDay?.date;
+            const intensity = day.totalSeconds / maxSeconds;
+            const bg = day.totalSeconds > 0 ? `rgba(55,135,255,${0.16 + intensity * 0.72})` : "#F3F4F6";
+            return (
+              <button
+                key={day.date}
+                type="button"
+                onClick={() => setSelectedDate(day.date)}
+                style={{
+                  aspectRatio: "1/1",
+                  borderRadius: 10,
+                  border: active ? `2px solid ${PRIMARY}` : "1px solid transparent",
+                  background: bg,
+                  color: day.totalSeconds > maxSeconds * 0.55 ? "#fff" : "#111827",
+                  fontSize: 10,
+                  fontWeight: 900,
+                  padding: 0,
+                }}
+              >
+                {Number(day.date.slice(-2))}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {selectedDay && (
+        <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+            <div>
+              <p style={{ fontSize: 13, color: TEXT_MUTED, fontWeight: 800 }}>{selectedDay.date}</p>
+              <h3 style={{ marginTop: 2, fontSize: 18, color: "#111", fontWeight: 900 }}>{formatHours(selectedDay.totalSeconds)}</h3>
+            </div>
+            <span style={{ padding: "7px 10px", borderRadius: 999, background: PRIMARY_SOFTER, color: PRIMARY, fontSize: 12, fontWeight: 900 }}>
+              {selectedDay.sessionCount}회
+            </span>
+          </div>
+          <textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="오늘 공부 메모를 남겨보세요."
+            maxLength={500}
+            style={{ width: "100%", minHeight: 92, resize: "vertical", borderRadius: 14, border: "1px solid #E5E7EB", background: "#F9FAFB", padding: 12, color: "#111", fontSize: 14, lineHeight: 1.5, outline: "none" }}
+          />
+          <button type="button" onClick={saveMemo} disabled={saving} style={{ marginTop: 8, width: "100%", height: 42, border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 14, fontWeight: 900 }}>
+            {saving ? "저장 중" : "메모 저장"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111", marginBottom: 12 }}>최근 7일 그래프</h2>
+        <div style={{ height: 150, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", alignItems: "end", gap: 8 }}>
+          {recent7.map((day) => {
+            const height = Math.max(8, Math.round((day.totalSeconds / maxSeconds) * 132));
+            return (
+              <div key={day.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div title={formatHours(day.totalSeconds)} style={{ width: "100%", height, borderRadius: "10px 10px 4px 4px", background: day.totalSeconds > 0 ? PRIMARY : "#E5E7EB" }} />
+                <span style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: 800 }}>{Number(day.date.slice(-2))}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", overflow: "hidden" }}>
+        <div style={{ padding: 14, borderBottom: "1px solid #F3F4F6" }}>
+          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>공부 분석 표</h2>
+        </div>
+        {[
+          { label: "가장 많이 공부한 날", value: analysis.summary.bestDay ? `${analysis.summary.bestDay.date} · ${formatHours(analysis.summary.bestDay.totalSeconds)}` : "-" },
+          { label: "최근 7일 합계", value: formatHours(analysis.summary.recent7TotalSeconds) },
+          { label: "공부한 날 평균", value: formatHours(analysis.summary.averageSeconds) },
+          { label: "상위 기록", value: topDays.filter((day) => day.totalSeconds > 0).map((day) => `${day.date.slice(5)} ${formatHours(day.totalSeconds)}`).join(" / ") || "-" },
+        ].map((row, index) => (
+          <div key={row.label} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, padding: "12px 14px", borderBottom: index === 3 ? "none" : "1px solid #F3F4F6" }}>
+            <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 900 }}>{row.label}</span>
+            <span style={{ fontSize: 13, color: "#111827", fontWeight: 800, lineHeight: 1.45 }}>{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AnalysisStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ minHeight: 72, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, padding: 12 }}>
+      <p style={{ fontSize: 11, color: "#4A6BB0", fontWeight: 900 }}>{label}</p>
+      <p style={{ marginTop: 7, fontSize: 15, color: "#111827", fontWeight: 900, lineHeight: 1.2 }}>{value}</p>
+    </div>
   );
 }
 
