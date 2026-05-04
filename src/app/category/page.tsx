@@ -122,7 +122,7 @@ function CategoryContent() {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  backgroundColor: isSelected ? "#EBF0FF" : "#F9FAFB",
+                  backgroundColor: isSelected ? "#EBF0FF" : "#F2F2F6",
                   border: isSelected ? "2px solid #4A90D9" : "1px solid #F3F4F6",
                   display: "flex",
                   alignItems: "center",

@@ -244,7 +244,7 @@ export default function HomeClient({
                   width: "100%",
                   aspectRatio: "1/1",
                   borderRadius: "50%",
-                  backgroundColor: "#F9FAFB",
+                  backgroundColor: "#F2F2F6",
                   border: "1px solid #F3F4F6",
                   display: "flex",
                   alignItems: "center",
