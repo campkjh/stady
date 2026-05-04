@@ -56,6 +56,14 @@ const PRIMARY_SOFT = "#E8F0FE";
 const PRIMARY_SOFTER = "#F4F8FF";
 const ACCENT_BG = "#D3E4FF";
 const TEXT_MUTED = "#9CA3AF";
+
+const TIMER_TABS = [
+  { key: "status" as const, label: "공부현황", icon: "/timer/tab-status.png" },
+  { key: "ranking" as const, label: "투데이랭킹", icon: "/timer/tab-ranking.png" },
+  { key: "friends" as const, label: "친구", icon: "/timer/tab-friends.png" },
+  { key: "badges" as const, label: "뱃지", icon: "/timer/tab-badge.png" },
+  { key: "analysis" as const, label: "분석", icon: "/timer/tab-analysis.png" },
+];
 const OFFLINE_FILL = "#E5E7EB";
 const LOCKED_BADGE_IMAGE = "/badges/locked.png";
 const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
@@ -113,7 +121,6 @@ function formatHours(sec: number): string {
 export default function TimerPage() {
   const router = useRouter();
   const [startMessage] = useState(() => START_MESSAGES[Math.floor(Math.random() * START_MESSAGES.length)]);
-  const [compactProgress, setCompactProgress] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [users, setUsers] = useState<TimerUser[]>([]);
   const [activeCount, setActiveCount] = useState(0);
@@ -138,16 +145,6 @@ export default function TimerPage() {
       .then((r) => r.json())
       .then((data) => setIsLoggedIn(!!data.user))
       .catch(() => setIsLoggedIn(false));
-  }, []);
-
-  useEffect(() => {
-    const updateProgress = () => {
-      const next = Math.min(1, Math.max(0, window.scrollY / 130));
-      setCompactProgress(next);
-    };
-    updateProgress();
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    return () => window.removeEventListener("scroll", updateProgress);
   }, []);
 
   const fetchData = async () => {
@@ -298,140 +295,176 @@ export default function TimerPage() {
     [users]
   );
 
+  const topFriendChips = useMemo(
+    () =>
+      [...users]
+        .filter((u) => !u.isMe && u.todayTotalSeconds > 0)
+        .sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds)
+        .slice(0, 3),
+    [users]
+  );
+
   if (isLoggedIn === null) return null;
   if (isLoggedIn === false) return <LoginRequired />;
 
-  const compactOpacity = compactProgress > 0.14 ? compactProgress : 0;
-  const expandedOpacity = 1 - compactProgress;
-  const heroHeight = 260 - compactProgress * 224;
-  const fixedHeroHeight = heroHeight + compactProgress * 20;
-
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
-      {/* Timer Hero */}
+      {/* Title */}
+      <header style={{ padding: "20px 20px 16px" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: "#111" }}>타이머</h1>
+      </header>
+
+      {/* Main timer row: clock on left, bubble + play on right */}
       <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 30,
-        height: fixedHeroHeight,
-        boxSizing: "border-box",
-        overflow: "visible",
-        background: `linear-gradient(180deg, ${PRIMARY_SOFTER} 0%, ${PRIMARY_SOFTER} 55%, #ffffff 100%)`,
-        padding: `${20 - compactProgress * 12}px 20px ${20 - compactProgress * 12}px`,
+        padding: "0 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        marginBottom: 14,
       }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 82% 8%, rgba(55,135,255,0.16), transparent 40%)", opacity: expandedOpacity }} />
-        <div style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          height: fixedHeroHeight,
-          background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.9) 56%, rgba(255,255,255,0) 100%)",
-          opacity: compactProgress,
-          pointerEvents: "none",
-        }} />
-        <header style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: 44 - compactProgress * 8,
-          marginBottom: 28 * (1 - compactProgress),
+        <p style={{
+          fontSize: 40,
+          fontWeight: 900,
+          color: "#111",
+          letterSpacing: -1,
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1,
+          margin: 0,
+          whiteSpace: "nowrap",
         }}>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: "#111" }}>타이머</h1>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            opacity: compactOpacity,
-            transform: `translateX(${18 - compactProgress * 18}px) scale(${0.94 + compactProgress * 0.06})`,
-            pointerEvents: compactProgress > 0.55 ? "auto" : "none",
-            transition: "opacity 0.12s linear",
-          }}>
-            <span style={{
-              fontSize: 19,
+          {formatTime(myElapsed)}
+        </p>
+        <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
+          {!isRunning && (
+            <div style={{
+              position: "absolute",
+              right: 56,
+              top: -10,
+              padding: "8px 14px",
+              borderRadius: 999,
+              background: "#fff",
+              border: "1px solid #E5E7EB",
+              color: "#111",
+              fontSize: 13,
               fontWeight: 800,
-              color: "#111827",
-              letterSpacing: 0,
-              fontVariantNumeric: "tabular-nums",
-              lineHeight: 1,
+              whiteSpace: "nowrap",
+              boxShadow: "0 6px 16px rgba(15,23,42,0.06)",
+              pointerEvents: "none",
             }}>
-              {formatTime(myElapsed)}
-            </span>
-            <div style={{ position: "relative" }}>
-              <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} compact />
+              {startMessage}
             </div>
-          </div>
-        </header>
+          )}
+          <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} />
+        </div>
+      </div>
 
+      {/* Friend chips */}
+      {topFriendChips.length > 0 && (
         <div style={{
-          position: "relative",
-          textAlign: "center",
-          maxHeight: 176 * (1 - compactProgress),
-          opacity: expandedOpacity,
-          transform: `translateY(${-12 * compactProgress}px) scale(${1 - compactProgress * 0.12})`,
-          overflow: "hidden",
-          pointerEvents: compactProgress < 0.82 ? "auto" : "none",
+          padding: "0 20px",
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          marginBottom: 18,
         }}>
-          <p style={{ fontSize: 13, color: "#4A6BB0", fontWeight: 800, marginBottom: 10 }}>
-            오늘 {formatShort(myTodayTotal)}
-          </p>
-          <p style={{
-            fontSize: 58,
-            fontWeight: 700,
-            color: "#111827",
-            letterSpacing: 0,
-            fontVariantNumeric: "tabular-nums",
-            lineHeight: 1,
-            marginBottom: 18,
-          }}>
-            {formatTime(myElapsed)}
-          </p>
-
-          <div style={{ position: "relative", display: "inline-flex", justifyContent: "center" }}>
-            {!isRunning && <TimerStartBubble message={startMessage} />}
-            <TimerControlButton isRunning={isRunning} onClick={isRunning ? stop : start} />
-          </div>
+          {topFriendChips.map((u) => (
+            <button
+              key={u.userId}
+              type="button"
+              onClick={() => setSelectedUser(u)}
+              style={{
+                flexShrink: 0,
+                padding: "7px 12px",
+                borderRadius: 999,
+                background: "#F3F4F6",
+                color: "#374151",
+                fontSize: 13,
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              {u.nickname} {formatShort(u.todayTotalSeconds)}
+            </button>
+          ))}
         </div>
-      </div>
+      )}
 
-      <div style={{ height: heroHeight }} />
+      <div style={{ height: 1, background: "#F3F4F6" }} />
 
-      {/* Tabs */}
-      <div style={{ position: "sticky", top: heroHeight, zIndex: 20, backgroundColor: "#fff", padding: "0 20px" }}>
-        <div style={{ position: "relative", display: "flex", gap: 22, borderBottom: "1px solid #F3F4F6", overflowX: "auto", scrollbarWidth: "none" }}>
-          {[
-            { key: "status", label: "공부 현황" },
-            { key: "ranking", label: "오늘 공부 시간" },
-            { key: "friends", label: `친구${incomingRequests.length > 0 ? ` ${incomingRequests.length}` : ""}` },
-            { key: "badges", label: "뱃지" },
-            { key: "analysis", label: "분석" },
-          ].map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key as "status" | "ranking" | "friends" | "badges" | "analysis")}
-                data-tab={tab.key}
-                style={{
-                  position: "relative", padding: "12px 0 10px",
-                  background: "none", border: "none", borderBottom: isActive ? `2.5px solid ${PRIMARY}` : "2.5px solid transparent", cursor: "pointer",
-                  fontSize: 15, fontWeight: 700,
-                  color: isActive ? PRIMARY : TEXT_MUTED,
-                  transition: "color 0.25s ease, border-color 0.25s ease",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
+      {/* Icon Tabs */}
+      <div style={{
+        padding: "16px 12px 12px",
+        display: "flex",
+        gap: 4,
+        overflowX: "auto",
+        scrollbarWidth: "none",
+      }}>
+        {TIMER_TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const requestBadge = tab.key === "friends" && incomingRequests.length > 0 ? incomingRequests.length : 0;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1,
+                minWidth: 64,
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 0",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ position: "relative", width: 60, height: 60 }}>
+                <img
+                  src={tab.icon}
+                  alt=""
+                  style={{ width: 60, height: 60, objectFit: "contain", display: "block" }}
+                />
+                {requestBadge > 0 && (
+                  <span style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    minWidth: 18,
+                    height: 18,
+                    padding: "0 5px",
+                    borderRadius: 9,
+                    background: "#E85D5D",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    {requestBadge}
+                  </span>
+                )}
+              </div>
+              <span style={{
+                fontSize: 13,
+                fontWeight: isActive ? 800 : 600,
+                color: isActive ? "#111" : "#9CA3AF",
+              }}>
                 {tab.label}
-              </button>
-            );
-          })}
-        </div>
+              </span>
+            </button>
+          );
+        })}
       </div>
+
+      <div style={{ height: 1, background: "#F3F4F6" }} />
 
       {/* Tab content */}
       <div style={{ padding: "20px 20px 40px" }}>
@@ -602,43 +635,6 @@ export default function TimerPage() {
           transform-origin: top center;
         }
       `}</style>
-    </div>
-  );
-}
-
-function TimerStartBubble({ message, compact = false }: { message: string; compact?: boolean }) {
-  return (
-    <div style={{
-      position: "absolute",
-      left: "50%",
-      bottom: compact ? 36 : 72,
-      transform: "translateX(-50%)",
-      minWidth: compact ? 92 : 112,
-      padding: compact ? "7px 9px" : "8px 12px",
-      borderRadius: 999,
-      background: "#fff",
-      border: "1px solid #DCE8FF",
-      color: PRIMARY_DARK,
-      fontSize: compact ? 11 : 12,
-      fontWeight: 900,
-      lineHeight: 1,
-      whiteSpace: "nowrap",
-      boxShadow: "0 10px 22px rgba(55,135,255,0.14)",
-      pointerEvents: "none",
-      zIndex: 2,
-    }}>
-      {message}
-      <span style={{
-        position: "absolute",
-        left: "50%",
-        bottom: -5,
-        width: 9,
-        height: 9,
-        background: "#fff",
-        borderRight: "1px solid #DCE8FF",
-        borderBottom: "1px solid #DCE8FF",
-        transform: "translateX(-50%) rotate(45deg)",
-      }} />
     </div>
   );
 }
