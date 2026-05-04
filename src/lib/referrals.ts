@@ -77,6 +77,40 @@ export async function registerReferralInvite(inviteeId: string, rawInviteCode: u
   return { applied: true };
 }
 
+export interface ReferralPair {
+  id: string;
+  invitedAt: Date;
+  inviterId: string;
+  inviterNickname: string;
+  inviterAvatar: string | null;
+  inviteeId: string;
+  inviteeNickname: string;
+  inviteeAvatar: string | null;
+  inviteCode: string;
+}
+
+export async function getAllReferrals(): Promise<ReferralPair[]> {
+  await ensureReferralTable();
+  return prisma.$queryRawUnsafe<ReferralPair[]>(
+    `
+      SELECT
+        r."id",
+        r."createdAt" AS "invitedAt",
+        r."inviteCode",
+        inviter."id"       AS "inviterId",
+        inviter."nickname" AS "inviterNickname",
+        inviter."avatar"   AS "inviterAvatar",
+        invitee."id"       AS "inviteeId",
+        invitee."nickname" AS "inviteeNickname",
+        invitee."avatar"   AS "inviteeAvatar"
+      FROM "ReferralInvite" r
+      JOIN "User" inviter ON inviter."id" = r."inviterId"
+      JOIN "User" invitee ON invitee."id" = r."inviteeId"
+      ORDER BY r."createdAt" DESC
+    `
+  );
+}
+
 export async function getReferralSummary(userId: string) {
   await ensureReferralTable();
 

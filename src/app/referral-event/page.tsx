@@ -13,12 +13,26 @@ interface Invitee {
   invitedAt: string;
 }
 
+interface ReferralPair {
+  id: string;
+  invitedAt: string;
+  inviterId: string;
+  inviterNickname: string;
+  inviterAvatar: string | null;
+  inviteeId: string;
+  inviteeNickname: string;
+  inviteeAvatar: string | null;
+  inviteCode: string;
+}
+
 interface ReferralSummary {
   inviteCode: string;
   invitedCount: number;
   canClaimThreeMonths: boolean;
   canClaimSixMonths: boolean;
   invitees: Invitee[];
+  isMasterAdmin?: boolean;
+  allReferrals?: ReferralPair[];
 }
 
 const primary = "#3787FF";
@@ -132,7 +146,56 @@ export default function ReferralEventPage() {
             ))}
           </div>
         </section>
+
+        {summary?.isMasterAdmin && (
+          <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "#fff", boxShadow: "0 8px 22px rgba(15,23,42,0.06)", border: `1.5px solid ${primary}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <span style={{ display: "inline-block", padding: "3px 8px", borderRadius: 6, background: primary, color: "#fff", fontSize: 11, fontWeight: 900, marginBottom: 6 }}>
+                  마스터
+                </span>
+                <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111827" }}>전체 초대 내역</h2>
+              </div>
+              <span style={{ padding: "6px 10px", borderRadius: 999, background: "#EEF5FF", color: primary, fontSize: 13, fontWeight: 900 }}>
+                {summary.allReferrals?.length || 0}건
+              </span>
+            </div>
+
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+              {summary.allReferrals && summary.allReferrals.length === 0 && (
+                <EmptyText text="아직 등록된 초대 내역이 없어요." />
+              )}
+              {summary.allReferrals?.map((pair) => (
+                <div key={pair.id} style={{ padding: 12, borderRadius: 14, background: "#F9FBFF", display: "flex", alignItems: "center", gap: 10 }}>
+                  <ReferralAvatar nickname={pair.inviterNickname} avatar={pair.inviterAvatar} />
+                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {pair.inviterNickname}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 700 }}>초대한 사람</p>
+                  </div>
+                  <span style={{ color: primary, fontSize: 18, fontWeight: 900, flexShrink: 0 }}>→</span>
+                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {pair.inviteeNickname}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 700 }}>{new Date(pair.invitedAt).toLocaleDateString("ko-KR")}</p>
+                  </div>
+                  <ReferralAvatar nickname={pair.inviteeNickname} avatar={pair.inviteeAvatar} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ReferralAvatar({ nickname, avatar }: { nickname: string; avatar: string | null }) {
+  return (
+    <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "#E8F0FE", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+      {avatar ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : nickname.slice(0, 1)}
     </div>
   );
 }

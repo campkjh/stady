@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
-import { getReferralSummary } from "@/lib/referrals";
+import { isMasterAdminEmail, requireUser } from "@/lib/auth";
+import { getAllReferrals, getReferralSummary } from "@/lib/referrals";
 
 export const runtime = "nodejs";
 
@@ -8,6 +8,10 @@ export async function GET() {
   try {
     const user = await requireUser();
     const summary = await getReferralSummary(user.id);
+    if (isMasterAdminEmail(user.email)) {
+      const allReferrals = await getAllReferrals();
+      return NextResponse.json({ ...summary, isMasterAdmin: true, allReferrals });
+    }
     return NextResponse.json(summary);
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
