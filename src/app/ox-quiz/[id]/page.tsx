@@ -453,7 +453,7 @@ export default function OxQuizSolvePage() {
                   </span>
                 )}
                 <h2 className="text-xl font-bold leading-relaxed">
-                  Q. {currentQuestion.question}?
+                  Q. {currentQuestion.question}
                 </h2>
               </div>
             </div>
