@@ -311,7 +311,7 @@ export default function TimerPage() {
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       {/* Title */}
       <header style={{ padding: "20px 20px 16px" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, color: "#111" }}>타이머</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111" }}>타이머</h1>
       </header>
 
       {/* Main timer row: clock on left, bubble + play on right */}
@@ -325,7 +325,7 @@ export default function TimerPage() {
       }}>
         <p style={{
           fontSize: 40,
-          fontWeight: 900,
+          fontWeight: 700,
           color: "#111",
           letterSpacing: -1,
           fontVariantNumeric: "tabular-nums",
@@ -347,7 +347,7 @@ export default function TimerPage() {
               border: "1px solid #E5E7EB",
               color: "#111",
               fontSize: 13,
-              fontWeight: 800,
+              fontWeight: 700,
               whiteSpace: "nowrap",
               boxShadow: "0 6px 16px rgba(15,23,42,0.06)",
               pointerEvents: "none",
@@ -443,7 +443,7 @@ export default function TimerPage() {
                     background: "#E85D5D",
                     color: "#fff",
                     fontSize: 11,
-                    fontWeight: 800,
+                    fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -597,7 +597,7 @@ export default function TimerPage() {
             <div style={{ width: 86, height: 86, margin: "0 auto 12px" }}>
               <Avatar user={selectedUser} size={86} />
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 900, color: "#111", marginBottom: 4 }}>{selectedUser.nickname}</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 4 }}>{selectedUser.nickname}</h2>
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 18 }}>
               오늘 {formatShort(selectedUser.todayTotalSeconds)}
               {selectedUser.isActive ? ` · ${selectedUser.subject || "공부중"}` : ""}
@@ -681,12 +681,12 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>내 뱃지</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>내 뱃지</h2>
           <p style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>
             {unlockedCount}/{BADGES.length} 해금
           </p>
         </div>
-        <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EEF5FF", color: PRIMARY, fontSize: 12, fontWeight: 900 }}>
+        <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EEF5FF", color: PRIMARY, fontSize: 12, fontWeight: 700 }}>
           연속 {stats?.streakDays || 0}일
         </span>
       </div>
@@ -721,12 +721,12 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
                   }}
                 />
                 {!unlocked && (
-                  <span style={{ position: "absolute", left: "50%", bottom: 5, transform: "translateX(-50%)", padding: "4px 8px", borderRadius: 999, background: "rgba(17,24,39,0.76)", color: "#fff", fontSize: 11, fontWeight: 900, whiteSpace: "nowrap" }}>
+                  <span style={{ position: "absolute", left: "50%", bottom: 5, transform: "translateX(-50%)", padding: "4px 8px", borderRadius: 999, background: "rgba(17,24,39,0.76)", color: "#fff", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
                     미해금
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12, fontWeight: 900, color: unlocked ? "#111827" : "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "#111827" : "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {badge.title}
               </p>
               <p style={{ marginTop: 3, fontSize: 10.5, lineHeight: 1.25, color: TEXT_MUTED, fontWeight: 700 }}>
@@ -784,8 +784,8 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
   if (!analysis) {
     return (
       <div style={{ padding: 28, borderRadius: 18, background: "#F9FAFB", border: "1px solid #F3F4F6", textAlign: "center" }}>
-        <p style={{ fontSize: 14, color: "#6B7280", fontWeight: 800 }}>분석 정보를 불러오지 못했어요.</p>
-        <button type="button" onClick={onRefresh} style={{ marginTop: 12, height: 38, padding: "0 14px", border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 900 }}>다시 불러오기</button>
+        <p style={{ fontSize: 14, color: "#6B7280", fontWeight: 700 }}>분석 정보를 불러오지 못했어요.</p>
+        <button type="button" onClick={onRefresh} style={{ marginTop: 12, height: 38, padding: "0 14px", border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 700 }}>다시 불러오기</button>
       </div>
     );
   }
@@ -806,12 +806,12 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
 
       <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>공부 달력</h2>
-          <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 800 }}>최근 5주</span>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>공부 달력</h2>
+          <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>최근 5주</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
           {["월", "화", "수", "목", "금", "토", "일"].map((day) => (
-            <span key={day} style={{ textAlign: "center", fontSize: 11, color: TEXT_MUTED, fontWeight: 900 }}>{day}</span>
+            <span key={day} style={{ textAlign: "center", fontSize: 11, color: TEXT_MUTED, fontWeight: 700 }}>{day}</span>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
@@ -834,7 +834,7 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
                   background: bg,
                   color: day.totalSeconds > maxSeconds * 0.55 ? "#fff" : "#111827",
                   fontSize: 10,
-                  fontWeight: 900,
+                  fontWeight: 700,
                   padding: 0,
                 }}
               >
@@ -849,10 +849,10 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
         <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
             <div>
-              <p style={{ fontSize: 13, color: TEXT_MUTED, fontWeight: 800 }}>{selectedDay.date}</p>
-              <h3 style={{ marginTop: 2, fontSize: 18, color: "#111", fontWeight: 900 }}>{formatHours(selectedDay.totalSeconds)}</h3>
+              <p style={{ fontSize: 13, color: TEXT_MUTED, fontWeight: 700 }}>{selectedDay.date}</p>
+              <h3 style={{ marginTop: 2, fontSize: 18, color: "#111", fontWeight: 700 }}>{formatHours(selectedDay.totalSeconds)}</h3>
             </div>
-            <span style={{ padding: "7px 10px", borderRadius: 999, background: PRIMARY_SOFTER, color: PRIMARY, fontSize: 12, fontWeight: 900 }}>
+            <span style={{ padding: "7px 10px", borderRadius: 999, background: PRIMARY_SOFTER, color: PRIMARY, fontSize: 12, fontWeight: 700 }}>
               {selectedDay.sessionCount}회
             </span>
           </div>
@@ -863,21 +863,21 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
             maxLength={500}
             style={{ width: "100%", minHeight: 92, resize: "vertical", borderRadius: 14, border: "1px solid #E5E7EB", background: "#F9FAFB", padding: 12, color: "#111", fontSize: 14, lineHeight: 1.5, outline: "none" }}
           />
-          <button type="button" onClick={saveMemo} disabled={saving} style={{ marginTop: 8, width: "100%", height: 42, border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 14, fontWeight: 900 }}>
+          <button type="button" onClick={saveMemo} disabled={saving} style={{ marginTop: 8, width: "100%", height: 42, border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 14, fontWeight: 700 }}>
             {saving ? "저장 중" : "메모 저장"}
           </button>
         </div>
       )}
 
       <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111", marginBottom: 12 }}>최근 7일 그래프</h2>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", marginBottom: 12 }}>최근 7일 그래프</h2>
         <div style={{ height: 150, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", alignItems: "end", gap: 8 }}>
           {recent7.map((day) => {
             const height = Math.max(8, Math.round((day.totalSeconds / maxSeconds) * 132));
             return (
               <div key={day.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                 <div title={formatHours(day.totalSeconds)} style={{ width: "100%", height, borderRadius: "10px 10px 4px 4px", background: day.totalSeconds > 0 ? PRIMARY : "#E5E7EB" }} />
-                <span style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: 800 }}>{Number(day.date.slice(-2))}</span>
+                <span style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: 700 }}>{Number(day.date.slice(-2))}</span>
               </div>
             );
           })}
@@ -886,7 +886,7 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
 
       <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", overflow: "hidden" }}>
         <div style={{ padding: 14, borderBottom: "1px solid #F3F4F6" }}>
-          <h2 style={{ fontSize: 17, fontWeight: 900, color: "#111" }}>공부 분석 표</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>공부 분석 표</h2>
         </div>
         {[
           { label: "가장 많이 공부한 날", value: analysis.summary.bestDay ? `${analysis.summary.bestDay.date} · ${formatHours(analysis.summary.bestDay.totalSeconds)}` : "-" },
@@ -895,8 +895,8 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
           { label: "상위 기록", value: topDays.filter((day) => day.totalSeconds > 0).map((day) => `${day.date.slice(5)} ${formatHours(day.totalSeconds)}`).join(" / ") || "-" },
         ].map((row, index) => (
           <div key={row.label} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, padding: "12px 14px", borderBottom: index === 3 ? "none" : "1px solid #F3F4F6" }}>
-            <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 900 }}>{row.label}</span>
-            <span style={{ fontSize: 13, color: "#111827", fontWeight: 800, lineHeight: 1.45 }}>{row.value}</span>
+            <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>{row.label}</span>
+            <span style={{ fontSize: 13, color: "#111827", fontWeight: 700, lineHeight: 1.45 }}>{row.value}</span>
           </div>
         ))}
       </div>
@@ -907,8 +907,8 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
 function AnalysisStat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ minHeight: 72, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, padding: 12 }}>
-      <p style={{ fontSize: 11, color: "#4A6BB0", fontWeight: 900 }}>{label}</p>
-      <p style={{ marginTop: 7, fontSize: 15, color: "#111827", fontWeight: 900, lineHeight: 1.2 }}>{value}</p>
+      <p style={{ fontSize: 11, color: "#4A6BB0", fontWeight: 700 }}>{label}</p>
+      <p style={{ marginTop: 7, fontSize: 15, color: "#111827", fontWeight: 700, lineHeight: 1.2 }}>{value}</p>
     </div>
   );
 }
@@ -983,7 +983,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
           background: "#fff",
           color: hasStatus ? "#111827" : "#C7CCD5",
           fontSize: 11,
-          fontWeight: 900,
+          fontWeight: 700,
           lineHeight: 1,
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -1063,7 +1063,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
             background: PRIMARY,
             color: "#fff",
             fontSize: 9,
-            fontWeight: 900,
+            fontWeight: 700,
             lineHeight: 1,
           }}>
             MY
@@ -1088,8 +1088,8 @@ function FriendRequestRow({ request, onAccept, onReject }: { request: FriendRequ
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "#fff", border: "1px solid #E5E7EB" }}>
       <Avatar user={request} size={38} />
       <b style={{ flex: 1, fontSize: 14, color: "#111" }}>{request.nickname}</b>
-      <button type="button" onClick={onReject} style={{ height: 32, padding: "0 10px", borderRadius: 10, border: "none", background: "#F3F4F6", color: "#6B7280", fontSize: 12, fontWeight: 800 }}>거절</button>
-      <button type="button" onClick={onAccept} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "none", background: PRIMARY, color: "#fff", fontSize: 12, fontWeight: 800 }}>수락</button>
+      <button type="button" onClick={onReject} style={{ height: 32, padding: "0 10px", borderRadius: 10, border: "none", background: "#F3F4F6", color: "#6B7280", fontSize: 12, fontWeight: 700 }}>거절</button>
+      <button type="button" onClick={onAccept} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "none", background: PRIMARY, color: "#fff", fontSize: 12, fontWeight: 700 }}>수락</button>
     </div>
   );
 }
@@ -1102,7 +1102,7 @@ const modalPrimaryButtonStyle = {
   background: PRIMARY,
   color: "#fff",
   fontSize: 15,
-  fontWeight: 800,
+  fontWeight: 700,
 };
 
 const modalSecondaryButtonStyle = {
@@ -1113,7 +1113,7 @@ const modalSecondaryButtonStyle = {
   background: "#F3F4F6",
   color: "#6B7280",
   fontSize: 15,
-  fontWeight: 800,
+  fontWeight: 700,
 };
 
 function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: number; isLast: boolean; onOpen?: () => void }) {
@@ -1138,7 +1138,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
       cursor: onOpen ? "pointer" : "default",
     }}>
       <span style={{
-        fontSize: 13, fontWeight: 800, color: rankColor,
+        fontSize: 13, fontWeight: 700, color: rankColor,
         width: 20, textAlign: "center", flexShrink: 0,
         fontVariantNumeric: "tabular-nums",
       }}>
