@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
+import AlertModal from "@/components/AlertModal";
 
 interface Problem {
   id: string;
@@ -56,6 +57,12 @@ export default function SolvePage() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
+  const [progressReady, setProgressReady] = useState(false);
+  const [pendingProgress, setPendingProgress] = useState<{
+    answersJson: string;
+    currentIndex: number;
+  } | null>(null);
+  const progressKey = bookmarkMode.enabled ? null : `workbook:${id}`;
 
   const enterTimeRef = useRef<number>(Date.now());
 
@@ -113,6 +120,56 @@ export default function SolvePage() {
     }
     fetchData();
   }, [id, bookmarkMode]);
+
+  // Load saved progress
+  useEffect(() => {
+    if (!workbook || progressReady || !progressKey) {
+      if (!progressKey && workbook && !progressReady) setProgressReady(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const row = data?.progress;
+        if (row?.answersJson) {
+          try {
+            const parsed = JSON.parse(row.answersJson) as { answers?: [string, number][]; dwell?: [string, number][] };
+            if (parsed.answers && parsed.answers.length > 0) {
+              setPendingProgress({ answersJson: row.answersJson, currentIndex: row.currentIndex || 0 });
+              return;
+            }
+          } catch {}
+        }
+        setProgressReady(true);
+      })
+      .catch(() => setProgressReady(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [workbook, progressReady, progressKey]);
+
+  // Persist progress
+  useEffect(() => {
+    if (!progressReady || !progressKey || answers.size === 0 || submitting) return;
+    const payload = {
+      quizKey: progressKey,
+      answersJson: JSON.stringify({
+        answers: Array.from(answers.entries()),
+        dwell: Array.from(dwellTimes.entries()),
+      }),
+      currentIndex,
+    };
+    const t = setTimeout(() => {
+      fetch("/api/quiz-progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [answers, dwellTimes, currentIndex, progressReady, progressKey, submitting]);
 
   const problems = workbook?.problems || [];
   const currentProblem = problems[currentIndex];
@@ -192,6 +249,9 @@ export default function SolvePage() {
       });
       if (!res.ok) throw new Error("submit failed");
       const data = await res.json();
+      if (progressKey) {
+        fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
+      }
       router.push(`/workbook/${id}/result?score=${data.score}&total=${data.totalScore}&time=${elapsed}&attemptId=${data.attempt.id}`);
     } catch {
       alert("제출 중 오류가 발생했습니다.");
@@ -591,6 +651,41 @@ export default function SolvePage() {
             }
           `}</style>
         </div>
+      )}
+
+      {pendingProgress && workbook && (
+        <AlertModal
+          title="이전에 푼 기록이 있습니다"
+          subtitle="이어서 풀까요?"
+          buttons={[
+            {
+              label: "이어서 풀기",
+              onClick: () => {
+                try {
+                  const parsed = JSON.parse(pendingProgress.answersJson) as { answers?: [string, number][]; dwell?: [string, number][] };
+                  if (parsed.answers) setAnswers(new Map(parsed.answers));
+                  if (parsed.dwell) setDwellTimes(new Map(parsed.dwell));
+                } catch {}
+                const targetIdx = Math.min(pendingProgress.currentIndex || 0, Math.max(0, (workbook?.problems.length || 1) - 1));
+                setCurrentIndex(targetIdx);
+                setPendingProgress(null);
+                setProgressReady(true);
+              },
+            },
+            {
+              label: "처음부터 풀기",
+              bgColor: "#F2F3F5",
+              color: "#51535C",
+              onClick: () => {
+                if (progressKey) {
+                  fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
+                }
+                setPendingProgress(null);
+                setProgressReady(true);
+              },
+            },
+          ]}
+        />
       )}
     </div>
   );

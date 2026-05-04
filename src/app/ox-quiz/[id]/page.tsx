@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
+import AlertModal from "@/components/AlertModal";
 
 interface OxQuestion {
   id: string;
@@ -50,7 +51,13 @@ export default function OxQuizSolvePage() {
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
   const [startTime] = useState(Date.now());
+  const [progressReady, setProgressReady] = useState(false);
+  const [pendingProgress, setPendingProgress] = useState<{
+    answersJson: string;
+    currentIndex: number;
+  } | null>(null);
   const listScrollRef = useRef<HTMLDivElement>(null);
+  const progressKey = bookmarkMode.enabled ? null : `ox:${id}`;
 
   // Touch swipe
   const touchStartX = useRef(0);
@@ -104,6 +111,53 @@ export default function OxQuizSolvePage() {
       })
       .catch(() => setLoading(false));
   }, [id, bookmarkMode]);
+
+  // Load saved progress once quiz is ready
+  useEffect(() => {
+    if (!quiz || progressReady || !progressKey) {
+      if (!progressKey && quiz && !progressReady) setProgressReady(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const row = data?.progress;
+        if (row?.answersJson) {
+          try {
+            const entries = JSON.parse(row.answersJson) as [string, { selected: boolean; isCorrect: boolean }][];
+            if (Array.isArray(entries) && entries.length > 0) {
+              setPendingProgress({ answersJson: row.answersJson, currentIndex: row.currentIndex || 0 });
+              return;
+            }
+          } catch {}
+        }
+        setProgressReady(true);
+      })
+      .catch(() => setProgressReady(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [quiz, progressReady, progressKey]);
+
+  // Persist progress on changes
+  useEffect(() => {
+    if (!progressReady || !progressKey || answers.size === 0 || submitted) return;
+    const payload = {
+      quizKey: progressKey,
+      answersJson: JSON.stringify(Array.from(answers.entries())),
+      currentIndex,
+    };
+    const t = setTimeout(() => {
+      fetch("/api/quiz-progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [answers, currentIndex, progressReady, progressKey, submitted]);
 
   const filteredQuestions = quiz
     ? quiz.questions.filter((q) => {
@@ -159,7 +213,12 @@ export default function OxQuizSolvePage() {
     } catch {
       // allow viewing results even if submit fails
     }
-  }, [submitted, quiz, answers, id, startTime]);
+    if (progressKey) {
+      fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, {
+        method: "DELETE",
+      }).catch(() => {});
+    }
+  }, [submitted, quiz, answers, id, startTime, progressKey]);
 
   const handleAnswer = (selected: boolean) => {
     if (!currentQuestion || answers.has(currentQuestion.id) || navigating) return;
@@ -823,6 +882,40 @@ export default function OxQuizSolvePage() {
           </div>
           <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
         </div>
+      )}
+
+      {pendingProgress && quiz && (
+        <AlertModal
+          title="이전에 푼 기록이 있습니다"
+          subtitle="이어서 풀까요?"
+          buttons={[
+            {
+              label: "이어서 풀기",
+              onClick: () => {
+                try {
+                  const entries = JSON.parse(pendingProgress.answersJson) as [string, { selected: boolean; isCorrect: boolean }][];
+                  if (Array.isArray(entries)) setAnswers(new Map(entries));
+                } catch {}
+                const targetIdx = Math.min(pendingProgress.currentIndex || 0, Math.max(0, (quiz?.questions.length || 1) - 1));
+                setCurrentIndex(targetIdx);
+                setPendingProgress(null);
+                setProgressReady(true);
+              },
+            },
+            {
+              label: "처음부터 풀기",
+              bgColor: "#F2F3F5",
+              color: "#51535C",
+              onClick: () => {
+                if (progressKey) {
+                  fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
+                }
+                setPendingProgress(null);
+                setProgressReady(true);
+              },
+            },
+          ]}
+        />
       )}
     </div>
   );
