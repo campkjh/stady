@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
+import LoginRequired from "@/components/LoginRequired";
 
 interface VocabQuestion {
   id: string;
@@ -36,6 +37,7 @@ export default function VocabQuizSolvePage() {
   const router = useRouter();
 
   const [quiz, setQuiz] = useState<VocabQuizSet | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<
@@ -86,8 +88,15 @@ export default function VocabQuizSolvePage() {
   }, [quiz, currentIndex]);
 
   useEffect(() => {
+    if (isLoggedIn !== true) return;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => setIsLoggedIn(res.ok))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {
@@ -99,6 +108,7 @@ export default function VocabQuizSolvePage() {
   }, []);
 
   useEffect(() => {
+    if (isLoggedIn !== true) return;
     setLoading(true);
     fetch(`/api/vocab-quiz/${id}`)
       .then((res) => res.json())
@@ -132,7 +142,7 @@ export default function VocabQuizSolvePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id, bookmarkMode]);
+  }, [id, bookmarkMode, isLoggedIn]);
 
   // Load saved progress once quiz is ready
   useEffect(() => {
@@ -282,6 +292,8 @@ export default function VocabQuizSolvePage() {
     { num: 3, text: q.choice3 },
     { num: 4, text: q.choice4 },
   ];
+
+  if (isLoggedIn === false) return <LoginRequired />;
 
   if (loading) {
     return (
@@ -758,4 +770,3 @@ export default function VocabQuizSolvePage() {
     </div>
   );
 }
-

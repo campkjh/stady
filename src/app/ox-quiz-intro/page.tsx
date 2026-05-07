@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDailyQuizMessage } from "@/lib/daily-quiz-message";
 
 interface OxQuizSet {
   id: string;
@@ -16,7 +17,9 @@ export default function OxQuizListPage() {
   const router = useRouter();
   const [quizSets, setQuizSets] = useState<OxQuizSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const dailyMessage = getDailyQuizMessage("ox");
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -24,14 +27,28 @@ export default function OxQuizListPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/ox-quiz")
-      .then((res) => res.json())
-      .then((data) => {
-        setQuizSets(data.oxQuizSets ?? []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch("/api/auth/me", { credentials: "include" })
+        .then((res) => res.ok)
+        .catch(() => false),
+      fetch("/api/ox-quiz")
+        .then((res) => res.json())
+        .then((data) => data.oxQuizSets ?? [])
+        .catch(() => []),
+    ]).then(([loggedIn, sets]) => {
+      setIsLoggedIn(loggedIn);
+      setQuizSets(sets);
+      setLoading(false);
+    });
   }, []);
+
+  function requireLoginThen(action: () => void) {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+    action();
+  }
 
   if (loading) {
     return (
@@ -90,7 +107,7 @@ export default function OxQuizListPage() {
           하루에 한 번 OX퀴즈
         </h1>
         <p style={{ fontSize: 15, color: "rgba(255,255,255,0.9)", textAlign: "center" }}>
-          로그인하시고 도전해보세요!
+          {isLoggedIn ? dailyMessage : "로그인하고 오늘의 퀴즈를 열어보세요."}
         </p>
       </div>
 
@@ -102,7 +119,7 @@ export default function OxQuizListPage() {
               <button
                 key={group.name}
                 type="button"
-                onClick={() => setSelectedGroupName(group.name)}
+                onClick={() => requireLoginThen(() => setSelectedGroupName(group.name))}
                 className="press"
                 style={{
                   width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "#fff",
@@ -134,7 +151,7 @@ export default function OxQuizListPage() {
                     <button
                       key={qs.id}
                       type="button"
-                      onClick={() => router.push(`/ox-quiz/${qs.id}`)}
+                      onClick={() => requireLoginThen(() => router.push(`/ox-quiz/${qs.id}`))}
                       className="press"
                       style={{
                         width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDailyQuizMessage } from "@/lib/daily-quiz-message";
 
 interface VocabQuizSet {
   id: string;
@@ -14,6 +15,8 @@ export default function VocabQuizListPage() {
   const router = useRouter();
   const [quizSets, setQuizSets] = useState<VocabQuizSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const dailyMessage = getDailyQuizMessage("vocab");
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -21,14 +24,28 @@ export default function VocabQuizListPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/vocab-quiz")
-      .then((res) => res.json())
-      .then((data) => {
-        setQuizSets(data.vocabQuizSets ?? []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch("/api/auth/me", { credentials: "include" })
+        .then((res) => res.ok)
+        .catch(() => false),
+      fetch("/api/vocab-quiz")
+        .then((res) => res.json())
+        .then((data) => data.vocabQuizSets ?? [])
+        .catch(() => []),
+    ]).then(([loggedIn, sets]) => {
+      setIsLoggedIn(loggedIn);
+      setQuizSets(sets);
+      setLoading(false);
+    });
   }, []);
+
+  function openQuiz(quizId: string) {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+    router.push(`/vocab-quiz/${quizId}`);
+  }
 
   if (loading) {
     return (
@@ -83,7 +100,7 @@ export default function VocabQuizListPage() {
         </div>
 
         <p style={{ fontSize: 18, color: "#9BB4DC", textAlign: "center", fontWeight: 700 }}>
-          수능 필수 영단어 2000개
+          {isLoggedIn ? dailyMessage : "로그인하고 오늘의 단어 퀴즈를 열어보세요."}
         </p>
       </div>
 
@@ -93,7 +110,7 @@ export default function VocabQuizListPage() {
             <button
               key={qs.id}
               type="button"
-              onClick={() => router.push(`/vocab-quiz/${qs.id}`)}
+              onClick={() => openQuiz(qs.id)}
               className="press"
               style={{
                 width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "#fff",

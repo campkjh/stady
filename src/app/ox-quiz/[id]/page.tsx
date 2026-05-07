@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
+import LoginRequired from "@/components/LoginRequired";
 
 interface OxQuestion {
   id: string;
@@ -36,6 +37,7 @@ export default function OxQuizSolvePage() {
   const router = useRouter();
 
   const [quiz, setQuiz] = useState<OxQuizSet | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<
@@ -64,8 +66,15 @@ export default function OxQuizSolvePage() {
   const touchEndX = useRef(0);
 
   useEffect(() => {
+    if (isLoggedIn !== true) return;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => setIsLoggedIn(res.ok))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {
@@ -77,6 +86,7 @@ export default function OxQuizSolvePage() {
   }, []);
 
   useEffect(() => {
+    if (isLoggedIn !== true) return;
     setLoading(true);
     fetch(`/api/ox-quiz/${id}`)
       .then((res) => res.json())
@@ -110,7 +120,7 @@ export default function OxQuizSolvePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id, bookmarkMode]);
+  }, [id, bookmarkMode, isLoggedIn]);
 
   // Load saved progress once quiz is ready
   useEffect(() => {
@@ -272,6 +282,8 @@ export default function OxQuizSolvePage() {
   useEffect(() => {
     setCurrentIndex(0);
   }, [tabFilter]);
+
+  if (isLoggedIn === false) return <LoginRequired />;
 
   if (loading) {
     return (
@@ -920,4 +932,3 @@ export default function OxQuizSolvePage() {
     </div>
   );
 }
-
