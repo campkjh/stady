@@ -134,7 +134,7 @@ export default function SolveWorkspace({ children, target, memoKey }: Props) {
   const dirty = memo !== loadedMemo;
 
   return (
-    <div style={{ display: "flex", width: "100vw", height: "100dvh", overflow: "hidden", background: "#fff" }}>
+    <div style={{ display: "flex", width: "100%", height: "100dvh", overflow: "hidden", background: "#fff" }}>
       {/* LEFT 50%: solve area + handwriting overlay.
           translateZ(0) makes this pane the containing block for the page's
           position:fixed top bars so they stay inside the left half. */}

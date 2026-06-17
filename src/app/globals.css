@@ -29,6 +29,15 @@
   display: none;
 }
 
+/* iOS WKWebView는 body에만 overflow-x:hidden을 줘도 문서(html) 레벨에서
+   가로로 밀리는 경우가 있다. 루트에서 가로 오버플로를 클립해 거의 모든
+   화면에 생기던 가로스크롤(행스크롤)을 막는다. */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 /* 폰: 500px 컬럼 고정. 아이패드 / 갤럭시탭(>=744px): 1024px까지 넓혀
    풀 태블릿 레이아웃이 화면을 활용하도록 한다. */
 .app-body {
@@ -37,6 +46,14 @@
 @media (min-width: 744px) {
   .app-body {
     max-width: 1024px;
+  }
+}
+/* 가로 태블릿(11" ~1180 / 13" ~1366): 1024px 상한이 남는 가로 폭을 못 써
+   콘텐츠가 가운데 좁게 뜨고 좌우가 비므로, 넓은 화면에선 상한을 키워
+   가로 공간을 채운다. */
+@media (min-width: 1180px) {
+  .app-body {
+    max-width: 1280px;
   }
 }
 

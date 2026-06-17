@@ -137,6 +137,10 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, Props>(function Ha
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!active) return;
+    // Only the Apple Pencil draws. Finger touches must fall through so the user
+    // can still scroll the solve pane and use the edge swipe-back gesture —
+    // otherwise a finger is mistaken for the pen and navigation is swallowed.
+    if (e.pointerType === "touch") return;
     e.preventDefault();
     canvasRef.current?.setPointerCapture(e.pointerId);
     drawingRef.current = true;
@@ -233,7 +237,9 @@ const HandwritingCanvas = forwardRef<HandwritingCanvasHandle, Props>(function Ha
         style={{
           position: "absolute",
           inset: 0,
-          touchAction: active ? "none" : "auto",
+          // Allow finger pan (scroll + edge swipe-back) even while 필기 is on;
+          // pen drawing is handled via pointer events guarded to pointerType=pen.
+          touchAction: active ? "pan-x pan-y" : "auto",
           pointerEvents: active ? "auto" : "none",
           cursor: active ? "crosshair" : "default",
         }}
