@@ -6,6 +6,7 @@ import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import LoginRequired from "@/components/LoginRequired";
 import SolveWorkspace from "@/components/SolveWorkspace";
+import { useIsTablet } from "@/lib/useIsTablet";
 
 interface OxQuestion {
   id: string;
@@ -36,6 +37,7 @@ type TabFilter = "all" | "correct" | "wrong";
 export default function OxQuizSolvePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const isTablet = useIsTablet();
 
   const [quiz, setQuiz] = useState<OxQuizSet | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -326,20 +328,26 @@ export default function OxQuizSolvePage() {
     <SolveWorkspace
       target={currentQuestion ? { quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id } : null}
       memoKey={currentQuestion?.id || ""}
+      nav={{
+        onBack: () => (answers.size > 0 ? setShowExitConfirm(true) : router.back()),
+        onList: () => setShowList(true),
+      }}
     >
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
       {/* Header */}
       <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
-        <button
-          type="button"
-          onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
-          className="press"
-          style={{ background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40 }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
+        {!isTablet && (
+          <button
+            type="button"
+            onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
+            className="press"
+            style={{ background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40 }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
         <div className="flex-1" style={{ minWidth: 0 }}>
           <h1 style={{
             fontSize: 14,
@@ -352,18 +360,20 @@ export default function OxQuizSolvePage() {
             {breadcrumb}
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowList(true)}
-          className="press"
-          style={{ background: "none", border: "none" }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        {!isTablet && (
+          <button
+            type="button"
+            onClick={() => setShowList(true)}
+            className="press"
+            style={{ background: "none", border: "none" }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+        )}
       </header>
 
       {/* Tab filter */}

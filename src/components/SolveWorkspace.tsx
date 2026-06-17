@@ -26,6 +26,10 @@ interface Props {
   target: BookmarkTarget | null;
   /** Changes when the current question changes, so we reload its saved memo. */
   memoKey: string;
+  /** Tablet-only left nav rail actions. Rendered above the handwriting canvas
+   *  so the pen can never swallow the back/list taps. The page keeps its own
+   *  exit logic (e.g. confirm-on-quit) by passing handlers here. */
+  nav?: { onBack?: () => void; onList?: () => void };
 }
 
 function matchesTarget(row: BookmarkRow, t: BookmarkTarget): boolean {
@@ -46,7 +50,7 @@ function matchesTarget(row: BookmarkRow, t: BookmarkTarget): boolean {
   return true;
 }
 
-export default function SolveWorkspace({ children, target, memoKey }: Props) {
+export default function SolveWorkspace({ children, target, memoKey, nav }: Props) {
   const isTablet = useIsTablet();
   const canvasRef = useRef<HandwritingCanvasHandle>(null);
   const [penActive, setPenActive] = useState(false);
@@ -134,7 +138,7 @@ export default function SolveWorkspace({ children, target, memoKey }: Props) {
   const dirty = memo !== loadedMemo;
 
   return (
-    <div style={{ display: "flex", width: "100%", height: "100dvh", overflow: "hidden", background: "#fff" }}>
+    <div style={{ position: "relative", display: "flex", width: "100%", height: "100dvh", overflow: "hidden", background: "#fff" }}>
       {/* LEFT 50%: solve area + handwriting overlay.
           translateZ(0) makes this pane the containing block for the page's
           position:fixed top bars so they stay inside the left half. */}
@@ -199,9 +203,57 @@ export default function SolveWorkspace({ children, target, memoKey }: Props) {
           }}
         />
       </div>
+
+      {/* Left nav rail (tablet only): sits at the root level above the
+          handwriting canvas (z-index 40) and outside the scrolling pane, so the
+          pen can never swallow the back / list taps the way the in-page header
+          did. The page supplies the handlers to keep its own exit logic. */}
+      {nav && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(10px + env(safe-area-inset-top, 0px))",
+            left: 10,
+            zIndex: 40,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          {nav.onBack && (
+            <button onClick={nav.onBack} aria-label="뒤로가기" style={railBtnStyle}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          {nav.onList && (
+            <button onClick={nav.onList} aria-label="목록" style={railBtnStyle}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+const railBtnStyle = {
+  width: 44,
+  height: 44,
+  borderRadius: 999,
+  border: "1px solid #E5E7EB",
+  background: "rgba(255,255,255,0.96)",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+} as const;
 
 function btnStyle(primary: boolean) {
   return {
