@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
+import SolveWorkspace from "@/components/SolveWorkspace";
 
 interface Problem {
   id: string;
@@ -304,6 +305,10 @@ export default function SolvePage() {
   ] : [];
 
   return (
+    <SolveWorkspace
+      target={currentProblem ? { quizType: "workbook", workbookId: workbook.id, problemId: currentProblem.id } : null}
+      memoKey={currentProblem?.id || ""}
+    >
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
       maxWidth: 500, margin: "0 auto", background: "#fff",
@@ -688,5 +693,6 @@ export default function SolvePage() {
         />
       )}
     </div>
+    </SolveWorkspace>
   );
 }

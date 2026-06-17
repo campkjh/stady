@@ -88,7 +88,12 @@ export async function POST(request: NextRequest) {
       workbookId,
       oxQuizSetId,
       vocabQuizSetId,
+      memo,
+      drawing,
     } = body;
+
+    // 메모/필기를 보내면 토글이 아니라 저장(upsert)으로 동작한다.
+    const isMemoSave = memo !== undefined || drawing !== undefined;
 
     if (!quizType) {
       return NextResponse.json(
@@ -139,9 +144,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Toggle: if exists, remove; otherwise create
     const existing = await prisma.bookmark.findFirst({ where: findWhere });
 
+    // 메모/필기 저장: 토글하지 않고 기존 북마크를 업데이트하거나 새로 만든다.
+    if (isMemoSave) {
+      const bookmark = existing
+        ? await prisma.bookmark.update({
+            where: { id: existing.id },
+            data: {
+              ...(memo !== undefined ? { memo: memo || null } : {}),
+              ...(drawing !== undefined ? { drawing: drawing || null } : {}),
+            },
+          })
+        : await prisma.bookmark.create({
+            data: {
+              userId: user.id,
+              quizType,
+              workbookId: workbookId || null,
+              oxQuizSetId: oxQuizSetId || null,
+              vocabQuizSetId: vocabQuizSetId || null,
+              problemId: problemId || null,
+              oxQuestionId: oxQuestionId || null,
+              vocabQuestionId: vocabQuestionId || null,
+              memo: memo || null,
+              drawing: drawing || null,
+            },
+          });
+      return NextResponse.json({ bookmarked: true, saved: true, bookmark });
+    }
+
+    // Toggle: if exists, remove; otherwise create
     if (existing) {
       await prisma.bookmark.delete({ where: { id: existing.id } });
       return NextResponse.json({ bookmarked: false, message: "북마크가 해제되었습니다." });

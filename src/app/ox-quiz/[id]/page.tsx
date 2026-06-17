@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import LoginRequired from "@/components/LoginRequired";
+import SolveWorkspace from "@/components/SolveWorkspace";
 
 interface OxQuestion {
   id: string;
@@ -322,6 +323,10 @@ export default function OxQuizSolvePage() {
   ].filter(Boolean).join(" > ");
 
   return (
+    <SolveWorkspace
+      target={currentQuestion ? { quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id } : null}
+      memoKey={currentQuestion?.id || ""}
+    >
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
       {/* Header */}
       <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
@@ -941,5 +946,6 @@ export default function OxQuizSolvePage() {
         />
       )}
     </div>
+    </SolveWorkspace>
   );
 }

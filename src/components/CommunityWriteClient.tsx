@@ -19,6 +19,19 @@ interface UploadedImage {
   name: string;
 }
 
+// Android WebView often hands back files with an empty or generic MIME type
+// (e.g. "" or "application/octet-stream") for gallery/camera picks, which made
+// the strict `type.startsWith("image/")` check reject valid photos. Fall back
+// to the file extension so those uploads succeed.
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i;
+
+function isImageFile(file: File) {
+  if (file.type && file.type !== "application/octet-stream") {
+    return file.type.startsWith("image/");
+  }
+  return IMAGE_EXT_RE.test(file.name || "");
+}
+
 export default function CommunityWriteClient() {
   const router = useRouter();
   const [groups, setGroups] = useState<CategoryGroup[]>([]);
@@ -92,7 +105,7 @@ export default function CommunityWriteClient() {
     try {
       const nextImages: UploadedImage[] = [];
       for (const file of files) {
-        if (!file.type.startsWith("image/")) {
+        if (!isImageFile(file)) {
           throw new Error("이미지 파일만 업로드할 수 있습니다.");
         }
         if (file.size > 10 * 1024 * 1024) {

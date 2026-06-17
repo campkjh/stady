@@ -14,6 +14,8 @@ interface Bookmark {
   problemId: string | null;
   oxQuestionId: string | null;
   vocabQuestionId: string | null;
+  memo: string | null;
+  drawing: string | null;
   createdAt: string;
   title: string;
   subtitle: string;
@@ -391,6 +393,11 @@ export default function BookmarksPage() {
                   {bookmark.subtitle && bookmark.title && (
                     <p className="mt-1 text-xs text-gray-500 line-clamp-1">
                       {bookmark.title}
+                    </p>
+                  )}
+                  {bookmark.memo && (
+                    <p className="mt-2 w-full whitespace-pre-wrap rounded-lg bg-[#F8F9FB] p-2 text-xs text-gray-600 line-clamp-3">
+                      📝 {bookmark.memo}
                     </p>
                   )}
                 </button>

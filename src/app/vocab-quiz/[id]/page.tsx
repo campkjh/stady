@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import LoginRequired from "@/components/LoginRequired";
+import SolveWorkspace from "@/components/SolveWorkspace";
 
 interface VocabQuestion {
   id: string;
@@ -351,6 +352,10 @@ export default function VocabQuizSolvePage() {
   const isBookmarked = currentQuestion ? bookmarkedQuestionIds.has(currentQuestion.id) : false;
 
   return (
+    <SolveWorkspace
+      target={currentQuestion ? { quizType: "vocab", vocabQuizSetId: quiz.id, vocabQuestionId: currentQuestion.id } : null}
+      memoKey={currentQuestion?.id || ""}
+    >
     <div
       className="flex flex-col bg-white"
       style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}
@@ -849,5 +854,6 @@ export default function VocabQuizSolvePage() {
         />
       )}
     </div>
+    </SolveWorkspace>
   );
 }

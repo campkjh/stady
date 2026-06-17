@@ -17,7 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
+    // Android WebView may send images with an empty/generic MIME type, so fall
+    // back to the file extension before rejecting.
+    const looksLikeImage =
+      file.type && file.type !== "application/octet-stream"
+        ? file.type.startsWith("image/")
+        : /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i.test(file.name || "");
+    if (!looksLikeImage) {
       return NextResponse.json({ error: "이미지 파일만 업로드할 수 있습니다." }, { status: 400 });
     }
 
