@@ -9,7 +9,9 @@ export default function MainLayout({
   return (
     <>
       <div className="min-h-screen" style={{ paddingBottom: "calc(82px + env(safe-area-inset-bottom, 0px))", width: "100%", overflowX: "hidden" }}>
-        <PageTransition>{children}</PageTransition>
+        <div className="app-shell">
+          <PageTransition>{children}</PageTransition>
+        </div>
       </div>
       <BottomNav />
     </>

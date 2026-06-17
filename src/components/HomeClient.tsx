@@ -212,16 +212,16 @@ export default function HomeClient({
 
       {/* Shortcut Cards */}
       <div
-        className="fade-in-up fade-in-up-1"
+        className="fade-in-up fade-in-up-1 home-shortcuts"
         style={{ overflowX: "auto", overflowY: "hidden", padding: "0 10px 20px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div style={{ display: "flex", gap: 12, width: "max-content" }}>
+        <div className="home-shortcuts-row" style={{ display: "flex", gap: 12, width: "max-content" }}>
           {BANNER_ITEMS.map((item) => (
             <button
               key={item.title}
               type="button"
               onClick={() => router.push(item.href)}
-              className="press-deep"
+              className="press-deep home-shortcut-card"
               style={{
                 position: "relative",
                 width: 140,

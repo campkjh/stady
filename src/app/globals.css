@@ -29,6 +29,43 @@
   display: none;
 }
 
+/* 폰: 500px 컬럼 고정. 아이패드 / 갤럭시탭(>=744px): 1024px까지 넓혀
+   풀 태블릿 레이아웃이 화면을 활용하도록 한다. */
+.app-body {
+  max-width: 500px;
+}
+@media (min-width: 744px) {
+  .app-body {
+    max-width: 1024px;
+  }
+}
+
+/* (main) 탭 본문: 태블릿에서 좌우 여백만 추가. */
+.app-shell {
+  width: 100%;
+  margin: 0 auto;
+}
+@media (min-width: 744px) {
+  .app-shell {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* 홈 상단 단축카드: 태블릿에선 가로 스크롤 대신 4열 그리드로 폭을 채운다. */
+  .home-shortcuts {
+    overflow: visible !important;
+  }
+  .home-shortcuts-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    width: 100% !important;
+  }
+  .home-shortcut-card {
+    width: auto !important;
+    height: 190px !important;
+  }
+}
+
 /* 토스 스타일 인터렉션 */
 .press {
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;

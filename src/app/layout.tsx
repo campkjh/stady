@@ -27,10 +27,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body
-        className="min-h-full flex flex-col bg-white"
+        className="min-h-full flex flex-col bg-white app-body"
         style={{
           width: "100%",
-          maxWidth: 500,
           margin: "0 auto",
           overflowX: "hidden",
         }}
