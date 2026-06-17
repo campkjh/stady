@@ -108,7 +108,7 @@ export default function AdminDashboard() {
     {
       label: "회원 수",
       count: counts.users,
-      href: "/admin",
+      href: "/admin/users",
       color: "#F59E0B",
       bgColor: "#FFFBEB",
       icon: (
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
               border: "1px solid #E5E7EB",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
-            }}>
+            }} className="admin-table-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
               border: "1px solid #E5E7EB",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
-            }}>
+            }} className="admin-table-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
               border: "1px solid #E5E7EB",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
-            }}>
+            }} className="admin-table-card admin-referral-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
                   아직 친구초대 기록이 없습니다.
                 </div>
               ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table className="admin-referral-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#F9FAFB" }}>
                       <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대한 회원</th>
@@ -473,6 +473,16 @@ export default function AdminDashboard() {
         @media (max-width: 900px) {
           .admin-dashboard-grid {
             grid-template-columns: 1fr !important;
+          }
+          .admin-table-card {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+          }
+          .admin-table-card table {
+            min-width: 620px;
+          }
+          .admin-referral-table {
+            min-width: 760px !important;
           }
         }
       `}</style>

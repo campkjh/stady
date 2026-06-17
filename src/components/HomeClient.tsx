@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
+import { requestAppReview } from "@/lib/appReview";
 
 interface Category {
   id: string;
@@ -68,6 +69,7 @@ interface HomeBanner {
 
 interface HomeClientProps {
   userName: string | null;
+  isAdmin: boolean;
   categories: Category[];
   workbooks: Workbook[];
   oxQuizSets: OxQuizSet[];
@@ -104,8 +106,8 @@ const BANNER_ITEMS = [
 
 export default function HomeClient({
   userName,
+  isAdmin,
   categories,
-  workbooks,
   oxQuizSets,
   vocabQuizSets,
   isNewUser,
@@ -114,14 +116,18 @@ export default function HomeClient({
   const [showWelcome, setShowWelcome] = useState(isNewUser);
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
+  const welcomeVisible = showWelcome && Boolean(userName);
 
   const handleWelcomeComplete = useCallback(() => {
     setShowWelcome(false);
     document.cookie = "isNewUser=; path=/; max-age=0";
+    // 온보딩이 끝나면 네이티브 별점 리뷰(App Store / Play Store) 프롬프트를 띄운다.
+    setTimeout(() => requestAppReview(), 800);
   }, []);
 
   const openBanner = useCallback((linkUrl: string | null) => {
     if (!linkUrl) return;
+    setPopupBanner(null);
     if (linkUrl.startsWith("http://") || linkUrl.startsWith("https://")) {
       window.location.href = linkUrl;
       return;
@@ -135,18 +141,23 @@ export default function HomeClient({
       .then((data) => {
         const nextBanners = (data.banners || []) as HomeBanner[];
         setBanners(nextBanners);
-        const modal = nextBanners.find((banner) => banner.bannerType === "modal");
-        if (!modal) return;
-        const hiddenUntil = Number(localStorage.getItem(`home_popup_hidden_until_${modal.id}`) || 0);
-        if (Date.now() > hiddenUntil) setPopupBanner(modal);
+        // 오픈베타 웰컴 팝업(모달 배너) 비활성화 — 더 이상 자동으로 띄우지 않음
       })
       .catch(() => setBanners([]));
+  }, []);
+
+  const closePopup = useCallback(() => {
+    setPopupBanner(null);
   }, []);
 
   const hidePopupForThreeDays = useCallback(() => {
     if (!popupBanner) return;
     const threeDays = 3 * 24 * 60 * 60 * 1000;
-    localStorage.setItem(`home_popup_hidden_until_${popupBanner.id}`, String(Date.now() + threeDays));
+    try {
+      localStorage.setItem(`home_popup_hidden_until_${popupBanner.id}`, String(Date.now() + threeDays));
+    } catch {
+      // localStorage may be blocked in some WebView modes; closing still works for the current view.
+    }
     setPopupBanner(null);
   }, [popupBanner]);
 
@@ -154,20 +165,49 @@ export default function HomeClient({
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflow: "hidden" }}>
-      {showWelcome && userName && (
+      {welcomeVisible && userName && (
         <WelcomeOverlay nickname={userName} onComplete={handleWelcomeComplete} />
       )}
       {/* Header */}
-      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 10px 12px" }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111" }}>
+      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {userName ? `${userName}님 안녕하세요!` : "로그인이 필요합니다."}
         </h1>
-        <button type="button" onClick={() => router.push("/search")} className="search-btn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => router.push("/admin")}
+              className="press"
+              aria-label="관리자 페이지로 이동"
+              style={{
+                height: 36,
+                padding: "0 11px",
+                borderRadius: 18,
+                border: "1px solid #D6E4FF",
+                background: "#EEF5FF",
+                color: "#1F5EDC",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3L19 6V11C19 15.4 16.2 19.2 12 21C7.8 19.2 5 15.4 5 11V6L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                <path d="M9 12L11 14L15.5 9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              관리자
+            </button>
+          )}
+          <button type="button" onClick={() => router.push("/search")} className="search-btn" aria-label="검색">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Shortcut Cards */}
@@ -313,13 +353,40 @@ export default function HomeClient({
       {/* Divider */}
       <div style={{ height: 8, backgroundColor: "#F9FAFB" }} />
 
-      {popupBanner && !showWelcome && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.48)" }} onClick={() => setPopupBanner(null)} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 420, borderRadius: 18, overflow: "hidden", background: "#fff", boxShadow: "0 20px 60px rgba(15,23,42,0.24)" }}>
+      {popupBanner && !welcomeVisible && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100dvh",
+            padding: "max(14px, env(safe-area-inset-top, 0px)) 14px max(14px, env(safe-area-inset-bottom, 0px))",
+            boxSizing: "border-box",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.48)" }} onClick={closePopup} />
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: 420,
+              maxHeight: "calc(100dvh - 28px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))",
+              borderRadius: 18,
+              overflow: "hidden",
+              background: "#fff",
+              boxShadow: "0 20px 60px rgba(15,23,42,0.24)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <button
               type="button"
-              onClick={() => setPopupBanner(null)}
+              onClick={closePopup}
               aria-label="닫기"
               style={{ position: "absolute", top: 10, right: 10, zIndex: 3, width: 32, height: 32, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.52)", color: "#fff", fontSize: 20, lineHeight: "32px" }}
             >
@@ -331,6 +398,8 @@ export default function HomeClient({
               style={{
                 position: "relative",
                 width: "100%",
+                flex: "1 1 auto",
+                minHeight: 0,
                 border: "none",
                 background: popupBanner.bgColor || "#3787FF",
                 textAlign: "left",
@@ -339,7 +408,17 @@ export default function HomeClient({
               }}
             >
               {popupBanner.imageUrl ? (
-                <img src={popupBanner.imageUrl} alt={popupBanner.title} style={{ display: "block", width: "100%", maxHeight: "78vh", objectFit: "contain", background: popupBanner.bgColor || "#fff" }} />
+                <img
+                  src={popupBanner.imageUrl}
+                  alt={popupBanner.title}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    maxHeight: "calc(100dvh - 96px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))",
+                    objectFit: "contain",
+                    background: popupBanner.bgColor || "#fff",
+                  }}
+                />
               ) : (
                 <div style={{ position: "relative", width: "100%", aspectRatio: "2/1" }}>
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
@@ -352,11 +431,11 @@ export default function HomeClient({
                 </div>
               )}
             </button>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7", flex: "0 0 auto" }}>
               <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14, fontWeight: 800 }}>
-                3일간 안보기
+                3일동안 안보기
               </button>
-              <button type="button" onClick={() => setPopupBanner(null)} style={{ height: 48, border: "none", background: "#fff", color: "#111827", fontSize: 14, fontWeight: 900 }}>
+              <button type="button" onClick={closePopup} style={{ height: 48, border: "none", background: "#fff", color: "#111827", fontSize: 14, fontWeight: 900 }}>
                 닫기
               </button>
             </div>
@@ -366,61 +445,68 @@ export default function HomeClient({
 
       {/* Content */}
       <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
+        <section>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
+            스타디 교재
+          </h2>
+          <button
+            type="button"
+            onClick={() => router.push("/store/korean-history")}
+            className="press-deep"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              width: "100%",
+              padding: 12,
+              borderRadius: 16,
+              border: "1px solid #EEF0F3",
+              background: "#fff",
+              textAlign: "left",
+              boxShadow: "0 6px 18px rgba(15,23,42,0.05)",
+            }}
+          >
+            <div style={{
+              flexShrink: 0,
+              width: 64,
+              height: 84,
+              borderRadius: 10,
+              background: "linear-gradient(135deg, #3787FF, #1E5FD8)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+            }}>
+              <span style={{ fontSize: 9, fontWeight: 800, opacity: 0.85, letterSpacing: 0.5 }}>STADY</span>
+              <span style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.1, textAlign: "center" }}>2026<br />한국사</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 15, fontWeight: 800, color: "#111", margin: 0 }}>2026 한국사</p>
+              <p style={{ fontSize: 12, color: "#9CA3AF", margin: "3px 0 0", fontWeight: 600 }}>한국사 문제집 · PDF 다운로드</p>
+              <p style={{ fontSize: 16, fontWeight: 900, color: "#3787FF", margin: "8px 0 0" }}>3,900원</p>
+            </div>
+            <span style={{
+              flexShrink: 0,
+              padding: "8px 14px",
+              borderRadius: 999,
+              background: "#3787FF",
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 800,
+            }}>구매</span>
+          </button>
+        </section>
+
         {userName && (
           <section>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
-              내가 풀고 있는 문제집
+              준비중
             </h2>
-            {workbooks.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0" }}>
-                <Image src="/icons/emoji-empty.svg" alt="" width={52} height={52} unoptimized style={{ marginBottom: 12 }} />
-                <p style={{ fontSize: 14, color: "#9CA3AF" }}>지금 풀고 계신 문제집이 없습니다</p>
-              </div>
-            ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-              {workbooks.map((wb, i) => (
-                <button
-                  key={wb.id}
-                  type="button"
-                  onClick={() => router.push(`/workbook/${wb.id}`)}
-                  className="hover-lift"
-                  style={{ textAlign: "left", background: "none", border: "none" }}
-                >
-                  <div style={{
-                    position: "relative",
-                    aspectRatio: "3/4",
-                    borderRadius: 8,
-                    overflow: "hidden",
-                    backgroundColor: "#3787FF",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
-                    {wb.thumbnail ? (
-                      <Image src={wb.thumbnail} alt="" fill sizes="33vw" style={{ objectFit: "cover" }} unoptimized />
-                    ) : (
-                      <Image src="/icons/book-cover.svg" alt="" width={60} height={80} unoptimized style={{ width: "60%", height: "auto", opacity: 0.8 }} />
-                    )}
-                    {wb.isPopular && (
-                      <span style={{
-                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
-                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
-                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
-                      }}>인기</span>
-                    )}
-                  </div>
-                  <div style={{ paddingTop: 8 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {wb.title}
-                    </p>
-                    <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
-                      {wb.totalQuestions}문항/{wb.questionPerPage}문항
-                    </p>
-                  </div>
-                </button>
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0" }}>
+              <Image src="/icons/under-construction.svg" alt="" width={52} height={52} unoptimized style={{ marginBottom: 12 }} />
+              <p style={{ fontSize: 14, color: "#9CA3AF" }}>문제집은 현재 준비중입니다.</p>
             </div>
-            )}
           </section>
         )}
 

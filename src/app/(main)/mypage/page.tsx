@@ -1,89 +1,137 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import LoginRequired from "@/components/LoginRequired";
 
-interface UserProfile {
-  nickname: string;
-  avatar: string | null;
-  email: string;
+interface SubscriptionState {
+  status: string;
+  active: boolean;
+  amount: number;
+  cardCompany: string | null;
+  cardNumber: string | null;
+  currentPeriodEnd: string;
+  nextBillingAt: string;
 }
 
-const MENU_ITEMS = [
-  {
-    label: "프로필 설정",
-    href: "/mypage/profile",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    label: "공지사항",
-    href: "/notice",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
-    ),
-  },
-  {
-    label: "자주묻는질문",
-    href: "/faq",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
-  },
-  {
-    label: "고객센터",
-    href: "/customer-center",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-  {
-    label: "모든약관",
-    href: "/mypage/terms",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-      </svg>
-    ),
-  },
+const PLAN_ID = "monthly-pass";
+
+function fmtDate(value: string) {
+  return new Date(value).toLocaleDateString("ko-KR");
+}
+
+const MENU_GROUP_1 = [
+  { label: "내가쓴글", href: "/mypage/my-posts", icon: "/icons/mypage-mywrite.png" },
+  { label: "결제로그", href: "/mypage/payments", icon: "/icons/mypage-paylog.png" },
+  { label: "친구초대", href: "/referral-event", icon: "/icons/mypage-invite.png" },
 ];
+
+const MENU_GROUP_2 = [
+  { label: "공지사항", href: "/notice", icon: "/icons/mypage-notice.png" },
+  { label: "자주묻는질문", href: "/faq", icon: "/icons/mypage-faq.png" },
+  { label: "고객센터", href: "/customer-center", icon: "/icons/mypage-support.png" },
+  { label: "모든약관", href: "/mypage/terms", icon: "/icons/mypage-terms.png" },
+];
+
+function Chevron() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function MenuRow({ label, href, icon }: { label: string; href: string; icon: string }) {
+  return (
+    <Link href={href} className="press" style={rowStyle}>
+      <span style={iconBox}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={icon} alt="" style={{ height: 30, width: "auto", maxWidth: 34 }} />
+      </span>
+      <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "#191F28" }}>{label}</span>
+      <Chevron />
+    </Link>
+  );
+}
 
 export default function MyPage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.user) {
-          setIsLoggedIn(true);
-          setUser({ nickname: data.user.nickname, avatar: data.user.avatar, email: data.user.email });
-        } else {
-          setIsLoggedIn(false);
-        }
-      })
+      .then((data) => setIsLoggedIn(!!data.user))
       .catch(() => setIsLoggedIn(false));
   }, []);
+
+  const [sub, setSub] = useState<SubscriptionState | null>(null);
+  const [subBusy, setSubBusy] = useState(false);
+
+  const loadSub = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/subscription/status?planId=${PLAN_ID}`, { credentials: "include" });
+      const data = await res.json();
+      setSub(data.subscription ?? null);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) loadSub();
+  }, [isLoggedIn, loadSub]);
+
+  async function handleSubscribe() {
+    setSubBusy(true);
+    try {
+      const res = await fetch("/api/subscription/checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: PLAN_ID }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "구독 준비에 실패했습니다.");
+      const tossPayments = await loadTossPayments(data.clientKey);
+      const payment = tossPayments.payment({ customerKey: data.customerKey });
+      await payment.requestBillingAuth({
+        method: "CARD",
+        successUrl: `${window.location.origin}/store/subscription/success?planId=${data.planId}`,
+        failUrl: `${window.location.origin}/store/subscription/fail`,
+        customerEmail: data.customerEmail || undefined,
+        customerName: data.customerName || undefined,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "구독을 진행하지 못했습니다.";
+      if (!/취소|cancel/i.test(message)) alert(message);
+      setSubBusy(false);
+    }
+  }
+
+  async function handleCancelSub() {
+    if (!window.confirm("월정액 패키지 자동결제를 해지할까요?\n남은 이용 기간까지는 계속 이용할 수 있어요.")) return;
+    setSubBusy(true);
+    try {
+      const res = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: PLAN_ID }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "해지에 실패했습니다.");
+      }
+      await loadSub();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "해지 중 오류가 발생했습니다.");
+    } finally {
+      setSubBusy(false);
+    }
+  }
 
   if (isLoggedIn === null) return null;
   if (isLoggedIn === false) return <LoginRequired />;
@@ -95,137 +143,80 @@ export default function MyPage() {
     window.location.href = "/";
   }
 
+  const isActiveAuto = sub?.status === "ACTIVE";
+  const isCanceledActive = sub?.status === "CANCELED" && sub?.active;
+
   return (
     <div style={{ background: "#fff", minHeight: "100vh" }}>
-      {/* Profile Section */}
-      <div style={{ padding: "28px 16px 20px" }}>
+      {/* Profile settings */}
+      <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
+        <span style={iconBox}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/mypage-profile.png" alt="" style={{ height: 30, width: "auto", maxWidth: 34 }} />
+        </span>
+        <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "#191F28" }}>프로필설정</span>
+        <Chevron />
+      </Link>
+
+      <div style={dividerStyle} />
+
+      {/* Subscription package */}
+      <div style={{ padding: "24px 20px 22px" }}>
+        <h2 style={{ fontSize: 23, fontWeight: 800, margin: 0, lineHeight: 1.3, letterSpacing: "-0.4px" }}>
+          <span style={{ color: "#3182F6" }}>스타디</span> <span style={{ color: "#191F28" }}>월정액 패키지</span>
+        </h2>
+        <p style={{ fontSize: 14.5, color: "#8B95A1", margin: "10px 0 0", fontWeight: 500 }}>
+          {isActiveAuto
+            ? `구독 중 · 다음 결제일 ${fmtDate(sub!.nextBillingAt)}${sub!.cardCompany ? ` · ${sub!.cardCompany}` : ""}`
+            : isCanceledActive
+              ? `${fmtDate(sub!.currentPeriodEnd)}까지 이용할 수 있어요`
+              : "1등급을 위한 학습자료를 놓치지 마세요!"}
+        </p>
         <button
           type="button"
-          onClick={() => router.push("/mypage/profile")}
+          onClick={isActiveAuto ? handleCancelSub : handleSubscribe}
+          disabled={subBusy}
           className="press"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            width: "100%",
-            background: "none",
+            marginTop: 16,
             border: "none",
-            textAlign: "left",
+            borderRadius: 8,
+            background: "rgba(7,25,76,0.05)",
+            color: "#4E5968",
+            padding: "9px 18px",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+            opacity: subBusy ? 0.6 : 1,
           }}
         >
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            overflow: "hidden",
-            background: "#F3F4F6",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>{user?.nickname || "사용자"}</p>
-            <p style={{ fontSize: 13, color: "#9CA3AF", marginTop: 2 }}>{user?.email || ""}</p>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
+          {subBusy ? "처리 중..." : isActiveAuto ? "구독 해지" : isCanceledActive ? "다시 구독하기" : "구독하기"}
         </button>
       </div>
 
-      {/* Divider */}
-      <div style={{ height: 6, background: "#F5F5F5" }} />
+      {/* Menu group 1 */}
+      {MENU_GROUP_1.map((item) => (
+        <MenuRow key={item.label} {...item} />
+      ))}
 
-      {/* Menu List */}
-      <div style={{ padding: "8px 0" }}>
-        {MENU_ITEMS.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className="press"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              padding: "15px 16px",
-              textDecoration: "none",
-              color: "#111",
-              fontSize: 15,
-              fontWeight: 500,
-            }}
-          >
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              backgroundColor: "#F3F4F6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              {item.icon}
-            </div>
-            <span style={{ flex: 1 }}>{item.label}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </Link>
-        ))}
-      </div>
+      <div style={dividerStyle} />
 
-      {/* Divider */}
-      <div style={{ height: 6, background: "#F5F5F5" }} />
+      {/* Menu group 2 */}
+      {MENU_GROUP_2.map((item) => (
+        <MenuRow key={item.label} {...item} />
+      ))}
+
+      <div style={dividerStyle} />
 
       {/* Logout */}
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="press"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          width: "100%",
-          padding: "15px 16px",
-          background: "none",
-          border: "none",
-          fontSize: 15,
-          fontWeight: 500,
-          color: "#9CA3AF",
-        }}
-      >
-        <div style={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
-          backgroundColor: "#F3F4F6",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-        </div>
-        로그아웃
+      <button type="button" onClick={handleLogout} className="press" style={{ ...rowStyle, width: "100%", background: "none", border: "none", textAlign: "left", cursor: "pointer" }}>
+        <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "#8B95A1" }}>로그아웃</span>
+        <Chevron />
       </button>
 
       {/* Footer */}
-      <div style={{ padding: "24px 16px 16px" }}>
+      <div style={{ padding: "24px 20px 32px" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/stady-logo.svg" alt="Stady" style={{ width: 64, height: "auto", filter: "grayscale(100%)", opacity: 0.25, marginBottom: 12 }} />
         <div style={{ fontSize: 11, lineHeight: 1.8, color: "#C0C0C0" }}>
           <p>헬스스헬 | 우 06314  경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
@@ -233,7 +224,32 @@ export default function MyPage() {
           <p>대표자 김지승 | 사업자 등록 번호 852-06-03583</p>
           <p>Copyright© stady. All right reserved.</p>
         </div>
+        <p style={{ marginTop: 10, fontSize: 11, fontWeight: 600, color: "#B8BCC4" }}>
+          버전 {process.env.APP_VERSION} · {(process.env.BUILD_DATE || "").replace(/-/g, ".")} 업데이트
+        </p>
       </div>
     </div>
   );
 }
+
+const rowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  height: 60,
+  padding: "0 20px",
+  textDecoration: "none",
+} as const;
+
+const iconBox = {
+  width: 34,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+} as const;
+
+const dividerStyle = {
+  height: 10,
+  background: "#F9FAFB",
+} as const;

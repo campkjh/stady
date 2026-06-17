@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         let subtitle = "";
         let word: string | null = null;
         let meaning: string | null = null;
+        let categoryName = "";
 
         if (bm.quizType === "workbook" && bm.workbookId) {
           const wb = await prisma.workbook.findUnique({ where: { id: bm.workbookId } });
@@ -34,8 +35,12 @@ export async function GET(request: NextRequest) {
             subtitle = `${wb?.totalQuestions || 0}문항`;
           }
         } else if (bm.quizType === "ox" && bm.oxQuizSetId) {
-          const oxSet = await prisma.oxQuizSet.findUnique({ where: { id: bm.oxQuizSetId } });
+          const oxSet = await prisma.oxQuizSet.findUnique({
+            where: { id: bm.oxQuizSetId },
+            include: { category: true },
+          });
           title = oxSet?.title || "";
+          categoryName = oxSet?.category?.name || "";
           if (bm.oxQuestionId) {
             const q = await prisma.oxQuestion.findUnique({ where: { id: bm.oxQuestionId } });
             subtitle = q?.question || "";
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        return { ...bm, title, subtitle, word, meaning };
+        return { ...bm, title, subtitle, word, meaning, categoryName };
       })
     );
 
@@ -97,13 +102,41 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       quizType,
     };
+    let hasBookmarkTarget = false;
 
-    if (quizType === "workbook" && problemId) {
-      findWhere.problemId = problemId;
-    } else if (quizType === "ox" && oxQuestionId) {
-      findWhere.oxQuestionId = oxQuestionId;
-    } else if (quizType === "vocab" && vocabQuestionId) {
-      findWhere.vocabQuestionId = vocabQuestionId;
+    if (quizType === "workbook") {
+      if (problemId) {
+        findWhere.problemId = problemId;
+        hasBookmarkTarget = true;
+      } else if (workbookId) {
+        findWhere.workbookId = workbookId;
+        hasBookmarkTarget = true;
+      }
+    } else if (quizType === "ox") {
+      if (oxQuizSetId) {
+        findWhere.oxQuizSetId = oxQuizSetId;
+        hasBookmarkTarget = true;
+      }
+      if (oxQuestionId) {
+        findWhere.oxQuestionId = oxQuestionId;
+        hasBookmarkTarget = true;
+      }
+    } else if (quizType === "vocab") {
+      if (vocabQuizSetId) {
+        findWhere.vocabQuizSetId = vocabQuizSetId;
+        hasBookmarkTarget = true;
+      }
+      if (vocabQuestionId) {
+        findWhere.vocabQuestionId = vocabQuestionId;
+        hasBookmarkTarget = true;
+      }
+    }
+
+    if (!hasBookmarkTarget) {
+      return NextResponse.json(
+        { error: "책갈피 대상은 필수입니다." },
+        { status: 400 }
+      );
     }
 
     // Toggle: if exists, remove; otherwise create
@@ -145,6 +178,17 @@ export async function DELETE(request: NextRequest) {
     const user = await requireUser();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const deleteAll = searchParams.get("all") === "true";
+
+    if (deleteAll) {
+      const result = await prisma.bookmark.deleteMany({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      return NextResponse.json({ deleted: true, count: result.count });
+    }
 
     if (!id) {
       return NextResponse.json(

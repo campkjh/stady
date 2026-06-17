@@ -3,15 +3,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
-const SOURCE_OPTIONS = [
-  "인스타그램",
-  "유튜브",
-  "블로그",
-  "지인 추천",
-  "검색 (네이버/구글)",
-  "기타",
-];
-
 const keyframesStyle = `
 @keyframes welcomeFadeIn {
   from { opacity: 0; }
@@ -38,12 +29,8 @@ interface WelcomeOverlayProps {
 }
 
 export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayProps) {
-  const [step, setStep] = useState<"greeting" | "question" | "thanks">("greeting");
+  const [step, setStep] = useState<"greeting" | "thanks">("greeting");
   const [fadingOut, setFadingOut] = useState(false);
-  const [inviteCode, setInviteCode] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("stady_pending_invite_code") || "";
-  });
 
   useEffect(() => {
     // 스크롤 방지
@@ -51,35 +38,43 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
     document.body.style.position = "fixed";
     document.body.style.width = "100%";
     document.body.style.maxWidth = "500px";
-    const timer = setTimeout(() => setStep("question"), 1500);
+
+    let t2: ReturnType<typeof setTimeout> | undefined;
+    let t3: ReturnType<typeof setTimeout> | undefined;
+
+    const t1 = setTimeout(async () => {
+      // 유입경로 질문은 제거됨 — 초대코드(리퍼럴)가 있으면 조용히 적용
+      const code = (localStorage.getItem("stady_pending_invite_code") || "").trim();
+      if (code) {
+        try {
+          const res = await fetch("/api/auth/signup-source", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ inviteCode: code }),
+          });
+          if (res.ok) localStorage.removeItem("stady_pending_invite_code");
+        } catch {
+          // ignore
+        }
+      }
+      setStep("thanks");
+      t2 = setTimeout(() => {
+        setFadingOut(true);
+        t3 = setTimeout(() => onComplete(), 500);
+      }, 1500);
+    }, 1500);
+
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      if (t3) clearTimeout(t3);
       document.body.style.overflow = "";
       document.body.style.position = "";
       document.body.style.width = "";
       document.body.style.maxWidth = "";
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleSelect = async (source: string) => {
-    try {
-      const res = await fetch("/api/auth/signup-source", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source, inviteCode: inviteCode.trim() }),
-      });
-      if (res.ok && inviteCode.trim()) {
-        localStorage.removeItem("stady_pending_invite_code");
-      }
-    } catch {
-      // ignore errors
-    }
-    setStep("thanks");
-    setTimeout(() => {
-      setFadingOut(true);
-      setTimeout(() => onComplete(), 500);
-    }, 1500);
-  };
 
   if (typeof document === "undefined") return null;
 
@@ -100,8 +95,6 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
           alignItems: "center",
           justifyContent: "center",
           animation: fadingOut ? "welcomeFadeOut 0.5s forwards" : "welcomeFadeIn 0.5s forwards",
-          overflowY: "auto",
-          WebkitOverflowScrolling: "touch",
         }}
       >
         {/* Greeting */}
@@ -110,78 +103,12 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
             color: "#fff",
             fontSize: 24,
             fontWeight: 700,
-            marginBottom: 16,
+            marginBottom: step === "thanks" ? 16 : 0,
             animation: "welcomeFadeInUp 0.6s forwards",
           }}
         >
           환영합니다 {nickname}님!
         </p>
-
-        {/* Question */}
-        {(step === "question" || step === "thanks") && step !== "thanks" && (
-          <>
-            <p
-              style={{
-                color: "#fff",
-                fontSize: 16,
-                marginBottom: 24,
-                animation: "welcomeFadeInUp 0.6s forwards",
-              }}
-            >
-              어떤 경로로 오셨나요?
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-                width: "80%",
-                maxWidth: 320,
-              }}
-            >
-              <input
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                placeholder="초대코드가 있다면 입력"
-                autoCapitalize="characters"
-                style={{
-                  height: 44,
-                  borderRadius: 22,
-                  border: "1px solid rgba(255,255,255,0.35)",
-                  background: "rgba(255,255,255,0.95)",
-                  color: "#111827",
-                  padding: "0 16px",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  outline: "none",
-                  textAlign: "center",
-                  animation: "welcomeFadeInUp 0.5s 0.08s both",
-                }}
-              />
-              {SOURCE_OPTIONS.map((option, i) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  style={{
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: "#fff",
-                    color: "#2B313D",
-                    fontSize: 15,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    animation: `welcomeFadeInUp 0.5s ${0.1 * (i + 1)}s both`,
-                  }}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
 
         {/* Thanks */}
         {step === "thanks" && (
@@ -210,7 +137,7 @@ export default function WelcomeOverlay({ nickname, onComplete }: WelcomeOverlayP
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <p style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>감사합니다!</p>
+            <p style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>스타디에 오신 걸 환영해요!</p>
           </div>
         )}
       </div>

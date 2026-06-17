@@ -49,10 +49,10 @@ export default function OxQuizSolvePage() {
   const [showList, setShowList] = useState(false);
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
   const [navigating, setNavigating] = useState(false);
-  const [bookmarkToast, setBookmarkToast] = useState(false);
+  const [bookmarkToast, setBookmarkToast] = useState("");
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
-  const [startTime] = useState(Date.now());
+  const [startTime] = useState(() => Date.now());
   const [progressReady, setProgressReady] = useState(false);
   const [pendingProgress, setPendingProgress] = useState<{
     answersJson: string;
@@ -92,16 +92,22 @@ export default function OxQuizSolvePage() {
       .then((res) => res.json())
       .then(async (data) => {
         let nextQuiz = data.oxQuizSet as OxQuizSet;
+        let bookmarkedIds = new Set<string>();
+
+        try {
+          const bmRes = await fetch("/api/bookmarks?quizType=ox");
+          if (bmRes.ok) {
+            const bmData = await bmRes.json();
+            bookmarkedIds = new Set(
+              ((bmData.bookmarks || []) as BookmarkItem[])
+                .filter((bm) => bm.oxQuizSetId === id && bm.oxQuestionId)
+                .map((bm) => bm.oxQuestionId as string)
+            );
+          }
+        } catch {}
+        setBookmarkedQuestionIds(bookmarkedIds);
 
         if (bookmarkMode.enabled) {
-          const bmRes = await fetch("/api/bookmarks?quizType=ox");
-          const bmData = await bmRes.json();
-          const bookmarkedIds = new Set(
-            ((bmData.bookmarks || []) as BookmarkItem[])
-              .filter((bm) => bm.oxQuizSetId === id && bm.oxQuestionId)
-              .map((bm) => bm.oxQuestionId as string)
-          );
-          setBookmarkedQuestionIds(bookmarkedIds);
           nextQuiz = {
             ...nextQuiz,
             title: `${nextQuiz.title} 책갈피`,
@@ -465,18 +471,24 @@ export default function OxQuizSolvePage() {
                 onClick={async () => {
                   if (!currentQuestion || !quiz) return;
                   try {
-                    await fetch("/api/bookmarks", {
+                    const response = await fetch("/api/bookmarks", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id }),
                     });
+                    if (!response.ok) throw new Error("Failed to toggle bookmark");
+                    const data = await response.json();
                     setBookmarkedQuestionIds((prev) => {
                       const next = new Set(prev);
-                      next.add(currentQuestion.id);
+                      if (data.bookmarked) {
+                        next.add(currentQuestion.id);
+                      } else {
+                        next.delete(currentQuestion.id);
+                      }
                       return next;
                     });
-                    setBookmarkToast(true);
-                    setTimeout(() => setBookmarkToast(false), 2000);
+                    setBookmarkToast(data.bookmarked ? "책갈피에 추가되었습니다" : "책갈피가 취소되었습니다");
+                    setTimeout(() => setBookmarkToast(""), 2000);
                   } catch {}
                 }}
                 className="press"
@@ -869,7 +881,7 @@ export default function OxQuizSolvePage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          책갈피에 추가되었습니다
+          {bookmarkToast}
         </div>
       )}
       <style>{`
@@ -885,7 +897,6 @@ export default function OxQuizSolvePage() {
           <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "#fff", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>정말로 나가시겠습니까?</h2>
-              <p style={{ fontSize: 15, color: "#8A909C", marginTop: 1 }}>풀고 있던 문제가 저장되지 않습니다.</p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>

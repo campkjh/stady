@@ -124,9 +124,9 @@ export default function ProfilePage() {
               </svg>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
+          {/* WKWebView(iOS 앱) 호환: 버튼 + 숨김 input의 ref.click() 대신
+              label 위에 투명 input을 덮어 탭이 input에 직접 닿게 한다. */}
+          <label
             className="press"
             style={{
               position: "absolute",
@@ -141,20 +141,22 @@ export default function ProfilePage() {
               alignItems: "center",
               justifyContent: "center",
               boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+              cursor: "pointer",
+              overflow: "hidden",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            style={{ display: "none" }}
-          />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+            />
+          </label>
         </div>
 
         {/* Nickname */}

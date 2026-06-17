@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordUserAccessMetadata } from "@/lib/user-admin-profile";
 
 // iOS 앱에서 카카오 로그인 후 호출하는 엔드포인트
 export async function GET(request: NextRequest) {
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
+    await recordUserAccessMetadata(request, user.id, isNewUser);
 
     if (isNewUser) {
       response.cookies.set("isNewUser", "true", {

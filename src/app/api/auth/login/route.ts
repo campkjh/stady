@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { recordUserAccessMetadata } from "@/lib/user-admin-profile";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,8 +31,17 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
+    await recordUserAccessMetadata(request, user.id, false);
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      role: user.role,
+      signupSource: user.signupSource,
+      createdAt: user.createdAt,
+    };
 
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {

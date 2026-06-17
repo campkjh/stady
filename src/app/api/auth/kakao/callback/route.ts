@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordUserAccessMetadata } from "@/lib/user-admin-profile";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
+    await recordUserAccessMetadata(request, user.id, isNewUser);
 
     if (isNewUser) {
       response.cookies.set("isNewUser", "true", {

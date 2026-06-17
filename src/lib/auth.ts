@@ -2,9 +2,14 @@ import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 
 export const MASTER_ADMIN_EMAIL = "campkjh@nate.com";
+export const ADMIN_EMAILS = [
+  MASTER_ADMIN_EMAIL,
+  "tlsdml0507@naver.com",
+];
 
 export function isMasterAdminEmail(email?: string | null) {
-  return email?.toLowerCase() === MASTER_ADMIN_EMAIL;
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
 export async function getCurrentUser() {

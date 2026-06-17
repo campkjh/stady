@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ACTIVE_COLOR = "#3787FF";
 const INACTIVE_COLOR = "#2B313D";
+const COMMUNITY_VISITED_KEY = "stady_community_visited";
 
 const tabs = [
   {
@@ -14,16 +15,6 @@ const tabs = [
     icon: (color: string) => (
       <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
         <path d="M13.8467 8.13878C14.5381 7.65068 15.4619 7.65068 16.1533 8.13878L21.5586 11.9542C22.0894 12.329 22.4053 12.9382 22.4053 13.588V20.6769C22.4052 21.7814 21.5098 22.6769 20.4053 22.6769H17.6354C17.4144 22.6769 17.2354 22.4978 17.2354 22.2769V18.5515C17.2354 18.3306 17.0563 18.1515 16.8354 18.1515H13.1646C12.9437 18.1515 12.7646 18.3306 12.7646 18.5515V22.2769C12.7646 22.4978 12.5856 22.6769 12.3646 22.6769H9.59473C8.4902 22.6769 7.5948 21.7814 7.59473 20.6769V13.588C7.59473 12.9382 7.91057 12.329 8.44141 11.9542L13.8467 8.13878Z" fill={color}/>
-      </svg>
-    ),
-  },
-  {
-    label: "검색",
-    href: "/search",
-    icon: (color: string) => (
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <circle cx="13.8173" cy="13.8173" r="6.24392" stroke={color} strokeWidth="1.8"/>
-        <path d="M18.8291 18.8296L23.3266 23.327" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
       </svg>
     ),
   },
@@ -50,14 +41,33 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [showCommunityTip, setShowCommunityTip] = useState(false);
+
+  // Show the floating "새로운 커뮤니티" tooltip only to users who have never
+  // opened the community. Visiting /community marks it as seen forever.
+  useEffect(() => {
+    const visited = localStorage.getItem(COMMUNITY_VISITED_KEY) === "true";
+    const onCommunity = pathname.startsWith("/community");
+    if (onCommunity && !visited) localStorage.setItem(COMMUNITY_VISITED_KEY, "true");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowCommunityTip(!visited && !onCommunity);
+  }, [pathname]);
+
+  function markCommunityVisited() {
+    localStorage.setItem(COMMUNITY_VISITED_KEY, "true");
+    setShowCommunityTip(false);
+  }
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
 
+  if (pathname.startsWith("/community/write")) {
+    return null;
+  }
+
   return (
-    <>
     <nav style={{
       position: "fixed",
       bottom: 0,
@@ -80,8 +90,39 @@ export default function BottomNav() {
       }}>
         {tabs.map((tab, tabIdx) => (
           <React.Fragment key={tab.href}>
-            {/* Timer tab inserted after 검색 (index 1) */}
-            {tabIdx === 2 && (
+            {/* Community and timer tabs inserted after 홈 */}
+            {tabIdx === 1 && (
+              <>
+              <li style={{ position: "relative" }}>
+                {showCommunityTip && (
+                  <div className="community-tip" aria-hidden="true">
+                    <div className="community-tip-bubble">
+                      <span className="community-tip-text">새로운 커뮤니티</span>
+                    </div>
+                    <svg className="community-tip-tail" width="39" height="12" viewBox="0 0 39 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M30.922 2.63L20.459 11C19.729 11.584 18.69 11.584 17.96 11L7.496 2.63C5.368 0.928001 2.725 0 0 0H38.418C35.693 0 33.05 0.928001 30.922 2.63Z" fill="white"/>
+                    </svg>
+                  </div>
+                )}
+                <Link
+                  href="/community"
+                  onClick={markCommunityVisited}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                    textDecoration: "none",
+                    opacity: isActive("/community") ? 1 : 0.44,
+                  }}
+                >
+                  <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+                    <path d="M8 10.5C8 8.567 9.567 7 11.5 7H18.5C20.433 7 22 8.567 22 10.5V15.5C22 17.433 20.433 19 18.5 19H15.75L11.8 22.2C11.47 22.468 10.976 22.233 10.976 21.808V19H11.5C9.567 19 8 17.433 8 15.5V10.5Z" stroke={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" strokeLinejoin="round"/>
+                    <path d="M12 12.5H18M12 15.5H15.5" stroke={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: 10, fontWeight: 500, color: isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR }}>커뮤니티</span>
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/timer"
@@ -103,6 +144,7 @@ export default function BottomNav() {
                   <span style={{ fontSize: 10, fontWeight: 500, color: isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR }}>타이머</span>
                 </Link>
               </li>
+              </>
             )}
             <li>
               <Link
@@ -129,7 +171,55 @@ export default function BottomNav() {
           </React.Fragment>
         ))}
       </ul>
+      <style>{`
+        .community-tip {
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% - 12px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          pointer-events: none;
+          z-index: 60;
+          will-change: transform;
+          animation: communityTipFloat 2.6s ease-in-out infinite;
+        }
+        .community-tip-bubble {
+          background: #fff;
+          border-radius: 16px;
+          padding: 7px 14px;
+          box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
+          white-space: nowrap;
+        }
+        .community-tip-text {
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
+          background: linear-gradient(110deg, #8B95A1 0%, #8B95A1 26%, #3182F6 42%, #333D4B 58%, #333D4B 100%);
+          background-size: 230% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+          animation: communityTipText 2.8s ease-in-out infinite;
+        }
+        .community-tip-tail {
+          margin-top: -1px;
+          filter: drop-shadow(0 6px 4px rgba(15, 23, 42, 0.10));
+        }
+        @keyframes communityTipFloat {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-5px); }
+        }
+        @keyframes communityTipText {
+          0% { background-position: 150% 0; }
+          100% { background-position: -50% 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .community-tip { animation: none; transform: translateX(-50%); }
+          .community-tip-text { animation: none; }
+        }
+      `}</style>
     </nav>
-    </>
   );
 }

@@ -102,11 +102,8 @@ function formatTime(sec: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function formatShort(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return `${h}시간 ${m}분`;
-  return `${m}분`;
+function timerUserRenderKey(user: TimerUser) {
+  return `${user.userId}-${user.activeStartedAt || "idle"}-${user.activeElapsedSeconds}`;
 }
 
 function formatHours(sec: number): string {
@@ -133,6 +130,9 @@ export default function TimerPage() {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<TimerUser[]>([]);
+  const [friendIdentifier, setFriendIdentifier] = useState("");
+  const [friendAddMessage, setFriendAddMessage] = useState("");
+  const [friendAddLoading, setFriendAddLoading] = useState(false);
   const [myStats, setMyStats] = useState<TimerStats | null>(null);
   const [analysis, setAnalysis] = useState<TimerAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -209,13 +209,41 @@ export default function TimerPage() {
   }, [isLoggedIn, activeTab, analysis]);
 
   const sendFriendRequest = async (userId: string) => {
-    await fetch("/api/timer/friends", {
+    const res = await fetch("/api/timer/friends", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
     });
     setSelectedUser(null);
     fetchFriends();
+    if (!res.ok) setFriendAddMessage("친구 요청을 보내지 못했어요.");
+  };
+
+  const sendFriendRequestByIdentifier = async () => {
+    const identifier = friendIdentifier.trim();
+    if (!identifier) {
+      setFriendAddMessage("아이디를 입력해주세요.");
+      return;
+    }
+    setFriendAddLoading(true);
+    setFriendAddMessage("");
+    try {
+      const res = await fetch("/api/timer/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier }),
+      });
+      if (res.ok) {
+        setFriendIdentifier("");
+        setFriendAddMessage("친구 요청을 보냈어요.");
+        fetchFriends();
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setFriendAddMessage(data.error || "친구 요청을 보내지 못했어요.");
+    } finally {
+      setFriendAddLoading(false);
+    }
   };
 
   const respondFriendRequest = async (requestId: string, action: "accept" | "reject") => {
@@ -278,7 +306,7 @@ export default function TimerPage() {
   };
 
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
-  const myTodayTotal = (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed;
+  const myTodayTotal = Math.max(0, (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed);
 
   // Sort: active (by elapsed desc) → inactive (by today total desc) → never studied
   const sortedUsers = useMemo(() => {
@@ -333,7 +361,7 @@ export default function TimerPage() {
           margin: 0,
           whiteSpace: "nowrap",
         }}>
-          {formatTime(myElapsed)}
+          {formatTime(myTodayTotal)}
         </p>
         <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
           {!isRunning && (
@@ -387,7 +415,7 @@ export default function TimerPage() {
                 cursor: "pointer",
               }}
             >
-              {u.nickname} {formatShort(u.todayTotalSeconds)}
+              {u.nickname} {formatTime(u.todayTotalSeconds)}
             </button>
           ))}
         </div>
@@ -492,7 +520,7 @@ export default function TimerPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
                 {sortedUsers.map((u) => (
                   <UserCard
-                    key={u.userId}
+                    key={timerUserRenderKey(u)}
                     user={u}
                     onOpen={() => setSelectedUser(u)}
                     onStatusClick={u.isMe ? () => router.push("/mypage/profile") : undefined}
@@ -523,13 +551,45 @@ export default function TimerPage() {
                 background: "#fff",
               }}>
                 {todayRanking.map((u, i) => (
-                  <RankingRow key={u.userId} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} onOpen={() => setSelectedUser(u)} />
+                  <RankingRow key={timerUserRenderKey(u)} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} onOpen={() => setSelectedUser(u)} />
                 ))}
               </div>
             )}
           </div>
         ) : activeTab === "friends" ? (
           <div key="friends" className="timer-tab-panel">
+            <div style={{ marginBottom: 18, padding: 14, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}` }}>
+              <p style={{ fontSize: 13, color: PRIMARY_DARK, fontWeight: 800, marginBottom: 10 }}>아이디로 친구 추가</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={friendIdentifier}
+                  onChange={(e) => {
+                    setFriendIdentifier(e.target.value);
+                    setFriendAddMessage("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendFriendRequestByIdentifier();
+                  }}
+                  placeholder="아이디, 이메일 또는 닉네임"
+                  autoCapitalize="none"
+                  style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 12, border: "1px solid #D6E4FF", background: "#fff", padding: "0 12px", color: "#111827", fontSize: 14, fontWeight: 700, outline: "none" }}
+                />
+                <button
+                  type="button"
+                  onClick={sendFriendRequestByIdentifier}
+                  disabled={friendAddLoading}
+                  style={{ width: 74, height: 42, borderRadius: 12, border: "none", background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 800, flexShrink: 0, opacity: friendAddLoading ? 0.65 : 1 }}
+                >
+                  추가
+                </button>
+              </div>
+              {friendAddMessage && (
+                <p style={{ marginTop: 8, fontSize: 12, color: friendAddMessage.includes("보냈") ? PRIMARY_DARK : "#EF4444", fontWeight: 700 }}>
+                  {friendAddMessage}
+                </p>
+              )}
+            </div>
+
             {incomingRequests.length > 0 && (
               <div style={{ marginBottom: 18 }}>
                 <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>들어온 친구 요청</p>
@@ -572,7 +632,7 @@ export default function TimerPage() {
                 {friends
                   .sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds)
                   .map((friend, index) => (
-                    <RankingRow key={friend.userId} user={friend} rank={index + 1} isLast={index === friends.length - 1} />
+                    <RankingRow key={timerUserRenderKey(friend)} user={friend} rank={index + 1} isLast={index === friends.length - 1} />
                   ))}
               </div>
             )}
@@ -599,7 +659,7 @@ export default function TimerPage() {
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 4 }}>{selectedUser.nickname}</h2>
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 18 }}>
-              오늘 {formatShort(selectedUser.todayTotalSeconds)}
+              오늘 {formatTime(selectedUser.todayTotalSeconds)}
               {selectedUser.isActive ? ` · ${selectedUser.subject || "공부중"}` : ""}
             </p>
             {selectedUser.isMe ? (
@@ -944,11 +1004,10 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
-    setElapsed(user.activeElapsedSeconds);
     if (!user.isActive) return;
     const t = setInterval(() => setElapsed((p) => p + 1), 1000);
     return () => clearInterval(t);
-  }, [user.userId, user.activeElapsedSeconds, user.isActive]);
+  }, [user.isActive]);
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
   const lit = user.isActive;
@@ -1077,7 +1136,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
         color: lit ? PRIMARY : "#BDC2CB",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {lit ? formatTime(elapsed) : totalToday > 0 ? formatShort(totalToday) : "오프라인"}
+        {lit || totalToday > 0 ? formatTime(totalToday) : "오프라인"}
       </p>
     </div>
   );
@@ -1120,11 +1179,10 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
 
   useEffect(() => {
-    setElapsed(user.activeElapsedSeconds);
     if (!user.isActive) return;
     const t = setInterval(() => setElapsed((p) => p + 1), 1000);
     return () => clearInterval(t);
-  }, [user.userId, user.activeElapsedSeconds, user.isActive]);
+  }, [user.isActive]);
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
   const rankColor = rank === 1 ? "#F59E0B" : rank === 2 ? "#94A3B8" : rank === 3 ? "#CD7F32" : "#D1D5DB";
@@ -1176,7 +1234,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
           color: user.isActive ? PRIMARY : "#111",
           fontVariantNumeric: "tabular-nums",
         }}>
-          {formatShort(totalToday)}
+          {formatTime(totalToday)}
         </p>
         {user.isActive && (
           <p style={{ fontSize: 10, color: PRIMARY, marginTop: 1, fontWeight: 600 }}>

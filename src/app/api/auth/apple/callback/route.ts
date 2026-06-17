@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordUserAccessMetadata } from "@/lib/user-admin-profile";
 
 function decodeJwtPayload(token: string): Record<string, unknown> {
   const payload = token.split(".")[1];
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
+    await recordUserAccessMetadata(request, user.id, isNewUser);
 
     if (isNewUser) {
       response.cookies.set("isNewUser", "true", {

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
+import { isMasterAdminEmail } from "@/lib/auth";
 import HomeClient from "@/components/HomeClient";
 
 export default async function HomePage() {
@@ -11,7 +12,7 @@ export default async function HomePage() {
 
   const [user, categoriesRaw, workbooks, oxQuizSets, vocabQuizSets] = await Promise.all([
     userId
-      ? prisma.user.findUnique({ where: { id: userId }, select: { nickname: true } })
+      ? prisma.user.findUnique({ where: { id: userId }, select: { email: true, nickname: true, role: true, signupSource: true } })
       : null,
     prisma.category.findMany({ orderBy: { order: "asc" } }),
     prisma.workbook.findMany({
@@ -29,11 +30,13 @@ export default async function HomePage() {
   ]);
 
   const categories = categoriesRaw.filter((c) => c.name !== "전체");
-  const isNewUser = cookieStore.get("isNewUser")?.value !== undefined;
+  const isNewUser = cookieStore.get("isNewUser")?.value !== undefined && !user?.signupSource;
+  const isAdmin = user?.role === "admin" || isMasterAdminEmail(user?.email);
 
   return (
     <HomeClient
       userName={user?.nickname ?? null}
+      isAdmin={isAdmin}
       categories={categories}
       workbooks={workbooks}
       oxQuizSets={oxQuizSets}

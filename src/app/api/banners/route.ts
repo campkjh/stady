@@ -2,7 +2,6 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, requireAdmin } from "@/lib/auth";
-import { REFERRAL_EVENT_PATH } from "@/lib/referrals";
 
 export const runtime = "nodejs";
 
@@ -40,51 +39,8 @@ async function ensureBannerTable() {
     ADD COLUMN IF NOT EXISTS "bannerType" TEXT NOT NULL DEFAULT 'slide'
   `);
 
-  const defaultRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    `SELECT "id" FROM "HomeBanner" WHERE "imageUrl" = '/banners/referral-event.png' LIMIT 1`
-  );
-  if (defaultRows.length === 0) {
-    await prisma.$executeRawUnsafe(
-      `
-        INSERT INTO "HomeBanner" ("id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "bannerType", "sortOrder", "isActive")
-        VALUES ($1, $2, $3, $4, $5, $6, 'modal', -100, true)
-      `,
-      randomUUID(),
-      "스타디 1달 오픈베타 이벤트!",
-      "친구를 초대할수록 더 커지는 혜택",
-      "/banners/referral-event.png",
-      REFERRAL_EVENT_PATH,
-      "#EAF3FF"
-    );
-  }
-
-  const defaultSlideRows = await prisma.$queryRawUnsafe<{ id: string }[]>(
-    `SELECT "id" FROM "HomeBanner" WHERE "imageUrl" = '/banners/referral-slide.png' LIMIT 1`
-  );
-  if (defaultSlideRows.length === 0) {
-    await prisma.$executeRawUnsafe(
-      `
-        INSERT INTO "HomeBanner" ("id", "title", "subtitle", "imageUrl", "linkUrl", "bgColor", "bannerType", "sortOrder", "isActive")
-        VALUES ($1, $2, $3, $4, $5, $6, 'slide', -90, true)
-      `,
-      randomUUID(),
-      "스타디 1달 오픈베타 이벤트!",
-      "친구를 초대할수록 더 커지는 혜택",
-      "/banners/referral-slide.png",
-      REFERRAL_EVENT_PATH,
-      "#EAF3FF"
-    );
-  }
-
-  await prisma.$executeRawUnsafe(
-    `
-      UPDATE "HomeBanner"
-      SET "linkUrl" = $1, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE "imageUrl" IN ('/banners/referral-event.png', '/banners/referral-slide.png')
-        AND ("linkUrl" IS NULL OR "linkUrl" = '/timer')
-    `,
-    REFERRAL_EVENT_PATH
-  );
+  // 오픈베타 기본 배너 자동 시드 제거 — 더 이상 자동 생성하지 않는다.
+  // (배너는 관리자가 추가한 것만 노출)
 }
 
 function normalizeBanner(row: BannerRow) {

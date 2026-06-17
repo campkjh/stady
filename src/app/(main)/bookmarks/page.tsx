@@ -19,6 +19,7 @@ interface Bookmark {
   subtitle: string;
   word: string | null;
   meaning: string | null;
+  categoryName: string;
 }
 
 const TABS = [
@@ -146,8 +147,10 @@ function SwipeableVocabBookmarkItem({
 export default function BookmarksPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("");
+  const [oxCategory, setOxCategory] = useState(""); // OX 분류(카테고리) 필터
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -155,6 +158,20 @@ export default function BookmarksPage() {
       .then((r) => r.json())
       .then((data) => setIsLoggedIn(!!data.user))
       .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  // 나갔다 다시 들어와도 선택했던 탭/분류가 유지되도록 복원
+  useEffect(() => {
+    try {
+      const savedTab = localStorage.getItem("bookmark_tab");
+      const savedCat = localStorage.getItem("bookmark_ox_category");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (savedTab) setActiveTab(savedTab);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (savedCat) setOxCategory(savedCat);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -204,22 +221,85 @@ export default function BookmarksPage() {
     }
   }
 
+  async function handleDeleteAllBookmarks() {
+    if (deletingAll || bookmarks.length === 0) return;
+    if (!window.confirm("모든 책갈피를 취소할까요?")) return;
+
+    const previousBookmarks = bookmarks;
+    setDeletingAll(true);
+    setBookmarks([]);
+    try {
+      const res = await fetch("/api/bookmarks?all=true", {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete all");
+    } catch {
+      setBookmarks(previousBookmarks);
+      alert("책갈피를 모두 취소하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeletingAll(false);
+    }
+  }
+
+  // OX 분류(카테고리) 목록 — OX 탭에서 필터 칩으로 사용
+  const oxCategories = Array.from(
+    new Set(
+      bookmarks
+        .filter((b) => b.quizType === "ox" && b.categoryName)
+        .map((b) => b.categoryName)
+    )
+  );
+
   // Split: vocab vs others
   const vocabBookmarks = bookmarks.filter((b) => b.quizType === "vocab");
-  const otherBookmarks = bookmarks.filter((b) => b.quizType !== "vocab");
+  const otherBookmarks = bookmarks
+    .filter((b) => b.quizType !== "vocab")
+    // OX 탭에서 분류가 선택되면 해당 분류만 노출
+    .filter((b) => !(activeTab === "ox" && oxCategory) || b.categoryName === oxCategory);
 
   return (
     <div className="px-4 pt-6">
       <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", paddingBottom: 8 }}>
-        <h1 className="text-xl font-bold mb-4">찜</h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <h1 className="text-xl font-bold" style={{ margin: 0 }}>찜</h1>
+          {!loading && bookmarks.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteAllBookmarks}
+              disabled={deletingAll}
+              className="press"
+              style={{
+                border: "1px solid #FCA5A5",
+                borderRadius: 999,
+                background: deletingAll ? "#FEE2E2" : "#fff",
+                color: "#DC2626",
+                padding: "8px 12px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: deletingAll ? "not-allowed" : "pointer",
+                opacity: deletingAll ? 0.64 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {deletingAll ? "취소 중..." : "모든 책갈피 취소"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto">
+      <div className={`flex gap-2 overflow-x-auto ${activeTab === "ox" && oxCategories.length > 0 ? "mb-3" : "mb-6"}`}>
         {TABS.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => {
+              setActiveTab(tab.value);
+              setOxCategory("");
+              try {
+                localStorage.setItem("bookmark_tab", tab.value);
+                localStorage.setItem("bookmark_ox_category", "");
+              } catch {}
+            }}
             className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.value
                 ? "bg-gray-900 text-white"
@@ -230,6 +310,40 @@ export default function BookmarksPage() {
           </button>
         ))}
       </div>
+
+      {/* OX 분류(카테고리) 필터 — 메인 탭(알약)과 구분되는 언더라인 탭 스타일 */}
+      {activeTab === "ox" && oxCategories.length > 0 && (
+        <div className="flex gap-1 mb-6 overflow-x-auto" style={{ borderBottom: "1px solid #EFF1F4" }}>
+          {[{ label: "전체", value: "" }, ...oxCategories.map((c) => ({ label: c, value: c }))].map((c) => {
+            const active = oxCategory === c.value;
+            return (
+              <button
+                key={c.value || "__all"}
+                onClick={() => {
+                  setOxCategory(c.value);
+                  try { localStorage.setItem("bookmark_ox_category", c.value); } catch {}
+                }}
+                className="shrink-0"
+                style={{
+                  padding: "8px 12px 11px",
+                  background: "none",
+                  border: "none",
+                  borderBottom: active ? "2.5px solid #3787FF" : "2.5px solid transparent",
+                  marginBottom: -1,
+                  fontSize: 14,
+                  fontWeight: active ? 800 : 600,
+                  color: active ? "#3787FF" : "#9CA3AF",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                  transition: "color 0.15s ease",
+                }}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (

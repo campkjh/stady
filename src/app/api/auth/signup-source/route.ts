@@ -8,18 +8,24 @@ export async function PUT(request: NextRequest) {
     const user = await requireUser();
     const { source, inviteCode } = await request.json();
 
-    if (!source || typeof source !== "string") {
-      return NextResponse.json({ error: "source is required" }, { status: 400 });
+    // The signup-source survey was removed; `source` is now optional and only
+    // recorded when provided. The referral invite code is still applied.
+    if (source && typeof source === "string") {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { signupSource: source },
+      });
     }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { signupSource: source },
-    });
 
     const referral = await registerReferralInvite(user.id, inviteCode);
 
-    return NextResponse.json({ success: true, referralApplied: referral.applied });
+    const response = NextResponse.json({ success: true, referralApplied: referral.applied });
+    response.cookies.set("isNewUser", "", {
+      path: "/",
+      maxAge: 0,
+    });
+
+    return response;
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

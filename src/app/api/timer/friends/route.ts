@@ -163,8 +163,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
-    const { userId } = await request.json();
-    if (!userId || userId === user.id) {
+    const { userId, identifier } = await request.json();
+    const trimmedIdentifier = typeof identifier === "string" ? identifier.trim() : "";
+    const targetUser = trimmedIdentifier
+      ? await prisma.user.findFirst({
+          where: {
+            role: "user",
+            OR: [
+              { id: trimmedIdentifier },
+              { email: { equals: trimmedIdentifier, mode: "insensitive" } },
+              { nickname: { equals: trimmedIdentifier, mode: "insensitive" } },
+            ],
+          },
+          select: { id: true },
+        })
+      : null;
+    const targetUserId = targetUser?.id || userId;
+
+    if (!targetUserId || targetUserId === user.id) {
       return NextResponse.json({ error: "친구 요청 대상이 올바르지 않습니다." }, { status: 400 });
     }
 
@@ -177,7 +193,7 @@ export async function POST(request: NextRequest) {
       `,
       randomUUID(),
       user.id,
-      userId
+      targetUserId
     );
 
     return NextResponse.json({ success: true });

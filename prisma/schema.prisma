@@ -22,6 +22,157 @@ model User {
   bookmarks Bookmark[]
   reviews   Review[]
   studySessions StudySession[]
+  communityPosts CommunityPost[]
+  communityComments CommunityComment[]
+  communityReports CommunityReport[]
+  communityPostLikes CommunityPostLike[]
+  communityCommentLikes CommunityCommentLike[]
+}
+
+model CommunityCategoryGroup {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tags  CommunityTag[]
+  posts CommunityPost[]
+
+  @@map("CommunityCategoryGroup")
+}
+
+model CommunityTag {
+  id          String   @id @default(uuid())
+  groupId     String   @map("group_id")
+  name        String
+  slug        String
+  description String   @default("")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  group CommunityCategoryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  postTags CommunityPostTag[]
+
+  @@unique([groupId, slug])
+  @@index([groupId])
+  @@map("CommunityTag")
+}
+
+model CommunityPost {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  groupId     String   @map("group_id")
+  title       String
+  content     String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  group CommunityCategoryGroup @relation(fields: [groupId], references: [id])
+  postTags CommunityPostTag[]
+  images CommunityPostImage[]
+  comments CommunityComment[]
+  reports CommunityReport[]
+  likes CommunityPostLike[]
+
+  @@index([groupId])
+  @@index([createdAt])
+  @@map("CommunityPost")
+}
+
+model CommunityPostTag {
+  postId String @map("post_id")
+  tagId  String @map("tag_id")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  CommunityTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+  @@map("CommunityPostTag")
+}
+
+model CommunityPostImage {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  imageUrl  String   @map("image_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, sortOrder])
+  @@map("CommunityPostImage")
+}
+
+model CommunityComment {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  parentId  String?  @map("parent_id")
+  userId    String?  @map("user_id")
+  content   String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent CommunityComment? @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CommunityComment[] @relation("CommunityCommentReplies")
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  likes CommunityCommentLike[]
+
+  @@index([postId])
+  @@index([postId, parentId])
+  @@map("CommunityComment")
+}
+
+model CommunityPostLike {
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId])
+  @@map("CommunityPostLike")
+}
+
+model CommunityCommentLike {
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+  @@index([userId])
+  @@map("CommunityCommentLike")
+}
+
+model CommunityReport {
+  id        String   @id @default(uuid())
+  postId    String?  @map("post_id")
+  userId    String?  @map("user_id")
+  reason    String
+  status    String   @default("접수")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  post CommunityPost? @relation(fields: [postId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("CommunityReport")
 }
 
 model StudySession {

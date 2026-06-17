@@ -32,6 +32,8 @@ interface BookmarkItem {
   vocabQuestionId: string | null;
 }
 
+type TabFilter = "all" | "correct" | "wrong";
+
 export default function VocabQuizSolvePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -40,12 +42,13 @@ export default function VocabQuizSolvePage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [tabFilter, setTabFilter] = useState<TabFilter>("all");
   const [answers, setAnswers] = useState<
     Map<string, { selected: number; isCorrect: boolean }>
   >(new Map());
   const [submitted, setSubmitted] = useState(false);
-  const [startTime] = useState(Date.now());
-  const [bookmarkToast, setBookmarkToast] = useState(false);
+  const [startTime] = useState(() => Date.now());
+  const [bookmarkToast, setBookmarkToast] = useState("");
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [showList, setShowList] = useState(false);
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
@@ -68,7 +71,7 @@ export default function VocabQuizSolvePage() {
     if (!quiz) return;
     const currentQuestion = quiz.questions[currentIndex];
     try {
-      await fetch("/api/bookmarks", {
+      const response = await fetch("/api/bookmarks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -77,13 +80,19 @@ export default function VocabQuizSolvePage() {
           vocabQuestionId: currentQuestion.id,
         }),
       });
+      if (!response.ok) throw new Error("Failed to toggle bookmark");
+      const data = await response.json();
       setBookmarkedQuestionIds((prev) => {
         const next = new Set(prev);
-        next.add(currentQuestion.id);
+        if (data.bookmarked) {
+          next.add(currentQuestion.id);
+        } else {
+          next.delete(currentQuestion.id);
+        }
         return next;
       });
-      setBookmarkToast(true);
-      setTimeout(() => setBookmarkToast(false), 2000);
+      setBookmarkToast(data.bookmarked ? "책갈피에 추가되었습니다" : "책갈피가 취소되었습니다");
+      setTimeout(() => setBookmarkToast(""), 2000);
     } catch {}
   }, [quiz, currentIndex]);
 
@@ -114,16 +123,22 @@ export default function VocabQuizSolvePage() {
       .then((res) => res.json())
       .then(async (data) => {
         let nextQuiz = data.vocabQuizSet as VocabQuizSet;
+        let bookmarkedIds = new Set<string>();
+
+        try {
+          const bmRes = await fetch("/api/bookmarks?quizType=vocab");
+          if (bmRes.ok) {
+            const bmData = await bmRes.json();
+            bookmarkedIds = new Set(
+              ((bmData.bookmarks || []) as BookmarkItem[])
+                .filter((bm) => bm.vocabQuizSetId === id && bm.vocabQuestionId)
+                .map((bm) => bm.vocabQuestionId as string)
+            );
+          }
+        } catch {}
+        setBookmarkedQuestionIds(bookmarkedIds);
 
         if (bookmarkMode.enabled) {
-          const bmRes = await fetch("/api/bookmarks?quizType=vocab");
-          const bmData = await bmRes.json();
-          const bookmarkedIds = new Set(
-            ((bmData.bookmarks || []) as BookmarkItem[])
-              .filter((bm) => bm.vocabQuizSetId === id && bm.vocabQuestionId)
-              .map((bm) => bm.vocabQuestionId as string)
-          );
-          setBookmarkedQuestionIds(bookmarkedIds);
           nextQuiz = {
             ...nextQuiz,
             title: `${nextQuiz.title} 책갈피`,
@@ -222,7 +237,22 @@ export default function VocabQuizSolvePage() {
     }
   }, [submitted, quiz, answers, id, startTime, progressKey]);
 
-  const currentQuestion = quiz?.questions[currentIndex] ?? null;
+  const filteredQuestions = quiz
+    ? quiz.questions.filter((q) => {
+        if (tabFilter === "all") return true;
+        const ans = answers.get(q.id);
+        if (!ans) return false;
+        if (tabFilter === "correct") return ans.isCorrect;
+        return !ans.isCorrect;
+      })
+    : [];
+
+  const currentQuestion = filteredQuestions[currentIndex] ?? null;
+
+  // Reset position when switching the live-score filter tab
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [tabFilter]);
 
   useEffect(() => {
     if (showSwipeGuide) {
@@ -256,7 +286,7 @@ export default function VocabQuizSolvePage() {
   };
 
   const goNext = () => {
-    if (quiz && currentIndex < quiz.questions.length - 1) {
+    if (currentIndex < filteredQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
@@ -358,6 +388,57 @@ export default function VocabQuizSolvePage() {
         </button>
       </header>
 
+      {/* Tab filter (live score) */}
+      <div style={{ display: "flex", gap: 12, padding: "8px 16px", justifyContent: "center", position: "relative", zIndex: 20 }}>
+        {[
+          { key: "all" as TabFilter, icon: "/icons/emoji-solved.svg", label: "풀은문제", count: answers.size },
+          { key: "correct" as TabFilter, icon: "/icons/emoji-correct.svg", label: "맞춘문제", count: Array.from(answers.values()).filter((a) => a.isCorrect).length },
+          { key: "wrong" as TabFilter, icon: "/icons/emoji-wrong.svg", label: "틀린문제", count: Array.from(answers.values()).filter((a) => !a.isCorrect).length },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setTabFilter(tab.key)}
+            className="press"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              background: "none",
+              border: "none",
+              opacity: tabFilter === tab.key ? 1 : 0.4,
+              transition: "opacity 0.2s ease",
+              position: "relative",
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <img src={tab.icon} alt="" style={{ width: 32, height: 32 }} />
+              {tab.count > 0 && (
+                <span style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -8,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: "#E85D5D",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Question List Drawer */}
       {showList && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
@@ -387,15 +468,16 @@ export default function VocabQuizSolvePage() {
               </button>
             </div>
             <div ref={listScrollRef} style={{ padding: 8 }}>
-              {quiz.questions.map((q, idx) => {
+              {filteredQuestions.map((q, fIdx) => {
+                const origIdx = quiz.questions.findIndex((qq) => qq.id === q.id);
                 const ans = answers.get(q.id);
                 const status = ans ? (ans.isCorrect ? "correct" : "wrong") : "unanswered";
                 return (
                   <button
                     key={q.id}
                     type="button"
-                    data-active={currentIndex === idx}
-                    onClick={() => { setCurrentIndex(idx); setShowList(false); }}
+                    data-active={currentIndex === fIdx}
+                    onClick={() => { setCurrentIndex(fIdx); setShowList(false); }}
                     className="press"
                     style={{
                       display: "flex",
@@ -403,7 +485,7 @@ export default function VocabQuizSolvePage() {
                       gap: 12,
                       width: "100%",
                       padding: "14px 12px",
-                      background: currentIndex === idx ? "#F0F5FF" : "none",
+                      background: currentIndex === fIdx ? "#F0F5FF" : "none",
                       border: "none",
                       borderRadius: 10,
                       textAlign: "left",
@@ -421,7 +503,7 @@ export default function VocabQuizSolvePage() {
                       color: "#fff",
                       backgroundColor: status === "correct" ? "#4A90D9" : status === "wrong" ? "#E85D5D" : "#D1D5DB",
                     }}>
-                      {idx + 1}
+                      {origIdx + 1}
                     </span>
                     <span style={{ fontSize: 14, color: "#111", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {q.word}
@@ -447,7 +529,7 @@ export default function VocabQuizSolvePage() {
         <div
           className="h-full rounded-full bg-blue-500 transition-all duration-300"
           style={{
-            width: `${((currentIndex + 1) / quiz.questions.length) * 100}%`,
+            width: `${filteredQuestions.length ? ((currentIndex + 1) / filteredQuestions.length) * 100 : 0}%`,
           }}
         />
       </div>
@@ -456,7 +538,7 @@ export default function VocabQuizSolvePage() {
         onPrev={goPrev}
         onNext={goNext}
         prevDisabled={currentIndex === 0}
-        nextDisabled={currentIndex >= quiz.questions.length - 1}
+        nextDisabled={currentIndex >= filteredQuestions.length - 1}
       />
 
       {/* Question area */}
@@ -482,18 +564,18 @@ export default function VocabQuizSolvePage() {
                 </svg>
               </button>
               <p className="text-sm text-gray-400">
-                {currentIndex + 1} / {quiz.questions.length}
+                {currentIndex + 1} / {filteredQuestions.length}
               </p>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goNext(); }}
-                disabled={currentIndex >= quiz.questions.length - 1}
+                disabled={currentIndex >= filteredQuestions.length - 1}
                 className="press"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 28, height: 28, borderRadius: "50%",
                   border: "1px solid #E5E7EB", background: "#fff",
-                  opacity: currentIndex >= quiz.questions.length - 1 ? 0.3 : 1,
+                  opacity: currentIndex >= filteredQuestions.length - 1 ? 0.3 : 1,
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -638,7 +720,6 @@ export default function VocabQuizSolvePage() {
           <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "#fff", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>정말로 나가시겠습니까?</h2>
-              <p style={{ fontSize: 15, color: "#8A909C", marginTop: 1 }}>풀고 있던 문제가 저장되지 않습니다.</p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
@@ -730,7 +811,7 @@ export default function VocabQuizSolvePage() {
           zIndex: 100,
           animation: "fadeInUp 0.3s ease",
         }}>
-          책갈피에 추가되었습니다
+          {bookmarkToast}
         </div>
       )}
 

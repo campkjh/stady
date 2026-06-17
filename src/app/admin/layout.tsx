@@ -26,12 +26,74 @@ const navItems = [
     ),
   },
   {
+    href: "/admin/community-posts",
+    label: "게시글 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 3.5H16V16.5H4V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/comments",
+    label: "댓글 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 5.5C3 4.39543 3.89543 3.5 5 3.5H15C16.1046 3.5 17 4.39543 17 5.5V12C17 13.1046 16.1046 14 15 14H8L4 17V14H5C3.89543 14 3 13.1046 3 12V5.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M7 8H13M7 11H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/category-groups",
+    label: "카테고리 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+        <rect x="12" y="3" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+        <rect x="3" y="12" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M12 13H17M12 16H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/tags",
+    label: "태그 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.5 4.5V9.2C3.5 9.73 3.71 10.24 4.09 10.61L9.89 16.41C10.67 17.2 11.93 17.2 12.72 16.41L16.41 12.72C17.2 11.93 17.2 10.67 16.41 9.89L10.61 4.09C10.24 3.71 9.73 3.5 9.2 3.5H4.5C3.95 3.5 3.5 3.95 3.5 4.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <circle cx="7" cy="7" r="1" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/reports",
+    label: "신고 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 2.5L18 16.5H2L10 2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M10 7.5V11M10 14V14.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     href: "/admin/workbooks",
     label: "문제집 관리",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 4C3 2.89543 3.89543 2 5 2H15C16.1046 2 17 2.89543 17 4V16C17 17.1046 16.1046 18 15 18H5C3.89543 18 3 17.1046 3 16V4Z" stroke="currentColor" strokeWidth="1.5"/>
         <path d="M7 6H13M7 10H13M7 14H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/users",
+    label: "사용자 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M4 17C4 13.9624 6.68629 11.5 10 11.5C13.3137 11.5 16 13.9624 16 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
     ),
   },
@@ -93,11 +155,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
-
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
 
   if (loading) {
     return (
@@ -198,6 +255,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   style={{
                     display: "flex",
                     alignItems: "center",

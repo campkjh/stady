@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { sendInquiryNotification } from "@/lib/inquiry-email";
 
 export async function GET() {
   try {
@@ -47,7 +48,24 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(inquiry, { status: 201 });
+    let emailDelivery: { sent: boolean; reason?: string } = { sent: false, reason: "not_attempted" };
+    try {
+      emailDelivery = await sendInquiryNotification({
+        inquiryId: inquiry.id,
+        userId: inquiry.userId,
+        name: inquiry.name,
+        email: inquiry.email,
+        category: inquiry.category,
+        title: inquiry.title,
+        content: inquiry.content,
+        createdAt: inquiry.createdAt,
+      });
+    } catch (error) {
+      console.error("Inquiry notification email error:", error);
+      emailDelivery = { sent: false, reason: "send_failed" };
+    }
+
+    return NextResponse.json({ ...inquiry, emailDelivery }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
