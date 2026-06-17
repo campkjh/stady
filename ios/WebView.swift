@@ -15,6 +15,19 @@ struct WebView: UIViewRepresentable {
         // NOTE: register the app's other handlers here too
         // (kakaoLogin / appleLogin / showNativeLogin).
 
+        // The customUserAgent below is forced to an iPhone string (for KakaoTalk
+        // login), which makes an iPad masquerade as a phone. The web layout can't
+        // reliably recover the real device from a spoofed UA, so we hand it the
+        // truth: inject the native interface idiom before any page script runs.
+        // The web reads window.__STADY_NATIVE__.idiom (see src/lib/useIsTablet.ts).
+        let idiom = UIDevice.current.userInterfaceIdiom == .pad ? "pad" : "phone"
+        let idiomScript = WKUserScript(
+            source: "window.__STADY_NATIVE__ = { idiom: \"\(idiom)\" };",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        config.userContentController.addUserScript(idiomScript)
+
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK/10.0.0"
         // Enable the edge swipe-back gesture so users can navigate back from
