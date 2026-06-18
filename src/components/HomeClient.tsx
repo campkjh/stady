@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
+import { scheduleHomeRatingOnce } from "@/lib/appReview";
 
 interface Category {
   id: string;
@@ -122,6 +123,11 @@ export default function HomeClient({
     document.cookie = "isNewUser=; path=/; max-age=0";
     // 리뷰 프롬프트는 더 이상 온보딩 직후 띄우지 않는다. 퀴즈를 3개 이상 풀었을 때
     // 계정당 1회만 띄우도록 서버 게이트(/api/app-review)로 일원화했다.
+  }, []);
+
+  // 홈에서 앱 사용 3분 뒤 별점 팝업을 기기당 1회만 띄운다.
+  useEffect(() => {
+    return scheduleHomeRatingOnce();
   }, []);
 
   const openBanner = useCallback((linkUrl: string | null) => {
