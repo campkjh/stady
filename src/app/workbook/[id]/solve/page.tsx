@@ -200,6 +200,10 @@ export default function SolvePage() {
 
   const selectAnswer = (problemId: string, choiceNum: number) => {
     if (answers.has(problemId)) return; // 이미 답했으면 재선택 불가
+    // 한 판에서 3번째 문제를 푼 순간(직전 2개 + 이번 1개), 계정당 1회 리뷰 프롬프트.
+    if (answers.size === 2) {
+      maybePromptAppReviewAfterQuiz();
+    }
     setAnswers((prev) => {
       const next = new Map(prev);
       next.set(problemId, choiceNum);
@@ -250,8 +254,6 @@ export default function SolvePage() {
       });
       if (!res.ok) throw new Error("submit failed");
       const data = await res.json();
-      // 풀이 기록 저장 후, 계정당 1회 앱 리뷰 프롬프트 조건을 서버에서 판정.
-      maybePromptAppReviewAfterQuiz();
       if (progressKey) {
         fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
       }

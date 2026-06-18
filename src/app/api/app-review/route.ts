@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 
-// 유저가 퀴즈를 일정 개수(THRESHOLD) 이상 풀었을 때, 계정당 딱 한 번만
-// 앱스토어 리뷰 작성 팝업을 띄우도록 게이트하는 엔드포인트.
-//  - 풀이 횟수는 QuizAttempt(OX·영단어·워크북 공통)로 계정 단위 집계.
+// 앱스토어 리뷰 작성 팝업을 계정당 딱 한 번만 띄우도록 게이트하는 엔드포인트.
+//  - 노출 조건(한 판에서 3번째 문제를 푼 시점)은 클라이언트(퀴즈 페이지)가 판정해
+//    이 엔드포인트를 호출한다. 서버는 "계정당 1회"만 보장한다.
 //  - "1회만"은 User.reviewPromptedAt 로 보장 → 아이폰/아이패드 통틀어 한 번.
-const THRESHOLD = 3;
 
 export async function POST() {
   try {
@@ -17,12 +16,7 @@ export async function POST() {
       return NextResponse.json({ prompt: false });
     }
 
-    const solved = await prisma.quizAttempt.count({ where: { userId: user.id } });
-    if (solved < THRESHOLD) {
-      return NextResponse.json({ prompt: false });
-    }
-
-    // 임계치 도달 + 미노출 → 지금 노출로 표시(원자적 가드)하고 prompt:true 반환.
+    // 미노출 → 지금 노출로 표시(원자적 가드)하고 prompt:true 반환.
     // 동시 요청이 와도 reviewPromptedAt 가 null 인 행만 업데이트되므로 중복 노출 방지.
     const marked = await prisma.user.updateMany({
       where: { id: user.id, reviewPromptedAt: null },

@@ -228,8 +228,6 @@ export default function VocabQuizSolvePage() {
           timeTaken: Math.floor((Date.now() - startTime) / 1000),
         }),
       });
-      // 풀이 기록 저장 후, 계정당 1회 앱 리뷰 프롬프트 조건을 서버에서 판정.
-      maybePromptAppReviewAfterQuiz();
     } catch {
       // allow viewing results even if submit fails
     }
@@ -278,6 +276,11 @@ export default function VocabQuizSolvePage() {
     const newAnswers = new Map(answers);
     newAnswers.set(currentQuestion.id, { selected: choiceNum, isCorrect });
     setAnswers(newAnswers);
+
+    // 한 판에서 3번째 문제를 푼 순간, 계정당 1회 앱 리뷰 프롬프트를 띄운다.
+    if (newAnswers.size === 3) {
+      maybePromptAppReviewAfterQuiz();
+    }
 
     // Check if all questions answered
     if (quiz && newAnswers.size === quiz.questions.length) {
