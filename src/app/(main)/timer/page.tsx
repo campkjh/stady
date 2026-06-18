@@ -323,11 +323,12 @@ export default function TimerPage() {
     [users]
   );
 
+  // 상단 칩도 현재 공부중(active)인 사람만 — 오프라인은 제외(나 포함).
   const topFriendChips = useMemo(
     () =>
       [...users]
-        .filter((u) => !u.isMe && u.todayTotalSeconds > 0)
-        .sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds)
+        .filter((u) => !u.isMe && u.isActive)
+        .sort((a, b) => b.activeElapsedSeconds - a.activeElapsedSeconds)
         .slice(0, 3),
     [users]
   );
