@@ -8,8 +8,8 @@
 
 const IOS_REVIEW_URL = "https://apps.apple.com/kr/app/id6761746105?action=write-review";
 const ANDROID_REVIEW_URL = "https://play.google.com/store/apps/details?id=kr.stady";
-const HOME_RATING_KEY = "stady_home_rating_shown";
 const APP_OPENED_KEY = "stady_app_opened_at";
+const HOME_RATING_CALLED_KEY = "stady_home_rating_called"; // 이번 세션 중복 호출 방지용
 
 // 리뷰 "작성" 페이지로 보낸다. (퀴즈 3문제 트리거에서 사용)
 export function requestAppReview() {
@@ -47,14 +47,15 @@ export function requestStarRating() {
   window.open(isAndroid ? ANDROID_REVIEW_URL : IOS_REVIEW_URL, "_blank", "noopener,noreferrer");
 }
 
-// 홈에서 "앱 사용 3분 뒤" 별점 팝업을 기기당 딱 1회만 띄우도록 예약한다.
+// 홈에서 "앱 사용 3분 뒤" 별점 팝업을 계정당 딱 1회만 띄우도록 예약한다.
 // HomeClient의 useEffect에서 호출하고, 반환된 정리 함수를 cleanup으로 쓴다.
 //  - 3분 기준점은 앱을 연 시각(sessionStorage)로 잡아, 홈을 떠났다 와도
 //    누적 3분이 지나면 곧바로 뜬다.
-//  - "1회만"은 localStorage(stady_home_rating_shown)로 보장(기기 단위, 앱 재시작에도 유지).
+//  - "1회만"은 서버(/api/home-rating, User.homeRatingPromptedAt)로 보장 → 계정 단위.
+//    sessionStorage 플래그는 한 세션에서 서버를 중복 호출하지 않도록 막는 용도일 뿐.
 export function scheduleHomeRatingOnce(): (() => void) | undefined {
   if (typeof window === "undefined") return;
-  if (localStorage.getItem(HOME_RATING_KEY) === "1") return;
+  if (sessionStorage.getItem(HOME_RATING_CALLED_KEY) === "1") return;
 
   const DELAY_MS = 3 * 60 * 1000;
   let openedAt = Number(sessionStorage.getItem(APP_OPENED_KEY));
@@ -64,10 +65,19 @@ export function scheduleHomeRatingOnce(): (() => void) | undefined {
   }
   const remaining = Math.max(0, DELAY_MS - (Date.now() - openedAt));
 
-  const timer = setTimeout(() => {
-    if (localStorage.getItem(HOME_RATING_KEY) === "1") return;
-    localStorage.setItem(HOME_RATING_KEY, "1");
-    requestStarRating();
+  const timer = setTimeout(async () => {
+    sessionStorage.setItem(HOME_RATING_CALLED_KEY, "1");
+    try {
+      const res = await fetch("/api/home-rating", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { prompt?: boolean };
+      if (data.prompt) requestStarRating();
+    } catch {
+      // 네트워크 오류 시 조용히 무시 — 다음 세션에 다시 시도.
+    }
   }, remaining);
 
   return () => clearTimeout(timer);
