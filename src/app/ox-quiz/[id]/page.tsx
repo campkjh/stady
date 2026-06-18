@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import LoginRequired from "@/components/LoginRequired";
+import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 
 interface OxQuestion {
   id: string;
@@ -226,6 +227,8 @@ export default function OxQuizSolvePage() {
           timeTaken: Math.floor((Date.now() - startTime) / 1000),
         }),
       });
+      // 풀이 기록 저장 후, 계정당 1회 앱 리뷰 프롬프트 조건을 서버에서 판정.
+      maybePromptAppReviewAfterQuiz();
     } catch {
       // allow viewing results even if submit fails
     }

@@ -17,6 +17,7 @@ model User {
   role         String   @default("user")
   signupSource String?
   createdAt    DateTime @default(now())
+  reviewPromptedAt DateTime?
 
   attempts  QuizAttempt[]
   bookmarks Bookmark[]

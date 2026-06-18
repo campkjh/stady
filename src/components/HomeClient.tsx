@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
-import { requestAppReview } from "@/lib/appReview";
 
 interface Category {
   id: string;
@@ -121,8 +120,8 @@ export default function HomeClient({
   const handleWelcomeComplete = useCallback(() => {
     setShowWelcome(false);
     document.cookie = "isNewUser=; path=/; max-age=0";
-    // 온보딩이 끝나면 네이티브 별점 리뷰(App Store / Play Store) 프롬프트를 띄운다.
-    setTimeout(() => requestAppReview(), 800);
+    // 리뷰 프롬프트는 더 이상 온보딩 직후 띄우지 않는다. 퀴즈를 3개 이상 풀었을 때
+    // 계정당 1회만 띄우도록 서버 게이트(/api/app-review)로 일원화했다.
   }, []);
 
   const openBanner = useCallback((linkUrl: string | null) => {
