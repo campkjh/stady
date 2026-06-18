@@ -3,95 +3,156 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureUserStatusMessageColumn } from "@/lib/user-status";
 
-interface TimerUserRow {
-  id: string;
+interface ActiveRow {
+  userId: string;
   nickname: string;
   avatar: string | null;
   statusMessage: string | null;
+  subject: string;
+  startedAt: Date;
 }
 
+interface TodayRow {
+  userId: string;
+  nickname: string;
+  avatar: string | null;
+  statusMessage: string | null;
+  done: number;
+}
+
+interface UserCard {
+  userId: string;
+  nickname: string;
+  avatar: string | null;
+  statusMessage: string | null;
+  isActive: boolean;
+  subject: string | null;
+  activeStartedAt: Date | null;
+  activeElapsedSeconds: number;
+  todayTotalSeconds: number;
+  isMe: boolean;
+}
+
+// 공부 현황. 예전엔 전체 유저(수천 명)를 불러와 유저마다 쿼리 2개씩 돌려(N+1)
+// 매우 무거웠다. 이제는 "현재 공부중(active)" + "오늘 공부한" 유저만 집계 쿼리로
+// 가져온다 — 등록 유저 수와 무관하게 가볍다.
 export async function GET() {
   try {
     const me = await getCurrentUser();
     await ensureUserStatusMessageColumn();
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-
-    // Auto-close stale active sessions
-    const stale = await prisma.studySession.findMany({
-      where: { endedAt: null, lastPingAt: { lt: twoMinutesAgo } },
-    });
-    for (const s of stale) {
-      const elapsedSec = Math.floor((s.lastPingAt.getTime() - s.startedAt.getTime()) / 1000);
-      await prisma.studySession.update({
-        where: { id: s.id },
-        data: { endedAt: s.lastPingAt, totalSeconds: elapsedSec },
-      });
-    }
-
-    // Get all users
-    const users = await prisma.$queryRawUnsafe<TimerUserRow[]>(
-      `SELECT "id", "nickname", "avatar", "statusMessage" FROM "User" WHERE "role" = 'user'`
-    );
 
     const now = Date.now();
+    const twoMinutesAgo = new Date(now - 2 * 60 * 1000);
 
-    // For each user, compute today's total time + active session info
+    // 1) 오래된(2분 넘게 핑 없음) active 세션을 단일 UPDATE로 일괄 종료.
+    await prisma.$executeRaw`
+      UPDATE "StudySession"
+      SET "endedAt" = "lastPingAt",
+          "totalSeconds" = GREATEST(0, FLOOR(EXTRACT(EPOCH FROM ("lastPingAt" - "startedAt"))))::int
+      WHERE "endedAt" IS NULL AND "lastPingAt" < ${twoMinutesAgo}
+    `;
+
+    // 2) 헤더 "X / N명 공부 중"의 N — 등록 유저 수(단일 count).
+    const totalRows = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT count(*) AS count FROM "User" WHERE "role" = 'user'
+    `;
+    const totalCount = Number(totalRows[0]?.count ?? 0);
+
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const userCards = await Promise.all(
-      users.map(async (u) => {
-        // Today's completed sessions
-        const todayDone = await prisma.studySession.findMany({
-          where: {
-            userId: u.id,
-            startedAt: { gte: startOfDay },
-            endedAt: { not: null },
-          },
-          select: { totalSeconds: true },
+    // 3) 현재 공부중인 유저만 — 유저당 가장 최근 active 세션 1개.
+    const activeRows = await prisma.$queryRaw<ActiveRow[]>`
+      SELECT DISTINCT ON (s."userId")
+             s."userId", s."subject", s."startedAt",
+             u."nickname", u."avatar", u."statusMessage"
+      FROM "StudySession" s
+      JOIN "User" u ON u."id" = s."userId"
+      WHERE s."endedAt" IS NULL AND u."role" = 'user'
+      ORDER BY s."userId", s."startedAt" DESC
+    `;
+
+    // 4) 오늘 공부한 유저별 완료 시간 합(누적기록 랭킹용) — 오늘 세션이 있는 유저만.
+    const todayRows = await prisma.$queryRaw<TodayRow[]>`
+      SELECT s."userId",
+             SUM(s."totalSeconds")::int AS done,
+             u."nickname", u."avatar", u."statusMessage"
+      FROM "StudySession" s
+      JOIN "User" u ON u."id" = s."userId"
+      WHERE s."endedAt" IS NOT NULL
+        AND s."startedAt" >= ${startOfDay}
+        AND u."role" = 'user'
+      GROUP BY s."userId", u."nickname", u."avatar", u."statusMessage"
+    `;
+
+    // 5) active ∪ today (+ me) 머지.
+    const map = new Map<string, UserCard>();
+
+    for (const r of todayRows) {
+      map.set(r.userId, {
+        userId: r.userId,
+        nickname: r.nickname,
+        avatar: r.avatar,
+        statusMessage: r.statusMessage,
+        isActive: false,
+        subject: null,
+        activeStartedAt: null,
+        activeElapsedSeconds: 0,
+        todayTotalSeconds: r.done,
+        isMe: me?.id === r.userId,
+      });
+    }
+
+    for (const r of activeRows) {
+      const elapsed = Math.max(0, Math.floor((now - new Date(r.startedAt).getTime()) / 1000));
+      const existing = map.get(r.userId);
+      if (existing) {
+        existing.isActive = true;
+        existing.subject = r.subject;
+        existing.activeStartedAt = r.startedAt;
+        existing.activeElapsedSeconds = elapsed;
+        existing.todayTotalSeconds += elapsed;
+      } else {
+        map.set(r.userId, {
+          userId: r.userId,
+          nickname: r.nickname,
+          avatar: r.avatar,
+          statusMessage: r.statusMessage,
+          isActive: true,
+          subject: r.subject,
+          activeStartedAt: r.startedAt,
+          activeElapsedSeconds: elapsed,
+          todayTotalSeconds: elapsed,
+          isMe: me?.id === r.userId,
         });
-        const doneTotal = todayDone.reduce((sum, s) => sum + s.totalSeconds, 0);
+      }
+    }
 
-        // Active session
-        const active = await prisma.studySession.findFirst({
-          where: { userId: u.id, endedAt: null },
-          orderBy: { startedAt: "desc" },
-        });
+    // me가 active도 아니고 오늘 공부도 안 했으면 빈 카드로 포함(낙관적 업데이트/내 카드용).
+    if (me && !map.has(me.id)) {
+      map.set(me.id, {
+        userId: me.id,
+        nickname: me.nickname,
+        avatar: me.avatar ?? null,
+        statusMessage: null,
+        isActive: false,
+        subject: null,
+        activeStartedAt: null,
+        activeElapsedSeconds: 0,
+        todayTotalSeconds: 0,
+        isMe: true,
+      });
+    }
 
-        const activeElapsed = active
-          ? Math.floor((now - active.startedAt.getTime()) / 1000)
-          : 0;
-
-        return {
-          userId: u.id,
-          nickname: u.nickname,
-          avatar: u.avatar,
-          statusMessage: u.statusMessage,
-          isActive: !!active,
-          subject: active?.subject || null,
-          activeStartedAt: active?.startedAt || null,
-          activeElapsedSeconds: activeElapsed,
-          todayTotalSeconds: doneTotal + activeElapsed,
-          isMe: me?.id === u.id,
-        };
-      })
-    );
-
-    // Sort: active first (by elapsed desc), then by todayTotal desc
-    userCards.sort((a, b) => {
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      if (a.isActive && b.isActive) return b.activeElapsedSeconds - a.activeElapsedSeconds;
-      return b.todayTotalSeconds - a.todayTotalSeconds;
-    });
-
-    const activeCount = userCards.filter((u) => u.isActive).length;
+    const userCards = Array.from(map.values());
+    const activeCount = activeRows.length;
     const mySession = userCards.find((u) => u.isMe && u.isActive) || null;
     const myStats = me ? await getMyTimerStats(me.id, now) : null;
 
     return NextResponse.json({
       users: userCards,
       activeCount,
-      totalCount: userCards.length,
+      totalCount,
       mySession,
       myStats,
     });

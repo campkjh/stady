@@ -308,14 +308,14 @@ export default function TimerPage() {
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
   const myTodayTotal = Math.max(0, (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed);
 
-  // Sort: active (by elapsed desc) → inactive (by today total desc) → never studied
+  // 공부현황: 현재 공부중(active)인 유저만 노출. 나(me)는 공부중일 때 맨 앞.
   const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
-      if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      if (a.isActive && b.isActive) return b.activeElapsedSeconds - a.activeElapsedSeconds;
-      return b.todayTotalSeconds - a.todayTotalSeconds;
-    });
+    return [...users]
+      .filter((u) => u.isActive)
+      .sort((a, b) => {
+        if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
+        return b.activeElapsedSeconds - a.activeElapsedSeconds;
+      });
   }, [users]);
 
   const todayRanking = useMemo(
