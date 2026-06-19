@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Enrich bookmarks with related data for display
+    // Enrich bookmarks with related data for display.
+    // If the referenced quiz/question no longer exists (deleted or re-imported),
+    // the bookmark is "orphaned" — it would render as a blank/broken row, which
+    // users perceive as a bookmark that "disappeared". We drop those instead.
     const enriched = await Promise.all(
       bookmarks.map(async (bm) => {
         let title = "";
@@ -24,12 +27,15 @@ export async function GET(request: NextRequest) {
         let word: string | null = null;
         let meaning: string | null = null;
         let categoryName = "";
+        let orphan = false;
 
         if (bm.quizType === "workbook" && bm.workbookId) {
           const wb = await prisma.workbook.findUnique({ where: { id: bm.workbookId } });
+          if (!wb) orphan = true;
           title = wb?.title || "";
           if (bm.problemId) {
             const prob = await prisma.problem.findUnique({ where: { id: bm.problemId } });
+            if (!prob) orphan = true;
             subtitle = prob?.questionText || "";
           } else {
             subtitle = `${wb?.totalQuestions || 0}문항`;
@@ -39,31 +45,40 @@ export async function GET(request: NextRequest) {
             where: { id: bm.oxQuizSetId },
             include: { category: true },
           });
+          if (!oxSet) orphan = true;
           title = oxSet?.title || "";
           categoryName = oxSet?.category?.name || "";
           if (bm.oxQuestionId) {
             const q = await prisma.oxQuestion.findUnique({ where: { id: bm.oxQuestionId } });
+            if (!q) orphan = true;
             subtitle = q?.question || "";
           }
         } else if (bm.quizType === "vocab" && bm.vocabQuizSetId) {
           const vSet = await prisma.vocabQuizSet.findUnique({ where: { id: bm.vocabQuizSetId } });
+          if (!vSet) orphan = true;
           title = vSet?.title || "";
           if (bm.vocabQuestionId) {
             const q = await prisma.vocabQuestion.findUnique({ where: { id: bm.vocabQuestionId } });
-            if (q) {
+            if (!q) {
+              orphan = true;
+            } else {
               word = q.word;
               const choices = [q.choice1, q.choice2, q.choice3, q.choice4];
               meaning = choices[q.answer - 1] || null;
               subtitle = q.word;
             }
           }
+        } else {
+          // quizType set but its matching target id is missing entirely
+          orphan = true;
         }
 
+        if (orphan) return null;
         return { ...bm, title, subtitle, word, meaning, categoryName };
       })
     );
 
-    return NextResponse.json({ bookmarks: enriched });
+    return NextResponse.json({ bookmarks: enriched.filter(Boolean) });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

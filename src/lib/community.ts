@@ -839,3 +839,108 @@ export async function toggleCommunityCommentLike(commentId: string, userId: stri
   );
   return { liked, likeCount: Number(countRows[0]?.count || 0) };
 }
+
+/* ----------------------------- Admin moderation ---------------------------- */
+
+// 게시글 수정 (관리자): 전달된 필드만 갱신한다.
+export async function adminUpdateCommunityPost(
+  id: string,
+  input: { title?: string; content?: string; groupId?: string; isActive?: boolean }
+) {
+  await ensureCommunityTables();
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  let i = 1;
+  if (input.title !== undefined) {
+    sets.push(`"title" = $${i++}`);
+    values.push(input.title);
+  }
+  if (input.content !== undefined) {
+    sets.push(`"content" = $${i++}`);
+    values.push(input.content);
+  }
+  if (input.groupId !== undefined) {
+    sets.push(`"group_id" = $${i++}`);
+    values.push(input.groupId);
+  }
+  if (input.isActive !== undefined) {
+    sets.push(`"is_active" = $${i++}`);
+    values.push(input.isActive);
+  }
+  if (sets.length === 0) return;
+  sets.push(`"updated_at" = CURRENT_TIMESTAMP`);
+  values.push(id);
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityPost" SET ${sets.join(", ")} WHERE "id" = $${i}`,
+    ...values
+  );
+}
+
+// 게시글 노출/비노출 토글 (관리자): 되돌릴 수 있는 소프트 처리.
+export async function adminSetCommunityPostActive(id: string, isActive: boolean) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityPost" SET "is_active" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2`,
+    isActive,
+    id
+  );
+}
+
+// 게시글 영구 삭제 (관리자): 자식(태그/이미지/댓글/좋아요)은 ON DELETE CASCADE로 함께 삭제된다.
+export async function adminDeleteCommunityPost(id: string) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(`DELETE FROM "CommunityPost" WHERE "id" = $1`, id);
+}
+
+export interface AdminCommentRow {
+  id: string;
+  post_id: string;
+  post_title: string;
+  parent_id: string | null;
+  user_id: string | null;
+  nickname: string | null;
+  content: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+// 댓글 목록 (관리자): 최신순, 게시글 제목 포함.
+export async function getAdminComments(options: { limit?: number } = {}) {
+  await ensureCommunityTables();
+  const limit = Math.min(Math.max(options.limit ?? 200, 1), 500);
+  return prisma.$queryRawUnsafe<AdminCommentRow[]>(
+    `
+      SELECT
+        c."id",
+        c."post_id",
+        p."title" AS "post_title",
+        c."parent_id",
+        c."user_id",
+        u."nickname",
+        c."content",
+        c."is_active",
+        c."created_at"
+      FROM "CommunityComment" c
+      JOIN "CommunityPost" p ON p."id" = c."post_id"
+      LEFT JOIN "User" u ON u."id" = c."user_id"
+      ORDER BY c."created_at" DESC
+      LIMIT ${limit}
+    `
+  );
+}
+
+// 댓글 노출/비노출 토글 (관리자).
+export async function adminSetCommunityCommentActive(id: string, isActive: boolean) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityComment" SET "is_active" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2`,
+    isActive,
+    id
+  );
+}
+
+// 댓글 영구 삭제 (관리자): 대댓글/좋아요는 ON DELETE CASCADE로 함께 삭제된다.
+export async function adminDeleteCommunityComment(id: string) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(`DELETE FROM "CommunityComment" WHERE "id" = $1`, id);
+}

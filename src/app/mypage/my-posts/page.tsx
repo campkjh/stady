@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
+import BackHeader from "@/components/BackHeader";
 
 interface Post {
   id: string;
@@ -51,14 +52,7 @@ export default function MyPostsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 500, margin: "0 auto" }}>
-      <header style={headerStyle}>
-        <button type="button" onClick={() => router.back()} aria-label="뒤로가기" style={backBtn} className="press">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <h1 style={{ fontSize: 17, fontWeight: 700, color: "#191F28", margin: 0 }}>내가 쓴 글</h1>
-      </header>
+      <BackHeader title="내가 쓴 글" />
 
       {loading ? (
         <div style={centerBox}>
@@ -98,25 +92,6 @@ export default function MyPostsPage() {
     </div>
   );
 }
-
-const headerStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 4,
-  height: 56,
-  padding: "0 8px",
-} as const;
-
-const backBtn = {
-  width: 40,
-  height: 40,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-} as const;
 
 const centerBox = {
   display: "flex",

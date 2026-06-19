@@ -284,6 +284,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </nav>
 
+          {/* Back to app */}
+          <div style={{ padding: "8px 10px" }}>
+            <Link
+              href="/"
+              onClick={() => setSidebarOpen(false)}
+              className="press"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 14px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.85)",
+                background: "rgba(255,255,255,0.06)",
+                textDecoration: "none",
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M11 15L6 10L11 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 10H15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+              <span>앱으로 돌아가기</span>
+            </Link>
+          </div>
+
           {/* User info */}
           <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -336,6 +363,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </svg>
           </button>
           <Image src="/icons/stady-logo.svg" alt="Stady" width={60} height={20} style={{ filter: "brightness(0) invert(1)" }} />
+          <Link
+            href="/"
+            className="press"
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#fff",
+              background: "rgba(255,255,255,0.12)",
+              textDecoration: "none",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M11 15L6 10L11 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M6 10H15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            앱으로
+          </Link>
         </div>
 
         {/* Content */}
