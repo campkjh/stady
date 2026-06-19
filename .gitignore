@@ -45,3 +45,6 @@ prisma/dev.db
 
 # Paid downloadable assets (served via gated API, never committed)
 private/
+
+# local DB snapshots (may contain user data)
+backups/
