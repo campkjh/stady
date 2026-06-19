@@ -999,6 +999,17 @@ export async function adminDeleteCommunityPost(id: string) {
   await prisma.$executeRawUnsafe(`DELETE FROM "CommunityPost" WHERE "id" = $1`, id);
 }
 
+// 게시글 작성자 id 조회 (본인 글 편집/삭제 권한 확인용). 글이 없으면 undefined.
+export async function getCommunityPostOwnerId(id: string): Promise<string | null | undefined> {
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+    `SELECT "user_id" FROM "CommunityPost" WHERE "id" = $1 LIMIT 1`,
+    id
+  );
+  if (rows.length === 0) return undefined;
+  return rows[0].user_id;
+}
+
 export interface AdminCommentRow {
   id: string;
   post_id: string;

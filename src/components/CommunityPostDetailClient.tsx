@@ -34,6 +34,7 @@ interface CommunityPoll {
 
 interface CommunityPostDetail {
   id: string;
+  userId: string | null;
   nickname: string;
   groupName: string;
   title: string;
@@ -78,6 +79,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [showReactions, setShowReactions] = useState(false);
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -97,6 +103,67 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   useEffect(() => {
     loadDetail();
   }, [loadDetail]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setCurrentUserId(d?.user?.id ?? null))
+      .catch(() => setCurrentUserId(null));
+  }, []);
+
+  function startEdit() {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!post) return;
+    const t = editTitle.trim();
+    const c = editContent.trim();
+    if (!t || !c) {
+      setMessage("제목과 내용을 입력해주세요.");
+      return;
+    }
+    setActionBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: t, content: c }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "수정에 실패했습니다.");
+      setEditing(false);
+      await loadDetail();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "수정에 실패했습니다.");
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function deletePost() {
+    if (!post) return;
+    if (!window.confirm("이 게시글을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    setActionBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "삭제에 실패했습니다.");
+      router.push("/community");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+      setActionBusy(false);
+    }
+  }
 
   async function submitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -254,9 +321,47 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 <span style={{ borderRadius: 999, border: "1px solid #EEF0F3", background: "transparent", color: "#374151", padding: "7px 10px", fontSize: 13, fontWeight: 900 }}>{post.groupName}</span>
                 <span style={{ color: "#8A909C", fontSize: 12 }}>{new Date(post.createdAt).toLocaleString("ko-KR")}</span>
               </div>
-              <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 900 }}>{post.title}</h2>
-              <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname}</p>
-              <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
+              {editing ? (
+                <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="제목"
+                    style={inputStyle}
+                  />
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    placeholder="내용"
+                    rows={6}
+                    style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                  />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" onClick={saveEdit} disabled={actionBusy} style={ownerBtnStyle(true)}>
+                      저장
+                    </button>
+                    <button type="button" onClick={() => setEditing(false)} disabled={actionBusy} style={ownerBtnStyle(false)}>
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 900 }}>{post.title}</h2>
+                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname}</p>
+                  <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
+                  {!!post.userId && currentUserId === post.userId && (
+                    <div style={{ display: "flex", gap: 8, margin: "0 0 4px" }}>
+                      <button type="button" onClick={startEdit} disabled={actionBusy} style={ownerBtnStyle(false)}>
+                        편집
+                      </button>
+                      <button type="button" onClick={deletePost} disabled={actionBusy} style={ownerDangerStyle}>
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
               {post.imageUrls.length > 0 && (
                 <div className="community-detail-image-list" style={{ position: "relative" }}>
                   {post.imageUrls.map((imageUrl, index) => (
@@ -674,6 +779,30 @@ function actionButtonStyle(active: boolean) {
     gap: 6,
   } as const;
 }
+
+function ownerBtnStyle(primary: boolean) {
+  return {
+    border: primary ? "none" : "1px solid #E5E7EB",
+    borderRadius: 999,
+    background: primary ? "#111827" : "#fff",
+    color: primary ? "#fff" : "#4B5563",
+    padding: "8px 16px",
+    fontSize: 13,
+    fontWeight: 800,
+    cursor: "pointer",
+  } as const;
+}
+
+const ownerDangerStyle = {
+  border: "1px solid #FECACA",
+  borderRadius: 999,
+  background: "#FEF2F2",
+  color: "#DC2626",
+  padding: "8px 16px",
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+} as const;
 
 function reactionEmoji(key: string) {
   return REACTIONS.find((r) => r.key === key)?.emoji || "🙂";
