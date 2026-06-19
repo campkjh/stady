@@ -762,7 +762,7 @@ function CommunityStyles() {
         background-size: 200% 100%;
         animation: communitySkeleton 1.15s ease-in-out infinite;
       }
-      @media (min-width: 900px) {
+      @media (min-width: 768px) {
         .community-topbar {
           padding-left: 24px;
           padding-right: 24px;
