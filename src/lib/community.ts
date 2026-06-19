@@ -28,6 +28,19 @@ export interface CommunityTagRow {
   post_count?: bigint | number;
 }
 
+export interface CommunityPollOptionResult {
+  id: string;
+  text: string;
+  sort_order: number;
+  votes: number;
+}
+
+export interface CommunityPollResult {
+  options: CommunityPollOptionResult[];
+  totalVotes: number;
+  myOptionId: string | null;
+}
+
 export interface CommunityPostRow {
   id: string;
   user_id: string | null;
@@ -37,6 +50,8 @@ export interface CommunityPostRow {
   group_slug: string;
   title: string;
   content: string;
+  type: string;
+  is_blinded: boolean;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -45,6 +60,9 @@ export interface CommunityPostRow {
   like_count?: bigint | number;
   comment_count?: bigint | number;
   liked_by_me?: boolean;
+  reaction_counts?: Record<string, number>;
+  my_reaction?: string | null;
+  poll?: CommunityPollResult | null;
 }
 
 export interface CommunityPostImageRow {
@@ -218,6 +236,58 @@ export async function ensureCommunityTables() {
       "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // --- Post type (normal | poll) and author-chosen image blind ---
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityPost" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'normal'
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityPost" ADD COLUMN IF NOT EXISTS "is_blinded" BOOLEAN NOT NULL DEFAULT false
+  `);
+
+  // --- Reaction kind for the 6 empathy types (one reaction per user) ---
+  // Existing rows default to 'heart' to preserve current likes.
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityPostLike" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'heart'
+  `);
+
+  // --- Poll options + votes (max 4 options, one vote per user) ---
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityPollOption" (
+      "id" TEXT PRIMARY KEY,
+      "post_id" TEXT NOT NULL REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "text" TEXT NOT NULL,
+      "sort_order" INTEGER NOT NULL DEFAULT 0,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityPollOption_post_idx"
+    ON "CommunityPollOption" ("post_id", "sort_order")
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityPollVote" (
+      "post_id" TEXT NOT NULL REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "option_id" TEXT NOT NULL REFERENCES "CommunityPollOption"("id") ON DELETE CASCADE,
+      "user_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("post_id", "user_id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityPollVote_option_idx"
+    ON "CommunityPollVote" ("option_id")
+  `);
+}
+
+// The 6 supported empathy reactions. Order = display order.
+export const COMMUNITY_REACTION_TYPES = ["heart", "sad", "laugh", "smile", "devil", "skull"] as const;
+export type CommunityReactionType = (typeof COMMUNITY_REACTION_TYPES)[number];
+
+export function normalizeReactionType(value: unknown): CommunityReactionType {
+  return (COMMUNITY_REACTION_TYPES as readonly string[]).includes(String(value))
+    ? (String(value) as CommunityReactionType)
+    : "heart";
 }
 
 export async function seedDefaultCommunityTaxonomy() {
@@ -552,17 +622,45 @@ async function getImagesByPost(postIds: string[]) {
   return imagesByPost;
 }
 
-export async function createCommunityPost(input: { userId: string | null; groupId: string; title: string; content: string; tagIds: string[]; imageUrls?: string[] }) {
+export async function createCommunityPost(input: {
+  userId: string | null;
+  groupId: string;
+  title: string;
+  content: string;
+  tagIds: string[];
+  imageUrls?: string[];
+  isBlinded?: boolean;
+  type?: string;
+  pollOptions?: string[];
+}) {
   await ensureCommunityTables();
   const id = randomUUID();
+  const isPoll = input.type === "poll";
+  const pollOptions = (input.pollOptions || [])
+    .map((t) => String(t || "").trim())
+    .filter((t) => t.length > 0)
+    .slice(0, 4);
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "CommunityPost" ("id", "user_id", "group_id", "title", "content") VALUES ($1, $2, $3, $4, $5)`,
+    `INSERT INTO "CommunityPost" ("id", "user_id", "group_id", "title", "content", "type", "is_blinded") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     id,
     input.userId,
     input.groupId,
     input.title,
-    input.content
+    input.content,
+    isPoll ? "poll" : "normal",
+    !!input.isBlinded
   );
+  if (isPoll) {
+    for (const [index, text] of pollOptions.entries()) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "CommunityPollOption" ("id", "post_id", "text", "sort_order") VALUES ($1, $2, $3, $4)`,
+        randomUUID(),
+        id,
+        text,
+        index
+      );
+    }
+  }
   for (const tagId of input.tagIds) {
     await prisma.$executeRawUnsafe(
       `INSERT INTO "CommunityPostTag" ("post_id", "tag_id") VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -655,6 +753,8 @@ export async function getCommunityPostDetail(
     postId
   );
   const imagesByPost = await getImagesByPost([postId]);
+  const reactions = await getPostReactions(postId, viewerId);
+  const poll = post.type === "poll" ? await getPollResult(postId, viewerId) : null;
 
   const commentConditions = [`c."post_id" = $1`];
   if (options.activeOnly) commentConditions.push(`c."is_active" = true`);
@@ -684,7 +784,14 @@ export async function getCommunityPostDetail(
   );
 
   return {
-    post: { ...post, tags, images: imagesByPost.get(postId) || [] },
+    post: {
+      ...post,
+      tags,
+      images: imagesByPost.get(postId) || [],
+      reaction_counts: reactions.counts,
+      my_reaction: reactions.myReaction,
+      poll,
+    },
     comments: buildCommentTree(commentRows),
   };
 }
@@ -943,4 +1050,120 @@ export async function adminSetCommunityCommentActive(id: string, isActive: boole
 export async function adminDeleteCommunityComment(id: string) {
   await ensureCommunityTables();
   await prisma.$executeRawUnsafe(`DELETE FROM "CommunityComment" WHERE "id" = $1`, id);
+}
+
+/* --------------------------- Reactions (6 types) --------------------------- */
+
+// 게시글 공감 집계 + 내 공감.
+export async function getPostReactions(postId: string, viewerId?: string | null) {
+  const rows = await prisma.$queryRawUnsafe<{ type: string; n: bigint }[]>(
+    `SELECT "type", COUNT(*)::bigint AS n FROM "CommunityPostLike" WHERE "post_id" = $1 GROUP BY "type"`,
+    postId
+  );
+  const counts: Record<string, number> = {};
+  let total = 0;
+  for (const r of rows) {
+    const n = Number(r.n);
+    counts[r.type] = n;
+    total += n;
+  }
+  let myReaction: string | null = null;
+  if (viewerId) {
+    const mine = await prisma.$queryRawUnsafe<{ type: string }[]>(
+      `SELECT "type" FROM "CommunityPostLike" WHERE "post_id" = $1 AND "user_id" = $2 LIMIT 1`,
+      postId,
+      viewerId
+    );
+    myReaction = mine[0]?.type ?? null;
+  }
+  return { counts, total, myReaction };
+}
+
+// 공감 설정: type=null이면 해제, 아니면 1인 1개로 교체(upsert).
+export async function setCommunityPostReaction(
+  postId: string,
+  userId: string,
+  type: string | null
+) {
+  await ensureCommunityTables();
+  await assertActiveCommunityPost(postId);
+  if (type === null) {
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "CommunityPostLike" WHERE "post_id" = $1 AND "user_id" = $2`,
+      postId,
+      userId
+    );
+  } else {
+    const t = normalizeReactionType(type);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "CommunityPostLike" ("post_id", "user_id", "type") VALUES ($1, $2, $3)
+       ON CONFLICT ("post_id", "user_id") DO UPDATE SET "type" = EXCLUDED."type"`,
+      postId,
+      userId,
+      t
+    );
+  }
+  const r = await getPostReactions(postId, userId);
+  // `liked`/`likeCount` kept for backward compatibility with older callers.
+  return { myReaction: r.myReaction, counts: r.counts, total: r.total, liked: r.myReaction !== null, likeCount: r.total };
+}
+
+/* -------------------------------- Polls ----------------------------------- */
+
+export async function getPollResult(
+  postId: string,
+  viewerId?: string | null
+): Promise<CommunityPollResult | null> {
+  const opts = await prisma.$queryRawUnsafe<
+    { id: string; text: string; sort_order: number; votes: bigint }[]
+  >(
+    `
+      SELECT o."id", o."text", o."sort_order", COALESCE(v."cnt", 0)::bigint AS "votes"
+      FROM "CommunityPollOption" o
+      LEFT JOIN (
+        SELECT "option_id", COUNT(*) AS "cnt" FROM "CommunityPollVote" GROUP BY "option_id"
+      ) v ON v."option_id" = o."id"
+      WHERE o."post_id" = $1
+      ORDER BY o."sort_order" ASC
+    `,
+    postId
+  );
+  if (opts.length === 0) return null;
+  let myOptionId: string | null = null;
+  if (viewerId) {
+    const mine = await prisma.$queryRawUnsafe<{ option_id: string }[]>(
+      `SELECT "option_id" FROM "CommunityPollVote" WHERE "post_id" = $1 AND "user_id" = $2 LIMIT 1`,
+      postId,
+      viewerId
+    );
+    myOptionId = mine[0]?.option_id ?? null;
+  }
+  const options = opts.map((o) => ({
+    id: o.id,
+    text: o.text,
+    sort_order: o.sort_order,
+    votes: Number(o.votes),
+  }));
+  const totalVotes = options.reduce((s, o) => s + o.votes, 0);
+  return { options, totalVotes, myOptionId };
+}
+
+// 투표(1인 1표): 이미 투표했으면 선택을 변경한다.
+export async function voteCommunityPoll(postId: string, userId: string, optionId: string) {
+  await ensureCommunityTables();
+  await assertActiveCommunityPost(postId);
+  const valid = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
+    `SELECT COUNT(*)::bigint AS "count" FROM "CommunityPollOption" WHERE "id" = $1 AND "post_id" = $2`,
+    optionId,
+    postId
+  );
+  if (Number(valid[0]?.count || 0) === 0) throw new Error("CommunityPollOptionNotFound");
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "CommunityPollVote" ("post_id", "user_id", "option_id") VALUES ($1, $2, $3)
+     ON CONFLICT ("post_id", "user_id") DO UPDATE SET "option_id" = EXCLUDED."option_id"`,
+    postId,
+    userId,
+    optionId
+  );
+  return getPollResult(postId, userId);
 }

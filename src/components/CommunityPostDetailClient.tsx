@@ -20,19 +20,45 @@ interface CommunityComment {
   replies: CommunityComment[];
 }
 
+interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+interface CommunityPoll {
+  options: PollOption[];
+  totalVotes: number;
+  myOptionId: string | null;
+}
+
 interface CommunityPostDetail {
   id: string;
   nickname: string;
   groupName: string;
   title: string;
   content: string;
+  type: string;
+  isBlinded: boolean;
   createdAt: string;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
+  reactionCounts: Record<string, number>;
+  myReaction: string | null;
+  poll: CommunityPoll | null;
   imageUrls: string[];
   tags: CommunityTag[];
 }
+
+const REACTIONS: { key: string; emoji: string; label: string }[] = [
+  { key: "heart", emoji: "❤️", label: "공감" },
+  { key: "sad", emoji: "🥺", label: "슬퍼요" },
+  { key: "laugh", emoji: "🤣", label: "웃겨요" },
+  { key: "smile", emoji: "😄", label: "좋아요" },
+  { key: "devil", emoji: "👿", label: "화나요" },
+  { key: "skull", emoji: "☠️", label: "충격" },
+];
 
 interface CommunityPostDetailClientProps {
   postId: string;
@@ -49,6 +75,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [replyTargetId, setReplyTargetId] = useState("");
   const [replyContent, setReplyContent] = useState("");
   const [replyPosting, setReplyPosting] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
+  const [revealBlind, setRevealBlind] = useState(false);
+  const [voting, setVoting] = useState(false);
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -120,19 +149,49 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  async function togglePostLike() {
+  async function react(type: string) {
     if (!post) return;
+    setShowReactions(false);
     setMessage("");
+    const nextType = post.myReaction === type ? null : type;
     try {
       const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/like`, {
         method: "POST",
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: nextType }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "공감을 처리하지 못했습니다.");
-      setPost({ ...post, likedByMe: data.liked, likeCount: data.likeCount });
+      setPost({
+        ...post,
+        myReaction: data.myReaction ?? null,
+        reactionCounts: data.counts || {},
+        likeCount: data.total ?? 0,
+      });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "공감을 처리하지 못했습니다.");
+    }
+  }
+
+  async function votePoll(optionId: string) {
+    if (!post || voting) return;
+    setVoting(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/vote`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "투표를 처리하지 못했습니다.");
+      setPost({ ...post, poll: data.poll });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "투표를 처리하지 못했습니다.");
+    } finally {
+      setVoting(false);
     }
   }
 
@@ -199,12 +258,71 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
               <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname}</p>
               <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
               {post.imageUrls.length > 0 && (
-                <div className="community-detail-image-list">
+                <div className="community-detail-image-list" style={{ position: "relative" }}>
                   {post.imageUrls.map((imageUrl, index) => (
-                    <img key={imageUrl} src={imageUrl} alt={`${post.title} 이미지 ${index + 1}`} />
+                    <img
+                      key={imageUrl}
+                      src={imageUrl}
+                      alt={`${post.title} 이미지 ${index + 1}`}
+                      style={
+                        post.isBlinded && !revealBlind
+                          ? { filter: "blur(24px)", transform: "scale(1.04)" }
+                          : undefined
+                      }
+                    />
                   ))}
+                  {post.isBlinded && !revealBlind && (
+                    <button type="button" onClick={() => setRevealBlind(true)} style={blindOverlayStyle}>
+                      <span style={{ fontSize: 24 }}>🙈</span>
+                      터치하여 보기
+                    </button>
+                  )}
                 </div>
               )}
+
+              {post.poll && (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {post.poll.options.map((opt) => {
+                    const total = post.poll!.totalVotes;
+                    const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+                    const mine = post.poll!.myOptionId === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        disabled={voting}
+                        onClick={() => votePoll(opt.id)}
+                        style={pollOptionStyle(mine)}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            bottom: 0,
+                            width: `${pct}%`,
+                            background: mine ? "#DBEAFE" : "#F3F4F6",
+                            borderRadius: 10,
+                            transition: "width 0.3s ease",
+                          }}
+                        />
+                        <span style={{ position: "relative", fontWeight: 800, color: "#111827" }}>
+                          {mine ? "✓ " : ""}
+                          {opt.text}
+                        </span>
+                        <span style={{ position: "relative", fontWeight: 800, color: "#6B7280", fontSize: 13 }}>
+                          {pct}% · {opt.votes}표
+                        </span>
+                      </button>
+                    );
+                  })}
+                  <span style={{ color: "#8A909C", fontSize: 13 }}>
+                    총 {post.poll.totalVotes}표
+                    {post.poll.myOptionId ? " · 투표 완료 (다시 누르면 변경)" : " · 항목을 눌러 투표하세요"}
+                  </span>
+                </div>
+              )}
+
               {post.tags.length > 0 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {post.tags.map((tag) => (
@@ -214,14 +332,44 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   ))}
                 </div>
               )}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-                <button type="button" className="community-action-button" onClick={togglePostLike} style={actionButtonStyle(post.likedByMe)}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill={post.likedByMe ? "currentColor" : "none"} aria-hidden="true">
-                    <path d="M12 20.5C8.2 17.1 5 14.25 5 10.85C5 8.65 6.7 7 8.8 7C10 7 11.15 7.55 12 8.45C12.85 7.55 14 7 15.2 7C17.3 7 19 8.65 19 10.85C19 14.25 15.8 17.1 12 20.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  </svg>
-                  공감 {post.likeCount}
-                </button>
-                <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 800 }}>댓글 {post.commentCount}</span>
+
+              <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", position: "relative" }}>
+                  <button
+                    type="button"
+                    className="community-action-button"
+                    onClick={() => setShowReactions((v) => !v)}
+                    style={actionButtonStyle(!!post.myReaction)}
+                  >
+                    <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🙂"}</span>
+                    {post.myReaction ? reactionLabel(post.myReaction) : "공감"} {post.likeCount}
+                  </button>
+                  <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 800 }}>댓글 {post.commentCount}</span>
+                  {showReactions && (
+                    <div style={reactionPickerStyle}>
+                      {REACTIONS.map((r) => (
+                        <button
+                          key={r.key}
+                          type="button"
+                          onClick={() => react(r.key)}
+                          title={r.label}
+                          style={reactionPickStyle(post.myReaction === r.key)}
+                        >
+                          <span style={{ fontSize: 22 }}>{r.emoji}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {post.likeCount > 0 && (
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {REACTIONS.filter((r) => (post.reactionCounts[r.key] || 0) > 0).map((r) => (
+                      <span key={r.key} style={{ fontSize: 13, color: "#6B7280", fontWeight: 700 }}>
+                        {r.emoji} {post.reactionCounts[r.key]}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
 
@@ -524,6 +672,79 @@ function actionButtonStyle(active: boolean) {
     display: "inline-flex",
     alignItems: "center",
     gap: 6,
+  } as const;
+}
+
+function reactionEmoji(key: string) {
+  return REACTIONS.find((r) => r.key === key)?.emoji || "🙂";
+}
+
+function reactionLabel(key: string) {
+  return REACTIONS.find((r) => r.key === key)?.label || "공감";
+}
+
+const blindOverlayStyle = {
+  position: "absolute",
+  inset: 0,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  border: "none",
+  borderRadius: 8,
+  background: "rgba(17, 24, 39, 0.32)",
+  color: "#fff",
+  fontSize: 14,
+  fontWeight: 900,
+  cursor: "pointer",
+  backdropFilter: "blur(2px)",
+  WebkitBackdropFilter: "blur(2px)",
+} as const;
+
+function pollOptionStyle(mine: boolean) {
+  return {
+    position: "relative",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    border: `1px solid ${mine ? "#3787FF" : "#E5E7EB"}`,
+    borderRadius: 10,
+    background: "#fff",
+    padding: "12px 14px",
+    cursor: "pointer",
+    textAlign: "left",
+    width: "100%",
+  } as const;
+}
+
+const reactionPickerStyle = {
+  position: "absolute",
+  bottom: "calc(100% + 8px)",
+  left: 0,
+  zIndex: 20,
+  display: "flex",
+  gap: 4,
+  padding: 6,
+  borderRadius: 999,
+  background: "#fff",
+  border: "1px solid #E5E7EB",
+  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.12)",
+} as const;
+
+function reactionPickStyle(active: boolean) {
+  return {
+    width: 40,
+    height: 40,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "none",
+    borderRadius: 999,
+    background: active ? "#EFF6FF" : "transparent",
+    cursor: "pointer",
   } as const;
 }
 

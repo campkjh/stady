@@ -23,6 +23,8 @@ interface CommunityPost {
   groupName: string;
   title: string;
   content: string;
+  type?: string;
+  isBlinded?: boolean;
   createdAt: string;
   likeCount: number;
   commentCount: number;
@@ -265,13 +267,55 @@ export default function CommunityClient() {
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
                   </div>
-                  <h2 className="community-post-title">{post.title}</h2>
+                  <h2 className="community-post-title">
+                    {post.type === "poll" && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          marginRight: 6,
+                          padding: "1px 7px",
+                          borderRadius: 999,
+                          background: "#EFF6FF",
+                          color: "#1D4ED8",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          verticalAlign: "middle",
+                        }}
+                      >
+                        📊 투표
+                      </span>
+                    )}
+                    {post.title}
+                  </h2>
                   <p className="community-post-content">{post.content}</p>
                   {post.imageUrls.length > 0 && (
                     <div className={post.imageUrls.length === 1 ? "community-post-image-single" : "community-post-image-grid"}>
                       {post.imageUrls.slice(0, 4).map((imageUrl, index) => (
                         <div key={imageUrl} className="community-post-image-thumb">
-                          <img src={imageUrl} alt={`${post.title} 이미지 ${index + 1}`} />
+                          <img
+                            src={imageUrl}
+                            alt={post.isBlinded ? "블라인드 이미지" : `${post.title} 이미지 ${index + 1}`}
+                            style={post.isBlinded ? { filter: "blur(18px)", transform: "scale(1.05)" } : undefined}
+                          />
+                          {post.isBlinded && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                padding: "4px 10px",
+                                borderRadius: 999,
+                                background: "rgba(17, 24, 39, 0.55)",
+                                color: "#fff",
+                                fontSize: 12,
+                                fontWeight: 800,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              🙈 블라인드
+                            </span>
+                          )}
                           {index === 3 && post.imageUrls.length > 4 && (
                             <span>+{post.imageUrls.length - 4}</span>
                           )}

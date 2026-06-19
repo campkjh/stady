@@ -45,6 +45,22 @@ export default function CommunityWriteClient() {
   const [posting, setPosting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [postType, setPostType] = useState<"normal" | "poll">("normal");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [isBlinded, setIsBlinded] = useState(false);
+
+  const filledPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+  const pollReady = postType !== "poll" || filledPollOptions.length >= 2;
+
+  function updatePollOption(index: number, value: string) {
+    setPollOptions((current) => current.map((opt, i) => (i === index ? value : opt)));
+  }
+  function addPollOption() {
+    setPollOptions((current) => (current.length >= 4 ? current : [...current, ""]));
+  }
+  function removePollOption(index: number) {
+    setPollOptions((current) => (current.length <= 2 ? current : current.filter((_, i) => i !== index)));
+  }
 
   useEffect(() => {
     loadGroups();
@@ -150,6 +166,9 @@ export default function CommunityWriteClient() {
           content,
           tagIds,
           imageUrls: uploadedImages.map((image) => image.url),
+          type: postType,
+          isBlinded,
+          pollOptions: postType === "poll" ? filledPollOptions : [],
         }),
       });
       const data = await response.json();
@@ -190,6 +209,25 @@ export default function CommunityWriteClient() {
         )}
 
         <form onSubmit={submitPost} className="community-write-panel" style={panelStyle}>
+          <div style={{ display: "grid", gap: 8 }}>
+            <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>유형</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              {([
+                { key: "normal", label: "일반 글" },
+                { key: "poll", label: "투표" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setPostType(opt.key)}
+                  style={typeChipStyle(postType === opt.key)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label style={labelStyle}>
             카테고리
             <select value={groupId} onChange={(event) => setGroupId(event.target.value)} style={inputStyle} disabled={loading}>
@@ -233,6 +271,38 @@ export default function CommunityWriteClient() {
             />
           </label>
 
+          {postType === "poll" && (
+            <div style={{ display: "grid", gap: 8 }}>
+              <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>투표 항목 (최대 4개)</span>
+              {pollOptions.map((opt, index) => (
+                <div key={index} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    value={opt}
+                    onChange={(event) => updatePollOption(index, event.target.value)}
+                    placeholder={`항목 ${index + 1}`}
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  {pollOptions.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removePollOption(index)}
+                      aria-label="항목 삭제"
+                      style={{ ...typeChipStyle(false), padding: "9px 12px" }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {pollOptions.length < 4 && (
+                <button type="button" onClick={addPollOption} style={{ ...typeChipStyle(false), justifySelf: "start" }}>
+                  + 항목 추가
+                </button>
+              )}
+              <span style={{ color: "#8A909C", fontSize: 13 }}>2~4개 항목을 입력하세요. 1인 1표로 투표됩니다.</span>
+            </div>
+          )}
+
           <div style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>이미지</span>
@@ -270,9 +340,15 @@ export default function CommunityWriteClient() {
                 ))}
               </div>
             )}
+            {uploadedImages.length > 0 && (
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#374151", fontSize: 14, fontWeight: 700 }}>
+                <input type="checkbox" checked={isBlinded} onChange={(event) => setIsBlinded(event.target.checked)} style={{ width: 18, height: 18 }} />
+                사진 블라인드 (터치해야 보이게)
+              </label>
+            )}
           </div>
 
-          <button type="submit" className="community-submit-button" disabled={posting || uploadingImages || !groupId || !title.trim() || !content.trim()} style={submitStyle}>
+          <button type="submit" className="community-submit-button" disabled={posting || uploadingImages || !groupId || !title.trim() || !content.trim() || !pollReady} style={submitStyle}>
             {posting ? "등록 중..." : "게시글 등록"}
           </button>
         </form>
@@ -395,6 +471,19 @@ export default function CommunityWriteClient() {
       `}</style>
     </main>
   );
+}
+
+function typeChipStyle(active: boolean) {
+  return {
+    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    borderRadius: 999,
+    background: active ? "#111827" : "#fff",
+    color: active ? "#fff" : "#4B5563",
+    padding: "9px 16px",
+    fontSize: 14,
+    fontWeight: 800,
+    cursor: "pointer",
+  } as const;
 }
 
 function tagChipStyle(active: boolean) {

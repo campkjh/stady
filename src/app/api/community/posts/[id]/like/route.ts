@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { toggleCommunityPostLike } from "@/lib/community";
+import { setCommunityPostReaction } from "@/lib/community";
 
 export async function POST(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -13,7 +13,23 @@ export async function POST(
     }
 
     const { id } = await params;
-    const result = await toggleCommunityPostLike(id, user.id);
+    // Body: { type } picks one of the 6 reactions; { type: null } removes it.
+    // No body / no `type` key falls back to a heart toggle (legacy behaviour).
+    let type: string | null | undefined;
+    try {
+      const body = await request.json();
+      type = body?.type;
+    } catch {
+      type = undefined;
+    }
+    if (type === undefined) {
+      // legacy toggle: if already reacted, remove; else heart
+      const { getPostReactions } = await import("@/lib/community");
+      const current = await getPostReactions(id, user.id);
+      type = current.myReaction ? null : "heart";
+    }
+
+    const result = await setCommunityPostReaction(id, user.id, type);
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof Error && error.message === "CommunityPostNotFound") {

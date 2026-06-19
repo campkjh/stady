@@ -12,6 +12,8 @@ function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number]) {
     groupSlug: post.group_slug,
     title: post.title,
     content: post.content,
+    type: post.type,
+    isBlinded: post.is_blinded,
     isActive: post.is_active,
     createdAt: post.created_at,
     updatedAt: post.updated_at,
@@ -58,9 +60,21 @@ export async function POST(request: NextRequest) {
           .filter((imageUrl: string) => /^https?:\/\//.test(imageUrl))
           .slice(0, 5)
       : [];
+    const isBlinded = body.isBlinded === true;
+    const type = body.type === "poll" ? "poll" : "normal";
+    const pollOptions: string[] =
+      type === "poll" && Array.isArray(body.pollOptions)
+        ? body.pollOptions
+            .map((opt: unknown) => String(opt || "").trim())
+            .filter((opt: string) => opt.length > 0)
+            .slice(0, 4)
+        : [];
 
     if (!groupId || !title || !content) {
       return NextResponse.json({ error: "카테고리, 제목, 내용을 입력해주세요." }, { status: 400 });
+    }
+    if (type === "poll" && pollOptions.length < 2) {
+      return NextResponse.json({ error: "투표는 항목을 2개 이상 입력해주세요." }, { status: 400 });
     }
 
     const activeTags = await getTags({ groupId, activeOnly: true });
@@ -74,6 +88,9 @@ export async function POST(request: NextRequest) {
       content,
       tagIds,
       imageUrls,
+      isBlinded,
+      type,
+      pollOptions,
     });
 
     return NextResponse.json({ id }, { status: 201 });
