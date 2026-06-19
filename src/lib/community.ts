@@ -1010,6 +1010,21 @@ export async function getCommunityPostOwnerId(id: string): Promise<string | null
   return rows[0].user_id;
 }
 
+// 게시글 이미지 교체 (편집 시): 기존 이미지를 모두 지우고 전달된 순서대로 다시 넣는다.
+export async function setCommunityPostImages(postId: string, imageUrls: string[]) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(`DELETE FROM "CommunityPostImage" WHERE "post_id" = $1`, postId);
+  for (const [index, imageUrl] of imageUrls.entries()) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "CommunityPostImage" ("id", "post_id", "image_url", "sort_order") VALUES ($1, $2, $3, $4)`,
+      randomUUID(),
+      postId,
+      imageUrl,
+      index
+    );
+  }
+}
+
 export interface AdminCommentRow {
   id: string;
   post_id: string;

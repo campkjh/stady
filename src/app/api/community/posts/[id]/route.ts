@@ -6,6 +6,7 @@ import {
   getCommunityPostOwnerId,
   adminUpdateCommunityPost,
   adminDeleteCommunityPost,
+  setCommunityPostImages,
   mapTag,
   toNumber,
 } from "@/lib/community";
@@ -106,20 +107,31 @@ export async function PATCH(
     const body = await request.json();
     const title = body?.title !== undefined ? String(body.title).trim() : undefined;
     const content = body?.content !== undefined ? String(body.content).trim() : undefined;
+    const imageUrls: string[] | undefined = Array.isArray(body?.imageUrls)
+      ? body.imageUrls
+          .map((u: unknown) => String(u || "").trim())
+          .filter((u: string) => /^https?:\/\//.test(u))
+          .slice(0, 5)
+      : undefined;
     if (title !== undefined && title.length === 0) {
       return NextResponse.json({ error: "제목을 입력해주세요." }, { status: 400 });
     }
     if (content !== undefined && content.length === 0) {
       return NextResponse.json({ error: "내용을 입력해주세요." }, { status: 400 });
     }
-    if (title === undefined && content === undefined) {
+    if (title === undefined && content === undefined && imageUrls === undefined) {
       return NextResponse.json({ error: "수정할 내용이 없습니다." }, { status: 400 });
     }
 
-    await adminUpdateCommunityPost(id, {
-      ...(title !== undefined ? { title } : {}),
-      ...(content !== undefined ? { content } : {}),
-    });
+    if (title !== undefined || content !== undefined) {
+      await adminUpdateCommunityPost(id, {
+        ...(title !== undefined ? { title } : {}),
+        ...(content !== undefined ? { content } : {}),
+      });
+    }
+    if (imageUrls !== undefined) {
+      await setCommunityPostImages(id, imageUrls);
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Community post PATCH error:", error);

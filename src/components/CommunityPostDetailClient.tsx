@@ -1,7 +1,18 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AlertModal from "@/components/AlertModal";
+
+// Android WebView often returns gallery files with an empty/generic MIME type,
+// so fall back to the file extension (same logic as the write form).
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i;
+function isImageFile(file: File) {
+  if (file.type && file.type !== "application/octet-stream") {
+    return file.type.startsWith("image/");
+  }
+  return IMAGE_EXT_RE.test(file.name || "");
+}
 
 interface CommunityTag {
   id: string;
@@ -83,7 +94,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -115,7 +129,46 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     if (!post) return;
     setEditTitle(post.title);
     setEditContent(post.content);
+    setEditImages([...post.imageUrls]);
     setEditing(true);
+  }
+
+  async function uploadEditImages(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (files.length === 0) return;
+    if (editImages.length + files.length > 5) {
+      setMessage("이미지는 최대 5장까지 올릴 수 있습니다.");
+      return;
+    }
+    setUploadingEdit(true);
+    setMessage("");
+    try {
+      const next: string[] = [];
+      for (const file of files) {
+        if (!isImageFile(file)) throw new Error("이미지 파일만 업로드할 수 있습니다.");
+        if (file.size > 10 * 1024 * 1024) throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch("/api/community/uploads", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "이미지 업로드에 실패했습니다.");
+        next.push(data.url);
+      }
+      setEditImages((cur) => [...cur, ...next]);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploadingEdit(false);
+    }
+  }
+
+  function removeEditImage(url: string) {
+    setEditImages((cur) => cur.filter((u) => u !== url));
   }
 
   async function saveEdit() {
@@ -133,7 +186,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: t, content: c }),
+        body: JSON.stringify({ title: t, content: c, imageUrls: editImages }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "수정에 실패했습니다.");
@@ -146,9 +199,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  async function deletePost() {
+  async function doDelete() {
     if (!post) return;
-    if (!window.confirm("이 게시글을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    setShowDeleteConfirm(false);
     setActionBusy(true);
     setMessage("");
     try {
@@ -336,8 +389,41 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     rows={6}
                     style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
                   />
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#374151" }}>이미지</span>
+                      <label style={{ ...ownerBtnStyle(false), position: "relative", overflow: "hidden", display: "inline-flex", alignItems: "center" }}>
+                        {uploadingEdit ? "업로드 중..." : "이미지 추가"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={uploadEditImages}
+                          disabled={uploadingEdit || editImages.length >= 5}
+                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+                        />
+                      </label>
+                    </div>
+                    {editImages.length > 0 && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                        {editImages.map((url) => (
+                          <div key={url} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", border: "1px solid #EEF0F3", background: "#F9FAFB" }}>
+                            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            <button
+                              type="button"
+                              onClick={() => removeEditImage(url)}
+                              aria-label="이미지 삭제"
+                              style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: 999, border: "none", background: "rgba(17,24,39,0.78)", color: "#fff", fontSize: 16, lineHeight: "26px", cursor: "pointer" }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button type="button" onClick={saveEdit} disabled={actionBusy} style={ownerBtnStyle(true)}>
+                    <button type="button" onClick={saveEdit} disabled={actionBusy || uploadingEdit} style={ownerBtnStyle(true)}>
                       저장
                     </button>
                     <button type="button" onClick={() => setEditing(false)} disabled={actionBusy} style={ownerBtnStyle(false)}>
@@ -355,14 +441,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       <button type="button" onClick={startEdit} disabled={actionBusy} style={ownerBtnStyle(false)}>
                         편집
                       </button>
-                      <button type="button" onClick={deletePost} disabled={actionBusy} style={ownerDangerStyle}>
+                      <button type="button" onClick={() => setShowDeleteConfirm(true)} disabled={actionBusy} style={ownerDangerStyle}>
                         삭제
                       </button>
                     </div>
                   )}
                 </>
               )}
-              {post.imageUrls.length > 0 && (
+              {!editing && post.imageUrls.length > 0 && (
                 <div className="community-detail-image-list" style={{ position: "relative" }}>
                   {post.imageUrls.map((imageUrl, index) => (
                     <img
@@ -621,6 +707,18 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           }
         }
       `}</style>
+
+      {showDeleteConfirm && (
+        <AlertModal
+          title={"게시글을 삭제할까요?"}
+          subtitle={"삭제하면 되돌릴 수 없어요."}
+          onClose={() => setShowDeleteConfirm(false)}
+          buttons={[
+            { label: "삭제", bgColor: "#E85D5D", color: "#fff", onClick: doDelete },
+            { label: "취소", bgColor: "#F2F4F6", color: "#4B5563", onClick: () => setShowDeleteConfirm(false) },
+          ]}
+        />
+      )}
     </main>
   );
 }
