@@ -33,11 +33,30 @@ struct WebView: UIViewRepresentable {
         // Enable the edge swipe-back gesture so users can navigate back from
         // pushed pages and external flows (e.g. the Toss billing/정기결제 page).
         webView.allowsBackForwardNavigationGestures = true
+
+        // Clear any stale cached web bundle on launch. WKWebView caches the HTML
+        // document to disk (NSURLCache), so after a web (Vercel) deploy the app can
+        // keep serving the OLD bundle — old JS chunks — even across full app
+        // restarts; a normal relaunch does NOT clear this. Wipe the disk/memory
+        // cache once at startup so the WebView always loads the latest deployed code.
+        let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
+        WKWebsiteDataStore.default().removeData(
+            ofTypes: cacheTypes,
+            modifiedSince: Date(timeIntervalSince1970: 0)
+        ) {}
+
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        let request = URLRequest(url: url)
+        // Bypass the local cache on every load so a fresh HTML document (and thus
+        // the current JS chunk hashes) is always fetched after a deploy.
+        // (URLRequest's cachePolicy initializer also requires timeoutInterval.)
+        let request = URLRequest(
+            url: url,
+            cachePolicy: .reloadIgnoringLocalCacheData,
+            timeoutInterval: 60
+        )
         webView.load(request)
     }
 
