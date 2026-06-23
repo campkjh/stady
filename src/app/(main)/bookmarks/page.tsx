@@ -347,6 +347,27 @@ export default function BookmarksPage() {
         </div>
       )}
 
+      {/* Re-test all collected questions of the active tab at once */}
+      {!loading && bookmarks.length > 0 && (
+        <button
+          type="button"
+          onClick={() => router.push(`/retest?source=bookmark&type=${activeTab || "all"}`)}
+          className="press"
+          style={{
+            width: "100%", height: 52, borderRadius: 14, border: "none", marginBottom: 20,
+            background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            boxShadow: "0 6px 18px rgba(55,135,255,0.28)",
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9" />
+            <polyline points="3 4 3 9 8 9" />
+          </svg>
+          찜한 문제 한번에 풀기
+        </button>
+      )}
+
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
