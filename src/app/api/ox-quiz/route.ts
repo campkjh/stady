@@ -25,6 +25,16 @@ async function ensureLifeEthicsOxData() {
     category = await prisma.category.create({ data: { name: "생활과윤리" } });
   }
 
+  // The 단원별 세트는 scripts/merge-ox-life-ethics.mjs 로 하나의 "생활과윤리 OX정리"
+  // 세트로 통합되었다. 통합 세트(전체 문항 이상을 가진 단일 세트)가 있으면 절대
+  // 다시 단원별로 쪼개지 않는다. (이 가드가 없으면 문항이 줄어든 순간 per-단원
+  // 루프가 돌면서 단원 세트를 재생성해 통합을 깨뜨린다.)
+  const consolidated = await prisma.oxQuizSet.findFirst({
+    where: { categoryId: category.id, totalQuestions: { gte: expectedQuestions } },
+    select: { id: true },
+  });
+  if (consolidated) return;
+
   const currentQuestions = await prisma.oxQuestion.count({
     where: { oxQuizSet: { categoryId: category.id } },
   });

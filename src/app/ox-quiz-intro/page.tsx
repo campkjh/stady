@@ -115,11 +115,18 @@ export default function OxQuizListPage() {
         <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
           {!selectedGroup && groups.map((group, index) => {
             const totalQuestions = group.items.reduce((sum, item) => sum + item.totalQuestions, 0);
+            // 단원(세트)이 하나뿐인 그룹은 중간 선택 화면을 건너뛰고 바로 퀴즈로
+            // 들어간다 — 단원을 오가는 번거로움을 없애기 위함.
+            const single = group.items.length === 1;
             return (
               <button
                 key={group.name}
                 type="button"
-                onClick={() => requireLoginThen(() => setSelectedGroupName(group.name))}
+                onClick={() => requireLoginThen(() =>
+                  single
+                    ? router.push(`/ox-quiz/${group.items[0].id}`)
+                    : setSelectedGroupName(group.name)
+                )}
                 className="press"
                 style={{
                   width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "#fff",
@@ -130,7 +137,7 @@ export default function OxQuizListPage() {
               >
                 <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>{group.name}</span>
                 <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "#8A909C" }}>
-                  {group.items.length}개 중분류 · {totalQuestions}문항
+                  {single ? `${totalQuestions}문항` : `${group.items.length}개 중분류 · ${totalQuestions}문항`}
                 </span>
               </button>
             );
