@@ -686,6 +686,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .community-primary-button:hover:not(:disabled) {
           box-shadow: 0 8px 18px rgba(55,135,255,0.24);
         }
+        .community-primary-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
         .community-action-button:active,
         .community-primary-button:active,
         .community-reply-button:active,

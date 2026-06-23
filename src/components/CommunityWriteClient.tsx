@@ -50,7 +50,6 @@ export default function CommunityWriteClient() {
   const [isBlinded, setIsBlinded] = useState(false);
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
-  const pollReady = postType !== "poll" || filledPollOptions.length >= 2;
 
   function updatePollOption(index: number, value: string) {
     setPollOptions((current) => current.map((opt, i) => (i === index ? value : opt)));
@@ -153,6 +152,25 @@ export default function CommunityWriteClient() {
 
   async function submitPost(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    // 버튼은 항상 누를 수 있게 두고(전송/업로드 중 제외), 빠진 항목은 여기서 안내한다.
+    // 예전엔 조건이 안 맞으면 버튼이 조용히 disabled 됐는데 비활성 표시가 전혀 없어
+    // "버튼이 안 눌린다"처럼 보였다.
+    const validationError = !groupId
+      ? "카테고리를 선택해주세요."
+      : !title.trim()
+      ? "제목을 입력해주세요."
+      : !content.trim()
+      ? "내용을 입력해주세요."
+      : postType === "poll" && filledPollOptions.length < 2
+      ? "투표 항목을 2개 이상 입력해주세요."
+      : "";
+    if (validationError) {
+      setMessage(validationError);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setPosting(true);
     setMessage("");
     try {
@@ -348,8 +366,8 @@ export default function CommunityWriteClient() {
             )}
           </div>
 
-          <button type="submit" className="community-submit-button" disabled={posting || uploadingImages || !groupId || !title.trim() || !content.trim() || !pollReady} style={submitStyle}>
-            {posting ? "등록 중..." : "게시글 등록"}
+          <button type="submit" className="community-submit-button" disabled={posting || uploadingImages} style={submitStyle}>
+            {posting ? "등록 중..." : uploadingImages ? "이미지 업로드 중..." : "게시글 등록"}
           </button>
         </form>
       </div>
@@ -411,6 +429,11 @@ export default function CommunityWriteClient() {
         }
         .community-submit-button {
           transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+        }
+        .community-submit-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          box-shadow: none;
         }
         .community-image-upload-button {
           transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
