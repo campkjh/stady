@@ -91,6 +91,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -121,8 +122,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setCurrentUserId(d?.user?.id ?? null))
-      .catch(() => setCurrentUserId(null));
+      .then((d) => {
+        setCurrentUserId(d?.user?.id ?? null);
+        setIsAdmin(d?.user?.role === "admin");
+      })
+      .catch(() => {
+        setCurrentUserId(null);
+        setIsAdmin(false);
+      });
   }, []);
 
   function startEdit() {
@@ -436,16 +443,27 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 900 }}>{post.title}</h2>
                   <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname}</p>
                   <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
-                  {!!post.userId && currentUserId === post.userId && (
-                    <div style={{ display: "flex", gap: 8, margin: "0 0 4px" }}>
-                      <button type="button" onClick={startEdit} disabled={actionBusy} style={ownerBtnStyle(false)}>
-                        편집
-                      </button>
-                      <button type="button" onClick={() => setShowDeleteConfirm(true)} disabled={actionBusy} style={ownerDangerStyle}>
-                        삭제
-                      </button>
-                    </div>
-                  )}
+                  {(() => {
+                    const isOwner = !!post.userId && currentUserId === post.userId;
+                    if (!isOwner && !isAdmin) return null;
+                    // 관리자가 남의 글을 강제 편집/삭제하는 경우엔 라벨과 배지로 구분.
+                    const moderating = isAdmin && !isOwner;
+                    return (
+                      <div style={{ display: "flex", gap: 8, margin: "0 0 4px", alignItems: "center" }}>
+                        {moderating && (
+                          <span style={{ fontSize: 12, fontWeight: 800, color: "#B91C1C", background: "#FEE2E2", borderRadius: 999, padding: "4px 10px" }}>
+                            관리자
+                          </span>
+                        )}
+                        <button type="button" onClick={startEdit} disabled={actionBusy} style={ownerBtnStyle(false)}>
+                          {moderating ? "강제 편집" : "편집"}
+                        </button>
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)} disabled={actionBusy} style={ownerDangerStyle}>
+                          {moderating ? "강제 삭제" : "삭제"}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
               {!editing && post.imageUrls.length > 0 && (
