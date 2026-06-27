@@ -777,7 +777,9 @@ export async function getCommunityPostDetail(
         GROUP BY "comment_id"
       ) cl ON cl."comment_id" = c."id"
       WHERE ${commentConditions.join(" AND ")}
-      ORDER BY c."created_at" ASC
+      ORDER BY
+        CASE WHEN c."parent_id" IS NULL THEN COALESCE(cl."like_count", 0) ELSE 0 END DESC,
+        c."created_at" ASC
     `,
     postId,
     viewerId
