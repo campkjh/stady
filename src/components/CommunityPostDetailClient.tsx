@@ -53,6 +53,7 @@ interface CommunityPostDetail {
   type: string;
   isBlinded: boolean;
   createdAt: string;
+  viewCount: number;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
@@ -100,10 +101,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [actionBusy, setActionBusy] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const loadDetail = useCallback(async () => {
+  const loadDetail = useCallback(async (track = false) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/community/posts/${encodeURIComponent(postId)}`);
+      // track=true 일 때만 조회수 +1 (최초 진입). 댓글/좋아요 후 재조회는 증가 안 함.
+      const url = `/api/community/posts/${encodeURIComponent(postId)}${track ? "?track=1" : ""}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "게시글을 불러오지 못했습니다.");
       setPost(data.post);
@@ -116,7 +119,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   }, [postId]);
 
   useEffect(() => {
-    loadDetail();
+    loadDetail(true);
   }, [loadDetail]);
 
   useEffect(() => {
@@ -441,7 +444,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
               ) : (
                 <>
                   <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 900 }}>{post.title}</h2>
-                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname}</p>
+                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname} · 조회 {post.viewCount ?? 0}</p>
                   <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;

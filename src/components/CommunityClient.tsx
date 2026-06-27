@@ -26,6 +26,7 @@ interface CommunityPost {
   type?: string;
   isBlinded?: boolean;
   createdAt: string;
+  viewCount: number;
   likeCount: number;
   commentCount: number;
   imageUrls: string[];
@@ -38,6 +39,7 @@ export default function CommunityClient() {
   const [groups, setGroups] = useState<CategoryGroup[]>([]);
   const [filterTags, setFilterTags] = useState<CommunityTag[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [weeklyPosts, setWeeklyPosts] = useState<CommunityPost[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedTagId, setSelectedTagId] = useState("");
   const [query, setQuery] = useState("");
@@ -48,6 +50,7 @@ export default function CommunityClient() {
 
   useEffect(() => {
     loadGroups();
+    loadWeeklyPopular();
   }, []);
 
   useEffect(() => {
@@ -122,6 +125,16 @@ export default function CommunityClient() {
       setMessage(error instanceof Error ? error.message : "게시글을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadWeeklyPopular() {
+    try {
+      const response = await fetch("/api/community/posts?popular=week");
+      const data = await response.json();
+      if (response.ok) setWeeklyPosts(data.posts || []);
+    } catch {
+      // 주간 인기글은 보조 섹션이라 실패해도 조용히 무시한다.
     }
   }
 
@@ -233,6 +246,34 @@ export default function CommunityClient() {
             </div>
           )}
 
+          {!selectedGroupId && !selectedTagId && !query.trim() && weeklyPosts.length > 0 && (
+            <section className="weekly-popular" aria-label="주간 인기글">
+              <h2 className="weekly-popular-title">🔥 주간 인기글</h2>
+              <div className="weekly-popular-track">
+                {weeklyPosts.map((post, index) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    className="weekly-popular-card"
+                    onClick={() => openPost(post.id)}
+                  >
+                    <span className="weekly-popular-top">
+                      <span className="weekly-popular-rank">{index + 1}</span>
+                      <span className="weekly-popular-group">{post.groupName}</span>
+                    </span>
+                    <span className="weekly-popular-card-title">{post.title}</span>
+                    <span className="weekly-popular-card-content">{post.content}</span>
+                    <span className="weekly-popular-card-metrics">
+                      <span><HeartIcon /> {post.likeCount || 0}</span>
+                      <span><CommentIcon /> {post.commentCount || 0}</span>
+                      <span><EyeIcon /> {post.viewCount || 0}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="community-post-list">
             {loading ? (
               <>
@@ -337,6 +378,9 @@ export default function CommunityClient() {
                     <span>
                       <CommentIcon /> 댓글 {post.commentCount || 0}
                     </span>
+                    <span>
+                      <EyeIcon /> 조회 {post.viewCount || 0}
+                    </span>
                   </div>
                 </article>
               ))
@@ -439,6 +483,15 @@ function CommentIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7.5 17.5H7C4.8 17.5 3 15.7 3 13.5V9C3 6.8 4.8 5 7 5H17C19.2 5 21 6.8 21 9V13.5C21 15.7 19.2 17.5 17 17.5H12.8L8.7 20.2C8.2 20.55 7.5 20.18 7.5 19.57V17.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2.5 12C4 8.2 7.7 5.8 12 5.8C16.3 5.8 20 8.2 21.5 12C20 15.8 16.3 18.2 12 18.2C7.7 18.2 4 15.8 2.5 12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -553,6 +606,98 @@ function CommunityStyles() {
       }
       .community-stat-pill strong {
         color: #111827;
+      }
+      .weekly-popular {
+        margin: 2px 0 16px;
+      }
+      .weekly-popular-title {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 900;
+        color: #111827;
+      }
+      .weekly-popular-track {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scroll-padding-left: 2px;
+        padding: 2px 0 10px;
+        scrollbar-width: none;
+      }
+      .weekly-popular-track::-webkit-scrollbar { display: none; }
+      .weekly-popular-card {
+        scroll-snap-align: start;
+        flex: 0 0 82%;
+        max-width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        text-align: left;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid #eef0f3;
+        background: linear-gradient(160deg, #ffffff, #f6f9ff);
+        box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+        cursor: pointer;
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+      }
+      .weekly-popular-card:active { transform: scale(0.98); }
+      .weekly-popular-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .weekly-popular-rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #3787ff;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        flex-shrink: 0;
+      }
+      .weekly-popular-group {
+        font-size: 12px;
+        font-weight: 800;
+        color: #8a909c;
+      }
+      .weekly-popular-card-title {
+        font-size: 15px;
+        font-weight: 900;
+        color: #111827;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .weekly-popular-card-content {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .weekly-popular-card-metrics {
+        display: flex;
+        gap: 14px;
+        margin-top: 2px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #8a909c;
+      }
+      .weekly-popular-card-metrics span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
       }
       .community-message {
         border: 1px solid #bfdbfe;

@@ -7,6 +7,7 @@ import {
   adminUpdateCommunityPost,
   adminDeleteCommunityPost,
   setCommunityPostImages,
+  incrementCommunityPostView,
   mapTag,
   toNumber,
 } from "@/lib/community";
@@ -47,12 +48,16 @@ function mapComment(comment: CommunityCommentNode): unknown {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const user = await getCurrentUser();
+    // 글 상세 최초 진입(track=1)에서만 조회수 +1. 좋아요/댓글 후 재조회 땐 증가 안 함.
+    if (new URL(request.url).searchParams.get("track") === "1") {
+      await incrementCommunityPostView(id);
+    }
     const detail = await getCommunityPostDetail(id, {
       activeOnly: true,
       viewerId: user?.id,
@@ -77,6 +82,7 @@ export async function GET(
         isActive: detail.post.is_active,
         createdAt: detail.post.created_at,
         updatedAt: detail.post.updated_at,
+        viewCount: toNumber(detail.post.view_count),
         likeCount: toNumber(detail.post.like_count),
         commentCount: toNumber(detail.post.comment_count),
         likedByMe: Boolean(detail.post.liked_by_me),

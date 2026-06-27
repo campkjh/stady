@@ -57,6 +57,7 @@ export interface CommunityPostRow {
   updated_at: Date;
   tags: CommunityTagRow[];
   images: CommunityPostImageRow[];
+  view_count?: bigint | number;
   like_count?: bigint | number;
   comment_count?: bigint | number;
   liked_by_me?: boolean;
@@ -243,6 +244,18 @@ export async function ensureCommunityTables() {
   `);
   await prisma.$executeRawUnsafe(`
     ALTER TABLE "CommunityPost" ADD COLUMN IF NOT EXISTS "is_blinded" BOOLEAN NOT NULL DEFAULT false
+  `);
+
+  // --- 조회수 ---
+  // 별도 카운터 테이블로 둔다(컬럼 X). CommunityPost 를 SELECT * 로 읽는 쿼리가
+  // 많아, 테이블에 컬럼을 ALTER 하면 Neon 풀러의 캐시된 플랜과 충돌해
+  // "cached plan must not change result type" 500 이 난다. 테이블+JOIN 은 p.* 의
+  // 결과 타입을 바꾸지 않아 안전하다.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityPostViewCount" (
+      "post_id" TEXT PRIMARY KEY REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "count" INTEGER NOT NULL DEFAULT 0
+    )
   `);
 
   // --- Reaction kind for the 6 empathy types (one reaction per user) ---
@@ -535,7 +548,7 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
   }
 }
 
-export async function getCommunityPosts(options: { activeOnly?: boolean; groupId?: string | null; tagId?: string | null; query?: string | null } = {}) {
+export async function getCommunityPosts(options: { activeOnly?: boolean; groupId?: string | null; tagId?: string | null; query?: string | null; sort?: "recent" | "popular"; windowDays?: number; limit?: number } = {}) {
   await seedDefaultCommunityTaxonomy();
   const conditions = [];
   const params: unknown[] = [];
@@ -555,7 +568,19 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
     params.push(`%${options.query}%`);
     conditions.push(`(p."title" ILIKE $${params.length} OR p."content" ILIKE $${params.length})`);
   }
+  // 최근 N일 이내(주간 인기글 등). days 는 정수로 정제해 직접 삽입(파라미터 불가).
+  if (options.windowDays && Number.isFinite(options.windowDays)) {
+    const days = Math.max(1, Math.floor(options.windowDays));
+    conditions.push(`p."created_at" >= NOW() - (INTERVAL '1 day' * ${days})`);
+  }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  // 인기순 = 공감×3 + 댓글×2 + 조회수 (최근 활동 가중). 그 외엔 최신순.
+  const orderBy = options.sort === "popular"
+    ? `ORDER BY (COALESCE(pl."like_count", 0) * 3 + COALESCE(cc."comment_count", 0) * 2 + COALESCE(vc."count", 0)) DESC, p."created_at" DESC`
+    : `ORDER BY p."created_at" DESC`;
+  const limit = options.limit && Number.isFinite(options.limit)
+    ? Math.max(1, Math.min(100, Math.floor(options.limit)))
+    : 100;
   const posts = await prisma.$queryRawUnsafe<Omit<CommunityPostRow, "tags" | "images">[]>(
     `
       SELECT
@@ -564,7 +589,8 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
         g."name" AS "group_name",
         g."slug" AS "group_slug",
         COALESCE(pl."like_count", 0) AS "like_count",
-        COALESCE(cc."comment_count", 0) AS "comment_count"
+        COALESCE(cc."comment_count", 0) AS "comment_count",
+        COALESCE(vc."count", 0) AS "view_count"
       FROM "CommunityPost" p
       JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id"
       LEFT JOIN "User" u ON u."id" = p."user_id"
@@ -579,9 +605,10 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
         WHERE "is_active" = true
         GROUP BY "post_id"
       ) cc ON cc."post_id" = p."id"
+      LEFT JOIN "CommunityPostViewCount" vc ON vc."post_id" = p."id"
       ${where}
-      ORDER BY p."created_at" DESC
-      LIMIT 100
+      ${orderBy}
+      LIMIT ${limit}
     `,
     ...params
   );
@@ -599,6 +626,19 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
       .filter(Boolean) as CommunityTagRow[],
     images: imagesByPost.get(post.id) || [],
   }));
+}
+
+// 조회수 +1 (활성 글만). 글 상세 최초 진입 시 1회 호출한다.
+export async function incrementCommunityPostView(postId: string) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO "CommunityPostViewCount" ("post_id", "count")
+      SELECT p."id", 1 FROM "CommunityPost" p WHERE p."id" = $1 AND p."is_active" = true
+      ON CONFLICT ("post_id") DO UPDATE SET "count" = "CommunityPostViewCount"."count" + 1
+    `,
+    postId
+  );
 }
 
 async function getImagesByPost(postIds: string[]) {
@@ -704,6 +744,7 @@ export async function getCommunityPostDetail(
         g."slug" AS "group_slug",
         COALESCE(pl."like_count", 0) AS "like_count",
         COALESCE(cc."comment_count", 0) AS "comment_count",
+        COALESCE(vc."count", 0) AS "view_count",
         EXISTS (
           SELECT 1
           FROM "CommunityPostLike" x
@@ -723,6 +764,7 @@ export async function getCommunityPostDetail(
         WHERE "is_active" = true
         GROUP BY "post_id"
       ) cc ON cc."post_id" = p."id"
+      LEFT JOIN "CommunityPostViewCount" vc ON vc."post_id" = p."id"
       WHERE ${postConditions.join(" AND ")}
       LIMIT 1
     `,

@@ -17,6 +17,7 @@ function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number]) {
     isActive: post.is_active,
     createdAt: post.created_at,
     updatedAt: post.updated_at,
+    viewCount: toNumber(post.view_count),
     likeCount: toNumber(post.like_count),
     commentCount: toNumber(post.comment_count),
     imageUrls: post.images.map((image) => image.image_url),
@@ -27,6 +28,16 @@ function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number]) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    // 주간 인기글: 최근 7일 글을 인기 점수순으로 상위 10개.
+    if (searchParams.get("popular") === "week") {
+      const popular = await getCommunityPosts({
+        activeOnly: true,
+        sort: "popular",
+        windowDays: 7,
+        limit: 10,
+      });
+      return NextResponse.json({ posts: popular.map(mapPost) });
+    }
     const posts = await getCommunityPosts({
       activeOnly: true,
       groupId: searchParams.get("groupId"),
