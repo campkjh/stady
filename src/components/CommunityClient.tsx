@@ -47,6 +47,10 @@ export default function CommunityClient() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [topbarHeight, setTopbarHeight] = useState(0);
+  const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
+  const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
+  const scrollRestoredRef = useRef(false);
+  const restoreTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     loadGroups();
@@ -86,6 +90,41 @@ export default function CommunityClient() {
     loadPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId, selectedTagId, query]);
+
+  // 상세에서 돌아왔을 때(목록 첫 로드 완료 시점) 저장해둔 스크롤 위치로 복원.
+  useEffect(() => {
+    if (scrollRestoredRef.current) return;
+    if (loading || posts.length === 0) return; // 실제 목록이 렌더된 뒤에만 복원
+    if (selectedGroupId || selectedTagId || query.trim()) {
+      scrollRestoredRef.current = true;
+      return;
+    }
+    scrollRestoredRef.current = true;
+    let saved: string | null = null;
+    try { saved = sessionStorage.getItem("community-scroll"); } catch {}
+    if (!saved) return;
+    try { sessionStorage.removeItem("community-scroll"); } catch {}
+    const y = parseInt(saved, 10);
+    if (Number.isNaN(y) || y <= 0) return;
+    // 카드/이미지가 점차 렌더되며 목록 높이가 늘어나므로, 목표 위치에 닿을 때까지
+    // (또는 최대 ~1.2초) 반복 적용한다.
+    let tries = 0;
+    restoreTimerRef.current = window.setInterval(() => {
+      window.scrollTo(0, y);
+      tries += 1;
+      if (Math.abs(window.scrollY - y) <= 2 || tries >= 24) {
+        if (restoreTimerRef.current) window.clearInterval(restoreTimerRef.current);
+        restoreTimerRef.current = null;
+      }
+    }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, posts]);
+
+  useEffect(() => {
+    return () => {
+      if (restoreTimerRef.current) window.clearInterval(restoreTimerRef.current);
+    };
+  }, []);
 
   async function loadGroups() {
     try {
@@ -139,20 +178,32 @@ export default function CommunityClient() {
   }
 
   function openPost(postId: string) {
+    // 상세로 가기 전 현재 스크롤 위치를 저장해 두고, 돌아오면 그 자리로 복원한다.
+    try { sessionStorage.setItem("community-scroll", String(window.scrollY)); } catch {}
     router.push(`/community/${postId}`);
+  }
+
+  // 주간 인기글 슬라이드에서 현재 보이는(가장 왼쪽에 스냅된) 카드 인덱스를 추적해
+  // 하단 인디케이터에 반영한다.
+  function handleWeeklyScroll() {
+    const track = weeklyTrackRef.current;
+    if (!track) return;
+    const cards = Array.from(track.children) as HTMLElement[];
+    if (cards.length === 0) return;
+    const trackLeft = track.getBoundingClientRect().left;
+    let nearest = 0;
+    let min = Infinity;
+    cards.forEach((card, i) => {
+      const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
+      if (d < min) { min = d; nearest = i; }
+    });
+    setWeeklyActiveIndex(nearest);
   }
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId),
     [groups, selectedGroupId]
   );
-  const selectedTag = useMemo(
-    () => filterTags.find((tag) => tag.id === selectedTagId),
-    [filterTags, selectedTagId]
-  );
-  const totalLikes = useMemo(() => posts.reduce((sum, post) => sum + (post.likeCount || 0), 0), [posts]);
-  const totalComments = useMemo(() => posts.reduce((sum, post) => sum + (post.commentCount || 0), 0), [posts]);
-
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
       <header ref={topbarRef} className="community-topbar">
@@ -229,17 +280,6 @@ export default function CommunityClient() {
         </aside>
 
         <section className="community-feed">
-          <div className="community-feed-summary">
-            <div>
-              <p className="community-summary-label">{selectedTag ? `#${selectedTag.name}` : selectedGroup?.name || "전체"}</p>
-              <strong className="community-summary-title">{posts.length}개의 글</strong>
-            </div>
-            <div className="community-summary-stats">
-              <StatPill label="공감" value={totalLikes} />
-              <StatPill label="댓글" value={totalComments} />
-            </div>
-          </div>
-
           {message && (
             <div className="community-message">
               {message}
@@ -248,8 +288,11 @@ export default function CommunityClient() {
 
           {!selectedGroupId && !selectedTagId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
-              <h2 className="weekly-popular-title">🔥 주간 인기글</h2>
-              <div className="weekly-popular-track">
+              <h2 className="weekly-popular-title">
+                <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ verticalAlign: "-3px", marginRight: 4 }} />
+                주간 인기글
+              </h2>
+              <div className="weekly-popular-track" ref={weeklyTrackRef} onScroll={handleWeeklyScroll}>
                 {weeklyPosts.map((post, index) => (
                   <button
                     key={post.id}
@@ -271,6 +314,13 @@ export default function CommunityClient() {
                   </button>
                 ))}
               </div>
+              {weeklyPosts.length > 1 && (
+                <div className="weekly-popular-dots" aria-hidden="true">
+                  {weeklyPosts.map((post, index) => (
+                    <span key={post.id} className={index === weeklyActiveIndex ? "weekly-dot active" : "weekly-dot"} />
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -449,14 +499,6 @@ function TagChips({
         </button>
       ))}
     </div>
-  );
-}
-
-function StatPill({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="community-stat-pill">
-      {label} <strong>{value}</strong>
-    </span>
   );
 }
 
@@ -698,6 +740,24 @@ function CommunityStyles() {
         display: inline-flex;
         align-items: center;
         gap: 4px;
+      }
+      .weekly-popular-dots {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin-top: 2px;
+      }
+      .weekly-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #d7dce3;
+        transition: width 0.2s ease, background 0.2s ease;
+      }
+      .weekly-dot.active {
+        width: 18px;
+        background: #3787ff;
       }
       .community-message {
         border: 1px solid #bfdbfe;

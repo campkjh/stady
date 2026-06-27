@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         activeOnly: true,
         sort: "popular",
         windowDays: 7,
-        limit: 10,
+        limit: 5,
       });
       return NextResponse.json({ posts: popular.map(mapPost) });
     }
