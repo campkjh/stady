@@ -36,6 +36,7 @@ interface OxQuizSet {
   thumbnail: string | null;
   totalQuestions: number;
   isPopular: boolean;
+  createdAt: string;
   category: Category;
 }
 
@@ -45,6 +46,7 @@ interface VocabQuizSet {
   thumbnail: string | null;
   totalQuestions: number;
   isPopular: boolean;
+  createdAt: string;
   category: Category;
 }
 
@@ -60,6 +62,154 @@ const PASTELS = [
 
 function getPastel(index: number) {
   return PASTELS[((index % PASTELS.length) + PASTELS.length) % PASTELS.length];
+}
+
+// 등록된 지 7일 이내면 새 퀴즈로 본다.
+const NEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+function isNewCreatedAt(createdAt: string) {
+  const t = new Date(createdAt).getTime();
+  return Number.isFinite(t) && Date.now() - t < NEW_WINDOW_MS;
+}
+
+// 책처럼 디자인된 퀴즈 카드(표지/책등 스프링/띠지/가름끈 + NEW·인기·진척도).
+function QuizBookCard({
+  label, title, meta, pastelIndex, isNew, isPopular, progressPct, onClick,
+}: {
+  label: string;
+  title: string;
+  meta: string;
+  pastelIndex: number;
+  isNew?: boolean;
+  isPopular?: boolean;
+  progressPct?: number | null;
+  onClick: () => void;
+}) {
+  const { bg, fg } = getPastel(pastelIndex);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="hover-lift"
+      style={{ textAlign: "left", background: "none", border: "none", padding: 0 }}
+    >
+      <div
+        style={{
+          position: "relative",
+          aspectRatio: "3 / 4",
+          borderRadius: "3px 11px 11px 3px",
+          background: bg,
+          overflow: "hidden",
+          boxShadow: "0 5px 14px rgba(15,23,42,0.12)",
+        }}
+      >
+        {/* 책등 + 스프링 코일 */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: 13,
+            background: "rgba(0,0,0,0.10)",
+            backgroundImage:
+              "repeating-linear-gradient(to bottom, transparent 0 9px, rgba(255,255,255,0.55) 9px 12px)",
+          }}
+        />
+        {/* 가름끈 */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: "24%",
+            width: 7,
+            height: "38%",
+            background: fg,
+            opacity: 0.85,
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)",
+          }}
+        />
+        {/* 표지 제목 */}
+        <span
+          style={{
+            position: "absolute",
+            top: "34%",
+            left: "calc(50% + 6px)",
+            transform: "translate(-50%, -50%)",
+            fontSize: 24,
+            fontWeight: 800,
+            color: fg,
+            letterSpacing: -1,
+          }}
+        >
+          {label}
+        </span>
+        {/* 띠지 */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 13,
+            right: 0,
+            bottom: "16%",
+            height: "19%",
+            background: fg,
+            opacity: 0.9,
+          }}
+        />
+        {isNew && (
+          <span
+            style={{
+              position: "absolute",
+              top: 7,
+              left: 19,
+              padding: "2px 7px",
+              borderRadius: 6,
+              background: "#FF3B30",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: 0.5,
+            }}
+          >
+            NEW
+          </span>
+        )}
+        {isPopular && (
+          <span
+            style={{
+              position: "absolute",
+              top: 7,
+              right: 7,
+              padding: "2px 7px",
+              borderRadius: 20,
+              background: "#FF3B5C",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 700,
+            }}
+          >
+            인기
+          </span>
+        )}
+        {progressPct != null && progressPct > 0 && (
+          <div
+            aria-hidden="true"
+            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 5, background: "rgba(255,255,255,0.6)" }}
+          >
+            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: fg }} />
+          </div>
+        )}
+      </div>
+      <div style={{ paddingTop: 8 }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {title}
+        </p>
+        <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{meta}</p>
+      </div>
+    </button>
+  );
 }
 
 interface HomeBanner {
@@ -129,6 +279,7 @@ export default function HomeClient({
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
   const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>([]);
+  const [oxProgress, setOxProgress] = useState<Record<string, number>>({});
   const welcomeVisible = showWelcome && Boolean(userName);
 
   const handleWelcomeComplete = useCallback(() => {
@@ -178,6 +329,17 @@ export default function HomeClient({
       .catch(() => {});
   }, [userName]);
 
+  // OX 퀴즈별 진척도(내가 답한 문항 수). 카드에 얇은 막대로 표시.
+  useEffect(() => {
+    if (!userName) return;
+    fetch("/api/ox-progress", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.progress && typeof data.progress === "object") setOxProgress(data.progress);
+      })
+      .catch(() => {});
+  }, [userName]);
+
   useEffect(() => {
     fetch("/api/banners")
       .then((res) => res.json())
@@ -205,6 +367,23 @@ export default function HomeClient({
   }, [popupBanner]);
 
   const slideBanners = banners.filter((banner) => banner.bannerType !== "modal");
+
+  // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
+  const newQuizzes = [
+    ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt })),
+    ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt })),
+  ]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6);
+
+  // OX 세트의 진척도(%) — 답한 문항 수 / 총 문항. 기록 없으면 null.
+  function oxProgressPct(id: string): number | null {
+    const answered = oxProgress[id];
+    if (answered == null) return null;
+    const total = oxQuizSets.find((o) => o.id === id)?.totalQuestions;
+    if (!total) return null;
+    return Math.min(100, Math.round((answered / total) * 100));
+  }
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflow: "hidden" }}>
@@ -494,33 +673,40 @@ export default function HomeClient({
               최근에 푼 퀴즈
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {recentQuizzes.map((q, i) => {
-                const pastel = getPastel(i);
-                return (
-                  <button
-                    key={q.key}
-                    type="button"
-                    onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
-                    className="hover-lift"
-                    style={{ textAlign: "left", background: "none", border: "none" }}
-                  >
-                    <div
-                      className="flex items-center justify-center"
-                      style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: pastel.bg }}
-                    >
-                      <span style={{ fontSize: 22, fontWeight: 700, color: pastel.fg }}>{q.type === "ox" ? "OX" : "Aa"}</span>
-                    </div>
-                    <div style={{ paddingTop: 8 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {q.title}
-                      </p>
-                      <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
-                        {q.type === "ox" ? "OX 퀴즈" : "단어 퀴즈"}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+              {recentQuizzes.map((q, i) => (
+                <QuizBookCard
+                  key={q.key}
+                  label={q.type === "ox" ? "OX" : "Aa"}
+                  title={q.title}
+                  meta={q.type === "ox" ? "OX 퀴즈" : "단어 퀴즈"}
+                  pastelIndex={i}
+                  progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
+                  onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {newQuizzes.length > 0 && (
+          <section>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
+              새로운 퀴즈
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+              {newQuizzes.map((q, i) => (
+                <QuizBookCard
+                  key={q.key}
+                  label={q.type === "ox" ? "OX" : "Aa"}
+                  title={q.title}
+                  meta={`${q.totalQuestions}문항`}
+                  pastelIndex={i}
+                  isNew
+                  isPopular={q.isPopular}
+                  progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
+                  onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
+                />
+              ))}
             </div>
           </section>
         )}
@@ -598,35 +784,16 @@ export default function HomeClient({
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {oxQuizSets.map((ox, i) => (
-                <button
+                <QuizBookCard
                   key={ox.id}
-                  type="button"
+                  label="OX"
+                  title={ox.title}
+                  meta={`${ox.totalQuestions}문항`}
+                  pastelIndex={i + 3}
+                  isPopular={ox.isPopular}
+                  progressPct={oxProgressPct(ox.id)}
                   onClick={() => router.push(`/ox-quiz/${ox.id}`)}
-                  className="hover-lift"
-                  style={{ textAlign: "left", background: "none", border: "none" }}
-                >
-                  <div
-                    className="flex items-center justify-center"
-                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: getPastel(i + 3).bg }}
-                  >
-                    <span style={{ fontSize: 22, fontWeight: 700, color: getPastel(i + 3).fg }}>OX</span>
-                    {ox.isPopular && (
-                      <span style={{
-                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
-                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
-                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
-                      }}>인기</span>
-                    )}
-                  </div>
-                  <div style={{ paddingTop: 8 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {ox.title}
-                    </p>
-                    <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
-                      {ox.totalQuestions}문항
-                    </p>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </section>
@@ -639,35 +806,15 @@ export default function HomeClient({
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {vocabQuizSets.map((vq, i) => (
-                <button
+                <QuizBookCard
                   key={vq.id}
-                  type="button"
+                  label="Aa"
+                  title={vq.title}
+                  meta={`${vq.totalQuestions}문항`}
+                  pastelIndex={i + 5}
+                  isPopular={vq.isPopular}
                   onClick={() => router.push(`/vocab-quiz/${vq.id}`)}
-                  className="hover-lift"
-                  style={{ textAlign: "left", background: "none", border: "none" }}
-                >
-                  <div
-                    className="flex items-center justify-center"
-                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: getPastel(i + 5).bg }}
-                  >
-                    <span style={{ fontSize: 22, fontWeight: 700, color: getPastel(i + 5).fg }}>Aa</span>
-                    {vq.isPopular && (
-                      <span style={{
-                        position: "absolute", top: 6, right: 6, padding: "2px 8px",
-                        borderRadius: 20, backgroundColor: "#FF3B5C", color: "#fff",
-                        fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
-                      }}>인기</span>
-                    )}
-                  </div>
-                  <div style={{ paddingTop: 8 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {vq.title}
-                    </p>
-                    <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
-                      {vq.totalQuestions}문항
-                    </p>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </section>

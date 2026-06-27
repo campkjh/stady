@@ -332,7 +332,7 @@ export default function CommunityClient() {
                     type="button"
                     className="weekly-popular-card"
                     onClick={() => openPost(post.id)}
-                    style={{ transform: index === weeklyActiveIndex ? "scale(1)" : "scale(0.9)" }}
+                    style={{ transform: index === weeklyActiveIndex ? "scale(1)" : "scale(0.94)" }}
                   >
                     <span className="weekly-popular-top">
                       <span className="weekly-popular-rank">{index + 1}</span>
@@ -738,7 +738,7 @@ function CommunityStyles() {
         padding: 16px;
         border-radius: 24px;
         border: 1px solid #eef0f3;
-        background: linear-gradient(160deg, #ffffff, #f6f9ff);
+        background: #ffffff;
         cursor: pointer;
         transform-origin: center center;
         transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
