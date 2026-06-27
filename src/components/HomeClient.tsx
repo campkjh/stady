@@ -7,6 +7,10 @@ import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 
+// 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
+// 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
+const SHOW_STORE_SECTION = false;
+
 interface Category {
   id: string;
   name: string;
@@ -450,6 +454,7 @@ export default function HomeClient({
 
       {/* Content */}
       <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
+        {SHOW_STORE_SECTION && (
         <section>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
             스타디 교재
@@ -502,6 +507,7 @@ export default function HomeClient({
             }}>구매</span>
           </button>
         </section>
+        )}
 
         {userName && (
           <section>
