@@ -64,7 +64,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
           textAlign: "center",
         }}
       >
-        <p style={{ margin: 0, color: "#111827", fontSize: 23, fontWeight: 900, letterSpacing: 0 }}>
+        <p style={{ margin: 0, color: "#111827", fontSize: 23, fontWeight: 700, letterSpacing: 0 }}>
           준비
           <button
             type="button"
@@ -110,7 +110,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
                 textAlign: "center",
               }}
             />
-            {error && <span style={{ color: "#DC2626", fontSize: 13, fontWeight: 700 }}>{error}</span>}
+            {error && <span style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{error}</span>}
             <button
               type="submit"
               style={{
@@ -120,7 +120,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
                 color: "#fff",
                 padding: "12px 14px",
                 fontSize: 15,
-                fontWeight: 900,
+                fontWeight: 700,
                 cursor: "pointer",
               }}
             >
@@ -137,7 +137,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
             background: "transparent",
             color: "#6B7280",
             fontSize: 14,
-            fontWeight: 700,
+            fontWeight: 500,
             cursor: "pointer",
           }}
         >

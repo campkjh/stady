@@ -332,7 +332,7 @@ export default function CommunityClient() {
               </>
             ) : posts.length === 0 ? (
               <div style={emptyPanelStyle}>
-                <p style={{ margin: 0, color: "#6B7280", fontSize: 14, fontWeight: 700 }}>아직 게시글이 없습니다.</p>
+                <p style={{ margin: 0, color: "#6B7280", fontSize: 14, fontWeight: 500 }}>아직 게시글이 없습니다.</p>
               </div>
             ) : (
               posts.map((post) => (
@@ -369,7 +369,7 @@ export default function CommunityClient() {
                           background: "#EFF6FF",
                           color: "#1D4ED8",
                           fontSize: 12,
-                          fontWeight: 800,
+                          fontWeight: 600,
                           verticalAlign: "middle",
                         }}
                       >
@@ -400,7 +400,7 @@ export default function CommunityClient() {
                                 background: "rgba(17, 24, 39, 0.55)",
                                 color: "#fff",
                                 fontSize: 12,
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -578,13 +578,13 @@ function CommunityStyles() {
         margin: 0 0 2px;
         color: #9ca3af;
         font-size: 11px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-title {
         margin: 0;
         color: #111827;
         font-size: 24px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-mobile-filters {
         display: grid;
@@ -620,12 +620,12 @@ function CommunityStyles() {
         margin: 0 0 3px;
         color: #6b7280;
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 600;
       }
       .community-summary-title {
         color: #111827;
         font-size: 20px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-summary-stats {
         display: flex;
@@ -644,7 +644,7 @@ function CommunityStyles() {
         color: #6b7280;
         padding: 7px 9px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
       }
       .community-stat-pill strong {
         color: #111827;
@@ -655,7 +655,7 @@ function CommunityStyles() {
       .weekly-popular-title {
         margin: 0 0 10px;
         font-size: 15px;
-        font-weight: 900;
+        font-weight: 700;
         color: #111827;
       }
       .weekly-popular-track {
@@ -701,17 +701,17 @@ function CommunityStyles() {
         background: #3787ff;
         color: #fff;
         font-size: 12px;
-        font-weight: 900;
+        font-weight: 700;
         flex-shrink: 0;
       }
       .weekly-popular-group {
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
         color: #8a909c;
       }
       .weekly-popular-card-title {
         font-size: 15px;
-        font-weight: 900;
+        font-weight: 700;
         color: #111827;
         line-height: 1.35;
         display: -webkit-box;
@@ -733,7 +733,7 @@ function CommunityStyles() {
         gap: 14px;
         margin-top: 2px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
         color: #8a909c;
       }
       .weekly-popular-card-metrics span {
@@ -766,7 +766,7 @@ function CommunityStyles() {
         border-radius: 8px;
         padding: 12px;
         font-size: 14px;
-        font-weight: 700;
+        font-weight: 500;
       }
       .community-post-list {
         display: grid;
@@ -810,19 +810,19 @@ function CommunityStyles() {
         background: #f3f4f6;
         color: #111827;
         font-size: 15px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-post-author {
         margin: 0;
         color: #111827;
         font-size: 14px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-post-date {
         margin: 2px 0 0;
         color: #9ca3af;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 500;
       }
       .community-group-badge {
         border-radius: 999px;
@@ -830,14 +830,14 @@ function CommunityStyles() {
         color: #374151;
         padding: 7px 10px;
         font-size: 12px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-post-title {
         margin: 0;
         color: #111827;
         font-size: 18px;
         line-height: 1.35;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-post-content {
         margin: 0;
@@ -893,7 +893,7 @@ function CommunityStyles() {
         background: rgba(17, 24, 39, 0.54);
         color: #fff;
         font-size: 20px;
-        font-weight: 900;
+        font-weight: 700;
       }
       .community-tag-badge {
         border-radius: 999px;
@@ -902,14 +902,14 @@ function CommunityStyles() {
         color: #6b7280;
         padding: 6px 9px;
         font-size: 12px;
-        font-weight: 800;
+        font-weight: 600;
       }
       .community-post-metrics {
         display: flex;
         gap: 12px;
         color: #6b7280;
         font-size: 13px;
-        font-weight: 800;
+        font-weight: 600;
       }
       .community-post-metrics span {
         display: inline-flex;
@@ -998,7 +998,7 @@ function CommunityStyles() {
           margin: 0;
           color: #9ca3af;
           font-size: 12px;
-          font-weight: 900;
+          font-weight: 700;
         }
         .community-post-card {
           padding: 20px 4px 21px;
@@ -1033,7 +1033,7 @@ function chipStyle(active: boolean, stacked: boolean) {
     color: active ? "#fff" : "#374151",
     padding: stacked ? "10px 12px" : "9px 13px",
     fontSize: 14,
-    fontWeight: 900,
+    fontWeight: 700,
     cursor: "pointer",
     textAlign: "left",
   } as const;
@@ -1049,7 +1049,7 @@ function tagChipStyle(active: boolean, stacked: boolean) {
     color: active ? "#fff" : "#4B5563",
     padding: stacked ? "9px 12px" : "8px 11px",
     fontSize: 13,
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: "pointer",
     textAlign: "left",
   } as const;
@@ -1104,7 +1104,7 @@ const floatingWriteButtonStyle = {
   color: "#fff",
   padding: "13px 18px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
   boxShadow: "0 12px 26px rgba(17,24,39,0.24)",
   zIndex: 55,

@@ -363,12 +363,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           </button>
           <div>
             <p className="community-detail-eyebrow">STADY</p>
-            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 900 }}>커뮤니티</h1>
+            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 700 }}>커뮤니티</h1>
           </div>
         </header>
 
         {message && (
-          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
             {message}
           </div>
         )}
@@ -381,7 +381,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           <>
             <article className="community-detail-panel community-post-detail-card" style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ borderRadius: 999, border: "1px solid #EEF0F3", background: "transparent", color: "#374151", padding: "7px 10px", fontSize: 13, fontWeight: 900 }}>{post.groupName}</span>
+                <span style={{ borderRadius: 999, border: "1px solid #EEF0F3", background: "transparent", color: "#374151", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
                 <span style={{ color: "#8A909C", fontSize: 12 }}>{new Date(post.createdAt).toLocaleString("ko-KR")}</span>
               </div>
               {editing ? (
@@ -401,7 +401,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   />
                   <div style={{ display: "grid", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#374151" }}>이미지</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>이미지</span>
                       <label style={{ ...ownerBtnStyle(false), position: "relative", overflow: "hidden", display: "inline-flex", alignItems: "center" }}>
                         {uploadingEdit ? "업로드 중..." : "이미지 추가"}
                         <input
@@ -443,8 +443,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               ) : (
                 <>
-                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 900 }}>{post.title}</h2>
-                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 700 }}>{post.nickname} · 조회 {post.viewCount ?? 0}</p>
+                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>{post.title}</h2>
+                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname} · 조회 {post.viewCount ?? 0}</p>
                   <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
@@ -454,7 +454,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     return (
                       <div style={{ display: "flex", gap: 8, margin: "0 0 4px", alignItems: "center" }}>
                         {moderating && (
-                          <span style={{ fontSize: 12, fontWeight: 800, color: "#B91C1C", background: "#FEE2E2", borderRadius: 999, padding: "4px 10px" }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#B91C1C", background: "#FEE2E2", borderRadius: 999, padding: "4px 10px" }}>
                             관리자
                           </span>
                         )}
@@ -518,11 +518,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                             transition: "width 0.3s ease",
                           }}
                         />
-                        <span style={{ position: "relative", fontWeight: 800, color: "#111827" }}>
+                        <span style={{ position: "relative", fontWeight: 600, color: "#111827" }}>
                           {mine ? "✓ " : ""}
                           {opt.text}
                         </span>
-                        <span style={{ position: "relative", fontWeight: 800, color: "#6B7280", fontSize: 13 }}>
+                        <span style={{ position: "relative", fontWeight: 600, color: "#6B7280", fontSize: 13 }}>
                           {pct}% · {opt.votes}표
                         </span>
                       </button>
@@ -556,7 +556,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🙂"}</span>
                     {post.myReaction ? reactionLabel(post.myReaction) : "공감"} {post.likeCount}
                   </button>
-                  <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 800 }}>댓글 {post.commentCount}</span>
+                  <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
                   {showReactions && (
                     <div style={reactionPickerStyle}>
                       {REACTIONS.map((r) => (
@@ -576,7 +576,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 {post.likeCount > 0 && (
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {REACTIONS.filter((r) => (post.reactionCounts[r.key] || 0) > 0).map((r) => (
-                      <span key={r.key} style={{ fontSize: 13, color: "#6B7280", fontWeight: 700 }}>
+                      <span key={r.key} style={{ fontSize: 13, color: "#6B7280", fontWeight: 500 }}>
                         {r.emoji} {post.reactionCounts[r.key]}
                       </span>
                     ))}
@@ -586,7 +586,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             </article>
 
             <section className="community-detail-panel" style={panelStyle}>
-              <h2 style={{ margin: 0, color: "#111827", fontSize: 18, fontWeight: 900 }}>댓글</h2>
+              <h2 style={{ margin: 0, color: "#111827", fontSize: 18, fontWeight: 700 }}>댓글</h2>
               <form onSubmit={submitComment} style={{ display: "grid", gap: 10 }}>
                 <textarea
                   value={comment}
@@ -667,7 +667,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           margin: 0 0 2px;
           color: #9ca3af;
           font-size: 11px;
-          font-weight: 900;
+          font-weight: 700;
         }
         .community-detail-panel {
           animation: communityDetailIn 0.22s ease both;
@@ -873,7 +873,7 @@ const primaryButtonStyle = {
   color: "#fff",
   padding: "12px 14px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;
 
@@ -884,7 +884,7 @@ const tagBadgeStyle = {
   color: "#4B5563",
   padding: "5px 9px",
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 600,
 } as const;
 
 function actionButtonStyle(active: boolean) {
@@ -895,7 +895,7 @@ function actionButtonStyle(active: boolean) {
     color: active ? "#fff" : "#374151",
     padding: "9px 12px",
     fontSize: 14,
-    fontWeight: 900,
+    fontWeight: 700,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
@@ -911,7 +911,7 @@ function ownerBtnStyle(primary: boolean) {
     color: primary ? "#fff" : "#4B5563",
     padding: "8px 16px",
     fontSize: 13,
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: "pointer",
   } as const;
 }
@@ -923,7 +923,7 @@ const ownerDangerStyle = {
   color: "#DC2626",
   padding: "8px 16px",
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 600,
   cursor: "pointer",
 } as const;
 
@@ -948,7 +948,7 @@ const blindOverlayStyle = {
   background: "rgba(17, 24, 39, 0.32)",
   color: "#fff",
   fontSize: 14,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
   backdropFilter: "blur(2px)",
   WebkitBackdropFilter: "blur(2px)",
@@ -1008,7 +1008,7 @@ function smallActionButtonStyle(active: boolean) {
     color: active ? "#fff" : "#4B5563",
     padding: "7px 10px",
     fontSize: 13,
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: "pointer",
   } as const;
 }

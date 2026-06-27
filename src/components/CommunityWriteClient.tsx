@@ -216,19 +216,19 @@ export default function CommunityWriteClient() {
           </button>
           <div>
             <p className="community-write-eyebrow">STADY</p>
-            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 900 }}>게시글 작성</h1>
+            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 700 }}>게시글 작성</h1>
           </div>
         </header>
 
         {message && (
-          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
             {message}
           </div>
         )}
 
         <form onSubmit={submitPost} className="community-write-panel" style={panelStyle}>
           <div style={{ display: "grid", gap: 8 }}>
-            <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>유형</span>
+            <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>유형</span>
             <div style={{ display: "flex", gap: 8 }}>
               {([
                 { key: "normal", label: "일반 글" },
@@ -258,7 +258,7 @@ export default function CommunityWriteClient() {
           </label>
 
           <div style={{ display: "grid", gap: 8 }}>
-            <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>태그</span>
+            <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>태그</span>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {tags.length === 0 ? (
                 <span style={{ color: "#8A909C", fontSize: 14 }}>선택 가능한 활성 태그가 없습니다.</span>
@@ -291,7 +291,7 @@ export default function CommunityWriteClient() {
 
           {postType === "poll" && (
             <div style={{ display: "grid", gap: 8 }}>
-              <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>투표 항목 (최대 4개)</span>
+              <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>투표 항목 (최대 4개)</span>
               {pollOptions.map((opt, index) => (
                 <div key={index} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
@@ -323,7 +323,7 @@ export default function CommunityWriteClient() {
 
           <div style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <span style={{ color: "#374151", fontSize: 14, fontWeight: 800 }}>이미지</span>
+              <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>이미지</span>
               <label className="community-image-upload-button" style={{ ...imageUploadButtonStyle, position: "relative", overflow: "hidden" }}>
                 {uploadingImages ? "업로드 중..." : "이미지 추가"}
                 {/* WKWebView(iOS 앱)에서는 display:none 파일 input의 파일 선택창이
@@ -359,7 +359,7 @@ export default function CommunityWriteClient() {
               </div>
             )}
             {uploadedImages.length > 0 && (
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#374151", fontSize: 14, fontWeight: 700 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#374151", fontSize: 14, fontWeight: 500 }}>
                 <input type="checkbox" checked={isBlinded} onChange={(event) => setIsBlinded(event.target.checked)} style={{ width: 18, height: 18 }} />
                 사진 블라인드 (터치해야 보이게)
               </label>
@@ -408,7 +408,7 @@ export default function CommunityWriteClient() {
           margin: 0 0 2px;
           color: #9ca3af;
           font-size: 11px;
-          font-weight: 900;
+          font-weight: 700;
         }
         .community-back-button:hover {
           background: #F9FAFB !important;
@@ -504,7 +504,7 @@ function typeChipStyle(active: boolean) {
     color: active ? "#fff" : "#4B5563",
     padding: "9px 16px",
     fontSize: 14,
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: "pointer",
   } as const;
 }
@@ -518,7 +518,7 @@ function tagChipStyle(active: boolean) {
     color: active ? "#fff" : "#4B5563",
     padding: "8px 11px",
     fontSize: 13,
-    fontWeight: 800,
+    fontWeight: 600,
     cursor: "pointer",
     transition: "background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease",
   } as const;
@@ -553,7 +553,7 @@ const labelStyle = {
   gap: 8,
   color: "#374151",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 600,
 } as const;
 
 const inputStyle = {
@@ -577,7 +577,7 @@ const imageUploadButtonStyle = {
   color: "#111827",
   padding: "9px 12px",
   fontSize: 14,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;
 
@@ -588,7 +588,7 @@ const submitStyle = {
   color: "#fff",
   padding: "13px 14px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
   transition: "transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease",
 } as const;
