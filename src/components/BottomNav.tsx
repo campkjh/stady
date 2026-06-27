@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const ACTIVE_COLOR = "#3787FF";
 const INACTIVE_COLOR = "#2B313D";
 const COMMUNITY_VISITED_KEY = "stady_community_visited";
+const COMMUNITY_SEEN_KEY = "stady_community_seen_at";
 
 const tabs = [
   {
@@ -41,6 +42,7 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
   const [showCommunityTip, setShowCommunityTip] = useState(false);
+  const [hasNewCommunity, setHasNewCommunity] = useState(false);
 
   // Show the floating "새로운 커뮤니티" tooltip only to users who have never
   // opened the community. Visiting /community marks it as seen forever.
@@ -52,9 +54,35 @@ export default function BottomNav() {
     setShowCommunityTip(!visited && !onCommunity);
   }, [pathname]);
 
+  // 안 본 새 글 인디케이터: 최신 글 시각이 마지막으로 본 시각보다 뒤면 빨간 점.
+  // 커뮤니티 화면을 보고 있으면 본 것으로 표시하고 점을 끈다.
+  useEffect(() => {
+    let cancelled = false;
+    const onCommunity = pathname.startsWith("/community");
+    fetch("/api/community/latest")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const latest = data?.latest ? new Date(data.latest).getTime() : 0;
+        if (!latest) { setHasNewCommunity(false); return; }
+        if (onCommunity) {
+          try { localStorage.setItem(COMMUNITY_SEEN_KEY, String(latest)); } catch {}
+          setHasNewCommunity(false);
+          return;
+        }
+        let seen = 0;
+        try { seen = Number(localStorage.getItem(COMMUNITY_SEEN_KEY) || 0); } catch {}
+        setHasNewCommunity(latest > seen);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [pathname]);
+
   function markCommunityVisited() {
     localStorage.setItem(COMMUNITY_VISITED_KEY, "true");
+    try { localStorage.setItem(COMMUNITY_SEEN_KEY, String(Date.now())); } catch {}
     setShowCommunityTip(false);
+    setHasNewCommunity(false);
   }
 
   function isActive(href: string) {
@@ -107,6 +135,7 @@ export default function BottomNav() {
                   href="/community"
                   onClick={markCommunityVisited}
                   style={{
+                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -115,6 +144,22 @@ export default function BottomNav() {
                     opacity: isActive("/community") ? 1 : 0.44,
                   }}
                 >
+                  {hasNewCommunity && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        top: -1,
+                        left: "calc(50% + 7px)",
+                        width: 8,
+                        height: 8,
+                        borderRadius: 999,
+                        background: "#FF3B30",
+                        border: "1.5px solid #fff",
+                        zIndex: 1,
+                      }}
+                    />
+                  )}
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <path fillRule="evenodd" clipRule="evenodd" d="M13.2578 16.9901C12.8778 17.2098 12.4467 17.3253 12.0078 17.3251C11.569 17.3259 11.1377 17.2106 10.7578 16.9911L4.34277 13.2871V17.1891C4.34277 17.5461 4.53277 17.8761 4.84277 18.0541L11.5078 21.9031C11.8178 22.0811 12.1978 22.0811 12.5078 21.9031L19.1728 18.0531C19.4828 17.8761 19.6728 17.5461 19.6728 17.1891V13.2871L13.2578 16.9901Z" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M23.0529 7.87195L12.5069 1.78195C12.3548 1.69447 12.1823 1.64844 12.0069 1.64844C11.8314 1.64844 11.659 1.69447 11.5069 1.78195L0.96187 7.87195C0.809863 7.95972 0.683636 8.08596 0.595876 8.23797C0.508116 8.38999 0.461914 8.56242 0.461914 8.73795C0.461914 8.91348 0.508116 9.08591 0.595876 9.23793C0.683636 9.38994 0.809863 9.51618 0.96187 9.60395L11.5089 15.6919C11.6608 15.7799 11.8333 15.8262 12.0089 15.8262C12.1844 15.8262 12.3569 15.7799 12.5089 15.6919L20.9069 10.8439V15.1329H22.4069V9.97695L23.0549 9.60295C23.2069 9.51518 23.3331 9.38894 23.4209 9.23693C23.5086 9.08491 23.5548 8.91248 23.5548 8.73695C23.5548 8.56142 23.5086 8.38899 23.4209 8.23697C23.3331 8.08496 23.2069 7.95872 23.0549 7.87095" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>

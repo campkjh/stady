@@ -49,6 +49,8 @@ export default function CommunityClient() {
   const [topbarHeight, setTopbarHeight] = useState(0);
   const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
   const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
+  const [weeklyAtStart, setWeeklyAtStart] = useState(true);
+  const [weeklyAtEnd, setWeeklyAtEnd] = useState(false);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
 
@@ -204,7 +206,32 @@ export default function CommunityClient() {
       if (d < min) { min = d; nearest = i; }
     });
     setWeeklyActiveIndex(nearest);
+    setWeeklyAtStart(track.scrollLeft <= 4);
+    setWeeklyAtEnd(track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
   }
+
+  // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 처음으로 순환.
+  useEffect(() => {
+    if (weeklyPosts.length <= 1) return;
+    const id = window.setInterval(() => {
+      const track = weeklyTrackRef.current;
+      if (!track) return;
+      const cards = Array.from(track.children) as HTMLElement[];
+      if (cards.length === 0) return;
+      const trackLeft = track.getBoundingClientRect().left;
+      let cur = 0;
+      let min = Infinity;
+      cards.forEach((card, i) => {
+        const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
+        if (d < min) { min = d; cur = i; }
+      });
+      const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 4;
+      const next = atEnd ? 0 : (cur + 1) % cards.length;
+      const delta = cards[next].getBoundingClientRect().left - trackLeft;
+      track.scrollBy({ left: delta, behavior: "smooth" });
+    }, 2400);
+    return () => window.clearInterval(id);
+  }, [weeklyPosts.length]);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId),
@@ -297,13 +324,15 @@ export default function CommunityClient() {
                 <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ verticalAlign: "-3px", marginRight: 4 }} />
                 주간 인기글
               </h2>
-              <div className="weekly-popular-track" ref={weeklyTrackRef} onScroll={handleWeeklyScroll}>
+              <div className="weekly-popular-viewport">
+                <div className="weekly-popular-track" ref={weeklyTrackRef} onScroll={handleWeeklyScroll}>
                 {weeklyPosts.map((post, index) => (
                   <button
                     key={post.id}
                     type="button"
                     className="weekly-popular-card"
                     onClick={() => openPost(post.id)}
+                    style={{ transform: index === weeklyActiveIndex ? "scale(1)" : "scale(0.9)" }}
                   >
                     <span className="weekly-popular-top">
                       <span className="weekly-popular-rank">{index + 1}</span>
@@ -318,6 +347,9 @@ export default function CommunityClient() {
                     </span>
                   </button>
                 ))}
+                </div>
+                <div className="weekly-edge weekly-edge-left" aria-hidden="true" style={{ opacity: weeklyAtStart ? 0 : 1 }} />
+                <div className="weekly-edge weekly-edge-right" aria-hidden="true" style={{ opacity: weeklyAtEnd ? 0 : 1 }} />
               </div>
               {weeklyPosts.length > 1 && (
                 <div className="weekly-popular-dots" aria-hidden="true">
@@ -664,6 +696,26 @@ function CommunityStyles() {
         font-weight: 700;
         color: #111827;
       }
+      .weekly-popular-viewport {
+        position: relative;
+      }
+      .weekly-edge {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 34px;
+        pointer-events: none;
+        z-index: 2;
+        transition: opacity 0.3s ease;
+      }
+      .weekly-edge-left {
+        left: 0;
+        background: linear-gradient(to right, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+      }
+      .weekly-edge-right {
+        right: 0;
+        background: linear-gradient(to left, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+      }
       .weekly-popular-track {
         display: flex;
         gap: 12px;
@@ -684,13 +736,13 @@ function CommunityStyles() {
         gap: 8px;
         text-align: left;
         padding: 16px;
-        border-radius: 16px;
+        border-radius: 24px;
         border: 1px solid #eef0f3;
         background: linear-gradient(160deg, #ffffff, #f6f9ff);
         cursor: pointer;
-        transition: transform 0.16s ease;
+        transform-origin: center center;
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
       }
-      .weekly-popular-card:active { transform: scale(0.98); }
       .weekly-popular-top {
         display: flex;
         align-items: center;

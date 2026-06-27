@@ -493,7 +493,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               최근에 푼 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {recentQuizzes.map((q, i) => {
                 const pastel = getPastel(i);
                 return (
@@ -596,7 +596,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               OX 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {oxQuizSets.map((ox, i) => (
                 <button
                   key={ox.id}
@@ -637,7 +637,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               단어 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {vocabQuizSets.map((vq, i) => (
                 <button
                   key={vq.id}
