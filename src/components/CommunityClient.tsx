@@ -131,7 +131,13 @@ export default function CommunityClient() {
       const response = await fetch("/api/category-groups");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "카테고리를 불러오지 못했습니다.");
-      setGroups(data.groups || []);
+      // "자유"를 맨 앞으로 (나머지는 기존 순서 유지).
+      const ordered = [...(data.groups || [])].sort((a, b) => {
+        if (a.name === "자유") return -1;
+        if (b.name === "자유") return 1;
+        return 0;
+      });
+      setGroups(ordered);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "카테고리를 불러오지 못했습니다.");
     }
@@ -209,7 +215,6 @@ export default function CommunityClient() {
       <header ref={topbarRef} className="community-topbar">
         <div className="community-topbar-inner">
           <div>
-            <p className="community-eyebrow">STADY</p>
             <h1 className="community-title">커뮤니티</h1>
           </div>
           <button
@@ -605,6 +610,7 @@ function CommunityStyles() {
       }
       .community-feed {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 4px;
         min-width: 0;
       }
@@ -681,9 +687,8 @@ function CommunityStyles() {
         border-radius: 16px;
         border: 1px solid #eef0f3;
         background: linear-gradient(160deg, #ffffff, #f6f9ff);
-        box-shadow: 0 6px 18px rgba(15,23,42,0.06);
         cursor: pointer;
-        transition: transform 0.16s ease, box-shadow 0.16s ease;
+        transition: transform 0.16s ease;
       }
       .weekly-popular-card:active { transform: scale(0.98); }
       .weekly-popular-top {
@@ -1027,13 +1032,13 @@ function chipStyle(active: boolean, stacked: boolean) {
   return {
     width: stacked ? "100%" : undefined,
     flex: "0 0 auto",
-    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "#111827" : "#E5E8EB"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#374151",
+    background: active ? "#111827" : "#E5E8EB",
+    color: active ? "#fff" : "#4E5968",
     padding: stacked ? "10px 12px" : "9px 13px",
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: active ? 600 : 400,
     cursor: "pointer",
     textAlign: "left",
   } as const;
