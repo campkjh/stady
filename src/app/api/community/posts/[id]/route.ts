@@ -8,8 +8,10 @@ import {
   adminDeleteCommunityPost,
   setCommunityPostImages,
   incrementCommunityPostView,
+  getUserTiers,
   mapTag,
   toNumber,
+  type CommunityTier,
 } from "@/lib/community";
 
 // 본인 글이거나 관리자면 통과. { ok } 또는 에러 응답을 반환.
@@ -30,21 +32,29 @@ async function authorizePostMutation(id: string) {
   return { ok: true as const };
 }
 
-function mapComment(comment: CommunityCommentNode): unknown {
+function mapComment(comment: CommunityCommentNode, tiers: Record<string, CommunityTier>): unknown {
   return {
     id: comment.id,
     postId: comment.post_id,
     parentId: comment.parent_id,
     userId: comment.user_id,
     nickname: comment.nickname || "익명",
+    authorTier: comment.user_id ? tiers[comment.user_id] ?? "iron" : "iron",
     content: comment.content,
     isActive: comment.is_active,
     createdAt: comment.created_at,
     updatedAt: comment.updated_at,
     likeCount: toNumber(comment.like_count),
     likedByMe: Boolean(comment.liked_by_me),
-    replies: comment.replies.map(mapComment),
+    replies: comment.replies.map((reply) => mapComment(reply, tiers)),
   };
+}
+
+function collectCommentUserIds(nodes: CommunityCommentNode[], out: (string | null)[]) {
+  for (const node of nodes) {
+    out.push(node.user_id);
+    collectCommentUserIds(node.replies, out);
+  }
 }
 
 export async function GET(
@@ -67,11 +77,16 @@ export async function GET(
       return NextResponse.json({ error: "게시글을 찾을 수 없습니다." }, { status: 404 });
     }
 
+    const commentUserIds: (string | null)[] = [];
+    collectCommentUserIds(detail.comments, commentUserIds);
+    const tiers = await getUserTiers([detail.post.user_id, ...commentUserIds]);
+
     return NextResponse.json({
       post: {
         id: detail.post.id,
         userId: detail.post.user_id,
         nickname: detail.post.nickname || "익명",
+        authorTier: detail.post.user_id ? tiers[detail.post.user_id] ?? "iron" : "iron",
         groupId: detail.post.group_id,
         groupName: detail.post.group_name,
         groupSlug: detail.post.group_slug,
@@ -92,7 +107,7 @@ export async function GET(
         imageUrls: detail.post.images.map((image) => image.image_url),
         tags: detail.post.tags.map(mapTag),
       },
-      comments: detail.comments.map(mapComment),
+      comments: detail.comments.map((comment) => mapComment(comment, tiers)),
     });
   } catch (error) {
     console.error("Community post detail GET error:", error);

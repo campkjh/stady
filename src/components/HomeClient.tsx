@@ -36,7 +36,7 @@ interface OxQuizSet {
   thumbnail: string | null;
   totalQuestions: number;
   isPopular: boolean;
-  createdAt: string;
+  createdAt: string | Date;
   category: Category;
 }
 
@@ -46,7 +46,7 @@ interface VocabQuizSet {
   thumbnail: string | null;
   totalQuestions: number;
   isPopular: boolean;
-  createdAt: string;
+  createdAt: string | Date;
   category: Category;
 }
 
@@ -66,7 +66,7 @@ function getPastel(index: number) {
 
 // 등록된 지 7일 이내면 새 퀴즈로 본다.
 const NEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-function isNewCreatedAt(createdAt: string) {
+function isNewCreatedAt(createdAt: string | Date) {
   const t = new Date(createdAt).getTime();
   return Number.isFinite(t) && Date.now() - t < NEW_WINDOW_MS;
 }
@@ -114,20 +114,6 @@ function QuizBookCard({
             background: "rgba(0,0,0,0.10)",
             backgroundImage:
               "repeating-linear-gradient(to bottom, transparent 0 9px, rgba(255,255,255,0.55) 9px 12px)",
-          }}
-        />
-        {/* 가름끈 */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            right: "24%",
-            width: 7,
-            height: "38%",
-            background: fg,
-            opacity: 0.85,
-            clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)",
           }}
         />
         {/* 표지 제목 */}

@@ -20,7 +20,9 @@ interface CommunityTag {
 interface CommunityPost {
   id: string;
   nickname: string;
+  authorTier?: string;
   groupName: string;
+  groupSlug?: string;
   title: string;
   content: string;
   type?: string;
@@ -31,6 +33,22 @@ interface CommunityPost {
   commentCount: number;
   imageUrls: string[];
   tags: CommunityTag[];
+}
+
+const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+function TierBadge({ tier }: { tier?: string }) {
+  if (!tier || !TIERS.includes(tier)) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ verticalAlign: "-2px", marginLeft: 4, flexShrink: 0 }} />
+  );
+}
+
+function QBadge({ answered }: { answered: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={18} height={18} style={{ verticalAlign: "-3px", marginRight: 5 }} />
+  );
 }
 
 export default function CommunityClient() {
@@ -390,7 +408,7 @@ export default function CommunityClient() {
                   <div className="community-post-head">
                     <div className="community-avatar" aria-hidden="true">{post.nickname.slice(0, 1)}</div>
                     <div>
-                      <p className="community-post-author">{post.nickname}</p>
+                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /></p>
                       <p className="community-post-date">{new Date(post.createdAt).toLocaleString("ko-KR")}</p>
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
@@ -413,6 +431,7 @@ export default function CommunityClient() {
                         📊 투표
                       </span>
                     )}
+                    {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
                   <p className="community-post-content">{post.content}</p>

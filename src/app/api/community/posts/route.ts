@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createCommunityPost, getCommunityPosts, getTags, mapTag, toNumber } from "@/lib/community";
+import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, mapTag, toNumber, type CommunityTier } from "@/lib/community";
 
-function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number]) {
+function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number], tiers: Record<string, CommunityTier>) {
   return {
     id: post.id,
     userId: post.user_id,
     nickname: post.nickname || "익명",
+    authorTier: post.user_id ? tiers[post.user_id] ?? "iron" : "iron",
     groupId: post.group_id,
     groupName: post.group_name,
     groupSlug: post.group_slug,
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
         windowDays: 7,
         limit: 5,
       });
-      return NextResponse.json({ posts: popular.map(mapPost) });
+      const popTiers = await getUserTiers(popular.map((p) => p.user_id));
+      return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers)) });
     }
     const posts = await getCommunityPosts({
       activeOnly: true,
@@ -44,7 +46,8 @@ export async function GET(request: NextRequest) {
       tagId: searchParams.get("tagId"),
       query: searchParams.get("q"),
     });
-    return NextResponse.json({ posts: posts.map(mapPost) });
+    const tiers = await getUserTiers(posts.map((p) => p.user_id));
+    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers)) });
   } catch (error) {
     console.error("Community posts GET error:", error);
     return NextResponse.json({ error: "게시글을 불러오지 못했습니다." }, { status: 500 });

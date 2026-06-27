@@ -291,6 +291,15 @@ export async function ensureCommunityTables() {
     CREATE INDEX IF NOT EXISTS "CommunityPollVote_option_idx"
     ON "CommunityPollVote" ("option_id")
   `);
+
+  // --- 질문게시판 카테고리(없으면 생성). 답변 여부에 따라 Q 배지를 보여준다. ---
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO "CommunityCategoryGroup" ("id", "name", "slug", "description", "sort_order")
+      VALUES ('community-group-qna', '질문게시판', 'qna', '궁금한 점을 묻고 답하는 공간', 0)
+      ON CONFLICT ("slug") DO NOTHING
+    `
+  );
 }
 
 // The 6 supported empathy reactions. Order = display order.
@@ -546,6 +555,45 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
   for (const item of items) {
     await prisma.$executeRawUnsafe(`UPDATE "CommunityTag" SET "sort_order" = $2, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $1`, item.id, item.sortOrder);
   }
+}
+
+// ── 활동 티어(리그) ──────────────────────────────────────────────
+// 출석 전용 테이블이 없어, 활동량(글·댓글·받은 공감·퀴즈 활동)으로 점수를 매겨
+// 6등급으로 환산한다. 인기글 등재는 공감 수에 자연히 반영된다.
+export type CommunityTier = "iron" | "silver" | "gold" | "emerald" | "diamond" | "master";
+
+export function tierForScore(score: number): CommunityTier {
+  if (score >= 1200) return "master";
+  if (score >= 600) return "diamond";
+  if (score >= 300) return "emerald";
+  if (score >= 120) return "gold";
+  if (score >= 40) return "silver";
+  return "iron";
+}
+
+export async function getUserTiers(userIds: (string | null | undefined)[]): Promise<Record<string, CommunityTier>> {
+  const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+  if (ids.length === 0) return {};
+  await ensureCommunityTables();
+  const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
+  const score: Record<string, number> = {};
+  for (const id of ids) score[id] = 0;
+  const apply = (rows: { id: string; c: bigint | number }[], weight: number) => {
+    for (const r of rows) if (score[r.id] != null) score[r.id] += Number(r.c) * weight;
+  };
+  const [posts, comments, likes, attempts] = await Promise.all([
+    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPost" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
+    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityComment" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
+    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT p."user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPostLike" l JOIN "CommunityPost" p ON p."id" = l."post_id" WHERE p."user_id" IN (${ph}) GROUP BY p."user_id"`, ...ids),
+    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "userId" AS id, COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" IN (${ph}) GROUP BY "userId"`, ...ids),
+  ]);
+  apply(posts, 10);
+  apply(comments, 3);
+  apply(likes, 2);
+  apply(attempts, 1);
+  const result: Record<string, CommunityTier> = {};
+  for (const id of ids) result[id] = tierForScore(score[id]);
+  return result;
 }
 
 export async function getCommunityPosts(options: { activeOnly?: boolean; groupId?: string | null; tagId?: string | null; query?: string | null; sort?: "recent" | "popular"; windowDays?: number; limit?: number } = {}) {

@@ -24,11 +24,28 @@ interface CommunityComment {
   id: string;
   parentId: string | null;
   nickname: string;
+  authorTier?: string;
   content: string;
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
   replies: CommunityComment[];
+}
+
+const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+function TierBadge({ tier }: { tier?: string }) {
+  if (!tier || !TIERS.includes(tier)) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ verticalAlign: "-2px", marginLeft: 4 }} />
+  );
+}
+
+function QBadge({ answered }: { answered: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={20} height={20} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+  );
 }
 
 interface PollOption {
@@ -47,7 +64,9 @@ interface CommunityPostDetail {
   id: string;
   userId: string | null;
   nickname: string;
+  authorTier?: string;
   groupName: string;
+  groupSlug?: string;
   title: string;
   content: string;
   type: string;
@@ -443,8 +462,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               ) : (
                 <>
-                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>{post.title}</h2>
-                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname} · 조회 {post.viewCount ?? 0}</p>
+                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>
+                    {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
+                    {post.title}
+                  </h2>
+                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /> · 조회 {post.viewCount ?? 0}</p>
                   <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
@@ -772,7 +794,7 @@ function CommentItem({
   return (
     <div style={commentBoxStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-        <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}</strong>
+        <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /></strong>
         <span style={{ color: "#9CA3AF", fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("ko-KR")}</span>
       </div>
       <p style={{ margin: "8px 0 0", color: "#374151", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
