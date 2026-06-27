@@ -48,17 +48,18 @@ interface VocabQuizSet {
   category: Category;
 }
 
-const GRADIENTS = [
-  "from-blue-400 to-blue-600",
-  "from-emerald-400 to-emerald-600",
-  "from-violet-400 to-violet-600",
-  "from-orange-400 to-orange-600",
-  "from-rose-400 to-rose-600",
-  "from-cyan-400 to-cyan-600",
+// 퀴즈 카드 단색 파스텔 팔레트 (bg=배경, fg=가운데 글자색).
+const PASTELS = [
+  { bg: "#DDE8FB", fg: "#5C86D8" },
+  { bg: "#D7F1E5", fg: "#4DA886" },
+  { bg: "#E8E1F8", fg: "#8A6FD1" },
+  { bg: "#FCE7D4", fg: "#E0935A" },
+  { bg: "#FBE1E7", fg: "#DC7A96" },
+  { bg: "#D7EEF4", fg: "#4FA6BC" },
 ];
 
-function getGradient(index: number) {
-  return GRADIENTS[index % GRADIENTS.length];
+function getPastel(index: number) {
+  return PASTELS[((index % PASTELS.length) + PASTELS.length) % PASTELS.length];
 }
 
 interface HomeBanner {
@@ -108,6 +109,13 @@ const BANNER_ITEMS = [
   },
 ];
 
+interface RecentQuiz {
+  key: string;
+  type: "ox" | "vocab";
+  id: string;
+  title: string;
+}
+
 export default function HomeClient({
   userName,
   isAdmin,
@@ -120,6 +128,7 @@ export default function HomeClient({
   const [showWelcome, setShowWelcome] = useState(isNewUser);
   const [banners, setBanners] = useState<HomeBanner[]>([]);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
+  const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>([]);
   const welcomeVisible = showWelcome && Boolean(userName);
 
   const handleWelcomeComplete = useCallback(() => {
@@ -143,6 +152,31 @@ export default function HomeClient({
     }
     router.push(linkUrl);
   }, [router]);
+
+  // 최근에 푼 OX·단어 퀴즈 (세트별 가장 최근 1개씩, 최대 6개).
+  useEffect(() => {
+    if (!userName) return;
+    fetch("/api/attempts", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const attempts = data?.attempts;
+        if (!Array.isArray(attempts)) return;
+        const seen = new Set<string>();
+        const recent: RecentQuiz[] = [];
+        for (const a of attempts) {
+          if (a.oxQuizSet) {
+            const k = `ox:${a.oxQuizSet.id}`;
+            if (!seen.has(k)) { seen.add(k); recent.push({ key: k, type: "ox", id: a.oxQuizSet.id, title: a.oxQuizSet.title }); }
+          } else if (a.vocabQuizSet) {
+            const k = `vocab:${a.vocabQuizSet.id}`;
+            if (!seen.has(k)) { seen.add(k); recent.push({ key: k, type: "vocab", id: a.vocabQuizSet.id, title: a.vocabQuizSet.title }); }
+          }
+          if (recent.length >= 6) break;
+        }
+        setRecentQuizzes(recent);
+      })
+      .catch(() => {});
+  }, [userName]);
 
   useEffect(() => {
     fetch("/api/banners")
@@ -454,6 +488,42 @@ export default function HomeClient({
 
       {/* Content */}
       <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
+        {recentQuizzes.length > 0 && (
+          <section>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
+              최근에 푼 퀴즈
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              {recentQuizzes.map((q, i) => {
+                const pastel = getPastel(i);
+                return (
+                  <button
+                    key={q.key}
+                    type="button"
+                    onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
+                    className="hover-lift"
+                    style={{ textAlign: "left", background: "none", border: "none" }}
+                  >
+                    <div
+                      className="flex items-center justify-center"
+                      style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: pastel.bg }}
+                    >
+                      <span style={{ fontSize: 22, fontWeight: 700, color: pastel.fg }}>{q.type === "ox" ? "OX" : "Aa"}</span>
+                    </div>
+                    <div style={{ paddingTop: 8 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.title}
+                      </p>
+                      <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
+                        {q.type === "ox" ? "OX 퀴즈" : "단어 퀴즈"}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
         {SHOW_STORE_SECTION && (
         <section>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
@@ -536,10 +606,10 @@ export default function HomeClient({
                   style={{ textAlign: "left", background: "none", border: "none" }}
                 >
                   <div
-                    className={`flex items-center justify-center bg-gradient-to-br ${getGradient(i + 3)}`}
-                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12 }}
+                    className="flex items-center justify-center"
+                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: getPastel(i + 3).bg }}
                   >
-                    <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>OX</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: getPastel(i + 3).fg }}>OX</span>
                     {ox.isPopular && (
                       <span style={{
                         position: "absolute", top: 6, right: 6, padding: "2px 8px",
@@ -577,10 +647,10 @@ export default function HomeClient({
                   style={{ textAlign: "left", background: "none", border: "none" }}
                 >
                   <div
-                    className={`flex items-center justify-center bg-gradient-to-br ${getGradient(i + 5)}`}
-                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12 }}
+                    className="flex items-center justify-center"
+                    style={{ position: "relative", aspectRatio: "1/1", borderRadius: 12, backgroundColor: getPastel(i + 5).bg }}
                   >
-                    <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>Aa</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: getPastel(i + 5).fg }}>Aa</span>
                     {vq.isPopular && (
                       <span style={{
                         position: "absolute", top: 6, right: 6, padding: "2px 8px",
