@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import LoginRequired from "@/components/LoginRequired";
 
 interface SubscriptionState {
@@ -23,16 +21,16 @@ function fmtDate(value: string) {
 }
 
 const MENU_GROUP_1 = [
-  { label: "내가쓴글", href: "/mypage/my-posts", icon: "/icons/mypage-mywrite.png" },
-  { label: "결제로그", href: "/mypage/payments", icon: "/icons/mypage-paylog.png" },
-  { label: "친구초대", href: "/referral-event", icon: "/icons/mypage-invite.png" },
+  { label: "내가쓴글", href: "/mypage/my-posts", icon: "/icons/mp-education.svg" },
+  { label: "결제로그", href: "/mypage/payments", icon: "/icons/mp-account.svg" },
+  { label: "친구초대", href: "/referral-event", icon: "/icons/mp-friend.svg" },
 ];
 
 const MENU_GROUP_2 = [
-  { label: "공지사항", href: "/notice", icon: "/icons/mypage-notice.png" },
-  { label: "자주묻는질문", href: "/faq", icon: "/icons/mypage-faq.png" },
-  { label: "고객센터", href: "/customer-center", icon: "/icons/mypage-support.png" },
-  { label: "모든약관", href: "/mypage/terms", icon: "/icons/mypage-terms.png" },
+  { label: "공지사항", href: "/notice", icon: "/icons/mp-notice.svg" },
+  { label: "자주묻는질문", href: "/faq", icon: "/icons/mp-faq.svg" },
+  { label: "고객센터", href: "/customer-center", icon: "/icons/mp-support.svg" },
+  { label: "모든약관", href: "/mypage/terms", icon: "/icons/mp-terms.svg" },
 ];
 
 function Chevron() {
@@ -57,7 +55,6 @@ function MenuRow({ label, href, icon }: { label: string; href: string; icon: str
 }
 
 export default function MyPage() {
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -84,31 +81,9 @@ export default function MyPage() {
     if (isLoggedIn) loadSub();
   }, [isLoggedIn, loadSub]);
 
-  async function handleSubscribe() {
-    setSubBusy(true);
-    try {
-      const res = await fetch("/api/subscription/checkout", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: PLAN_ID }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "구독 준비에 실패했습니다.");
-      const tossPayments = await loadTossPayments(data.clientKey);
-      const payment = tossPayments.payment({ customerKey: data.customerKey });
-      await payment.requestBillingAuth({
-        method: "CARD",
-        successUrl: `${window.location.origin}/store/subscription/success?planId=${data.planId}`,
-        failUrl: `${window.location.origin}/store/subscription/fail`,
-        customerEmail: data.customerEmail || undefined,
-        customerName: data.customerName || undefined,
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "구독을 진행하지 못했습니다.";
-      if (!/취소|cancel/i.test(message)) alert(message);
-      setSubBusy(false);
-    }
+  function handleSubscribe() {
+    // 월정액 서비스 준비중 — 결제 플로우는 아직 열지 않는다.
+    alert("월정액 서비스는 준비중입니다.");
   }
 
   async function handleCancelSub() {
