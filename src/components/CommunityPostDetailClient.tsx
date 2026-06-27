@@ -37,14 +37,14 @@ function TierBadge({ tier }: { tier?: string }) {
   if (!tier || !TIERS.includes(tier)) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ verticalAlign: "-2px", marginLeft: 4 }} />
+    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }} />
   );
 }
 
 function QBadge({ answered }: { answered: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={20} height={20} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={20} height={20} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 6 }} />
   );
 }
 

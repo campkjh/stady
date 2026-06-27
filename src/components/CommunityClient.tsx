@@ -40,14 +40,14 @@ function TierBadge({ tier }: { tier?: string }) {
   if (!tier || !TIERS.includes(tier)) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ verticalAlign: "-2px", marginLeft: 4, flexShrink: 0 }} />
+    <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4, flexShrink: 0 }} />
   );
 }
 
 function QBadge({ answered }: { answered: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={18} height={18} style={{ verticalAlign: "-3px", marginRight: 5 }} />
+    <img src={answered ? "/icons/quiz-q-answered.svg" : "/icons/quiz-q-gray.svg"} alt={answered ? "답변완료" : "미답변"} width={18} height={18} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 5 }} />
   );
 }
 
@@ -339,7 +339,7 @@ export default function CommunityClient() {
           {!selectedGroupId && !selectedTagId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
               <h2 className="weekly-popular-title">
-                <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ verticalAlign: "-3px", marginRight: 4 }} />
+                <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4 }} />
                 주간 인기글
               </h2>
               <div className="weekly-popular-viewport">
