@@ -359,7 +359,7 @@ export default function VocabQuizSolvePage() {
   return (
     <div
       className="flex flex-col bg-white"
-      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 720, margin: "0 auto", overflow: "hidden" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

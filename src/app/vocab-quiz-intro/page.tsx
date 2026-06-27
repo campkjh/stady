@@ -56,7 +56,7 @@ export default function VocabQuizListPage() {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", background: "linear-gradient(180deg, #E8F0FE 0%, #DEE9FB 100%)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", background: "linear-gradient(180deg, #E8F0FE 0%, #DEE9FB 100%)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => router.back()}

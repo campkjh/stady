@@ -136,7 +136,7 @@ export default function KoreanHistoryStorePage() {
 const pageStyle = {
   minHeight: "100vh",
   background: "#fff",
-  maxWidth: 500,
+  maxWidth: 720,
   margin: "0 auto",
 } as const;
 

@@ -311,7 +311,7 @@ export default function SolvePage() {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      maxWidth: 500, margin: "0 auto", background: "#fff",
+      maxWidth: 720, margin: "0 auto", background: "#fff",
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       {/* Top Bar */}
@@ -509,7 +509,7 @@ export default function SolvePage() {
           />
           <div style={{
             position: "absolute", left: 0, right: 0, bottom: 0,
-            maxWidth: 500, margin: "0 auto",
+            maxWidth: 720, margin: "0 auto",
             background: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
             padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
             animation: "explanationSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1)",

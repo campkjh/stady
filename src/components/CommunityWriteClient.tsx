@@ -390,8 +390,8 @@ export default function CommunityWriteClient() {
           top: 0;
           left: 50%;
           z-index: 80;
-          width: min(100vw, 500px);
-          max-width: 500px;
+          width: min(100vw, 720px);
+          max-width: 720px;
           box-sizing: border-box;
           display: flex;
           align-items: center;

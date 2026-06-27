@@ -68,7 +68,7 @@ export default function OxQuizListPage() {
   const selectedGroup = groups.find((group) => group.name === selectedGroupName) ?? null;
 
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", backgroundColor: "#7BC5E8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", backgroundColor: "#7BC5E8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => selectedGroup ? setSelectedGroupName(null) : router.back()}

@@ -35,7 +35,7 @@ export default function PaymentsLogPage() {
   if (authed === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 500, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
       <BackHeader title="결제로그" />
 
       {loading ? (

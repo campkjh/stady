@@ -51,7 +51,7 @@ export default function MyPostsPage() {
   if (authed === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 500, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
       <BackHeader title="내가 쓴 글" />
 
       {loading ? (

@@ -558,8 +558,8 @@ function CommunityStyles() {
         top: 0;
         left: 50%;
         z-index: 80;
-        width: min(100vw, 500px);
-        max-width: 500px;
+        width: min(100vw, 720px);
+        max-width: 720px;
         box-sizing: border-box;
         display: grid;
         gap: 12px;
@@ -864,7 +864,7 @@ function CommunityStyles() {
       .community-post-image-grid {
         display: grid;
         gap: 6px;
-        max-width: 520px;
+        max-width: 680px;
       }
       .community-post-image-single {
         grid-template-columns: minmax(0, 1fr);
@@ -1101,7 +1101,7 @@ const emptyPanelStyle = {
 
 const floatingWriteButtonStyle = {
   position: "fixed",
-  right: "max(18px, calc((100vw - 500px) / 2 + 18px))",
+  right: "max(18px, calc((100vw - 720px) / 2 + 18px))",
   bottom: "calc(98px + env(safe-area-inset-bottom, 0px))",
   border: "none",
   borderRadius: 999,

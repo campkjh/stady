@@ -82,7 +82,7 @@ export default function BottomNav() {
         alignItems: "center",
         justifyContent: "space-around",
         height: 82,
-        maxWidth: 500,
+        maxWidth: 720,
         margin: "0 auto",
         listStyle: "none",
         padding: 0,

@@ -148,7 +148,7 @@ function RetestContent() {
   return (
     <div
       className="flex flex-col bg-white"
-      style={{ position: "fixed", inset: 0, maxWidth: 500, margin: "0 auto", overflow: "hidden" }}
+      style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", overflow: "hidden" }}
     >
       {/* Header */}
       <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
