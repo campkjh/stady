@@ -33,7 +33,7 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { question, answer, explanation, section } = body;
+    const { question, answer, explanation, section, order: requestedOrder } = body;
 
     if (!question || answer === undefined || answer === null) {
       return NextResponse.json(
@@ -42,27 +42,43 @@ export async function POST(
       );
     }
 
-    const lastQuestion = await prisma.oxQuestion.findFirst({
-      where: { oxQuizSetId: id },
-      orderBy: { order: "desc" },
-    });
+    // 원하는 번호 위치에 삽입한다. 범위 안(1..현재개수)이면 그 위치에 넣고 뒤
+    // 문제들의 order 를 한 칸씩 민다. 미지정이거나 범위 밖이면 맨 끝에 추가.
+    const oxQuestion = await prisma.$transaction(async (tx) => {
+      const count = await tx.oxQuestion.count({ where: { oxQuizSetId: id } });
+      const reqPos = Number(requestedOrder);
+      let order: number;
+      if (Number.isFinite(reqPos) && reqPos >= 1 && reqPos <= count) {
+        order = Math.floor(reqPos);
+        await tx.oxQuestion.updateMany({
+          where: { oxQuizSetId: id, order: { gte: order } },
+          data: { order: { increment: 1 } },
+        });
+      } else {
+        const last = await tx.oxQuestion.findFirst({
+          where: { oxQuizSetId: id },
+          orderBy: { order: "desc" },
+        });
+        order = last ? last.order + 1 : 1;
+      }
 
-    const order = lastQuestion ? lastQuestion.order + 1 : 1;
+      const created = await tx.oxQuestion.create({
+        data: {
+          oxQuizSetId: id,
+          order,
+          section: section || null,
+          question,
+          answer: Boolean(answer),
+          explanation: explanation || null,
+        },
+      });
 
-    const oxQuestion = await prisma.oxQuestion.create({
-      data: {
-        oxQuizSetId: id,
-        order,
-        section: section || null,
-        question,
-        answer: Boolean(answer),
-        explanation: explanation || null,
-      },
-    });
+      await tx.oxQuizSet.update({
+        where: { id },
+        data: { totalQuestions: { increment: 1 } },
+      });
 
-    await prisma.oxQuizSet.update({
-      where: { id },
-      data: { totalQuestions: { increment: 1 } },
+      return created;
     });
 
     return NextResponse.json({ question: oxQuestion }, { status: 201 });

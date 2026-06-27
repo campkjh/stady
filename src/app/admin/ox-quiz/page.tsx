@@ -56,7 +56,9 @@ export default function OxQuizManagement() {
     answer: true,
     explanation: "",
     section: "",
+    order: "",
   });
+  const [useCustomSection, setUseCustomSection] = useState(false);
 
   useEffect(() => {
     fetchQuizSets();
@@ -136,12 +138,19 @@ export default function OxQuizManagement() {
       const res = await fetch(`/api/ox-quiz/${selectedSet.id}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(questionData),
+        body: JSON.stringify({
+          question: questionData.question,
+          answer: questionData.answer,
+          explanation: questionData.explanation,
+          section: questionData.section,
+          order: questionData.order ? Number(questionData.order) : undefined,
+        }),
         credentials: "include",
       });
       if (res.ok) {
         setShowQuestionForm(false);
-        setQuestionData({ question: "", answer: true, explanation: "", section: "" });
+        setUseCustomSection(false);
+        setQuestionData({ question: "", answer: true, explanation: "", section: "", order: "" });
         openQuestions(selectedSet);
         fetchQuizSets();
       } else {
@@ -189,6 +198,11 @@ export default function OxQuizManagement() {
     color: "#2B313D",
     marginBottom: 6,
   };
+
+  // 현재 세트에 이미 존재하는 소분류(섹션) 목록 — 새 문제를 여기에 넣으면 새 소분류가 안 생긴다.
+  const existingSections = Array.from(
+    new Set(questions.map((q) => q.section).filter((s): s is string => !!s))
+  );
 
   return (
     <div>
@@ -449,7 +463,18 @@ export default function OxQuizManagement() {
                 <p style={{ fontSize: 14, color: "#8A909C" }}>총 {questions.length}개 문제</p>
                 <button
                   className="press"
-                  onClick={() => setShowQuestionForm(!showQuestionForm)}
+                  onClick={() => {
+                    const opening = !showQuestionForm;
+                    setShowQuestionForm(opening);
+                    if (opening) {
+                      // 기본 섹션 = 현재 세트의 기존 소분류 → 그냥 추가하면 새 소분류가 안 생긴다.
+                      setUseCustomSection(false);
+                      setQuestionData({
+                        question: "", answer: true, explanation: "",
+                        section: existingSections[0] || "", order: "",
+                      });
+                    }
+                  }}
                   style={{
                     padding: "8px 16px",
                     background: showQuestionForm ? "#fff" : "#3787FF",
@@ -468,18 +493,57 @@ export default function OxQuizManagement() {
                   background: "#F9FAFB", borderRadius: 12, padding: 20, marginBottom: 20,
                   border: "1px solid #E5E7EB",
                 }}>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>섹션 (선택)</label>
-                    <input
-                      type="text"
-                      value={questionData.section}
-                      onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
-                      style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
-                      placeholder="예: 이론 윤리학"
-                    />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
+                    <div>
+                      <label style={labelStyle}>소분류(섹션)</label>
+                      {useCustomSection ? (
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <input
+                            type="text"
+                            value={questionData.section}
+                            onChange={(e) => setQuestionData({ ...questionData, section: e.target.value })}
+                            style={inputStyle}
+                            placeholder="새 소분류 이름"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => { setUseCustomSection(false); setQuestionData({ ...questionData, section: existingSections[0] || "" }); }}
+                            style={{ flexShrink: 0, padding: "0 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          value={questionData.section}
+                          onChange={(e) => {
+                            if (e.target.value === "__new__") { setUseCustomSection(true); setQuestionData({ ...questionData, section: "" }); }
+                            else setQuestionData({ ...questionData, section: e.target.value });
+                          }}
+                          style={{ ...inputStyle, appearance: "auto" }}
+                        >
+                          {existingSections.map((s) => <option key={s} value={s}>{s}</option>)}
+                          <option value="">(소분류 없음)</option>
+                          <option value="__new__">+ 새 소분류 직접 입력</option>
+                        </select>
+                      )}
+                    </div>
+                    <div>
+                      <label style={labelStyle}>번호 위치</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={questions.length + 1}
+                        value={questionData.order}
+                        onChange={(e) => setQuestionData({ ...questionData, order: e.target.value })}
+                        style={inputStyle}
+                        placeholder={`맨 끝(${questions.length + 1}번)`}
+                      />
+                    </div>
                   </div>
+                  <p style={{ fontSize: 12, color: "#8A909C", margin: "0 0 14px" }}>
+                    기존 소분류를 고르면 새 소분류가 생기지 않습니다. 번호를 지정하면 그 위치에 삽입되고 뒤 문제 번호가 한 칸씩 밀립니다(비우면 맨 끝).
+                  </p>
                   <div style={{ marginBottom: 14 }}>
                     <label style={labelStyle}>질문</label>
                     <textarea
