@@ -57,6 +57,12 @@ function isNewCreatedAt(createdAt: string | Date) {
   return Number.isFinite(t) && Date.now() - t < NEW_WINDOW_MS;
 }
 
+// 단어 카드의 카테고리 라벨. 단어 세트는 과목 카테고리가 의미 없으므로(예: 영단어가
+// 생활과윤리로 배정돼 있음) 제목 내용으로 라벨을 정한다.
+function vocabEyebrow(title: string): string {
+  return /영(어|단어)|english/i.test(title) ? "영단어" : "단어";
+}
+
 // 문제집(책) 표지 스타일 퀴즈 카드: 흰 표지 + 카테고리(연회색)·제목(네이비) +
 // 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기 뱃지와 진척도 바 포함.
 function QuizBookCard({
@@ -157,13 +163,22 @@ function QuizBookCard({
           </div>
         )}
 
-        {/* 진척도 바 (카드 하단) */}
+        {/* 진척도 게이지 (내가 푼 만큼, 카드 하단) */}
         {progressPct != null && progressPct > 0 && (
           <div
             aria-hidden="true"
-            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: "rgba(43,49,61,0.10)" }}
+            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 4, background: "rgba(43,49,61,0.07)" }}
           >
-            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: "#2B313D" }} />
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.min(100, progressPct)}%`,
+                background: "linear-gradient(90deg, #7DC4FF, #3787FF)",
+                borderTopRightRadius: 4,
+                borderBottomRightRadius: 4,
+                transition: "width 0.4s ease",
+              }}
+            />
           </div>
         )}
       </div>
@@ -335,12 +350,14 @@ export default function HomeClient({
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
 
-  // 카드 상단 카테고리 라벨(예: "생활과윤리OX"). 세트의 카테고리명 + 유형 접미사.
+  // 카드 상단 카테고리 라벨. OX는 "카테고리명+OX"(예: 생활과윤리OX), 단어는 내용 기반 라벨.
   function quizEyebrow(type: "ox" | "vocab", id: string): string {
-    const suffix = type === "ox" ? "OX" : "단어";
-    const list = type === "ox" ? oxQuizSets : vocabQuizSets;
-    const name = list.find((s) => s.id === id)?.category?.name;
-    return name ? `${name}${suffix}` : suffix;
+    if (type === "vocab") {
+      const title = vocabQuizSets.find((s) => s.id === id)?.title ?? "";
+      return vocabEyebrow(title);
+    }
+    const name = oxQuizSets.find((s) => s.id === id)?.category?.name;
+    return name ? `${name}OX` : "OX";
   }
 
   // OX 세트의 진척도(%) — 답한 문항 수 / 총 문항. 기록 없으면 null.
@@ -769,7 +786,7 @@ export default function HomeClient({
               {vocabQuizSets.map((vq) => (
                 <QuizBookCard
                   key={vq.id}
-                  eyebrow={`${vq.category.name}단어`}
+                  eyebrow={vocabEyebrow(vq.title)}
                   title={vq.title}
                   isPopular={vq.isPopular}
                   onClick={() => router.push(`/vocab-quiz/${vq.id}`)}
