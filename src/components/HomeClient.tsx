@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
+import DailyQuizCard from "@/components/DailyQuizCard";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
@@ -514,17 +515,18 @@ export default function HomeClient({
                   }}>인기</span>
                 )}
                 <div className="cat-circle" style={{
-                  width: "100%",
-                  aspectRatio: "1/1",
+                  width: 60,
+                  height: 60,
                   borderRadius: "50%",
                   backgroundColor: "#F2F2F6",
                   border: "1px solid #F3F4F6",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  flexShrink: 0,
                 }}>
                   {cat.icon.startsWith("/") ? (
-                    <Image src={cat.icon} alt={cat.name} width={48} height={48} unoptimized style={{ width: "64%", height: "64%", objectFit: "contain" }} />
+                    <Image src={cat.icon} alt={cat.name} width={38} height={38} unoptimized style={{ width: 38, height: 38, objectFit: "contain" }} />
                   ) : (
                     <span style={{ fontSize: 20 }}>{cat.icon}</span>
                   )}
@@ -535,6 +537,11 @@ export default function HomeClient({
               </button>
           ))}
         </div>
+      </div>
+
+      {/* 데일리 퀴즈 (카테고리 아이콘 아래) */}
+      <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 20px" }}>
+        <DailyQuizCard />
       </div>
 
       {/* Slide Banner */}

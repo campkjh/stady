@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { ensureDailyQuizTable } from "@/lib/daily-quiz";
 
 export interface CommunityCategoryGroupRow {
   id: string;
@@ -591,6 +592,17 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   apply(comments, 3);
   apply(likes, 2);
   apply(attempts, 1);
+  // 데일리 퀴즈 정답(×5). 테이블이 아직 없을 수 있으니 실패해도 티어 계산은 계속.
+  try {
+    await ensureDailyQuizTable();
+    const dailyCorrect = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
+      `SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "DailyQuizAnswer" WHERE "user_id" IN (${ph}) AND "is_correct" = true GROUP BY "user_id"`,
+      ...ids
+    );
+    apply(dailyCorrect, 5);
+  } catch (e) {
+    console.error("getUserTiers daily-quiz aggregate skipped:", e);
+  }
   const result: Record<string, CommunityTier> = {};
   for (const id of ids) result[id] = tierForScore(score[id]);
   return result;
