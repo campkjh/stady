@@ -167,8 +167,28 @@ function QuizBookCard({
           </span>
         )}
 
-        {/* 인기(UP) 뱃지 — 하늘색 셔머 상승 화살표 (우측 하단, NEW와 안 겹치게) */}
-        {isPopular && <span className="up-popular-badge" role="img" aria-label="인기" />}
+        {/* 인기 뱃지 — 반짝이는 황금 도토리 + "인기" (우측 하단, NEW와 안 겹치게) */}
+        {isPopular && (
+          <div
+            style={{
+              position: "absolute",
+              right: "6%",
+              bottom: "9%",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <img
+              src="/icons/popular-acorn.svg"
+              alt=""
+              style={{ width: "clamp(13px, 15cqw, 22px)", height: "auto", display: "block" }}
+            />
+            <span style={{ fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, color: "#E59500", letterSpacing: "-0.2px" }}>
+              인기
+            </span>
+          </div>
+        )}
 
         {/* 진척도 게이지 (내가 푼 만큼, 카드 하단) */}
         {progressPct != null && progressPct > 0 && (
