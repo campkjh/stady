@@ -50,20 +50,6 @@ interface VocabQuizSet {
   category: Category;
 }
 
-// 퀴즈 카드 단색 파스텔 팔레트 (bg=배경, fg=가운데 글자색).
-const PASTELS = [
-  { bg: "#DDE8FB", fg: "#5C86D8" },
-  { bg: "#D7F1E5", fg: "#4DA886" },
-  { bg: "#E8E1F8", fg: "#8A6FD1" },
-  { bg: "#FCE7D4", fg: "#E0935A" },
-  { bg: "#FBE1E7", fg: "#DC7A96" },
-  { bg: "#D7EEF4", fg: "#4FA6BC" },
-];
-
-function getPastel(index: number) {
-  return PASTELS[((index % PASTELS.length) + PASTELS.length) % PASTELS.length];
-}
-
 // 등록된 지 7일 이내면 새 퀴즈로 본다.
 const NEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 function isNewCreatedAt(createdAt: string | Date) {
@@ -71,128 +57,115 @@ function isNewCreatedAt(createdAt: string | Date) {
   return Number.isFinite(t) && Date.now() - t < NEW_WINDOW_MS;
 }
 
-// 책처럼 디자인된 퀴즈 카드(표지/책등 스프링/띠지/가름끈 + NEW·인기·진척도).
+// 문제집(책) 표지 스타일 퀴즈 카드: 흰 표지 + 카테고리(연회색)·제목(네이비) +
+// 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기 뱃지와 진척도 바 포함.
 function QuizBookCard({
-  label, title, meta, pastelIndex, isNew, isPopular, progressPct, onClick,
+  eyebrow, title, isNew, isPopular, progressPct, onClick,
 }: {
-  label: string;
+  eyebrow: string;
   title: string;
-  meta: string;
-  pastelIndex: number;
   isNew?: boolean;
   isPopular?: boolean;
   progressPct?: number | null;
   onClick: () => void;
 }) {
-  const { bg, fg } = getPastel(pastelIndex);
   return (
     <button
       type="button"
       onClick={onClick}
       className="hover-lift"
-      style={{ textAlign: "left", background: "none", border: "none", padding: 0 }}
+      style={{ textAlign: "left", background: "none", border: "none", padding: 0, display: "block", width: "100%" }}
     >
       <div
         style={{
           position: "relative",
-          aspectRatio: "3 / 4",
-          borderRadius: "3px 11px 11px 3px",
-          background: bg,
+          aspectRatio: "114 / 161",
+          borderRadius: 14,
+          background: "#fff",
+          border: "1px solid #F1F3F5",
+          boxShadow: "0 4px 14px rgba(15,23,42,0.06)",
           overflow: "hidden",
-          boxShadow: "0 5px 14px rgba(15,23,42,0.12)",
+          containerType: "inline-size",
         }}
       >
-        {/* 책등 + 스프링 코일 */}
+        {/* 카테고리 + 제목 */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "9% 8% 0" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "clamp(10px, 9.3cqw, 14px)",
+              fontWeight: 500,
+              color: "#8A909C",
+              letterSpacing: "-0.2px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {eyebrow}
+          </p>
+          <p
+            style={{
+              margin: "3% 0 0",
+              fontSize: "clamp(14px, 13cqw, 21px)",
+              fontWeight: 700,
+              color: "#2B313D",
+              lineHeight: 1.18,
+              letterSpacing: "-0.4px",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {title}
+          </p>
+        </div>
+
+        {/* 하단 그라데이션 띠 + 월계관 */}
         <div
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: 0,
-            bottom: 0,
             left: 0,
-            width: 13,
-            background: "rgba(0,0,0,0.10)",
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, transparent 0 9px, rgba(255,255,255,0.55) 9px 12px)",
-          }}
-        />
-        {/* 표지 제목 */}
-        <span
-          style={{
-            position: "absolute",
-            top: "34%",
-            left: "calc(50% + 6px)",
-            transform: "translate(-50%, -50%)",
-            fontSize: 24,
-            fontWeight: 800,
-            color: fg,
-            letterSpacing: -1,
+            right: 0,
+            bottom: 0,
+            height: "26.7%",
+            background: "linear-gradient(256deg, #EEF1F3 0%, #ffffff 50%, #DBDFE1 100%)",
           }}
         >
-          {label}
-        </span>
-        {/* 띠지 */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: 13,
-            right: 0,
-            bottom: "16%",
-            height: "19%",
-            background: fg,
-            opacity: 0.9,
-          }}
-        />
-        {isNew && (
-          <span
-            style={{
-              position: "absolute",
-              top: 7,
-              left: 19,
-              padding: "2px 7px",
-              borderRadius: 6,
-              background: "#FF3B30",
-              color: "#fff",
-              fontSize: 9,
-              fontWeight: 800,
-              letterSpacing: 0.5,
-            }}
-          >
-            NEW
-          </span>
+          <img
+            src="/icons/book-laurel.svg"
+            alt=""
+            style={{ position: "absolute", left: "6%", top: "50%", transform: "translateY(-50%)", width: "31%", display: "block" }}
+          />
+        </div>
+
+        {/* NEW / 인기 뱃지 */}
+        {(isNew || isPopular) && (
+          <div style={{ position: "absolute", top: "6%", right: "6%", display: "flex", gap: 4 }}>
+            {isPopular && (
+              <span style={{ padding: "2px 7px", borderRadius: 999, background: "#FF3B5C", color: "#fff", fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 700 }}>
+                인기
+              </span>
+            )}
+            {isNew && (
+              <span style={{ padding: "2px 7px", borderRadius: 6, background: "#FF3B30", color: "#fff", fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, letterSpacing: 0.3 }}>
+                NEW
+              </span>
+            )}
+          </div>
         )}
-        {isPopular && (
-          <span
-            style={{
-              position: "absolute",
-              top: 7,
-              right: 7,
-              padding: "2px 7px",
-              borderRadius: 20,
-              background: "#FF3B5C",
-              color: "#fff",
-              fontSize: 9,
-              fontWeight: 700,
-            }}
-          >
-            인기
-          </span>
-        )}
+
+        {/* 진척도 바 (카드 하단) */}
         {progressPct != null && progressPct > 0 && (
           <div
             aria-hidden="true"
-            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 5, background: "rgba(255,255,255,0.6)" }}
+            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: "rgba(43,49,61,0.10)" }}
           >
-            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: fg }} />
+            <div style={{ height: "100%", width: `${Math.min(100, progressPct)}%`, background: "#2B313D" }} />
           </div>
         )}
-      </div>
-      <div style={{ paddingTop: 8 }}>
-        <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {title}
-        </p>
-        <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>{meta}</p>
       </div>
     </button>
   );
@@ -361,6 +334,14 @@ export default function HomeClient({
   ]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
+
+  // 카드 상단 카테고리 라벨(예: "생활과윤리OX"). 세트의 카테고리명 + 유형 접미사.
+  function quizEyebrow(type: "ox" | "vocab", id: string): string {
+    const suffix = type === "ox" ? "OX" : "단어";
+    const list = type === "ox" ? oxQuizSets : vocabQuizSets;
+    const name = list.find((s) => s.id === id)?.category?.name;
+    return name ? `${name}${suffix}` : suffix;
+  }
 
   // OX 세트의 진척도(%) — 답한 문항 수 / 총 문항. 기록 없으면 null.
   function oxProgressPct(id: string): number | null {
@@ -659,13 +640,11 @@ export default function HomeClient({
               최근에 푼 퀴즈
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {recentQuizzes.map((q, i) => (
+              {recentQuizzes.map((q) => (
                 <QuizBookCard
                   key={q.key}
-                  label={q.type === "ox" ? "OX" : "Aa"}
+                  eyebrow={quizEyebrow(q.type, q.id)}
                   title={q.title}
-                  meta={q.type === "ox" ? "OX 퀴즈" : "단어 퀴즈"}
-                  pastelIndex={i}
                   progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
                   onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
                 />
@@ -680,13 +659,11 @@ export default function HomeClient({
               새로운 퀴즈
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {newQuizzes.map((q, i) => (
+              {newQuizzes.map((q) => (
                 <QuizBookCard
                   key={q.key}
-                  label={q.type === "ox" ? "OX" : "Aa"}
+                  eyebrow={quizEyebrow(q.type, q.id)}
                   title={q.title}
-                  meta={`${q.totalQuestions}문항`}
-                  pastelIndex={i}
                   isNew
                   isPopular={q.isPopular}
                   progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
@@ -769,13 +746,11 @@ export default function HomeClient({
               OX 퀴즈
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {oxQuizSets.map((ox, i) => (
+              {oxQuizSets.map((ox) => (
                 <QuizBookCard
                   key={ox.id}
-                  label="OX"
+                  eyebrow={`${ox.category.name}OX`}
                   title={ox.title}
-                  meta={`${ox.totalQuestions}문항`}
-                  pastelIndex={i + 3}
                   isPopular={ox.isPopular}
                   progressPct={oxProgressPct(ox.id)}
                   onClick={() => router.push(`/ox-quiz/${ox.id}`)}
@@ -791,13 +766,11 @@ export default function HomeClient({
               단어 퀴즈
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {vocabQuizSets.map((vq, i) => (
+              {vocabQuizSets.map((vq) => (
                 <QuizBookCard
                   key={vq.id}
-                  label="Aa"
+                  eyebrow={`${vq.category.name}단어`}
                   title={vq.title}
-                  meta={`${vq.totalQuestions}문항`}
-                  pastelIndex={i + 5}
                   isPopular={vq.isPopular}
                   onClick={() => router.push(`/vocab-quiz/${vq.id}`)}
                 />
