@@ -88,14 +88,15 @@ export async function POST(request: Request) {
       });
     }
 
-    await recordDailyAnswer(user.id, dateStr, question.id, selected, isCorrect);
+    // 실제로 새로 기록된 경우에만 경험치 부여(동시 이중 제출 시 중복 표시 방지).
+    const inserted = await recordDailyAnswer(user.id, dateStr, question.id, selected, isCorrect);
     const stats = await getDailyStats(dateStr, question.id);
 
     return NextResponse.json({
       mySelected: selected,
       isCorrect,
       correctAnswer: question.answer,
-      xpGained: isCorrect ? 5 : 0,
+      xpGained: inserted && isCorrect ? 5 : 0,
       stats,
     });
   } catch (error) {

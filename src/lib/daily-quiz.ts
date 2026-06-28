@@ -112,16 +112,17 @@ export async function getDailyStats(dateStr: string, questionId: string): Promis
   return { total, correct, correctRate };
 }
 
-// 응답 기록(1일 1회). 이미 있으면 무시. 성공 여부와 무관하게 멱등.
+// 응답 기록(1일 1회). 이미 있으면 무시(멱등). 실제로 새로 기록됐으면 true 반환
+// (동시 이중 제출 시 경험치 중복 표시 방지에 사용).
 export async function recordDailyAnswer(
   userId: string,
   dateStr: string,
   questionId: string,
   selected: boolean,
   isCorrect: boolean
-): Promise<void> {
+): Promise<boolean> {
   await ensureDailyQuizTable();
-  await prisma.$executeRawUnsafe(
+  const inserted = await prisma.$executeRawUnsafe(
     `INSERT INTO "DailyQuizAnswer" ("id", "user_id", "quiz_date", "question_id", "selected", "is_correct")
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT ("user_id", "quiz_date") DO NOTHING`,
@@ -132,4 +133,5 @@ export async function recordDailyAnswer(
     selected,
     isCorrect
   );
+  return Number(inserted) > 0;
 }
