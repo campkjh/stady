@@ -137,7 +137,6 @@ export default function DailyQuizCard() {
       alignItems: "center",
       justifyContent: "space-between",
       cursor: answered ? "default" : "pointer",
-      transition: "background 0.2s ease, box-shadow 0.2s ease",
     };
     if (!answered) return base;
     const isCorrectOpt = correctAnswer === optValue;
@@ -206,7 +205,7 @@ export default function DailyQuizCard() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "26px 16px 16px" }}>
           <button
             type="button"
-            className="press-deep"
+            className="daily-opt"
             disabled={answered || submitting}
             onClick={() => submit(true)}
             style={optionStyle(true)}
@@ -216,7 +215,7 @@ export default function DailyQuizCard() {
           </button>
           <button
             type="button"
-            className="press-deep"
+            className="daily-opt"
             disabled={answered || submitting}
             onClick={() => submit(false)}
             style={optionStyle(false)}

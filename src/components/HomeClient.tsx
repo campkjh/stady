@@ -129,7 +129,7 @@ function QuizBookCard({
           </p>
         </div>
 
-        {/* 하단 그라데이션 띠 + 월계관 */}
+        {/* 하단 그라데이션 띠 + 월계관 (인기 문제집은 금색) */}
         <div
           aria-hidden="true"
           style={{
@@ -138,11 +138,13 @@ function QuizBookCard({
             right: 0,
             bottom: 0,
             height: "26.7%",
-            background: "linear-gradient(256deg, #EEF1F3 0%, #ffffff 50%, #DBDFE1 100%)",
+            background: isPopular
+              ? "linear-gradient(256deg, #F7EAC6 0%, #FFFDF6 50%, #EAD7A0 100%)"
+              : "linear-gradient(256deg, #EEF1F3 0%, #ffffff 50%, #DBDFE1 100%)",
           }}
         >
           <img
-            src="/icons/book-laurel.svg"
+            src={isPopular ? "/icons/book-laurel-gold.svg" : "/icons/book-laurel.svg"}
             alt=""
             style={{ position: "absolute", left: "6%", top: "50%", transform: "translateY(-50%)", width: "31%", display: "block" }}
           />
