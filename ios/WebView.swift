@@ -9,8 +9,12 @@ struct WebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        // JS bridge: window.webkit.messageHandlers.requestReview.postMessage({})
-        // triggers the native App Store rating prompt (StoreKit).
+        // JS 브리지 (web: src/lib/appReview.ts) — 두 흐름이 서로 다른 핸들러를 쓴다:
+        //  - requestRating → 인앱 StoreKit 별점 위젯(SKStoreReviewController). 홈 3분 트리거.
+        //  - requestReview → App Store "리뷰 작성" 페이지 열기. 퀴즈 3개 트리거.
+        // 둘 다 등록해야 한다. (예전엔 requestReview만 등록 + StoreKit에 잘못 연결돼
+        //  별점 위젯이 호출되는 requestRating을 아무도 못 받아 팝업이 안 떴음.)
+        config.userContentController.add(context.coordinator, name: "requestRating")
         config.userContentController.add(context.coordinator, name: "requestReview")
         // NOTE: register the app's other handlers here too
         // (kakaoLogin / appleLogin / showNativeLogin).
@@ -61,17 +65,24 @@ struct WebView: UIViewRepresentable {
     }
 
     final class Coordinator: NSObject, WKScriptMessageHandler {
+        // 앱 스토어 ID(웹 src/lib/appReview.ts와 동일).
+        private static let appStoreId = "6761746105"
+
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             switch message.name {
+            case "requestRating":
+                requestNativeRating()
             case "requestReview":
-                requestNativeReview()
+                openWriteReviewPage()
             default:
                 break
             }
         }
 
-        /// Shows the native in-app review prompt (App Store star rating).
-        private func requestNativeReview() {
+        /// 인앱 StoreKit 별점 위젯(App Store 별점 팝업)을 띄운다.
+        /// 주의: Apple이 노출을 제한한다 — TestFlight/디버그에선 안 뜨고,
+        /// 프로덕션(App Store) 빌드에서 기기당 연 최대 3회만 노출된다.
+        private func requestNativeRating() {
             DispatchQueue.main.async {
                 if #available(iOS 14.0, *) {
                     if let scene = UIApplication.shared.connectedScenes
@@ -81,6 +92,14 @@ struct WebView: UIViewRepresentable {
                 } else {
                     SKStoreReviewController.requestReview()
                 }
+            }
+        }
+
+        /// App Store "리뷰 작성" 페이지를 연다(전체 리뷰 작성용).
+        private func openWriteReviewPage() {
+            guard let url = URL(string: "https://apps.apple.com/app/id\(Coordinator.appStoreId)?action=write-review") else { return }
+            DispatchQueue.main.async {
+                UIApplication.shared.open(url)
             }
         }
     }
