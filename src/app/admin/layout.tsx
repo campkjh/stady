@@ -138,6 +138,16 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/admin/surveys",
+    label: "설문 결과",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 3.5H15V16.5H5V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M8 7.5L9 8.5L11 6.5M8 12.5L9 13.5L11 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

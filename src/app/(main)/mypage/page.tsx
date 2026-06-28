@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import LoginRequired from "@/components/LoginRequired";
+import MyActivityCard from "@/components/MyActivityCard";
 
 interface SubscriptionState {
   status: string;
@@ -132,6 +133,11 @@ export default function MyPage() {
         <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "#191F28" }}>프로필설정</span>
         <Chevron />
       </Link>
+
+      <div style={dividerStyle} />
+
+      {/* 내 경험치 + 뱃지 현황 */}
+      <MyActivityCard />
 
       <div style={dividerStyle} />
 

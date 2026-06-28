@@ -572,6 +572,42 @@ export function tierForScore(score: number): CommunityTier {
   return "iron";
 }
 
+// 등급 임계값(오름차순). 마이페이지에서 현재 점수→다음 등급까지 진행도 계산에 사용.
+export const TIER_THRESHOLDS: { tier: CommunityTier; min: number }[] = [
+  { tier: "iron", min: 0 },
+  { tier: "silver", min: 40 },
+  { tier: "gold", min: 120 },
+  { tier: "emerald", min: 300 },
+  { tier: "diamond", min: 600 },
+  { tier: "master", min: 1200 },
+];
+
+// 단일 사용자의 활동 점수(경험치). getUserTiers와 동일한 가중치
+// (글×10·댓글×3·받은공감×2·퀴즈응시×1·데일리정답×5).
+export async function getUserActivityScore(userId: string): Promise<number> {
+  if (!userId) return 0;
+  await ensureCommunityTables();
+  const num = (rows: { c: bigint }[]) => Number(rows[0]?.c ?? 0);
+  const [posts, comments, likes, attempts] = await Promise.all([
+    prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "CommunityPost" WHERE "user_id" = $1 AND "is_active" = true`, userId),
+    prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "CommunityComment" WHERE "user_id" = $1 AND "is_active" = true`, userId),
+    prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "CommunityPostLike" l JOIN "CommunityPost" p ON p."id" = l."post_id" WHERE p."user_id" = $1`, userId),
+    prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" = $1`, userId),
+  ]);
+  let score = num(posts) * 10 + num(comments) * 3 + num(likes) * 2 + num(attempts) * 1;
+  try {
+    await ensureDailyQuizTable();
+    const daily = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
+      `SELECT COUNT(*)::bigint AS c FROM "DailyQuizAnswer" WHERE "user_id" = $1 AND "is_correct" = true`,
+      userId
+    );
+    score += num(daily) * 5;
+  } catch {
+    // 데일리 테이블이 아직 없으면 무시.
+  }
+  return score;
+}
+
 export async function getUserTiers(userIds: (string | null | undefined)[]): Promise<Record<string, CommunityTier>> {
   const ids = [...new Set(userIds.filter((id): id is string => !!id))];
   if (ids.length === 0) return {};

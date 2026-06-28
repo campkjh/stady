@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
+import SurveyGate from "@/components/SurveyGate";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
@@ -408,6 +409,8 @@ export default function HomeClient({
       {welcomeVisible && userName && (
         <WelcomeOverlay nickname={userName} onComplete={handleWelcomeComplete} />
       )}
+      {/* 첫 진입 평생 1회 온보딩 설문 */}
+      <SurveyGate />
       {/* Header */}
       <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
