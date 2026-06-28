@@ -147,21 +147,28 @@ function QuizBookCard({
           />
         </div>
 
-        {/* NEW / 인기 뱃지 */}
-        {(isNew || isPopular) && (
-          <div style={{ position: "absolute", top: "6%", right: "6%", display: "flex", gap: 4 }}>
-            {isPopular && (
-              <span style={{ padding: "2px 7px", borderRadius: 999, background: "#FF3B5C", color: "#fff", fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 700 }}>
-                인기
-              </span>
-            )}
-            {isNew && (
-              <span style={{ padding: "2px 7px", borderRadius: 6, background: "#FF3B30", color: "#fff", fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, letterSpacing: 0.3 }}>
-                NEW
-              </span>
-            )}
-          </div>
+        {/* NEW 뱃지 (우측 상단) */}
+        {isNew && (
+          <span
+            style={{
+              position: "absolute",
+              top: "6%",
+              right: "6%",
+              padding: "2px 7px",
+              borderRadius: 6,
+              background: "#FF3B30",
+              color: "#fff",
+              fontSize: "clamp(8px, 7cqw, 11px)",
+              fontWeight: 800,
+              letterSpacing: 0.3,
+            }}
+          >
+            NEW
+          </span>
         )}
+
+        {/* 인기(UP) 뱃지 — 하늘색 셔머 상승 화살표 (우측 하단, NEW와 안 겹치게) */}
+        {isPopular && <span className="up-popular-badge" role="img" aria-label="인기" />}
 
         {/* 진척도 게이지 (내가 푼 만큼, 카드 하단) */}
         {progressPct != null && progressPct > 0 && (
