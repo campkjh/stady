@@ -48,3 +48,9 @@ private/
 
 # local DB snapshots (may contain user data)
 backups/
+
+# iOS build artifacts
+ios/build/
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+ios/DerivedData/
