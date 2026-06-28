@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  // 네비게이션 시 방문한 페이지를 클라이언트 캐시에 유지 → 탭을 오갈 때마다 서버에서
+  // 다시 불러오지 않음. 동적 페이지(쿠키 사용) 기본값이 0초라 매번 재요청되던 문제 해결.
+  experimental: {
+    staleTimes: {
+      dynamic: 180,
+      static: 300,
+    },
+  },
   // Bundle the paid PDF with the download route so it is readable at runtime
   // on Vercel. (The file under /private is gitignored; include it at deploy
   // time or swap the download route to Vercel Blob for production.)

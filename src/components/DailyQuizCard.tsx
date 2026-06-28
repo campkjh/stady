@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { clientCache } from "@/lib/clientCache";
+
+const CACHE_KEY = "daily-quiz";
 
 interface DailyQuestion {
   id: string;
@@ -32,22 +35,23 @@ function fmtTime(sec: number) {
 }
 
 export default function DailyQuizCard() {
-  const [data, setData] = useState<DailyData | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // 캐시된 값이 있으면 즉시 표시(재방문 시 깜빡임 없음).
+  const [data, setData] = useState<DailyData | null>(() => clientCache.get<DailyData>(CACHE_KEY) ?? null);
+  const [loaded, setLoaded] = useState(() => clientCache.has(CACHE_KEY));
   const [submitting, setSubmitting] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [xpGained, setXpGained] = useState(0);
   const [isGuest, setIsGuest] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 오늘의 데일리 퀴즈 로드.
+  // 오늘의 데일리 퀴즈 로드(백그라운드 재검증, 달라졌을 때만 갱신).
   useEffect(() => {
     let alive = true;
     fetch("/api/daily-quiz", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((d: DailyData | null) => {
         if (!alive) return;
-        setData(d);
+        if (clientCache.set(CACHE_KEY, d)) setData(d);
         setLoaded(true);
       })
       .catch(() => {
@@ -91,18 +95,20 @@ export default function DailyQuizCard() {
         }
         setIsGuest(!!r.guest);
         setXpGained(r.xpGained ?? 0);
-        setData((prev) =>
-          prev
-            ? {
-                ...prev,
-                answered: true,
-                mySelected: r.mySelected,
-                correctAnswer: r.correctAnswer,
-                myCorrect: r.isCorrect,
-                stats: r.stats,
-              }
-            : prev
-        );
+        setData((prev) => {
+          if (!prev) return prev;
+          const next: DailyData = {
+            ...prev,
+            answered: true,
+            mySelected: r.mySelected,
+            correctAnswer: r.correctAnswer,
+            myCorrect: r.isCorrect,
+            stats: r.stats,
+          };
+          // 응답 결과를 캐시에 반영 → 다른 탭 갔다 와도 답한 상태 유지.
+          clientCache.set(CACHE_KEY, next);
+          return next;
+        });
       } catch {
         // 네트워크 오류 시 그대로 둠(재시도 가능)
       } finally {

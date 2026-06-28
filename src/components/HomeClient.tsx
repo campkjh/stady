@@ -7,6 +7,7 @@ import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
+import { clientCache } from "@/lib/clientCache";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
 // 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
@@ -280,10 +281,11 @@ export default function HomeClient({
 }: HomeClientProps) {
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(isNewUser);
-  const [banners, setBanners] = useState<HomeBanner[]>([]);
+  // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
+  const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
-  const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>([]);
-  const [oxProgress, setOxProgress] = useState<Record<string, number>>({});
+  const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>(() => clientCache.get<RecentQuiz[]>("home-recent") ?? []);
+  const [oxProgress, setOxProgress] = useState<Record<string, number>>(() => clientCache.get<Record<string, number>>("home-oxprogress") ?? {});
   const welcomeVisible = showWelcome && Boolean(userName);
 
   const handleWelcomeComplete = useCallback(() => {
@@ -328,7 +330,7 @@ export default function HomeClient({
           }
           if (recent.length >= 6) break;
         }
-        setRecentQuizzes(recent);
+        if (clientCache.set("home-recent", recent)) setRecentQuizzes(recent);
       })
       .catch(() => {});
   }, [userName]);
@@ -339,7 +341,9 @@ export default function HomeClient({
     fetch("/api/ox-progress", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.progress && typeof data.progress === "object") setOxProgress(data.progress);
+        if (data?.progress && typeof data.progress === "object") {
+          if (clientCache.set("home-oxprogress", data.progress)) setOxProgress(data.progress);
+        }
       })
       .catch(() => {});
   }, [userName]);
@@ -349,7 +353,7 @@ export default function HomeClient({
       .then((res) => res.json())
       .then((data) => {
         const nextBanners = (data.banners || []) as HomeBanner[];
-        setBanners(nextBanners);
+        if (clientCache.set("home-banners", nextBanners)) setBanners(nextBanners);
         // 오픈베타 웰컴 팝업(모달 배너) 비활성화 — 더 이상 자동으로 띄우지 않음
       })
       .catch(() => setBanners([]));

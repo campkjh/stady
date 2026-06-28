@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
+import { clientCache } from "@/lib/clientCache";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -240,6 +241,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "삭제에 실패했습니다.");
+      // 삭제된 글이 목록에서 사라지도록 캐시 무효화.
+      clientCache.clearPrefix("community-");
       router.push("/community");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "삭제에 실패했습니다.");

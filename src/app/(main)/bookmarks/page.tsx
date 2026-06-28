@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import type { TouchEvent } from "react";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
+import { clientCache } from "@/lib/clientCache";
+
+const bmKey = (tab: string) => `bookmarks:${tab}`;
 
 interface Bookmark {
   id: string;
@@ -150,8 +153,8 @@ export default function BookmarksPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("");
   const [oxCategory, setOxCategory] = useState(""); // OX 분류(카테고리) 필터
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => clientCache.get<Bookmark[]>(bmKey("")) ?? []);
+  const [loading, setLoading] = useState(() => !clientCache.has(bmKey("")));
   const [deletingAll, setDeletingAll] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
@@ -179,15 +182,24 @@ export default function BookmarksPage() {
   useEffect(() => {
     if (isLoggedIn === false) return;
     async function fetchBookmarks() {
-      setLoading(true);
+      const key = bmKey(activeTab);
+      // 캐시가 있으면 즉시 표시, 로딩 생략(백그라운드 재검증).
+      const cached = clientCache.get<Bookmark[]>(key);
+      if (cached) {
+        setBookmarks(cached);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       try {
         const query = activeTab ? `?quizType=${activeTab}` : "";
         const res = await fetch(`/api/bookmarks${query}`);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setBookmarks(data.bookmarks ?? []);
+        const fresh = data.bookmarks ?? [];
+        if (clientCache.set(key, fresh)) setBookmarks(fresh);
       } catch {
-        setBookmarks([]);
+        if (!cached) setBookmarks([]);
       } finally {
         setLoading(false);
       }
@@ -213,6 +225,7 @@ export default function BookmarksPage() {
 
   async function handleDeleteVocabBookmark(bookmark: Bookmark) {
     setBookmarks((prev) => prev.filter((item) => item.id !== bookmark.id));
+    clientCache.clearPrefix("bookmarks:");
     try {
       const res = await fetch(`/api/bookmarks?id=${bookmark.id}`, {
         method: "DELETE",
@@ -230,6 +243,7 @@ export default function BookmarksPage() {
     const previousBookmarks = bookmarks;
     setDeletingAll(true);
     setBookmarks([]);
+    clientCache.clearPrefix("bookmarks:");
     try {
       const res = await fetch("/api/bookmarks?all=true", {
         method: "DELETE",

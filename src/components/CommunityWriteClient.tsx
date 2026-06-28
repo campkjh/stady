@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { clientCache } from "@/lib/clientCache";
 
 interface CategoryGroup {
   id: string;
@@ -191,6 +192,8 @@ export default function CommunityWriteClient() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "게시글을 저장하지 못했습니다.");
+      // 새 글이 목록에 바로 보이도록 커뮤니티 목록 캐시 무효화.
+      clientCache.clearPrefix("community-");
       router.replace("/community");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "게시글을 저장하지 못했습니다.");

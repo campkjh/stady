@@ -2,6 +2,11 @@
 
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { clientCache } from "@/lib/clientCache";
+
+// 게시글 목록 캐시 키(필터 조합별).
+const postsKey = (groupId: string, tagId: string, q: string) =>
+  `community-posts:${groupId}:${tagId}:${q.trim()}`;
 
 interface CategoryGroup {
   id: string;
@@ -54,16 +59,18 @@ function QBadge({ answered }: { answered: boolean }) {
 export default function CommunityClient() {
   const router = useRouter();
   const topbarRef = useRef<HTMLElement | null>(null);
-  const [groups, setGroups] = useState<CategoryGroup[]>([]);
+  // 캐시된 값으로 초기화 → 탭 재진입 시 즉시 표시(로딩/깜빡임 없음).
+  const [groups, setGroups] = useState<CategoryGroup[]>(() => clientCache.get<CategoryGroup[]>("community-groups") ?? []);
   const [filterTags, setFilterTags] = useState<CommunityTag[]>([]);
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [weeklyPosts, setWeeklyPosts] = useState<CommunityPost[]>([]);
+  const [posts, setPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>(postsKey("", "", "")) ?? []);
+  const [weeklyPosts, setWeeklyPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>("community-weekly") ?? []);
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedTagId, setSelectedTagId] = useState("");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  // 캐시가 있으면 로딩 표시 안 함(데이터 변동 시에만 갱신).
+  const [loading, setLoading] = useState(() => !clientCache.has(postsKey("", "", "")));
   const [topbarHeight, setTopbarHeight] = useState(0);
   const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
   const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
@@ -157,7 +164,7 @@ export default function CommunityClient() {
         if (b.name === "자유") return 1;
         return 0;
       });
-      setGroups(ordered);
+      if (clientCache.set("community-groups", ordered)) setGroups(ordered);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "카테고리를 불러오지 못했습니다.");
     }
@@ -176,7 +183,15 @@ export default function CommunityClient() {
   }
 
   async function loadPosts() {
-    setLoading(true);
+    const key = postsKey(selectedGroupId, selectedTagId, query);
+    // 캐시가 있으면 즉시 표시하고 로딩을 띄우지 않는다(백그라운드 재검증).
+    const cached = clientCache.get<CommunityPost[]>(key);
+    if (cached) {
+      setPosts(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (selectedGroupId) params.set("groupId", selectedGroupId);
@@ -185,7 +200,9 @@ export default function CommunityClient() {
       const response = await fetch(`/api/community/posts?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "게시글을 불러오지 못했습니다.");
-      setPosts(data.posts || []);
+      const fresh = data.posts || [];
+      // 달라졌을 때만 갱신(데이터 변동 시에만 리렌더).
+      if (clientCache.set(key, fresh)) setPosts(fresh);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "게시글을 불러오지 못했습니다.");
     } finally {
@@ -197,7 +214,10 @@ export default function CommunityClient() {
     try {
       const response = await fetch("/api/community/posts?popular=week");
       const data = await response.json();
-      if (response.ok) setWeeklyPosts(data.posts || []);
+      if (response.ok) {
+        const fresh = data.posts || [];
+        if (clientCache.set("community-weekly", fresh)) setWeeklyPosts(fresh);
+      }
     } catch {
       // 주간 인기글은 보조 섹션이라 실패해도 조용히 무시한다.
     }
