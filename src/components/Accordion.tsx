@@ -3,13 +3,13 @@
 import { useState } from "react";
 
 interface AccordionItem {
-  id: number;
+  id: string | number;
   header: React.ReactNode;
   content: React.ReactNode;
 }
 
 export default function Accordion({ items }: { items: AccordionItem[] }) {
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<string | number | null>(null);
 
   return (
     <div style={{ padding: "0 20px" }}>

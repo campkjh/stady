@@ -355,7 +355,19 @@ export default function HomeClient({
       .then((data) => {
         const nextBanners = (data.banners || []) as HomeBanner[];
         if (clientCache.set("home-banners", nextBanners)) setBanners(nextBanners);
-        // 오픈베타 웰컴 팝업(모달 배너) 비활성화 — 더 이상 자동으로 띄우지 않음
+        // 첫 진입 모달 배너 자동 노출(관리자가 추가한 "진입 모달 배너"). "3일동안 안보기"로
+        // 닫은 배너는 기간 동안 다시 띄우지 않는다.
+        const modal = nextBanners.find((b) => b.bannerType === "modal");
+        if (modal) {
+          let hidden = false;
+          try {
+            const until = Number(localStorage.getItem(`home_popup_hidden_until_${modal.id}`));
+            hidden = Number.isFinite(until) && until > Date.now();
+          } catch {
+            // localStorage 차단 환경(일부 WebView)에서는 그냥 노출.
+          }
+          if (!hidden) setPopupBanner(modal);
+        }
       })
       .catch(() => setBanners([]));
   }, []);
