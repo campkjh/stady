@@ -9,6 +9,7 @@ import {
   setCommunityPostImages,
   incrementCommunityPostView,
   getUserTiers,
+  getAnswerKings,
   mapTag,
   toNumber,
   type CommunityTier,
@@ -32,7 +33,7 @@ async function authorizePostMutation(id: string) {
   return { ok: true as const };
 }
 
-function mapComment(comment: CommunityCommentNode, tiers: Record<string, CommunityTier>): unknown {
+function mapComment(comment: CommunityCommentNode, tiers: Record<string, CommunityTier>, kings: Set<string>): unknown {
   return {
     id: comment.id,
     postId: comment.post_id,
@@ -40,13 +41,14 @@ function mapComment(comment: CommunityCommentNode, tiers: Record<string, Communi
     userId: comment.user_id,
     nickname: comment.nickname || "익명",
     authorTier: comment.user_id ? tiers[comment.user_id] ?? "iron" : "iron",
+    authorIsAnswerKing: comment.user_id ? kings.has(comment.user_id) : false,
     content: comment.content,
     isActive: comment.is_active,
     createdAt: comment.created_at,
     updatedAt: comment.updated_at,
     likeCount: toNumber(comment.like_count),
     likedByMe: Boolean(comment.liked_by_me),
-    replies: comment.replies.map((reply) => mapComment(reply, tiers)),
+    replies: comment.replies.map((reply) => mapComment(reply, tiers, kings)),
   };
 }
 
@@ -79,7 +81,9 @@ export async function GET(
 
     const commentUserIds: (string | null)[] = [];
     collectCommentUserIds(detail.comments, commentUserIds);
-    const tiers = await getUserTiers([detail.post.user_id, ...commentUserIds]);
+    const allUserIds = [detail.post.user_id, ...commentUserIds];
+    const tiers = await getUserTiers(allUserIds);
+    const answerKings = await getAnswerKings(allUserIds);
 
     return NextResponse.json({
       post: {
@@ -87,6 +91,7 @@ export async function GET(
         userId: detail.post.user_id,
         nickname: detail.post.nickname || "익명",
         authorTier: detail.post.user_id ? tiers[detail.post.user_id] ?? "iron" : "iron",
+        authorIsAnswerKing: detail.post.user_id ? answerKings.has(detail.post.user_id) : false,
         groupId: detail.post.group_id,
         groupName: detail.post.group_name,
         groupSlug: detail.post.group_slug,
@@ -107,7 +112,7 @@ export async function GET(
         imageUrls: detail.post.images.map((image) => image.image_url),
         tags: detail.post.tags.map(mapTag),
       },
-      comments: detail.comments.map((comment) => mapComment(comment, tiers)),
+      comments: detail.comments.map((comment) => mapComment(comment, tiers, answerKings)),
     });
   } catch (error) {
     console.error("Community post detail GET error:", error);

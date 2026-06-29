@@ -608,6 +608,21 @@ export async function getUserActivityScore(userId: string): Promise<number> {
   return score;
 }
 
+// 답변왕: 최근 7일간 활성 댓글을 10개 이상 쓴 유저 id 집합. 커뮤니티 작성자 뱃지용.
+export async function getAnswerKings(userIds: (string | null | undefined)[]): Promise<Set<string>> {
+  const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+  if (ids.length === 0) return new Set();
+  await ensureCommunityTables();
+  const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
+  const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "user_id" AS id FROM "CommunityComment"
+     WHERE "user_id" IN (${ph}) AND "is_active" = true AND "created_at" >= now() - interval '7 days'
+     GROUP BY "user_id" HAVING COUNT(*) >= 10`,
+    ...ids
+  );
+  return new Set(rows.map((r) => r.id));
+}
+
 export async function getUserTiers(userIds: (string | null | undefined)[]): Promise<Record<string, CommunityTier>> {
   const ids = [...new Set(userIds.filter((id): id is string => !!id))];
   if (ids.length === 0) return {};

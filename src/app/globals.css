@@ -179,3 +179,52 @@ body {
   transform: scale(0.85);
 }
 
+/* 답변왕 뱃지 — 왕관 + "답변왕"(빨강→주황/인디언옐로우 그라데이션이 반짝이는 글자). */
+.answer-king-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.answer-king-crown {
+  width: 15px;
+  height: 15px;
+  display: block;
+  flex-shrink: 0;
+}
+.answer-king-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  background-image: linear-gradient(
+    110deg,
+    #f04452 0%,
+    #ff6a2b 28%,
+    #ffc24b 50%,
+    #ff6a2b 72%,
+    #f04452 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: answerKingShimmer 2.4s ease-in-out infinite;
+}
+@keyframes answerKingShimmer {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .answer-king-text {
+    animation: none;
+    background-position: 50% 0;
+  }
+}
+

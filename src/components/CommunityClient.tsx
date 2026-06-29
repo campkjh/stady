@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clientCache } from "@/lib/clientCache";
+import AnswerKingBadge from "@/components/AnswerKingBadge";
 
 // 게시글 목록 캐시 키(필터 조합별).
 const postsKey = (groupId: string, tagId: string, q: string) =>
@@ -27,6 +28,7 @@ interface CommunityPost {
   nickname: string;
   authorTier?: string;
   authorIsAdmin?: boolean;
+  authorIsAnswerKing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -75,7 +77,6 @@ export default function CommunityClient() {
   const [topbarHeight, setTopbarHeight] = useState(0);
   const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
   const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
-  const [weeklyAtStart, setWeeklyAtStart] = useState(true);
   const [weeklyAtEnd, setWeeklyAtEnd] = useState(false);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
@@ -245,7 +246,6 @@ export default function CommunityClient() {
       if (d < min) { min = d; nearest = i; }
     });
     setWeeklyActiveIndex(nearest);
-    setWeeklyAtStart(track.scrollLeft <= 4);
     setWeeklyAtEnd(track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
   }
 
@@ -387,7 +387,6 @@ export default function CommunityClient() {
                   </button>
                 ))}
                 </div>
-                <div className="weekly-edge weekly-edge-left" aria-hidden="true" style={{ opacity: weeklyAtStart ? 0 : 1 }} />
                 <div className="weekly-edge weekly-edge-right" aria-hidden="true" style={{ opacity: weeklyAtEnd ? 0 : 1 }} />
               </div>
               {weeklyPosts.length > 1 && (
@@ -436,7 +435,7 @@ export default function CommunityClient() {
                       )}
                     </div>
                     <div>
-                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /></p>
+                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /></p>
                       <p className="community-post-date">{new Date(post.createdAt).toLocaleString("ko-KR")}</p>
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
@@ -754,10 +753,6 @@ function CommunityStyles() {
         pointer-events: none;
         z-index: 2;
         transition: opacity 0.3s ease;
-      }
-      .weekly-edge-left {
-        left: 0;
-        background: linear-gradient(to right, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
       }
       .weekly-edge-right {
         right: 0;

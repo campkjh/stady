@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
+import AnswerKingBadge from "@/components/AnswerKingBadge";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -26,6 +27,7 @@ interface CommunityComment {
   parentId: string | null;
   nickname: string;
   authorTier?: string;
+  authorIsAnswerKing?: boolean;
   content: string;
   createdAt: string;
   likeCount: number;
@@ -66,6 +68,7 @@ interface CommunityPostDetail {
   userId: string | null;
   nickname: string;
   authorTier?: string;
+  authorIsAnswerKing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -469,7 +472,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
-                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /> · 조회 {post.viewCount ?? 0}</p>
+                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
                   <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
@@ -797,7 +800,7 @@ function CommentItem({
   return (
     <div style={commentBoxStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-        <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /></strong>
+        <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
         <span style={{ color: "#9CA3AF", fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("ko-KR")}</span>
       </div>
       <p style={{ margin: "8px 0 0", color: "#374151", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
