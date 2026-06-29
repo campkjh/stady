@@ -33,7 +33,9 @@ export async function POST(
     const { id } = await params;
 
     const body = await request.json();
-    const { question, answer, explanation, section, order: requestedOrder } = body;
+    // position = "선택한 소분류 내부"의 1-based 위치(없으면 그 소분류 맨 끝).
+    // 과거엔 order(세트 전체 글로벌 위치)를 받아 소분류가 쪼개지는 버그가 있었음.
+    const { question, answer, explanation, section, position: requestedPosition } = body;
 
     if (!question || answer === undefined || answer === null) {
       return NextResponse.json(
@@ -42,31 +44,44 @@ export async function POST(
       );
     }
 
-    // 원하는 번호 위치에 삽입한다. 범위 안(1..현재개수)이면 그 위치에 넣고 뒤
-    // 문제들의 order 를 한 칸씩 민다. 미지정이거나 범위 밖이면 맨 끝에 추가.
+    const sec: string | null = section || null;
+
+    // 새 문제를 "같은 소분류 블록 안"에 끼워넣어 소분류가 쪼개지지(=새 소분류처럼 보이지)
+    // 않도록 한다. position 은 그 소분류 내부 위치(1..해당소분류개수+1).
     const oxQuestion = await prisma.$transaction(async (tx) => {
-      const count = await tx.oxQuestion.count({ where: { oxQuizSetId: id } });
-      const reqPos = Number(requestedOrder);
+      const sectionQs = await tx.oxQuestion.findMany({
+        where: { oxQuizSetId: id, section: sec },
+        orderBy: { order: "asc" },
+        select: { order: true },
+      });
+
       let order: number;
-      if (Number.isFinite(reqPos) && reqPos >= 1 && reqPos <= count) {
-        order = Math.floor(reqPos);
+      if (sectionQs.length === 0) {
+        // 해당 소분류에 문제가 없으면(새 소분류 포함) 세트 맨 끝에 추가 — 쪼갤 일이 없다.
+        const last = await tx.oxQuestion.findFirst({
+          where: { oxQuizSetId: id },
+          orderBy: { order: "desc" },
+          select: { order: true },
+        });
+        order = last ? last.order + 1 : 1;
+      } else {
+        const reqPos = Number(requestedPosition);
+        const pos = Number.isFinite(reqPos)
+          ? Math.min(Math.max(Math.floor(reqPos), 1), sectionQs.length + 1)
+          : sectionQs.length + 1;
+        // 소분류 내부 pos 위치의 글로벌 order. 끝이면 그 소분류 마지막 문제 바로 뒤.
+        order = pos <= sectionQs.length ? sectionQs[pos - 1].order : sectionQs[sectionQs.length - 1].order + 1;
         await tx.oxQuestion.updateMany({
           where: { oxQuizSetId: id, order: { gte: order } },
           data: { order: { increment: 1 } },
         });
-      } else {
-        const last = await tx.oxQuestion.findFirst({
-          where: { oxQuizSetId: id },
-          orderBy: { order: "desc" },
-        });
-        order = last ? last.order + 1 : 1;
       }
 
       const created = await tx.oxQuestion.create({
         data: {
           oxQuizSetId: id,
           order,
-          section: section || null,
+          section: sec,
           question,
           answer: Boolean(answer),
           explanation: explanation || null,

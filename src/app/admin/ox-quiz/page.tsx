@@ -143,7 +143,8 @@ export default function OxQuizManagement() {
           answer: questionData.answer,
           explanation: questionData.explanation,
           section: questionData.section,
-          order: questionData.order ? Number(questionData.order) : undefined,
+          // position = 선택한 소분류 내부 위치(비우면 그 소분류 맨 끝).
+          position: questionData.order ? Number(questionData.order) : undefined,
         }),
         credentials: "include",
       });
@@ -203,6 +204,12 @@ export default function OxQuizManagement() {
   const existingSections = Array.from(
     new Set(questions.map((q) => q.section).filter((s): s is string => !!s))
   );
+
+  // 선택한 소분류에 이미 있는 문제 수 — "번호 위치"는 이 소분류 '내부' 기준이라
+  // 소분류 경계를 넘지 않아 소분류가 쪼개지지(=새로 생기지) 않는다.
+  const selectedSectionCount = questions.filter(
+    (q) => (q.section || "") === (questionData.section || "")
+  ).length;
 
   return (
     <div>
@@ -529,20 +536,20 @@ export default function OxQuizManagement() {
                       )}
                     </div>
                     <div>
-                      <label style={labelStyle}>번호 위치</label>
+                      <label style={labelStyle}>소분류 내 번호 위치</label>
                       <input
                         type="number"
                         min={1}
-                        max={questions.length + 1}
+                        max={selectedSectionCount + 1}
                         value={questionData.order}
                         onChange={(e) => setQuestionData({ ...questionData, order: e.target.value })}
                         style={inputStyle}
-                        placeholder={`맨 끝(${questions.length + 1}번)`}
+                        placeholder={`맨 끝(${selectedSectionCount + 1}번)`}
                       />
                     </div>
                   </div>
                   <p style={{ fontSize: 12, color: "#8A909C", margin: "0 0 14px" }}>
-                    기존 소분류를 고르면 새 소분류가 생기지 않습니다. 번호를 지정하면 그 위치에 삽입되고 뒤 문제 번호가 한 칸씩 밀립니다(비우면 맨 끝).
+                    기존 소분류를 고르면 새 소분류가 생기지 않습니다. 번호는 <b>그 소분류 안에서의 위치</b>이며, 지정한 자리에 삽입되고 그 소분류 뒤 문제들이 한 칸씩 밀립니다(비우면 그 소분류 맨 끝).
                   </p>
                   <div style={{ marginBottom: 14 }}>
                     <label style={labelStyle}>질문</label>
