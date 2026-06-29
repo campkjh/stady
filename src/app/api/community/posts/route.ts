@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getAdminUserIds } from "@/lib/auth";
 import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, mapTag, toNumber, type CommunityTier } from "@/lib/community";
 
-function mapPost(post: Awaited<ReturnType<typeof getCommunityPosts>>[number], tiers: Record<string, CommunityTier>) {
+function mapPost(
+  post: Awaited<ReturnType<typeof getCommunityPosts>>[number],
+  tiers: Record<string, CommunityTier>,
+  adminIds: Set<string>
+) {
   return {
     id: post.id,
     userId: post.user_id,
     nickname: post.nickname || "익명",
     authorTier: post.user_id ? tiers[post.user_id] ?? "iron" : "iron",
+    authorIsAdmin: post.user_id ? adminIds.has(post.user_id) : false,
     groupId: post.group_id,
     groupName: post.group_name,
     groupSlug: post.group_slug,
@@ -38,7 +43,8 @@ export async function GET(request: NextRequest) {
         limit: 5,
       });
       const popTiers = await getUserTiers(popular.map((p) => p.user_id));
-      return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers)) });
+      const popAdmins = await getAdminUserIds(popular.map((p) => p.user_id));
+      return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers, popAdmins)) });
     }
     const posts = await getCommunityPosts({
       activeOnly: true,
@@ -47,7 +53,8 @@ export async function GET(request: NextRequest) {
       query: searchParams.get("q"),
     });
     const tiers = await getUserTiers(posts.map((p) => p.user_id));
-    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers)) });
+    const adminIds = await getAdminUserIds(posts.map((p) => p.user_id));
+    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds)) });
   } catch (error) {
     console.error("Community posts GET error:", error);
     return NextResponse.json({ error: "게시글을 불러오지 못했습니다." }, { status: 500 });

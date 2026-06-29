@@ -12,6 +12,17 @@ export function isMasterAdminEmail(email?: string | null) {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+// 주어진 유저 id 중 관리자(ADMIN_EMAILS) 계정의 id 집합. 커뮤니티에서 관리자 프로필 표시용.
+export async function getAdminUserIds(userIds: (string | null | undefined)[]): Promise<Set<string>> {
+  const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+  if (ids.length === 0) return new Set();
+  const users = await prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, email: true },
+  });
+  return new Set(users.filter((u) => isMasterAdminEmail(u.email)).map((u) => u.id));
+}
+
 export async function getCurrentUser() {
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;

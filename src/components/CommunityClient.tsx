@@ -26,6 +26,7 @@ interface CommunityPost {
   id: string;
   nickname: string;
   authorTier?: string;
+  authorIsAdmin?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -426,7 +427,14 @@ export default function CommunityClient() {
                   }}
                 >
                   <div className="community-post-head">
-                    <div className="community-avatar" aria-hidden="true">{post.nickname.slice(0, 1)}</div>
+                    <div className="community-avatar" aria-hidden="true">
+                      {post.authorIsAdmin ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src="/icons/stady-app-icon.svg" alt="" className="community-avatar-img" />
+                      ) : (
+                        post.nickname.slice(0, 1)
+                      )}
+                    </div>
                     <div>
                       <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /></p>
                       <p className="community-post-date">{new Date(post.createdAt).toLocaleString("ko-KR")}</p>
@@ -907,6 +915,13 @@ function CommunityStyles() {
         color: #111827;
         font-size: 15px;
         font-weight: 700;
+        overflow: hidden;
+      }
+      .community-avatar-img {
+        width: 74%;
+        height: 74%;
+        object-fit: contain;
+        display: block;
       }
       .community-post-author {
         margin: 0;
