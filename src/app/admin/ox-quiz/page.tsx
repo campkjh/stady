@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 interface Category {
   id: string;
@@ -59,13 +59,11 @@ export default function OxQuizManagement() {
     order: "",
   });
   const [useCustomSection, setUseCustomSection] = useState(false);
-  const [orderMap, setOrderMap] = useState<Record<string, number>>({});
-  const [savingOrder, setSavingOrder] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   useEffect(() => {
     fetchQuizSets();
     fetchCategories();
-    fetchOrder();
   }, []);
 
   const fetchQuizSets = async () => {
@@ -74,34 +72,49 @@ export default function OxQuizManagement() {
     setQuizSets(data.oxQuizSets || []);
   };
 
-  const fetchOrder = async () => {
-    const res = await fetch("/api/admin/ox-order", { credentials: "include" });
-    if (res.ok) {
-      const data = await res.json();
-      setOrderMap(data.orderMap || {});
+  // 카테고리별로 묶는다(첫 등장 순서 유지). 같은 카테고리 세트는 연속 블록.
+  function groupByCategory(sets: OxQuizSet[]) {
+    const groups: { catId: string; catName: string; catIcon: string; sets: OxQuizSet[] }[] = [];
+    for (const s of sets) {
+      const catId = s.category?.id ?? "none";
+      let g = groups.find((x) => x.catId === catId);
+      if (!g) {
+        g = { catId, catName: s.category?.name ?? "기타", catIcon: s.category?.icon ?? "", sets: [] };
+        groups.push(g);
+      }
+      g.sets.push(s);
     }
-  };
+    return groups;
+  }
 
-  // 테이블의 "정렬 순서" 입력값을 일괄 저장. 저장 후 새 순서로 목록 갱신.
-  const saveOrder = async () => {
-    setSavingOrder(true);
+  // 평탄화된 순서를 0..N 글로벌 순서로 저장(카테고리 연속 유지 + 카테고리 내 순서 반영).
+  const persistOrder = async (flat: OxQuizSet[]) => {
+    setReordering(true);
     try {
-      const orders = quizSets.map((s) => ({ setId: s.id, sortOrder: orderMap[s.id] ?? 0 }));
-      const res = await fetch("/api/admin/ox-order", {
+      const orders = flat.map((s, i) => ({ setId: s.id, sortOrder: i }));
+      await fetch("/api/admin/ox-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ orders }),
       });
-      if (res.ok) {
-        await fetchQuizSets();
-        alert("정렬 순서를 저장했습니다. (작을수록 위)");
-      } else {
-        alert("순서 저장에 실패했습니다.");
-      }
     } finally {
-      setSavingOrder(false);
+      setReordering(false);
     }
+  };
+
+  // 같은 카테고리 안에서 위/아래로 이동. 즉시 저장.
+  const moveSet = (catId: string, index: number, dir: "up" | "down") => {
+    if (reordering) return;
+    const groups = groupByCategory(quizSets);
+    const g = groups.find((x) => x.catId === catId);
+    if (!g) return;
+    const j = dir === "up" ? index - 1 : index + 1;
+    if (j < 0 || j >= g.sets.length) return;
+    [g.sets[index], g.sets[j]] = [g.sets[j], g.sets[index]];
+    const flat = groups.flatMap((x) => x.sets);
+    setQuizSets(flat);
+    persistOrder(flat);
   };
 
   const fetchCategories = async () => {
@@ -366,17 +379,9 @@ export default function OxQuizManagement() {
         </form>
       )}
 
-      {/* 정렬 순서 저장 */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, marginBottom: 10 }}>
-        <span style={{ fontSize: 12, color: "#8A909C" }}>리스트 노출 순서(작을수록 위) — 숫자 수정 후 저장</span>
-        <button
-          type="button"
-          onClick={saveOrder}
-          disabled={savingOrder}
-          style={{ padding: "8px 16px", background: "#3787FF", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: savingOrder ? "not-allowed" : "pointer", opacity: savingOrder ? 0.6 : 1 }}
-        >
-          {savingOrder ? "저장 중..." : "정렬 순서 저장"}
-        </button>
+      {/* 정렬 안내 */}
+      <div style={{ marginBottom: 10, fontSize: 12, color: "#8A909C" }}>
+        카테고리별로 화살표(▲▼)를 눌러 리스트 노출 순서를 바꿀 수 있어요. 변경 즉시 저장됩니다.
       </div>
 
       {/* Table */}
@@ -387,9 +392,8 @@ export default function OxQuizManagement() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
             <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB" }}>
-              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "#8A909C", fontSize: 13, width: 80 }}>정렬</th>
+              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "#8A909C", fontSize: 13, width: 84 }}>정렬</th>
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>난이도</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
@@ -399,86 +403,85 @@ export default function OxQuizManagement() {
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
                   등록된 OX 퀴즈 세트가 없습니다.
                 </td>
               </tr>
             ) : (
-              quizSets.map((set, idx) => (
-                <tr
-                  key={set.id}
-                  style={{
-                    borderBottom: "1px solid #F3F4F6",
-                    background: idx % 2 === 1 ? "#FAFBFC" : "#fff",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#F5F7FA"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "#FAFBFC" : "#fff"}
-                >
-                  <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                    <input
-                      type="number"
-                      value={orderMap[set.id] ?? ""}
-                      onChange={(e) => setOrderMap({ ...orderMap, [set.id]: e.target.value === "" ? 0 : Number(e.target.value) })}
-                      placeholder="0"
-                      style={{ width: 56, padding: "6px 6px", border: "1px solid #E5E7EB", borderRadius: 8, textAlign: "center", fontSize: 13, color: "#2B313D", boxSizing: "border-box" }}
-                    />
-                  </td>
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{set.title}</td>
-                  <td style={{ padding: "14px 16px", color: "#8A909C" }}>
-                    {set.category.icon} {set.category.name}
-                  </td>
-                  <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{set.totalQuestions}</td>
-                  <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    <button
-                      onClick={async () => {
-                        await fetch(`/api/ox-quiz/${set.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ isPopular: !set.isPopular }),
-                          credentials: "include",
-                        });
-                        fetchQuizSets();
-                      }}
-                      style={{
-                        padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        backgroundColor: set.isPopular ? "#FF3B5C" : "#F3F4F6",
-                        color: set.isPopular ? "#fff" : "#9CA3AF",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {set.isPopular ? "인기" : "OFF"}
-                    </button>
-                  </td>
-                  <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", gap: 8 }}>
-                      <button
-                        onClick={() => openQuestions(set)}
-                        style={{
-                          background: "none", border: "none", color: "#3787FF",
-                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
-                        }}
-                      >
-                        문제 관리
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 문제와 기록도 모두 삭제됩니다.`)) return;
-                          const res = await fetch(`/api/ox-quiz/${set.id}`, { method: "DELETE", credentials: "include" });
-                          if (res.ok) fetchQuizSets();
-                          else alert("삭제 실패");
-                        }}
-                        style={{
-                          background: "none", border: "none", color: "#EF4444",
-                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
-                        }}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+              groupByCategory(quizSets).map((group) => (
+                <Fragment key={group.catId}>
+                  <tr>
+                    <td colSpan={6} style={{ padding: "11px 16px", background: "#EEF4FC", fontWeight: 800, color: "#2B313D", fontSize: 13, borderBottom: "1px solid #E5E7EB" }}>
+                      {group.catIcon} {group.catName} <span style={{ color: "#8A909C", fontWeight: 600 }}>· {group.sets.length}개</span>
+                    </td>
+                  </tr>
+                  {group.sets.map((set, index) => (
+                    <tr key={set.id} style={{ borderBottom: "1px solid #F3F4F6", background: "#fff" }}>
+                      <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                        <div style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
+                          <button
+                            type="button"
+                            aria-label="위로"
+                            disabled={index === 0 || reordering}
+                            onClick={() => moveSet(group.catId, index, "up")}
+                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid #E5E7EB", background: index === 0 ? "#F8F9FA" : "#fff", color: index === 0 ? "#D1D5DB" : "#4E5968", cursor: index === 0 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                          >▲</button>
+                          <button
+                            type="button"
+                            aria-label="아래로"
+                            disabled={index === group.sets.length - 1 || reordering}
+                            onClick={() => moveSet(group.catId, index, "down")}
+                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid #E5E7EB", background: index === group.sets.length - 1 ? "#F8F9FA" : "#fff", color: index === group.sets.length - 1 ? "#D1D5DB" : "#4E5968", cursor: index === group.sets.length - 1 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                          >▼</button>
+                        </div>
+                      </td>
+                      <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{set.title}</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{set.totalQuestions}</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                        <button
+                          onClick={async () => {
+                            await fetch(`/api/ox-quiz/${set.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ isPopular: !set.isPopular }),
+                              credentials: "include",
+                            });
+                            fetchQuizSets();
+                          }}
+                          style={{
+                            padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            backgroundColor: set.isPopular ? "#FF3B5C" : "#F3F4F6",
+                            color: set.isPopular ? "#fff" : "#9CA3AF",
+                          }}
+                        >
+                          {set.isPopular ? "인기" : "OFF"}
+                        </button>
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                        <div style={{ display: "inline-flex", gap: 8 }}>
+                          <button
+                            onClick={() => openQuestions(set)}
+                            style={{ background: "none", border: "none", color: "#3787FF", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                          >
+                            문제 관리
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 문제와 기록도 모두 삭제됩니다.`)) return;
+                              const res = await fetch(`/api/ox-quiz/${set.id}`, { method: "DELETE", credentials: "include" });
+                              if (res.ok) fetchQuizSets();
+                              else alert("삭제 실패");
+                            }}
+                            style={{ background: "none", border: "none", color: "#EF4444", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))
             )}
           </tbody>
