@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { getOxOrderMap } from "@/lib/oxOrder";
 import oxImportData from "../../../../scripts/ox-import-data.json";
 
 interface OxImportQuestion {
@@ -117,7 +118,16 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json({ oxQuizSets });
+    // 관리자가 지정한 순서(OxSetOrder)로 정렬. 미지정 세트는 뒤로(생성순).
+    const orderMap = await getOxOrderMap();
+    const sorted = [...oxQuizSets].sort((a, b) => {
+      const oa = orderMap[a.id] ?? Number.MAX_SAFE_INTEGER;
+      const ob = orderMap[b.id] ?? Number.MAX_SAFE_INTEGER;
+      if (oa !== ob) return oa - ob;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    return NextResponse.json({ oxQuizSets: sorted });
   } catch (error) {
     console.error("OX Quiz GET error:", error);
     return NextResponse.json(

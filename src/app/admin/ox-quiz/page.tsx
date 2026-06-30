@@ -59,16 +59,49 @@ export default function OxQuizManagement() {
     order: "",
   });
   const [useCustomSection, setUseCustomSection] = useState(false);
+  const [orderMap, setOrderMap] = useState<Record<string, number>>({});
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => {
     fetchQuizSets();
     fetchCategories();
+    fetchOrder();
   }, []);
 
   const fetchQuizSets = async () => {
     const res = await fetch("/api/ox-quiz", { credentials: "include" });
     const data = await res.json();
     setQuizSets(data.oxQuizSets || []);
+  };
+
+  const fetchOrder = async () => {
+    const res = await fetch("/api/admin/ox-order", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      setOrderMap(data.orderMap || {});
+    }
+  };
+
+  // 테이블의 "정렬 순서" 입력값을 일괄 저장. 저장 후 새 순서로 목록 갱신.
+  const saveOrder = async () => {
+    setSavingOrder(true);
+    try {
+      const orders = quizSets.map((s) => ({ setId: s.id, sortOrder: orderMap[s.id] ?? 0 }));
+      const res = await fetch("/api/admin/ox-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ orders }),
+      });
+      if (res.ok) {
+        await fetchQuizSets();
+        alert("정렬 순서를 저장했습니다. (작을수록 위)");
+      } else {
+        alert("순서 저장에 실패했습니다.");
+      }
+    } finally {
+      setSavingOrder(false);
+    }
   };
 
   const fetchCategories = async () => {
@@ -333,6 +366,19 @@ export default function OxQuizManagement() {
         </form>
       )}
 
+      {/* 정렬 순서 저장 */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, marginBottom: 10 }}>
+        <span style={{ fontSize: 12, color: "#8A909C" }}>리스트 노출 순서(작을수록 위) — 숫자 수정 후 저장</span>
+        <button
+          type="button"
+          onClick={saveOrder}
+          disabled={savingOrder}
+          style={{ padding: "8px 16px", background: "#3787FF", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: savingOrder ? "not-allowed" : "pointer", opacity: savingOrder ? 0.6 : 1 }}
+        >
+          {savingOrder ? "저장 중..." : "정렬 순서 저장"}
+        </button>
+      </div>
+
       {/* Table */}
       <div style={{
         background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
@@ -341,6 +387,7 @@ export default function OxQuizManagement() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
             <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB" }}>
+              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "#8A909C", fontSize: 13, width: 80 }}>정렬</th>
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>제목</th>
               <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
               <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>난이도</th>
@@ -352,7 +399,7 @@ export default function OxQuizManagement() {
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={7} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
                   등록된 OX 퀴즈 세트가 없습니다.
                 </td>
               </tr>
@@ -368,6 +415,15 @@ export default function OxQuizManagement() {
                   onMouseEnter={(e) => e.currentTarget.style.background = "#F5F7FA"}
                   onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "#FAFBFC" : "#fff"}
                 >
+                  <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                    <input
+                      type="number"
+                      value={orderMap[set.id] ?? ""}
+                      onChange={(e) => setOrderMap({ ...orderMap, [set.id]: e.target.value === "" ? 0 : Number(e.target.value) })}
+                      placeholder="0"
+                      style={{ width: 56, padding: "6px 6px", border: "1px solid #E5E7EB", borderRadius: 8, textAlign: "center", fontSize: 13, color: "#2B313D", boxSizing: "border-box" }}
+                    />
+                  </td>
                   <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{set.title}</td>
                   <td style={{ padding: "14px 16px", color: "#8A909C" }}>
                     {set.category.icon} {set.category.name}

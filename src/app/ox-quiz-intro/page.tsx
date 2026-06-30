@@ -73,7 +73,7 @@ export default function OxQuizListPage() {
         type="button"
         onClick={() => selectedGroup ? setSelectedGroupName(null) : router.back()}
         className="press"
-        style={{ position: "absolute", top: 16, left: 16, background: "none", border: "none", zIndex: 10 }}
+        style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top, 0px))", left: 16, background: "none", border: "none", zIndex: 10 }}
       >
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
