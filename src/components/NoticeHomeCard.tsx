@@ -10,8 +10,10 @@ interface Notice {
   imageUrls: string[];
 }
 
-// 마지막으로 확인한 공지 id. 이 id와 다른(=새) 공지가 있으면 카드 노출.
-const SEEN_KEY = "home_notice_seen_id";
+// 사용자가 × 로 "닫은" 공지 id. 이 id와 다른(=새) 공지면 카드 노출.
+// (예전엔 열람만 해도 저장하던 seen 키를 썼기에, 의미가 바뀐 지금은 새 키를 사용해
+//  과거 값이 남아 카드가 안 뜨던 문제를 없앤다.)
+const SEEN_KEY = "home_notice_dismissed_id";
 
 export default function NoticeHomeCard() {
   const router = useRouter();
