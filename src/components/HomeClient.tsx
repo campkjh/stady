@@ -253,6 +253,12 @@ const BANNER_ITEMS = [
     href: "/vocab-quiz-intro",
   },
   {
+    title: "모의고사\n(태블릿)",
+    icon: "/icons/banner-mock.svg",
+    bg: "#FF7A45",
+    href: "/mock-exam",
+  },
+  {
     title: "새로운\n공지사항",
     icon: "/icons/banner-notice.svg",
     bg: "#5AD39F",

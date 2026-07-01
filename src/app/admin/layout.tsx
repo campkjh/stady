@@ -169,6 +169,17 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/admin/mock-exams",
+    label: "모의고사 관리",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 3.5H16V16.5H4V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M7 3.5V16.5" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M10 7H14M10 10H14M10 13H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
