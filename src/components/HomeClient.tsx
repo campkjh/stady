@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import SurveyGate from "@/components/SurveyGate";
+import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
@@ -464,6 +465,9 @@ export default function HomeClient({
           </button>
         </div>
       </div>
+
+      {/* 첫 진입 시 안 본 새 공지 카드 */}
+      <NoticeHomeCard />
 
       {/* Shortcut Cards */}
       <div
