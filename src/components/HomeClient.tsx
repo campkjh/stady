@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import WelcomeOverlay from "@/components/WelcomeOverlay";
 import SurveyGate from "@/components/SurveyGate";
+import NoticePopup from "@/components/NoticePopup";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
@@ -430,6 +431,8 @@ export default function HomeClient({
       )}
       {/* 첫 진입 평생 1회 온보딩 설문 */}
       <SurveyGate />
+      {/* 진입 시 첫 공지 팝업(7일동안 안보기 / 닫기) */}
+      <NoticePopup />
       {/* Header */}
       <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
