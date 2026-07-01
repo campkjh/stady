@@ -255,7 +255,7 @@ const BANNER_ITEMS = [
   {
     title: "모의고사\n(태블릿)",
     icon: "/icons/banner-mock.svg",
-    bg: "#FF7A45",
+    bg: "#F5A623",
     href: "/mock-exam",
   },
   {
@@ -721,7 +721,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               최근에 푼 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {recentQuizzes.map((q) => (
                 <QuizBookCard
                   key={q.key}
@@ -740,7 +740,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               새로운 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {newQuizzes.map((q) => (
                 <QuizBookCard
                   key={q.key}
@@ -827,7 +827,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               OX 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {oxQuizSets.map((ox) => (
                 <QuizBookCard
                   key={ox.id}
@@ -847,7 +847,7 @@ export default function HomeClient({
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
               단어 퀴즈
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
               {vocabQuizSets.map((vq) => (
                 <QuizBookCard
                   key={vq.id}

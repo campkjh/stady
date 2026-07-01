@@ -95,7 +95,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav style={{
+    <nav className="main-nav" style={{
       position: "fixed",
       bottom: 0,
       left: 0,
@@ -105,7 +105,7 @@ export default function BottomNav() {
       backgroundColor: "#fff",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
-      <ul style={{
+      <ul className="main-nav-list" style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",

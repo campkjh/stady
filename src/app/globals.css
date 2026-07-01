@@ -68,18 +68,59 @@ body {
     padding-right: 20px;
   }
 
-  /* 홈 상단 단축카드: 태블릿에선 가로 스크롤 대신 4열 그리드로 폭을 채운다. */
+  /* 홈 상단 단축카드: 태블릿에선 1:1 비율, 카드당 최대 190px. */
   .home-shortcuts {
     overflow: visible !important;
   }
   .home-shortcuts-row {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-columns: repeat(auto-fill, minmax(0, 190px)) !important;
+    justify-content: start;
     width: 100% !important;
   }
   .home-shortcut-card {
+    width: 100% !important;
+    max-width: 190px !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+  }
+
+  /* 퀴즈·단어·문제집 카드 리스트: 태블릿에선 8열. */
+  .home-quiz-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+
+  /* 하단 네비게이션 → 좌측 긴 세로 알약 형태. 본문은 그만큼 왼쪽 여백. */
+  .main-content-wrap {
+    padding-bottom: 0 !important;
+    padding-left: calc(84px + env(safe-area-inset-left, 0px)) !important;
+  }
+  .main-nav {
+    top: 50% !important;
+    bottom: auto !important;
+    left: calc(12px + env(safe-area-inset-left, 0px)) !important;
+    right: auto !important;
+    transform: translateY(-50%);
     width: auto !important;
-    height: 190px !important;
+    border-top: none !important;
+    background-color: transparent !important;
+    padding-bottom: 0 !important;
+  }
+  .main-nav-list {
+    flex-direction: column !important;
+    height: auto !important;
+    width: 66px !important;
+    max-width: none !important;
+    padding: 16px 0 !important;
+    gap: 8px;
+    background: #fff;
+    border-radius: 999px;
+    box-shadow: 0 10px 34px rgba(15, 23, 42, 0.16);
+  }
+  .main-nav-list > li {
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 }
 
