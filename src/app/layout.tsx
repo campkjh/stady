@@ -31,7 +31,9 @@ export default function RootLayout({
         style={{
           width: "100%",
           margin: "0 auto",
-          overflowX: "hidden",
+          // clip: 가로 오버플로는 잘라내되 overflow-y가 auto로 강제되지 않아
+          // body가 스크롤 컨테이너가 되지 않는다(홈 좌측 숏컷 position:sticky 유지).
+          overflowX: "clip",
         }}
       >
         <NativeAuthProvider>

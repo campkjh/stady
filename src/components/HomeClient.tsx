@@ -240,7 +240,8 @@ interface HomeClientProps {
   isNewUser: boolean;
 }
 
-const BANNER_ITEMS = [
+type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
+const BANNER_ITEMS: BannerItem[] = [
   {
     title: "매일매일\nOX 퀴즈",
     icon: "/icons/banner-ox.svg",
@@ -258,6 +259,8 @@ const BANNER_ITEMS = [
     icon: "/icons/banner-mock.svg",
     bg: "#F5A623",
     href: "/mock-exam",
+    iconW: 46,
+    iconH: 46,
   },
   {
     title: "새로운\n공지사항",
@@ -425,7 +428,7 @@ export default function HomeClient({
   }
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflow: "hidden" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflowX: "clip" }}>
       {welcomeVisible && userName && (
         <WelcomeOverlay nickname={userName} onComplete={handleWelcomeComplete} />
       )}
@@ -478,7 +481,10 @@ export default function HomeClient({
       {/* 첫 진입 시 안 본 새 공지 카드 */}
       <NoticeHomeCard />
 
-      {/* Shortcut Cards */}
+      {/* 태블릿: 좌측 세로 숏컷(스티키) + 우측 스크롤 콘텐츠 2단 레이아웃 */}
+      <div className="home-body">
+      {/* Shortcut Cards (태블릿=좌측 스티키 컬럼) */}
+      <div className="home-side">
       <div
         className="fade-in-up fade-in-up-1 home-shortcuts"
         style={{ overflowX: "auto", overflowY: "hidden", padding: "0 10px 20px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -505,8 +511,8 @@ export default function HomeClient({
               <Image
                 src={item.icon}
                 alt=""
-                width={80}
-                height={53}
+                width={item.iconW ?? 80}
+                height={item.iconH ?? 53}
                 unoptimized
                 style={{ position: "absolute", top: 16, left: 12 }}
               />
@@ -519,7 +525,9 @@ export default function HomeClient({
           ))}
         </div>
       </div>
+      </div>{/* /home-side */}
 
+      <div className="home-main">
       {/* Category Grid */}
       <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 16px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
@@ -864,6 +872,8 @@ export default function HomeClient({
           </section>
         )}
       </div>
+      </div>{/* /home-main */}
+      </div>{/* /home-body */}
 
       {/* Footer */}
       <div style={{ marginTop: 32, padding: "24px 16px 16px", borderTop: "1px solid #F3F4F6" }}>

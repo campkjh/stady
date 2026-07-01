@@ -32,9 +32,16 @@
 /* iOS WKWebView는 body에만 overflow-x:hidden을 줘도 문서(html) 레벨에서
    가로로 밀리는 경우가 있다. 루트에서 가로 오버플로를 클립해 거의 모든
    화면에 생기던 가로스크롤(행스크롤)을 막는다. */
-html,
-body {
+html {
   overflow-x: hidden;
+  max-width: 100%;
+}
+/* body는 overflow-x를 clip으로 둔다. hidden이면 overflow-y가 auto로 강제되어
+   body 자체가 스크롤 컨테이너가 되고, 그 안의 position:sticky(홈 좌측 숏컷)가
+   뷰포트가 아닌 body에 묶여 깨진다. clip은 가로 오버플로를 동일하게 잘라내되
+   overflow-y가 visible로 유지되어 스크롤 컨테이너를 만들지 않는다. */
+body {
+  overflow-x: clip;
   max-width: 100%;
 }
 
@@ -68,26 +75,47 @@ body {
     padding-right: 20px;
   }
 
-  /* 홈 상단 단축카드: 태블릿에선 1:1 비율, 카드당 최대 190px. */
+  /* 홈: 태블릿에선 좌측 세로 숏컷(스크롤 따라오는 스티키) + 우측 스크롤 콘텐츠 2단. */
+  .home-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .home-side {
+    position: sticky;
+    top: 76px;
+    align-self: flex-start;
+    flex: 0 0 auto;
+    width: 342px;
+  }
+  .home-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  /* 좌측 숏컷: 2열 그리드(카드당 최대 160px), 1:1 비율. */
   .home-shortcuts {
     overflow: visible !important;
+    padding: 0 0 20px 10px !important;
   }
   .home-shortcuts-row {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(0, 190px)) !important;
+    grid-template-columns: repeat(2, minmax(0, 160px)) !important;
+    gap: 12px !important;
     justify-content: start;
     width: 100% !important;
   }
   .home-shortcut-card {
     width: 100% !important;
-    max-width: 190px !important;
+    max-width: 160px !important;
     aspect-ratio: 1 / 1 !important;
     height: auto !important;
   }
 
-  /* 퀴즈·단어·문제집 카드 리스트: 태블릿에선 8열. */
+  /* 퀴즈·단어·문제집 카드 리스트: 태블릿 우측 컬럼 폭에 맞춰 책 표지(~114px)로
+     자동 채움(대략 4~6열). 8열 고정은 좁아진 우측 컬럼에서 카드가 너무 작아짐. */
   .home-quiz-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important;
+    justify-content: start;
   }
 
   /* 하단 네비게이션 → 좌측 긴 세로 알약 형태. 본문은 그만큼 왼쪽 여백. */
