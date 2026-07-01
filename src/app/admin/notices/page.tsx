@@ -10,6 +10,7 @@ export default function AdminNoticesPage() {
       titleLabel="제목"
       bodyLabel="내용"
       withDate
+      withImages
     />
   );
 }

@@ -16,6 +16,7 @@ export interface SiteContentItem {
   dateLabel: string | null;
   sortOrder: number;
   isActive: boolean;
+  imageUrls: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,8 +53,36 @@ export async function ensureSiteContentTable(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "SiteContent_kind_sort_idx" ON "SiteContent" ("kind", "sort_order")`
   );
+  // 이미지는 별도 테이블로 관리(SiteContent를 SELECT *로 읽으므로 컬럼 ALTER 금지 — 캐시플랜 이슈).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SiteContentImage" (
+      "id" TEXT PRIMARY KEY,
+      "content_id" TEXT NOT NULL,
+      "image_url" TEXT NOT NULL,
+      "sort_order" INTEGER NOT NULL DEFAULT 0
+    )
+  `);
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "SiteContentImage_content_idx" ON "SiteContentImage" ("content_id")`
+  );
   tableReady = true;
   await seedIfEmpty();
+}
+
+// 특정 컨텐츠의 이미지를 통째로 교체(삭제 후 재삽입).
+async function replaceImages(contentId: string, urls: string[]): Promise<void> {
+  await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentImage" WHERE "content_id" = $1`, contentId);
+  for (let i = 0; i < urls.length; i++) {
+    const url = String(urls[i] || "").trim();
+    if (!url) continue;
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SiteContentImage" ("id", "content_id", "image_url", "sort_order") VALUES ($1, $2, $3, $4)`,
+      randomUUID(),
+      contentId,
+      url,
+      i
+    );
+  }
 }
 
 // 기존 하드코딩 공지/FAQ를 최초 1회 시드(테이블이 비어있을 때만) → 내용 보존 + 편집 가능.
@@ -101,6 +130,7 @@ function mapRow(r: Row): SiteContentItem {
     dateLabel: r.date_label,
     sortOrder: r.sort_order,
     isActive: r.is_active,
+    imageUrls: [],
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -117,7 +147,20 @@ export async function listSiteContent(kind: ContentKind, activeOnly = false): Pr
         `SELECT * FROM "SiteContent" WHERE "kind" = $1 ORDER BY "sort_order" ASC, "created_at" DESC`,
         kind
       );
-  return rows.map(mapRow);
+  const items = rows.map(mapRow);
+  // 이미지는 별도 테이블에서 한 번에 조회해 붙인다(SiteContent 쿼리는 그대로 유지).
+  if (items.length > 0) {
+    const ids = items.map((it) => it.id);
+    const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
+    const imgs = await prisma.$queryRawUnsafe<{ content_id: string; image_url: string }[]>(
+      `SELECT "content_id", "image_url" FROM "SiteContentImage" WHERE "content_id" IN (${ph}) ORDER BY "sort_order" ASC`,
+      ...ids
+    );
+    const byContent: Record<string, string[]> = {};
+    for (const im of imgs) (byContent[im.content_id] ??= []).push(im.image_url);
+    for (const it of items) it.imageUrls = byContent[it.id] ?? [];
+  }
+  return items;
 }
 
 export async function createSiteContent(input: {
@@ -127,12 +170,14 @@ export async function createSiteContent(input: {
   dateLabel?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  imageUrls?: string[];
 }): Promise<void> {
   await ensureSiteContentTable();
+  const id = randomUUID();
   await prisma.$executeRawUnsafe(
     `INSERT INTO "SiteContent" ("id","kind","title","body","date_label","sort_order","is_active")
      VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-    randomUUID(),
+    id,
     input.kind,
     input.title,
     input.body,
@@ -140,11 +185,14 @@ export async function createSiteContent(input: {
     input.sortOrder ?? 0,
     input.isActive ?? true
   );
+  if (input.imageUrls && input.imageUrls.length > 0) {
+    await replaceImages(id, input.imageUrls);
+  }
 }
 
 export async function updateSiteContent(
   id: string,
-  fields: { title?: string; body?: string; dateLabel?: string | null; sortOrder?: number; isActive?: boolean }
+  fields: { title?: string; body?: string; dateLabel?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[] }
 ): Promise<void> {
   await ensureSiteContentTable();
   const sets: string[] = [];
@@ -155,16 +203,21 @@ export async function updateSiteContent(
   if (fields.dateLabel !== undefined) { sets.push(`"date_label" = $${i++}`); vals.push(fields.dateLabel); }
   if (fields.sortOrder !== undefined) { sets.push(`"sort_order" = $${i++}`); vals.push(fields.sortOrder); }
   if (fields.isActive !== undefined) { sets.push(`"is_active" = $${i++}`); vals.push(fields.isActive); }
-  if (sets.length === 0) return;
-  sets.push(`"updated_at" = now()`);
-  vals.push(id);
-  await prisma.$executeRawUnsafe(
-    `UPDATE "SiteContent" SET ${sets.join(", ")} WHERE "id" = $${i}`,
-    ...vals
-  );
+  if (sets.length > 0) {
+    sets.push(`"updated_at" = now()`);
+    vals.push(id);
+    await prisma.$executeRawUnsafe(
+      `UPDATE "SiteContent" SET ${sets.join(", ")} WHERE "id" = $${i}`,
+      ...vals
+    );
+  }
+  if (fields.imageUrls !== undefined) {
+    await replaceImages(id, fields.imageUrls);
+  }
 }
 
 export async function deleteSiteContent(id: string): Promise<void> {
   await ensureSiteContentTable();
+  await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentImage" WHERE "content_id" = $1`, id);
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContent" WHERE "id" = $1`, id);
 }

@@ -20,8 +20,18 @@ export default async function NoticePage() {
       </div>
     ),
     content: (
-      <div style={{ padding: "0 0 16px", fontSize: 14, lineHeight: 1.6, color: "#4B5563", whiteSpace: "pre-wrap" }}>
-        {notice.body}
+      <div style={{ padding: "0 0 16px" }}>
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: "#4B5563", whiteSpace: "pre-wrap" }}>
+          {notice.body}
+        </div>
+        {notice.imageUrls.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+            {notice.imageUrls.map((url) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={url} src={url} alt="" style={{ width: "100%", borderRadius: 12, display: "block" }} />
+            ))}
+          </div>
+        )}
       </div>
     ),
   }));

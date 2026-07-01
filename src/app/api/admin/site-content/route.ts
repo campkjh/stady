@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
     if (!kind) return NextResponse.json({ error: "kind가 올바르지 않습니다." }, { status: 400 });
     const title = String(body?.title ?? "").trim();
     if (!title) return NextResponse.json({ error: "제목을 입력해주세요." }, { status: 400 });
+    const imageUrls: string[] = Array.isArray(body?.imageUrls)
+      ? body.imageUrls.map((u: unknown) => String(u || "").trim()).filter((u: string) => /^https?:\/\//.test(u)).slice(0, 10)
+      : [];
     await createSiteContent({
       kind,
       title,
@@ -46,6 +49,7 @@ export async function POST(request: NextRequest) {
       dateLabel: body?.dateLabel ? String(body.dateLabel).trim() : null,
       sortOrder: Number.isFinite(Number(body?.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body?.isActive !== false,
+      imageUrls,
     });
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

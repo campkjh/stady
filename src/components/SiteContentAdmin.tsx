@@ -10,6 +10,7 @@ interface Item {
   dateLabel: string | null;
   sortOrder: number;
   isActive: boolean;
+  imageUrls?: string[];
   createdAt: string;
 }
 
@@ -19,17 +20,19 @@ interface Props {
   titleLabel: string;
   bodyLabel: string;
   withDate: boolean;
+  withImages?: boolean;
 }
 
-const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true };
+const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true, imageUrls: [] as string[] };
 
-export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate }: Props) {
+export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...blank });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function load() {
     const res = await fetch(`/api/admin/site-content?kind=${kind}`, { credentials: "include" });
@@ -49,8 +52,32 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   }
   function openEdit(it: Item) {
     setEditingId(it.id);
-    setForm({ title: it.title, body: it.body, dateLabel: it.dateLabel ?? "", sortOrder: it.sortOrder, isActive: it.isActive });
+    setForm({ title: it.title, body: it.body, dateLabel: it.dateLabel ?? "", sortOrder: it.sortOrder, isActive: it.isActive, imageUrls: it.imageUrls ?? [] });
     setShowForm(true);
+  }
+
+  async function uploadImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
+        const data = await res.json();
+        if (res.ok && data.url) urls.push(data.url);
+        else alert(data.error || "이미지 업로드 실패");
+      }
+      if (urls.length) setForm((f) => ({ ...f, imageUrls: [...f.imageUrls, ...urls].slice(0, 10) }));
+    } finally {
+      setUploading(false);
+    }
+  }
+  function removeImage(url: string) {
+    setForm((f) => ({ ...f, imageUrls: f.imageUrls.filter((u) => u !== url) }));
   }
 
   async function submit(e: React.FormEvent) {
@@ -65,6 +92,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
         dateLabel: withDate ? form.dateLabel : null,
         sortOrder: Number(form.sortOrder) || 0,
         isActive: form.isActive,
+        imageUrls: withImages ? form.imageUrls : [],
       };
       const res = editingId
         ? await fetch(`/api/admin/site-content/${editingId}`, {
@@ -138,6 +166,33 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
             <label style={label}>{bodyLabel}</label>
             <textarea style={{ ...input, minHeight: 90, resize: "vertical" }} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
           </div>
+
+          {withImages && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={label}>사진 (선택 · 최대 10장)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                {form.imageUrls.map((url) => (
+                  <div key={url} style={{ position: "relative", width: 92, height: 92, borderRadius: 10, overflow: "hidden", border: "1px solid #E5E7EB" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(url)}
+                      style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 999, border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 14, lineHeight: 1, cursor: "pointer" }}
+                    >×</button>
+                  </div>
+                ))}
+                {form.imageUrls.length < 10 && (
+                  <label style={{ width: 92, height: 92, borderRadius: 10, border: "1px dashed #C4CDD8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: uploading ? "default" : "pointer", color: "#8A909C", fontSize: 12, background: "#fff" }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>{uploading ? "…" : "+"}</span>
+                    {uploading ? "업로드 중" : "사진 추가"}
+                    <input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={uploadImages} />
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: "grid", gridTemplateColumns: withDate ? "1fr 1fr 1fr" : "1fr 1fr", gap: 12, marginBottom: 14, alignItems: "end" }}>
             {withDate && (
               <div>
@@ -176,6 +231,14 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
                   </div>
                   {withDate && it.dateLabel && <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 3 }}>{it.dateLabel}</div>}
                   <div style={{ fontSize: 13.5, color: "#4B5563", marginTop: 6, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{it.body}</div>
+                  {withImages && it.imageUrls && it.imageUrls.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                      {it.imageUrls.map((url) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={url} src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #E5E7EB" }} />
+                      ))}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: "#B0B8C1", marginTop: 6 }}>순서 {it.sortOrder}</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
