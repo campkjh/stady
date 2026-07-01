@@ -547,31 +547,33 @@ export default function HomeClient({
                   border: "none",
                 }}
               >
-                {cat.isPopular && (
-                  <span style={{
-                    position: "absolute", top: -4, right: 0, zIndex: 1,
-                    padding: "1px 6px", borderRadius: 20,
-                    backgroundColor: "#FF3B5C", color: "#fff",
-                    fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
-                    lineHeight: "16px",
-                  }}>인기</span>
-                )}
-                <div className="cat-circle" style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: "50%",
-                  backgroundColor: "#F2F2F6",
-                  border: "1px solid #F3F4F6",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  {cat.icon.startsWith("/") ? (
-                    <Image src={cat.icon} alt={cat.name} width={38} height={38} unoptimized style={{ width: 38, height: 38, objectFit: "contain" }} />
-                  ) : (
-                    <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                {/* 아이콘 + 인기 뱃지(버튼 끝이 아니라 아이콘 원 우상단에 붙임) */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  {cat.isPopular && (
+                    <span style={{
+                      position: "absolute", top: -5, right: -8, zIndex: 1,
+                      padding: "1px 6px", borderRadius: 20,
+                      backgroundColor: "#FF3B5C", color: "#fff",
+                      fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
+                      lineHeight: "16px",
+                    }}>인기</span>
                   )}
+                  <div className="cat-circle" style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: "50%",
+                    backgroundColor: "#F2F2F6",
+                    border: "1px solid #F3F4F6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    {cat.icon.startsWith("/") ? (
+                      <Image src={cat.icon} alt={cat.name} width={38} height={38} unoptimized style={{ width: 38, height: 38, objectFit: "contain" }} />
+                    ) : (
+                      <span style={{ fontSize: 20 }}>{cat.icon}</span>
+                    )}
+                  </div>
                 </div>
                 <span style={{ fontSize: 12, color: "#374151", fontWeight: 500 }}>
                   {cat.name}

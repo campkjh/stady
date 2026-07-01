@@ -80,6 +80,8 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 18px;
+    /* 헤더와 상단 콘텐츠(좌 숏컷 / 우 카테고리) 사이 여백 */
+    margin-top: 14px;
   }
   .home-side {
     position: sticky;

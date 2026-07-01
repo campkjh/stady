@@ -1113,6 +1113,24 @@ function CommunityStyles() {
           font-size: 19px;
         }
       }
+      /* 태블릿(>=744px): 좌측 세로 네비 알약(84px offset) + app-body 중앙 정렬 +
+         app-shell 좌우 패딩(20px)을 반영해, 뷰포트 중앙 720px 고정이던 헤더를
+         아래 피드 콘텐츠 박스와 정확히 좌우 정렬한다. (104 = 84+20, 124 = 84+20+20) */
+      @media (min-width: 744px) {
+        .community-topbar {
+          left: calc(max(0px, (100vw - 1024px) / 2) + 104px + env(safe-area-inset-left, 0px));
+          width: calc(min(100vw, 1024px) - 124px - env(safe-area-inset-left, 0px));
+          max-width: none;
+          right: auto;
+          transform: none;
+        }
+      }
+      @media (min-width: 1180px) {
+        .community-topbar {
+          left: calc(max(0px, (100vw - 1280px) / 2) + 104px + env(safe-area-inset-left, 0px));
+          width: calc(min(100vw, 1280px) - 124px - env(safe-area-inset-left, 0px));
+        }
+      }
       @keyframes communitySearchIn {
         from { opacity: 0; transform: translateY(-5px); }
         to { opacity: 1; transform: translateY(0); }
