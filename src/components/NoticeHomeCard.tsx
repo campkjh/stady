@@ -41,9 +41,10 @@ export default function NoticeHomeCard() {
     };
   }, []);
 
-  // 카드를 열어 공지를 봐도 숨기지 않는다(다음에도 계속 노출).
+  // 카드를 열어 공지를 봐도 숨기지 않는다(다음에도 계속 노출). 해당 공지로 포커스.
   function open() {
-    router.push("/notice");
+    if (!notice) return;
+    router.push(`/notice?focus=${encodeURIComponent(notice.id)}`);
   }
   // 오직 우측 × 를 눌렀을 때만 이 공지를 숨긴다(안 볼 사람용). 더 새 공지가 오면 다시 노출.
   function dismiss(e: React.MouseEvent) {

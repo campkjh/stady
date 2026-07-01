@@ -12,12 +12,15 @@ function AccordionRow({
   item,
   isOpen,
   onToggle,
+  autoScroll,
 }: {
   item: AccordionItem;
   isOpen: boolean;
   onToggle: () => void;
+  autoScroll?: boolean;
 }) {
   const innerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
 
   // 콘텐츠 실제 높이를 측정해 그만큼만 펼친다. 이미지가 뒤늦게 로드돼 높이가
@@ -32,8 +35,17 @@ function AccordionRow({
     return () => ro.disconnect();
   }, []);
 
+  // 홈에서 특정 공지로 들어온 경우: 그 항목으로 스크롤(펼침 애니메이션 후).
+  useEffect(() => {
+    if (!autoScroll) return;
+    const t = setTimeout(() => {
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 350);
+    return () => clearTimeout(t);
+  }, [autoScroll]);
+
   return (
-    <div>
+    <div ref={rootRef}>
       <button
         type="button"
         className="press"
@@ -84,8 +96,17 @@ function AccordionRow({
   );
 }
 
-export default function Accordion({ items }: { items: AccordionItem[] }) {
-  const [openId, setOpenId] = useState<string | number | null>(null);
+export default function Accordion({
+  items,
+  defaultOpenId,
+}: {
+  items: AccordionItem[];
+  defaultOpenId?: string | number | null;
+}) {
+  // 홈에서 특정 공지로 들어오면 그 항목을 처음부터 펼쳐 둔다.
+  const [openId, setOpenId] = useState<string | number | null>(
+    defaultOpenId != null && items.some((it) => it.id === defaultOpenId) ? defaultOpenId : null
+  );
 
   return (
     <div style={{ padding: "0 20px" }}>
@@ -94,6 +115,7 @@ export default function Accordion({ items }: { items: AccordionItem[] }) {
           key={item.id}
           item={item}
           isOpen={openId === item.id}
+          autoScroll={defaultOpenId != null && item.id === defaultOpenId}
           onToggle={() => setOpenId(openId === item.id ? null : item.id)}
         />
       ))}

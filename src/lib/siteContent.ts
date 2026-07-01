@@ -17,9 +17,12 @@ export interface SiteContentItem {
   sortOrder: number;
   isActive: boolean;
   imageUrls: string[];
+  isRecent: boolean; // 생성 7일 이내 → "최근" 태그용
   createdAt: Date;
   updatedAt: Date;
 }
+
+const RECENT_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Row {
   id: string;
@@ -131,6 +134,7 @@ function mapRow(r: Row): SiteContentItem {
     sortOrder: r.sort_order,
     isActive: r.is_active,
     imageUrls: [],
+    isRecent: Date.now() - new Date(r.created_at).getTime() < RECENT_MS,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
