@@ -39,20 +39,18 @@ export default function NoticeHomeCard() {
     };
   }, []);
 
-  function markSeen() {
+  // 카드를 열어 공지를 봐도 숨기지 않는다(다음에도 계속 노출).
+  function open() {
+    router.push("/notice");
+  }
+  // 오직 우측 × 를 눌렀을 때만 이 공지를 숨긴다(안 볼 사람용). 더 새 공지가 오면 다시 노출.
+  function dismiss(e: React.MouseEvent) {
+    e.stopPropagation();
     try {
       if (notice) localStorage.setItem(SEEN_KEY, notice.id);
     } catch {
       // ignore
     }
-  }
-  function open() {
-    markSeen();
-    router.push("/notice");
-  }
-  function dismiss(e: React.MouseEvent) {
-    e.stopPropagation();
-    markSeen();
     setNotice(null);
   }
 
