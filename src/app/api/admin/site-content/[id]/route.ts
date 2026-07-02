@@ -28,6 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(Array.isArray(body?.imageUrls)
         ? { imageUrls: body.imageUrls.map((u: unknown) => String(u || "").trim()).filter((u: string) => /^https?:\/\//.test(u)).slice(0, 10) }
         : {}),
+      ...(body?.popupEnabled !== undefined ? { popupEnabled: Boolean(body.popupEnabled) } : {}),
+      ...(body?.popupHideDays !== undefined ? { popupHideDays: Number(body.popupHideDays) || 7 } : {}),
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

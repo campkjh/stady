@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
       sortOrder: Number.isFinite(Number(body?.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body?.isActive !== false,
       imageUrls,
+      popupEnabled: body?.popupEnabled === true,
+      popupHideDays: Number.isFinite(Number(body?.popupHideDays)) ? Number(body.popupHideDays) : 7,
     });
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

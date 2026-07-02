@@ -8,12 +8,16 @@ interface Notice {
   title: string;
   body: string;
   imageUrls: string[];
+  popupEnabled?: boolean;
+  popupHideDays?: number;
 }
 
-// 진입 팝업: 맨 위(첫 번째) 공지를 보여준다. "7일동안 안보기"로 닫으면 그 공지는
-// 7일간 안 뜨고, "닫기"는 이번 세션만 닫는다(다음 진입 때 다시 노출).
+// 진입 팝업: 어드민이 "팝업으로 노출"을 켠 공지 중 정렬 맨 위 공지를 보여준다.
+// "N일 동안 안보기"(N=어드민 설정)로 닫으면 그 공지는 N일간 안 뜨고,
+// "닫기"는 이번 세션만 닫는다(다음 진입 때 다시 노출). 켜진 공지가 없으면 아무것도 안 뜬다.
 const hideKey = (id: string) => `notice_popup_hidden_until_${id}`;
 const SESSION_KEY = "notice_popup_closed_session";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function NoticePopup() {
   const router = useRouter();
@@ -25,7 +29,8 @@ export default function NoticePopup() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!alive) return;
-        const first: Notice | undefined = d?.notices?.[0];
+        const list: Notice[] = Array.isArray(d?.notices) ? d.notices : [];
+        const first = list.find((n) => n.popupEnabled === true);
         if (!first) return;
         try {
           const until = Number(localStorage.getItem(hideKey(first.id)));
@@ -46,6 +51,8 @@ export default function NoticePopup() {
     };
   }, []);
 
+  const hideDays = notice?.popupHideDays && notice.popupHideDays > 0 ? Math.round(notice.popupHideDays) : 7;
+
   function closeSession() {
     try {
       if (notice) sessionStorage.setItem(SESSION_KEY, notice.id);
@@ -54,9 +61,9 @@ export default function NoticePopup() {
     }
     setNotice(null);
   }
-  function hide7Days() {
+  function hideForDays() {
     try {
-      if (notice) localStorage.setItem(hideKey(notice.id), String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+      if (notice) localStorage.setItem(hideKey(notice.id), String(Date.now() + hideDays * DAY_MS));
     } catch {
       /* ignore */
     }
@@ -116,8 +123,8 @@ export default function NoticePopup() {
 
         {/* 하단 버튼 */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7", flexShrink: 0 }}>
-          <button type="button" onClick={hide7Days} style={{ height: 52, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
-            7일동안 안보기
+          <button type="button" onClick={hideForDays} style={{ height: 52, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
+            {hideDays}일 동안 안보기
           </button>
           <button type="button" onClick={closeSession} style={{ height: 52, border: "none", background: "#fff", color: "#111827", fontSize: 14.5, fontWeight: 900, cursor: "pointer" }}>
             닫기

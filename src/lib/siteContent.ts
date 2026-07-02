@@ -18,6 +18,8 @@ export interface SiteContentItem {
   isActive: boolean;
   imageUrls: string[];
   isRecent: boolean; // 생성 7일 이내 → "최근" 태그용
+  popupEnabled: boolean; // 첫 진입 시 팝업으로 노출할지(공지 전용)
+  popupHideDays: number; // 팝업 "N일 동안 안보기" 기간(일)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +70,14 @@ export async function ensureSiteContentTable(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "SiteContentImage_content_idx" ON "SiteContentImage" ("content_id")`
   );
+  // 팝업 노출 설정도 별도 테이블(SiteContent를 SELECT *로 읽으므로 컬럼 ALTER 금지 — 캐시플랜 이슈).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SiteContentPopup" (
+      "content_id" TEXT PRIMARY KEY,
+      "popup_enabled" BOOLEAN NOT NULL DEFAULT false,
+      "hide_days" INTEGER NOT NULL DEFAULT 7
+    )
+  `);
   tableReady = true;
   await seedIfEmpty();
 }
@@ -86,6 +96,26 @@ async function replaceImages(contentId: string, urls: string[]): Promise<void> {
       i
     );
   }
+}
+
+// 팝업 노출 설정 upsert(content_id 1:1).
+async function setPopupConfig(contentId: string, enabled: boolean, hideDays: number): Promise<void> {
+  const days = Math.min(365, Math.max(1, Math.round(Number(hideDays) || 7)));
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "SiteContentPopup" ("content_id","popup_enabled","hide_days") VALUES ($1,$2,$3)
+     ON CONFLICT ("content_id") DO UPDATE SET "popup_enabled" = EXCLUDED."popup_enabled", "hide_days" = EXCLUDED."hide_days"`,
+    contentId,
+    enabled,
+    days
+  );
+}
+
+async function getPopupConfig(contentId: string): Promise<{ enabled: boolean; days: number } | null> {
+  const rows = await prisma.$queryRawUnsafe<{ popup_enabled: boolean; hide_days: number }[]>(
+    `SELECT "popup_enabled","hide_days" FROM "SiteContentPopup" WHERE "content_id" = $1`,
+    contentId
+  );
+  return rows[0] ? { enabled: rows[0].popup_enabled, days: rows[0].hide_days } : null;
 }
 
 // 기존 하드코딩 공지/FAQ를 최초 1회 시드(테이블이 비어있을 때만) → 내용 보존 + 편집 가능.
@@ -135,6 +165,8 @@ function mapRow(r: Row): SiteContentItem {
     isActive: r.is_active,
     imageUrls: [],
     isRecent: Date.now() - new Date(r.created_at).getTime() < RECENT_MS,
+    popupEnabled: false,
+    popupHideDays: 7,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -163,6 +195,18 @@ export async function listSiteContent(kind: ContentKind, activeOnly = false): Pr
     const byContent: Record<string, string[]> = {};
     for (const im of imgs) (byContent[im.content_id] ??= []).push(im.image_url);
     for (const it of items) it.imageUrls = byContent[it.id] ?? [];
+
+    // 팝업 설정도 별도 테이블에서 한 번에 조회해 붙인다.
+    const popups = await prisma.$queryRawUnsafe<{ content_id: string; popup_enabled: boolean; hide_days: number }[]>(
+      `SELECT "content_id", "popup_enabled", "hide_days" FROM "SiteContentPopup" WHERE "content_id" IN (${ph})`,
+      ...ids
+    );
+    const popupBy: Record<string, { enabled: boolean; days: number }> = {};
+    for (const p of popups) popupBy[p.content_id] = { enabled: p.popup_enabled, days: p.hide_days };
+    for (const it of items) {
+      const cfg = popupBy[it.id];
+      if (cfg) { it.popupEnabled = cfg.enabled; it.popupHideDays = cfg.days; }
+    }
   }
   return items;
 }
@@ -175,6 +219,8 @@ export async function createSiteContent(input: {
   sortOrder?: number;
   isActive?: boolean;
   imageUrls?: string[];
+  popupEnabled?: boolean;
+  popupHideDays?: number;
 }): Promise<void> {
   await ensureSiteContentTable();
   const id = randomUUID();
@@ -192,11 +238,14 @@ export async function createSiteContent(input: {
   if (input.imageUrls && input.imageUrls.length > 0) {
     await replaceImages(id, input.imageUrls);
   }
+  if (input.popupEnabled !== undefined || input.popupHideDays !== undefined) {
+    await setPopupConfig(id, input.popupEnabled ?? false, input.popupHideDays ?? 7);
+  }
 }
 
 export async function updateSiteContent(
   id: string,
-  fields: { title?: string; body?: string; dateLabel?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[] }
+  fields: { title?: string; body?: string; dateLabel?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[]; popupEnabled?: boolean; popupHideDays?: number }
 ): Promise<void> {
   await ensureSiteContentTable();
   const sets: string[] = [];
@@ -218,10 +267,18 @@ export async function updateSiteContent(
   if (fields.imageUrls !== undefined) {
     await replaceImages(id, fields.imageUrls);
   }
+  if (fields.popupEnabled !== undefined || fields.popupHideDays !== undefined) {
+    // 둘 중 하나만 와도 나머지는 기존 값 유지.
+    const cur = await getPopupConfig(id);
+    const enabled = fields.popupEnabled ?? cur?.enabled ?? false;
+    const days = fields.popupHideDays ?? cur?.days ?? 7;
+    await setPopupConfig(id, enabled, days);
+  }
 }
 
 export async function deleteSiteContent(id: string): Promise<void> {
   await ensureSiteContentTable();
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentImage" WHERE "content_id" = $1`, id);
+  await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentPopup" WHERE "content_id" = $1`, id);
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContent" WHERE "id" = $1`, id);
 }

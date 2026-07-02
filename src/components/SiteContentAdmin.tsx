@@ -11,6 +11,8 @@ interface Item {
   sortOrder: number;
   isActive: boolean;
   imageUrls?: string[];
+  popupEnabled?: boolean;
+  popupHideDays?: number;
   createdAt: string;
 }
 
@@ -21,11 +23,12 @@ interface Props {
   bodyLabel: string;
   withDate: boolean;
   withImages?: boolean;
+  withPopup?: boolean;
 }
 
-const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true, imageUrls: [] as string[] };
+const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], popupEnabled: false, popupHideDays: 7 };
 
-export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages }: Props) {
+export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages, withPopup }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...blank });
@@ -52,7 +55,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   }
   function openEdit(it: Item) {
     setEditingId(it.id);
-    setForm({ title: it.title, body: it.body, dateLabel: it.dateLabel ?? "", sortOrder: it.sortOrder, isActive: it.isActive, imageUrls: it.imageUrls ?? [] });
+    setForm({ title: it.title, body: it.body, dateLabel: it.dateLabel ?? "", sortOrder: it.sortOrder, isActive: it.isActive, imageUrls: it.imageUrls ?? [], popupEnabled: it.popupEnabled ?? false, popupHideDays: it.popupHideDays ?? 7 });
     setShowForm(true);
   }
 
@@ -93,6 +96,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
         sortOrder: Number(form.sortOrder) || 0,
         isActive: form.isActive,
         imageUrls: withImages ? form.imageUrls : [],
+        ...(withPopup ? { popupEnabled: form.popupEnabled, popupHideDays: Number(form.popupHideDays) || 7 } : {}),
       };
       const res = editingId
         ? await fetch(`/api/admin/site-content/${editingId}`, {
@@ -209,6 +213,31 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
               노출
             </label>
           </div>
+
+          {withPopup && (
+            <div style={{ marginBottom: 16, padding: "13px 15px", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "#2B313D", cursor: "pointer" }}>
+                <input type="checkbox" checked={form.popupEnabled} onChange={(e) => setForm({ ...form, popupEnabled: e.target.checked })} />
+                첫 진입 시 팝업으로 노출
+              </label>
+              {form.popupEnabled && (
+                <div style={{ marginTop: 12 }}>
+                  <label style={label}>“N일 동안 안보기” 기간</label>
+                  <select style={{ ...input, maxWidth: 220 }} value={form.popupHideDays} onChange={(e) => setForm({ ...form, popupHideDays: Number(e.target.value) })}>
+                    <option value={1}>1일</option>
+                    <option value={3}>3일</option>
+                    <option value={7}>7일</option>
+                    <option value={14}>14일</option>
+                    <option value={30}>30일</option>
+                  </select>
+                  <p style={{ fontSize: 12, color: "#9CA3AF", margin: "8px 0 0", lineHeight: 1.5 }}>
+                    팝업 하단에 “{form.popupHideDays}일 동안 안보기” · “닫기” 버튼이 표시됩니다.
+                    팝업으로 설정한 공지가 여러 개면 정렬 순서상 맨 위 공지가 노출됩니다.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           <button type="submit" disabled={busy} style={{ padding: "9px 20px", background: "#3787FF", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 }}>
             {busy ? "저장 중..." : editingId ? "수정 저장" : "추가"}
           </button>
@@ -239,7 +268,14 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
                       ))}
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: "#B0B8C1", marginTop: 6 }}>순서 {it.sortOrder}</div>
+                  <div style={{ fontSize: 11, color: "#B0B8C1", marginTop: 6, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span>순서 {it.sortOrder}</span>
+                    {withPopup && it.popupEnabled && (
+                      <span style={{ padding: "1px 7px", borderRadius: 999, background: "#EAF2FF", color: "#2F6BE0", fontWeight: 700, fontSize: 10.5 }}>
+                        팝업 · {it.popupHideDays ?? 7}일 안보기
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
                   <button type="button" onClick={() => openEdit(it)} style={{ padding: "5px 12px", border: "1px solid #E5E7EB", background: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#3787FF", cursor: "pointer" }}>수정</button>
