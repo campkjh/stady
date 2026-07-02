@@ -267,7 +267,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside
           style={{
             width: 240,
-            minHeight: "100vh",
+            height: "100dvh",
+            maxHeight: "100dvh",
             background: "#1E1F23",
             flexShrink: 0,
             display: "flex",
@@ -286,8 +287,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>관리자 패널</p>
           </div>
 
-          {/* Nav */}
-          <nav style={{ padding: "12px 10px", flex: 1 }}>
+          {/* Nav (좁은 화면에서 항목이 넘치면 이 영역만 스크롤) */}
+          <nav style={{ padding: "12px 10px", flex: 1, minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
             {navItems.map((item) => {
               const isActive =
                 item.href === "/admin"
