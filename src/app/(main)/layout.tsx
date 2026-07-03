@@ -1,5 +1,6 @@
 import BottomNav from "@/components/BottomNav";
 import PageTransition from "@/components/PageTransition";
+import TimerPinger from "@/components/TimerPinger";
 
 export default function MainLayout({
   children,
@@ -14,6 +15,7 @@ export default function MainLayout({
         </div>
       </div>
       <BottomNav />
+      <TimerPinger />
     </>
   );
 }

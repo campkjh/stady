@@ -139,6 +139,9 @@ export default function TimerPage() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
+  // 내 세션 시작 시각(ms). 매초 +1이 아니라 벽시계로 경과를 계산해야
+  // 앱을 백그라운드로 보냈다 와도(JS 타이머 정지) 시간이 그대로 이어진다.
+  const myStartAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -156,9 +159,11 @@ export default function TimerPage() {
       setTotalCount(data.totalCount || 0);
       if (data.mySession) {
         setIsRunning(true);
+        myStartAtRef.current = Date.now() - data.mySession.activeElapsedSeconds * 1000;
         setMyElapsed(data.mySession.activeElapsedSeconds);
       } else {
         setIsRunning(false);
+        myStartAtRef.current = null;
       }
       setMyStats(data.myStats || null);
     } catch {}
@@ -257,9 +262,26 @@ export default function TimerPage() {
 
   useEffect(() => {
     if (!isRunning) return;
-    intervalRef.current = setInterval(() => setMyElapsed((p) => p + 1), 1000);
+    intervalRef.current = setInterval(() => {
+      // 벽시계 기준(시작 시각과의 차) — 백그라운드에서 틱이 멈췄다 재개돼도 정확.
+      const startAt = myStartAtRef.current;
+      setMyElapsed((p) => (startAt != null ? Math.max(0, Math.floor((Date.now() - startAt) / 1000)) : p + 1));
+    }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning]);
+
+  // 앱/탭 복귀 시 서버 상태를 즉시 재조회(백그라운드 동안의 경과·상태 반영).
+  useEffect(() => {
+    if (isLoggedIn !== true) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+        fetchFriends();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -277,6 +299,7 @@ export default function TimerPage() {
     });
     if (res.ok) {
       setIsRunning(true);
+      myStartAtRef.current = Date.now();
       setMyElapsed(0);
       setUsers((prev) => prev.map((user) => user.isMe ? { ...user, isActive: true, subject: "공부중", activeElapsedSeconds: 0 } : user));
       setTimeout(() => fetchData(), 350);
@@ -288,6 +311,7 @@ export default function TimerPage() {
     const data = await res.json().catch(() => ({}));
     const finishedSeconds = Number(data.session?.totalSeconds || myElapsed || 0);
     setIsRunning(false);
+    myStartAtRef.current = null;
     setMyElapsed(0);
     setUsers((prev) => prev.map((user) => {
       if (!user.isMe) return user;
@@ -1006,9 +1030,11 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
 
   useEffect(() => {
     if (!user.isActive) return;
-    const t = setInterval(() => setElapsed((p) => p + 1), 1000);
+    // 벽시계 기준 기점(서버 경과값 역산) — 백그라운드에서 틱이 멈췄다 재개돼도 정확.
+    const base = Date.now() - user.activeElapsedSeconds * 1000;
+    const t = setInterval(() => setElapsed(Math.max(0, Math.floor((Date.now() - base) / 1000))), 1000);
     return () => clearInterval(t);
-  }, [user.isActive]);
+  }, [user.isActive, user.activeElapsedSeconds]);
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
   const lit = user.isActive;
@@ -1181,9 +1207,10 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
 
   useEffect(() => {
     if (!user.isActive) return;
-    const t = setInterval(() => setElapsed((p) => p + 1), 1000);
+    const base = Date.now() - user.activeElapsedSeconds * 1000;
+    const t = setInterval(() => setElapsed(Math.max(0, Math.floor((Date.now() - base) / 1000))), 1000);
     return () => clearInterval(t);
-  }, [user.isActive]);
+  }, [user.isActive, user.activeElapsedSeconds]);
 
   const totalToday = user.todayTotalSeconds - user.activeElapsedSeconds + elapsed;
   const rankColor = rank === 1 ? "#F59E0B" : rank === 2 ? "#94A3B8" : rank === 3 ? "#CD7F32" : "#D1D5DB";

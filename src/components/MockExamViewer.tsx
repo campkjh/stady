@@ -61,6 +61,28 @@ const PageCanvas = forwardRef<
 
   const storageKey = `mockexam_${examId}_p${pageIndex}`;
 
+  // 애플펜슬 필기 중 화면이 같이 스크롤되는 문제 방지.
+  // touch-action: pan-y는 포인터 종류를 구분하지 못해 펜 드래그도 팬(스크롤)으로
+  // 처리된다 → 스타일러스 터치(iOS Safari/WebView는 touchType==="stylus")와
+  // 펜 스트로크/OCR 선택 중의 손바닥 터치는 non-passive 리스너에서 preventDefault로
+  // 스크롤 제스처를 차단한다. 손가락 단독 터치는 그대로 스크롤.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const block = (e: TouchEvent) => {
+      const stylus = Array.from(e.changedTouches).some(
+        (t) => (t as Touch & { touchType?: string }).touchType === "stylus"
+      );
+      if (stylus || drawing.current || selStart.current) e.preventDefault();
+    };
+    canvas.addEventListener("touchstart", block, { passive: false });
+    canvas.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      canvas.removeEventListener("touchstart", block);
+      canvas.removeEventListener("touchmove", block);
+    };
+  }, []);
+
   function fit() {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;

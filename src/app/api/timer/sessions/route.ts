@@ -42,14 +42,19 @@ export async function GET() {
     await ensureUserStatusMessageColumn();
 
     const now = Date.now();
-    const twoMinutesAgo = new Date(now - 2 * 60 * 1000);
+    // 타이머는 명시적으로 정지할 때까지 벽시계 기준으로 계속 간다.
+    // 예전엔 2분간 핑이 없으면 자동 종료했는데, 앱을 백그라운드로 보내거나
+    // (WebView는 JS 타이머가 멈춰 핑이 끊김) 앱 안의 다른 페이지로 이동해도
+    // 세션이 죽어 "앱을 나갔다 오면 시간이 안 재지는" 버그가 됐다.
+    // 이제는 하루(24h) 넘게 핑이 없는, 정말 버려진 세션만 마지막 핑 시점으로 종료.
+    const staleCutoff = new Date(now - 24 * 60 * 60 * 1000);
 
-    // 1) 오래된(2분 넘게 핑 없음) active 세션을 단일 UPDATE로 일괄 종료.
+    // 1) 버려진 active 세션을 단일 UPDATE로 일괄 종료.
     await prisma.$executeRaw`
       UPDATE "StudySession"
       SET "endedAt" = "lastPingAt",
           "totalSeconds" = GREATEST(0, FLOOR(EXTRACT(EPOCH FROM ("lastPingAt" - "startedAt"))))::int
-      WHERE "endedAt" IS NULL AND "lastPingAt" < ${twoMinutesAgo}
+      WHERE "endedAt" IS NULL AND "lastPingAt" < ${staleCutoff}
     `;
 
     // 2) 헤더 "X / N명 공부 중"의 N — 등록 유저 수(단일 count).
