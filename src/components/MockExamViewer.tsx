@@ -45,10 +45,11 @@ const PageCanvas = forwardRef<
     tool: Tool;
     color: string;
     width: number;
+    eraserWidth: number;
     onActive: () => void;
     onOcrRegion: (dataUrl: string) => void;
   }
->(function PageCanvas({ examId, pageIndex, imageUrl, tool, color, width, onActive, onOcrRegion }, ref) {
+>(function PageCanvas({ examId, pageIndex, imageUrl, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -201,7 +202,7 @@ const PageCanvas = forwardRef<
     if (tool === "eraser") {
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "rgba(0,0,0,1)";
-      ctx.lineWidth = 22;
+      ctx.lineWidth = eraserWidth;
     } else if (tool === "highlight") {
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
@@ -317,6 +318,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
   const [hlColor, setHlColor] = useState(HL_COLORS[0]);
   const [width, setWidth] = useState(3);
+  const [eraserWidth, setEraserWidth] = useState(22);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const pageRefs = useRef<(PageHandle | null)[]>([]);
@@ -339,6 +341,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const activeColor = tool === "highlight" ? hlColor : penColor;
   const colors = tool === "highlight" ? HL_COLORS : PEN_COLORS;
   const setActiveColor = tool === "highlight" ? setHlColor : setPenColor;
+  const eraserPreview = Math.round(10 + ((eraserWidth - 8) / 52) * 16); // 10~26px 미리보기 원
 
   const toolBtn = (t: Tool, label: string, icon: string) => (
     <button
@@ -385,6 +388,17 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         {tool === "pen" && (
           <input type="range" min={1} max={8} value={width} onChange={(e) => setWidth(Number(e.target.value))} style={{ width: 70 }} aria-label="펜 굵기" />
         )}
+        {tool === "eraser" && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span
+              aria-hidden
+              style={{ display: "inline-flex", width: 28, height: 28, alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            >
+              <span style={{ display: "inline-block", width: eraserPreview, height: eraserPreview, borderRadius: "50%", background: "#CBD2DA", border: "1px solid #AEB6C0" }} />
+            </span>
+            <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 90 }} aria-label="지우개 크기" />
+          </div>
+        )}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           <button type="button" onClick={() => pageRefs.current[activePage.current]?.undo()} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#4E5968", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>되돌리기</button>
           <button type="button" onClick={() => { if (confirm("이 페이지 필기를 지울까요?")) pageRefs.current[activePage.current]?.clear(); }} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #FECACA", background: "#fff", color: "#EF4444", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>페이지 지우기</button>
@@ -411,6 +425,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               tool={tool}
               color={activeColor}
               width={width}
+              eraserWidth={eraserWidth}
               onActive={() => { activePage.current = i; }}
               onOcrRegion={runOcr}
             />
