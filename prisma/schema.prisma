@@ -267,15 +267,17 @@ model OxQuizSet {
 }
 
 model OxQuestion {
-  id          String  @id @default(uuid())
-  oxQuizSetId String
-  order       Int
-  section     String?
-  question    String
-  answer      Boolean
-  explanation String?
+  id            String  @id @default(uuid())
+  oxQuizSetId   String
+  order         Int
+  section       String?
+  question      String
+  answer        Boolean
+  explanation   String?
+  examYearMonth String? // 기출 출처 (예: "26학년도 6월"). 어드민에서 입력.
+  answerRate    Int? // 정답률 % (0~100). 기출 공식 정답률, 어드민에서 입력.
 
-  oxQuizSet OxQuizSet @relation(fields: [oxQuizSetId], references: [id], onDelete: Cascade)
+  oxQuizSet OxQuizSet  @relation(fields: [oxQuizSetId], references: [id], onDelete: Cascade)
   answers   OxAnswer[]
 }
 

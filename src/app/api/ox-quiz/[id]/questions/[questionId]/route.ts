@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { normalizeAnswerRate } from "../route";
 
 export async function PATCH(
   request: NextRequest,
@@ -16,6 +17,8 @@ export async function PATCH(
     if (body.answer !== undefined) data.answer = body.answer;
     if (body.explanation !== undefined) data.explanation = body.explanation;
     if (body.section !== undefined) data.section = body.section || null;
+    if (body.examYearMonth !== undefined) data.examYearMonth = body.examYearMonth ? String(body.examYearMonth).trim() || null : null;
+    if (body.answerRate !== undefined) data.answerRate = normalizeAnswerRate(body.answerRate);
 
     const question = await prisma.oxQuestion.update({ where: { id: questionId }, data });
     return NextResponse.json({ question });

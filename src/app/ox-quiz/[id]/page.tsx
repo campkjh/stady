@@ -14,6 +14,8 @@ interface OxQuestion {
   question: string;
   answer: boolean;
   explanation?: string;
+  examYearMonth?: string | null;
+  answerRate?: number | null;
 }
 
 interface OxQuizSet {
@@ -525,16 +527,35 @@ export default function OxQuizSolvePage() {
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ position: "relative", zIndex: 10 }}>
-                {currentQuestion.section && (
-                  <span style={{
-                    display: "inline-flex",
-                    fontSize: 12, fontWeight: 700, color: "#3787FF",
-                    background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
-                    marginBottom: 10,
-                  }}>
-                    {currentQuestion.section}
-                  </span>
-                )}
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  {currentQuestion.section && (
+                    <span style={{
+                      display: "inline-flex",
+                      fontSize: 12, fontWeight: 700, color: "#3787FF",
+                      background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                    }}>
+                      {currentQuestion.section}
+                    </span>
+                  )}
+                  {currentQuestion.examYearMonth && (
+                    <span style={{
+                      display: "inline-flex",
+                      fontSize: 12, fontWeight: 700, color: "#374151",
+                      background: "#fff", border: "1px solid #D1D5DB", borderRadius: 6, padding: "3px 10px",
+                    }}>
+                      {currentQuestion.examYearMonth}
+                    </span>
+                  )}
+                  {currentQuestion.answerRate != null && (
+                    <span style={{
+                      display: "inline-flex",
+                      fontSize: 12, fontWeight: 700, color: "#374151",
+                      background: "#fff", border: "1px solid #D1D5DB", borderRadius: 6, padding: "3px 10px",
+                    }}>
+                      정답률 {currentQuestion.answerRate}%
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-xl font-bold leading-relaxed">
                   Q. {currentQuestion.question}
                 </h2>

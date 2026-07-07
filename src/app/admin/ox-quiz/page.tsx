@@ -26,6 +26,8 @@ interface OxQuestion {
   question: string;
   answer: boolean;
   explanation: string | null;
+  examYearMonth: string | null;
+  answerRate: number | null;
 }
 
 const DIFFICULTIES = ["쉬움", "보통", "어려움"];
@@ -51,12 +53,16 @@ export default function OxQuizManagement() {
   const [editQAnswer, setEditQAnswer] = useState(true);
   const [editQExplanation, setEditQExplanation] = useState("");
   const [editQSection, setEditQSection] = useState("");
+  const [editQExamYearMonth, setEditQExamYearMonth] = useState("");
+  const [editQAnswerRate, setEditQAnswerRate] = useState("");
   const [questionData, setQuestionData] = useState({
     question: "",
     answer: true,
     explanation: "",
     section: "",
     order: "",
+    examYearMonth: "",
+    answerRate: "",
   });
   const [useCustomSection, setUseCustomSection] = useState(false);
   const [reordering, setReordering] = useState(false);
@@ -189,6 +195,8 @@ export default function OxQuizManagement() {
           answer: questionData.answer,
           explanation: questionData.explanation,
           section: questionData.section,
+          examYearMonth: questionData.examYearMonth,
+          answerRate: questionData.answerRate,
           // position = 선택한 소분류 내부 위치(비우면 그 소분류 맨 끝).
           position: questionData.order ? Number(questionData.order) : undefined,
         }),
@@ -197,7 +205,7 @@ export default function OxQuizManagement() {
       if (res.ok) {
         setShowQuestionForm(false);
         setUseCustomSection(false);
-        setQuestionData({ question: "", answer: true, explanation: "", section: "", order: "" });
+        setQuestionData({ question: "", answer: true, explanation: "", section: "", order: "", examYearMonth: "", answerRate: "" });
         openQuestions(selectedSet);
         fetchQuizSets();
       } else {
@@ -538,6 +546,7 @@ export default function OxQuizManagement() {
                       setQuestionData({
                         question: "", answer: true, explanation: "",
                         section: existingSections[0] || "", order: "",
+                        examYearMonth: "", answerRate: "",
                       });
                     }
                   }}
@@ -646,6 +655,30 @@ export default function OxQuizManagement() {
                       />
                     </div>
                   </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={labelStyle}>기출 출처 (선택)</label>
+                      <input
+                        type="text"
+                        value={questionData.examYearMonth}
+                        onChange={(e) => setQuestionData({ ...questionData, examYearMonth: e.target.value })}
+                        style={inputStyle}
+                        placeholder="예: 26학년도 6월"
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>정답률 % (선택)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={questionData.answerRate}
+                        onChange={(e) => setQuestionData({ ...questionData, answerRate: e.target.value })}
+                        style={inputStyle}
+                        placeholder="예: 69"
+                      />
+                    </div>
+                  </div>
                   <button
                     type="submit"
                     disabled={submitting}
@@ -751,6 +784,30 @@ export default function OxQuizManagement() {
                               style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
                               placeholder="해설 입력"
                             />
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                              <div>
+                                <label style={labelStyle}>기출 출처</label>
+                                <input
+                                  type="text"
+                                  value={editQExamYearMonth}
+                                  onChange={(e) => setEditQExamYearMonth(e.target.value)}
+                                  style={inputStyle}
+                                  placeholder="예: 26학년도 6월"
+                                />
+                              </div>
+                              <div>
+                                <label style={labelStyle}>정답률 %</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={editQAnswerRate}
+                                  onChange={(e) => setEditQAnswerRate(e.target.value)}
+                                  style={inputStyle}
+                                  placeholder="예: 69"
+                                />
+                              </div>
+                            </div>
                             <div style={{ display: "flex", gap: 8 }}>
                               <button
                                 type="button"
@@ -763,6 +820,8 @@ export default function OxQuizManagement() {
                                       question: editQText, answer: editQAnswer,
                                       explanation: editQExplanation || null,
                                       section: editQSection || null,
+                                      examYearMonth: editQExamYearMonth || null,
+                                      answerRate: editQAnswerRate === "" ? null : Number(editQAnswerRate),
                                     }),
                                     credentials: "include",
                                   });
@@ -811,6 +870,22 @@ export default function OxQuizManagement() {
                               }}>
                                 {q.answer ? "O (참)" : "X (거짓)"}
                               </span>
+                              {q.examYearMonth && (
+                                <span style={{
+                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
+                                  background: "#fff", border: "1px solid #D1D5DB", color: "#374151",
+                                }}>
+                                  {q.examYearMonth}
+                                </span>
+                              )}
+                              {q.answerRate != null && (
+                                <span style={{
+                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
+                                  background: "#fff", border: "1px solid #D1D5DB", color: "#374151",
+                                }}>
+                                  정답률 {q.answerRate}%
+                                </span>
+                              )}
                               {q.explanation && (
                                 <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {q.explanation}</span>
                               )}
@@ -827,6 +902,8 @@ export default function OxQuizManagement() {
                               setEditQAnswer(q.answer);
                               setEditQExplanation(q.explanation || "");
                               setEditQSection(q.section || "");
+                              setEditQExamYearMonth(q.examYearMonth || "");
+                              setEditQAnswerRate(q.answerRate != null ? String(q.answerRate) : "");
                             }}
                             style={{
                               background: "none", border: "none",
