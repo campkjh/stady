@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 // 모의고사: 관리자가 시험지 이미지를 업로드하고, 사용자는 태블릿에서 그 이미지 위에
 // 펜/형광펜/OCR 등으로 필기하며 푼다. 커뮤니티/공지와 동일하게 raw SQL로 관리.
 
+// 페이지별 텍스트 줄 박스. 각 줄은 [x, y, w, h](페이지 크기 대비 0~1 정규화).
+// 형광펜이 글자 줄에 맞춰 일직선으로 그려지도록 스냅하는 데 쓴다.
+export type LineBox = [number, number, number, number];
+
 export interface MockExamItem {
   id: string;
   title: string;
@@ -11,6 +15,8 @@ export interface MockExamItem {
   sortOrder: number;
   isActive: boolean;
   imageUrls: string[];
+  // imageUrls와 인덱스가 1:1로 대응. 줄 데이터가 없는 페이지는 빈 배열.
+  lineBoxes: LineBox[][];
   createdAt: Date;
 }
 
@@ -36,6 +42,10 @@ export async function ensureMockExamTables(): Promise<void> {
       "sort_order" INTEGER NOT NULL DEFAULT 0
     )
   `);
+  // 형광펜 스냅용 텍스트 줄 박스(JSON). 벡터 PDF에서 추출한 페이지만 채워진다.
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "MockExamImage" ADD COLUMN IF NOT EXISTS "text_lines" TEXT`
+  );
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "MockExamImage_exam_idx" ON "MockExamImage" ("exam_id")`
   );
@@ -66,17 +76,34 @@ interface ExamRow {
   created_at: Date;
 }
 
+function parseLineBoxes(raw: string | null): LineBox[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as LineBox[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 async function attachImages(exams: MockExamItem[]): Promise<void> {
   if (exams.length === 0) return;
   const ids = exams.map((e) => e.id);
   const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
-  const imgs = await prisma.$queryRawUnsafe<{ exam_id: string; image_url: string }[]>(
-    `SELECT "exam_id", "image_url" FROM "MockExamImage" WHERE "exam_id" IN (${ph}) ORDER BY "sort_order" ASC`,
+  const imgs = await prisma.$queryRawUnsafe<{ exam_id: string; image_url: string; text_lines: string | null }[]>(
+    `SELECT "exam_id", "image_url", "text_lines" FROM "MockExamImage" WHERE "exam_id" IN (${ph}) ORDER BY "sort_order" ASC`,
     ...ids
   );
   const byExam: Record<string, string[]> = {};
-  for (const im of imgs) (byExam[im.exam_id] ??= []).push(im.image_url);
-  for (const e of exams) e.imageUrls = byExam[e.id] ?? [];
+  const linesByExam: Record<string, LineBox[][]> = {};
+  for (const im of imgs) {
+    (byExam[im.exam_id] ??= []).push(im.image_url);
+    (linesByExam[im.exam_id] ??= []).push(parseLineBoxes(im.text_lines));
+  }
+  for (const e of exams) {
+    e.imageUrls = byExam[e.id] ?? [];
+    e.lineBoxes = linesByExam[e.id] ?? [];
+  }
 }
 
 function mapExam(r: ExamRow): MockExamItem {
@@ -87,6 +114,7 @@ function mapExam(r: ExamRow): MockExamItem {
     sortOrder: r.sort_order,
     isActive: r.is_active,
     imageUrls: [],
+    lineBoxes: [],
     createdAt: r.created_at,
   };
 }

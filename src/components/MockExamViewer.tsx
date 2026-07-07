@@ -5,11 +5,23 @@ import { useRouter } from "next/navigation";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
 
+// 페이지별 텍스트 줄 박스 [x, y, w, h] (페이지 대비 0~1 정규화). 형광펜 스냅용.
+type LineBox = [number, number, number, number];
+
 interface Exam {
   id: string;
   title: string;
   subtitle: string | null;
   imageUrls: string[];
+  lineBoxes: LineBox[][];
+}
+
+// 형광펜이 그려질 가로 띠. top/height는 CSS px, left/right는 줄 가로 범위(없으면 null).
+interface HighlightBand {
+  top: number;
+  height: number;
+  left: number | null;
+  right: number | null;
 }
 
 const PEN_COLORS = ["#111827", "#EF4444", "#3787FF", "#10B981"];
@@ -42,6 +54,7 @@ const PageCanvas = forwardRef<
     examId: string;
     pageIndex: number;
     imageUrl: string;
+    lines: LineBox[];
     tool: Tool;
     color: string;
     width: number;
@@ -49,7 +62,7 @@ const PageCanvas = forwardRef<
     onActive: () => void;
     onOcrRegion: (dataUrl: string) => void;
   }
->(function PageCanvas({ examId, pageIndex, imageUrl, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
+>(function PageCanvas({ examId, pageIndex, imageUrl, lines, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,6 +71,10 @@ const PageCanvas = forwardRef<
   const last = useRef<{ x: number; y: number } | null>(null);
   const undoStack = useRef<string[]>([]);
   const selStart = useRef<{ x: number; y: number } | null>(null);
+  // 형광펜 스냅용: 시작 시점의 캔버스 스냅샷 + 시작 x + 대상 줄 띠.
+  const hlSnap = useRef<ImageData | null>(null);
+  const hlStartX = useRef(0);
+  const hlBand = useRef<HighlightBand | null>(null);
   const [sized, setSized] = useState(false);
 
   const storageKey = `mockexam_${examId}_p${pageIndex}`;
@@ -156,6 +173,66 @@ const PageCanvas = forwardRef<
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
+  // 시작점에 해당하는 글자 줄을 찾아 형광펜 띠를 만든다. 줄 데이터가 없거나
+  // 근처에 줄이 없으면(빈 공간) 시작 y에 고정된 수평 띠로 대체(그래도 일직선).
+  function bandAt(px: number, py: number): HighlightBand {
+    const wrap = wrapRef.current;
+    const W = wrap?.clientWidth ?? 0;
+    const H = wrap?.clientHeight ?? 0;
+    const fallback: HighlightBand = { top: py - 9, height: 18, left: null, right: null };
+    if (!W || !H || lines.length === 0) return fallback;
+    const nx = px / W;
+    const ny = py / H;
+    let best: LineBox | null = null;
+    let bestDy = Infinity;
+    // 1순위: 시작 x가 가로 범위에 걸치는 줄(2단 편집에서 올바른 열 선택).
+    for (const [lx, ly, lw, lh] of lines) {
+      if (nx < lx - 0.005 || nx > lx + lw + 0.005) continue;
+      const inside = ny >= ly && ny <= ly + lh;
+      const dy = inside ? 0 : Math.abs(ny - (ly + lh / 2));
+      if (dy < bestDy) { bestDy = dy; best = [lx, ly, lw, lh]; }
+    }
+    // 2순위: 걸치는 줄이 없으면 y로 가장 가까운 줄(단, 너무 멀면 스냅 안 함).
+    if (!best) {
+      for (const [lx, ly, lw, lh] of lines) {
+        const dy = Math.abs(ny - (ly + lh / 2));
+        if (dy < bestDy) { bestDy = dy; best = [lx, ly, lw, lh]; }
+      }
+      if (best && bestDy > 0.02) best = null;
+    }
+    if (!best) return fallback;
+    const [lx, ly, lw, lh] = best;
+    const padY = lh * 0.2;
+    return {
+      top: (ly - padY) * H,
+      height: (lh + padY * 2) * H,
+      left: lx * W,
+      right: (lx + lw) * W,
+    };
+  }
+
+  // 스냅샷을 복원한 뒤 시작x~현재x 범위에 줄 띠를 채운다(겹쳐도 진해지지 않음).
+  function paintHighlight(curX: number) {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const band = hlBand.current;
+    if (!canvas || !ctx || !band || !hlSnap.current) return;
+    ctx.putImageData(hlSnap.current, 0, 0);
+    let x0 = Math.min(hlStartX.current, curX);
+    let x1 = Math.max(hlStartX.current, curX);
+    if (band.left != null && band.right != null) {
+      x0 = Math.max(x0, band.left);
+      x1 = Math.min(x1, band.right);
+    }
+    if (x1 - x0 < 1) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = color;
+    ctx.fillRect(x0, band.top, x1 - x0, band.height);
+    ctx.restore();
+  }
+
   function onDown(e: React.PointerEvent) {
     // 손가락(touch)은 스크롤용 — 펜/마우스만 필기/선택.
     if (e.pointerType === "touch") return;
@@ -169,6 +246,20 @@ const PageCanvas = forwardRef<
         selRef.current.style.top = `${p.y}px`;
         selRef.current.style.width = "0px";
         selRef.current.style.height = "0px";
+      }
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+      return;
+    }
+    if (tool === "highlight") {
+      // 글자 줄에 스냅한 일직선 형광펜. 시작 시점 스냅샷을 떠서 러버밴드로 그린다.
+      drawing.current = true;
+      hlStartX.current = p.x;
+      hlBand.current = bandAt(p.x, p.y);
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (canvas && ctx) {
+        if (undoStack.current.length === 0) undoStack.current.push(canvas.toDataURL("image/png"));
+        hlSnap.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
       (e.target as Element).setPointerCapture?.(e.pointerId);
       return;
@@ -193,6 +284,11 @@ const PageCanvas = forwardRef<
       selRef.current.style.height = `${Math.abs(p.y - s.y)}px`;
       return;
     }
+    if (tool === "highlight") {
+      if (!drawing.current) return;
+      paintHighlight(p.x);
+      return;
+    }
     if (!drawing.current || !last.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -203,11 +299,6 @@ const PageCanvas = forwardRef<
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "rgba(0,0,0,1)";
       ctx.lineWidth = eraserWidth;
-    } else if (tool === "highlight") {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = 0.35;
-      ctx.lineWidth = 18;
     } else {
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
@@ -237,6 +328,21 @@ const PageCanvas = forwardRef<
       const h = Math.abs(p.y - s.y);
       if (w < 8 || h < 8) return;
       cropAndOcr(x, y, w, h);
+      return;
+    }
+    if (tool === "highlight") {
+      if (!drawing.current) return;
+      // 클릭만 하고 끌지 않았으면(러버밴드 미변경) 취소하고 스냅샷 복원.
+      if (hlSnap.current) paintHighlight(e.clientX - (canvasRef.current?.getBoundingClientRect().left ?? 0));
+      drawing.current = false;
+      hlSnap.current = null;
+      hlBand.current = null;
+      const canvas = canvasRef.current;
+      if (canvas) {
+        undoStack.current.push(canvas.toDataURL("image/png"));
+        if (undoStack.current.length > 25) undoStack.current.shift();
+      }
+      persist();
       return;
     }
     if (!drawing.current) return;
@@ -407,7 +513,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
       {/* 안내 */}
       <p style={{ margin: 0, padding: "8px 14px", fontSize: 12, color: "#8A909C", textAlign: "center" }}>
-        애플펜슬(펜)로 필기하고, 손가락으로 스크롤하세요. OCR은 글자 영역을 드래그해 선택하면 됩니다.
+        애플펜슬(펜)로 필기하고, 손가락으로 스크롤하세요. 형광펜은 글자 줄에 맞춰 반듯하게 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다.
       </p>
 
       {/* 페이지들 */}
@@ -422,6 +528,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               examId={exam.id}
               pageIndex={i}
               imageUrl={url}
+              lines={exam.lineBoxes?.[i] ?? []}
               tool={tool}
               color={activeColor}
               width={width}

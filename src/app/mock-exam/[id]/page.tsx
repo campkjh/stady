@@ -19,7 +19,7 @@ export default async function MockExamViewerPage({ params }: { params: Promise<{
 
   return (
     <MockExamViewer
-      exam={{ id: exam.id, title: exam.title, subtitle: exam.subtitle, imageUrls: exam.imageUrls }}
+      exam={{ id: exam.id, title: exam.title, subtitle: exam.subtitle, imageUrls: exam.imageUrls, lineBoxes: exam.lineBoxes }}
     />
   );
 }
