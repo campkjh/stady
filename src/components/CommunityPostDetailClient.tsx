@@ -88,7 +88,7 @@ interface CommunityPostDetail {
 }
 
 const REACTIONS: { key: string; emoji: string; label: string }[] = [
-  { key: "heart", emoji: "❤️", label: "공감" },
+  { key: "heart", emoji: "❤️", label: "좋아요" },
   { key: "sad", emoji: "🥺", label: "슬퍼요" },
   { key: "laugh", emoji: "🤣", label: "웃겨요" },
   { key: "smile", emoji: "😄", label: "좋아요" },
@@ -111,7 +111,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [replyTargetId, setReplyTargetId] = useState("");
   const [replyContent, setReplyContent] = useState("");
   const [replyPosting, setReplyPosting] = useState(false);
-  const [showReactions, setShowReactions] = useState(false);
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -306,7 +305,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
   async function react(type: string) {
     if (!post) return;
-    setShowReactions(false);
     setMessage("");
     const nextType = post.myReaction === type ? null : type;
     try {
@@ -578,28 +576,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   <button
                     type="button"
                     className="community-action-button"
-                    onClick={() => setShowReactions((v) => !v)}
+                    onClick={() => react("heart")}
                     style={actionButtonStyle(!!post.myReaction)}
                   >
-                    <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🙂"}</span>
-                    {post.myReaction ? reactionLabel(post.myReaction) : "공감"} {post.likeCount}
+                    <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🤍"}</span>
+                    {post.myReaction ? reactionLabel(post.myReaction) : "좋아요"} {post.likeCount}
                   </button>
                   <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
-                  {showReactions && (
-                    <div style={reactionPickerStyle}>
-                      {REACTIONS.map((r) => (
-                        <button
-                          key={r.key}
-                          type="button"
-                          onClick={() => react(r.key)}
-                          title={r.label}
-                          style={reactionPickStyle(post.myReaction === r.key)}
-                        >
-                          <span style={{ fontSize: 22 }}>{r.emoji}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 {post.likeCount > 0 && (
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -960,7 +943,7 @@ function reactionEmoji(key: string) {
 }
 
 function reactionLabel(key: string) {
-  return REACTIONS.find((r) => r.key === key)?.label || "공감";
+  return REACTIONS.find((r) => r.key === key)?.label || "좋아요";
 }
 
 const blindOverlayStyle = {
@@ -997,34 +980,6 @@ function pollOptionStyle(mine: boolean) {
     cursor: "pointer",
     textAlign: "left",
     width: "100%",
-  } as const;
-}
-
-const reactionPickerStyle = {
-  position: "absolute",
-  bottom: "calc(100% + 8px)",
-  left: 0,
-  zIndex: 20,
-  display: "flex",
-  gap: 4,
-  padding: 6,
-  borderRadius: 999,
-  background: "#fff",
-  border: "1px solid #E5E7EB",
-  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.12)",
-} as const;
-
-function reactionPickStyle(active: boolean) {
-  return {
-    width: 40,
-    height: 40,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "none",
-    borderRadius: 999,
-    background: active ? "#EFF6FF" : "transparent",
-    cursor: "pointer",
   } as const;
 }
 

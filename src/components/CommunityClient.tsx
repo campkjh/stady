@@ -506,7 +506,7 @@ export default function CommunityClient() {
                   </div>
                   <div className="community-post-metrics">
                     <span>
-                      <HeartIcon /> 공감 {post.likeCount || 0}
+                      <HeartIcon /> 좋아요 {post.likeCount || 0}
                     </span>
                     <span>
                       <CommentIcon /> 댓글 {post.commentCount || 0}
