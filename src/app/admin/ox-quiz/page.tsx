@@ -54,7 +54,6 @@ export default function OxQuizManagement() {
   const [editQExplanation, setEditQExplanation] = useState("");
   const [editQSection, setEditQSection] = useState("");
   const [editQExamYearMonth, setEditQExamYearMonth] = useState("");
-  const [editQAnswerRate, setEditQAnswerRate] = useState("");
   const [questionData, setQuestionData] = useState({
     question: "",
     answer: true,
@@ -62,7 +61,6 @@ export default function OxQuizManagement() {
     section: "",
     order: "",
     examYearMonth: "",
-    answerRate: "",
   });
   const [useCustomSection, setUseCustomSection] = useState(false);
   const [reordering, setReordering] = useState(false);
@@ -196,7 +194,6 @@ export default function OxQuizManagement() {
           explanation: questionData.explanation,
           section: questionData.section,
           examYearMonth: questionData.examYearMonth,
-          answerRate: questionData.answerRate,
           // position = 선택한 소분류 내부 위치(비우면 그 소분류 맨 끝).
           position: questionData.order ? Number(questionData.order) : undefined,
         }),
@@ -205,7 +202,7 @@ export default function OxQuizManagement() {
       if (res.ok) {
         setShowQuestionForm(false);
         setUseCustomSection(false);
-        setQuestionData({ question: "", answer: true, explanation: "", section: "", order: "", examYearMonth: "", answerRate: "" });
+        setQuestionData({ question: "", answer: true, explanation: "", section: "", order: "", examYearMonth: "" });
         openQuestions(selectedSet);
         fetchQuizSets();
       } else {
@@ -546,7 +543,7 @@ export default function OxQuizManagement() {
                       setQuestionData({
                         question: "", answer: true, explanation: "",
                         section: existingSections[0] || "", order: "",
-                        examYearMonth: "", answerRate: "",
+                        examYearMonth: "",
                       });
                     }
                   }}
@@ -655,29 +652,18 @@ export default function OxQuizManagement() {
                       />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                    <div>
-                      <label style={labelStyle}>기출 출처 (선택)</label>
-                      <input
-                        type="text"
-                        value={questionData.examYearMonth}
-                        onChange={(e) => setQuestionData({ ...questionData, examYearMonth: e.target.value })}
-                        style={inputStyle}
-                        placeholder="예: 26학년도 6월"
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>정답률 % (선택)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={questionData.answerRate}
-                        onChange={(e) => setQuestionData({ ...questionData, answerRate: e.target.value })}
-                        style={inputStyle}
-                        placeholder="예: 69"
-                      />
-                    </div>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={labelStyle}>기출 출처 (선택)</label>
+                    <input
+                      type="text"
+                      value={questionData.examYearMonth}
+                      onChange={(e) => setQuestionData({ ...questionData, examYearMonth: e.target.value })}
+                      style={inputStyle}
+                      placeholder="예: 26학년도 6월"
+                    />
+                    <p style={{ fontSize: 12, color: "#8A909C", margin: "6px 0 0" }}>
+                      정답률은 사용자 응답으로 자동 집계되어 표시됩니다(입력 불필요).
+                    </p>
                   </div>
                   <button
                     type="submit"
@@ -784,30 +770,14 @@ export default function OxQuizManagement() {
                               style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
                               placeholder="해설 입력"
                             />
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-                              <div>
-                                <label style={labelStyle}>기출 출처</label>
-                                <input
-                                  type="text"
-                                  value={editQExamYearMonth}
-                                  onChange={(e) => setEditQExamYearMonth(e.target.value)}
-                                  style={inputStyle}
-                                  placeholder="예: 26학년도 6월"
-                                />
-                              </div>
-                              <div>
-                                <label style={labelStyle}>정답률 %</label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  value={editQAnswerRate}
-                                  onChange={(e) => setEditQAnswerRate(e.target.value)}
-                                  style={inputStyle}
-                                  placeholder="예: 69"
-                                />
-                              </div>
-                            </div>
+                            <label style={labelStyle}>기출 출처</label>
+                            <input
+                              type="text"
+                              value={editQExamYearMonth}
+                              onChange={(e) => setEditQExamYearMonth(e.target.value)}
+                              style={{ ...inputStyle, marginBottom: 10 }}
+                              placeholder="예: 26학년도 6월"
+                            />
                             <div style={{ display: "flex", gap: 8 }}>
                               <button
                                 type="button"
@@ -821,7 +791,6 @@ export default function OxQuizManagement() {
                                       explanation: editQExplanation || null,
                                       section: editQSection || null,
                                       examYearMonth: editQExamYearMonth || null,
-                                      answerRate: editQAnswerRate === "" ? null : Number(editQAnswerRate),
                                     }),
                                     credentials: "include",
                                   });
@@ -903,7 +872,6 @@ export default function OxQuizManagement() {
                               setEditQExplanation(q.explanation || "");
                               setEditQSection(q.section || "");
                               setEditQExamYearMonth(q.examYearMonth || "");
-                              setEditQAnswerRate(q.answerRate != null ? String(q.answerRate) : "");
                             }}
                             style={{
                               background: "none", border: "none",

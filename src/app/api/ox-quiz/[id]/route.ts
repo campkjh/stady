@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { computeAnswerRates } from "@/lib/oxAnswerRate";
 
 export async function GET(
   request: NextRequest,
@@ -23,6 +24,13 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // 정답률은 저장값이 아니라 사용자 응답에서 실시간 집계한다.
+    const rates = await computeAnswerRates(oxQuizSet.questions.map((q) => q.id));
+    oxQuizSet.questions = oxQuizSet.questions.map((q) => ({
+      ...q,
+      answerRate: rates.get(q.id) ?? null,
+    }));
 
     return NextResponse.json({ oxQuizSet });
   } catch (error) {

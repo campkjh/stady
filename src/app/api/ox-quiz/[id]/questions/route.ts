@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-
-// 정답률: 0~100 정수로 클램프. 빈 값/비숫자는 null.
-export function normalizeAnswerRate(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const n = Math.round(Number(value));
-  if (!Number.isFinite(n)) return null;
-  return Math.min(Math.max(n, 0), 100);
-}
+import { computeAnswerRates } from "@/lib/oxAnswerRate";
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +15,11 @@ export async function GET(
       orderBy: { order: "asc" },
     });
 
-    return NextResponse.json({ questions });
+    // 정답률은 사용자 응답에서 실시간 집계(어드민은 읽기 전용으로 확인).
+    const rates = await computeAnswerRates(questions.map((q) => q.id));
+    const withRates = questions.map((q) => ({ ...q, answerRate: rates.get(q.id) ?? null }));
+
+    return NextResponse.json({ questions: withRates });
   } catch (error) {
     console.error("OX Questions GET error:", error);
     return NextResponse.json(
@@ -43,7 +40,7 @@ export async function POST(
     const body = await request.json();
     // position = "선택한 소분류 내부"의 1-based 위치(없으면 그 소분류 맨 끝).
     // 과거엔 order(세트 전체 글로벌 위치)를 받아 소분류가 쪼개지는 버그가 있었음.
-    const { question, answer, explanation, section, examYearMonth, answerRate, position: requestedPosition } = body;
+    const { question, answer, explanation, section, examYearMonth, position: requestedPosition } = body;
 
     if (!question || answer === undefined || answer === null) {
       return NextResponse.json(
@@ -54,7 +51,6 @@ export async function POST(
 
     const sec: string | null = section || null;
     const examYM: string | null = examYearMonth ? String(examYearMonth).trim() || null : null;
-    const rate: number | null = normalizeAnswerRate(answerRate);
 
     // 새 문제를 "같은 소분류 블록 안"에 끼워넣어 소분류가 쪼개지지(=새 소분류처럼 보이지)
     // 않도록 한다. position 은 그 소분류 내부 위치(1..해당소분류개수+1).
@@ -96,7 +92,6 @@ export async function POST(
           answer: Boolean(answer),
           explanation: explanation || null,
           examYearMonth: examYM,
-          answerRate: rate,
         },
       });
 
