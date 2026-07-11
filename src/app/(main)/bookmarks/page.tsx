@@ -156,6 +156,7 @@ export default function BookmarksPage() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => clientCache.get<Bookmark[]>(bmKey("")) ?? []);
   const [loading, setLoading] = useState(() => !clientCache.has(bmKey("")));
   const [deletingAll, setDeletingAll] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -237,8 +238,9 @@ export default function BookmarksPage() {
   }
 
   async function handleDeleteAllBookmarks() {
+    // 확인은 인앱 모달에서 받는다(WebView는 window.confirm이 동작하지 않음).
     if (deletingAll || bookmarks.length === 0) return;
-    if (!window.confirm("모든 책갈피를 취소할까요?")) return;
+    setShowDeleteAllConfirm(false);
 
     const previousBookmarks = bookmarks;
     setDeletingAll(true);
@@ -281,7 +283,7 @@ export default function BookmarksPage() {
           {!loading && bookmarks.length > 0 && (
             <button
               type="button"
-              onClick={handleDeleteAllBookmarks}
+              onClick={() => setShowDeleteAllConfirm(true)}
               disabled={deletingAll}
               className="press"
               style={{
@@ -439,6 +441,55 @@ export default function BookmarksPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 모든 책갈피 취소 확인 모달 (WebView에서 window.confirm 미동작 → 인앱 모달) */}
+      {showDeleteAllConfirm && (
+        <div
+          onClick={() => setShowDeleteAllConfirm(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(15,23,42,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 320, background: "#fff", borderRadius: 18,
+              padding: "22px 20px 16px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+            }}
+          >
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#191F28", margin: "0 0 6px", textAlign: "center" }}>
+              모든 책갈피 취소
+            </p>
+            <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>
+              찜한 모든 문제의 책갈피를 취소할까요?
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteAllConfirm(false)}
+                style={{
+                  flex: 1, height: 48, borderRadius: 12, border: "1px solid #E5E7EB",
+                  background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAllBookmarks}
+                style={{
+                  flex: 1, height: 48, borderRadius: 12, border: "none",
+                  background: "#EF4444", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+                }}
+              >
+                확인
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
