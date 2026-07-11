@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
@@ -75,7 +75,27 @@ const PageCanvas = forwardRef<
   const hlSnap = useRef<ImageData | null>(null);
   const hlStartX = useRef(0);
   const hlBand = useRef<HighlightBand | null>(null);
+  const eraserCurRef = useRef<HTMLDivElement>(null);
   const [sized, setSized] = useState(false);
+
+  // 지우개 커서: 지울 영역만큼의 원형 보더를 포인터 위치에 표시.
+  function showEraserCursor(px: number, py: number) {
+    const el = eraserCurRef.current;
+    if (!el) return;
+    el.style.width = `${eraserWidth}px`;
+    el.style.height = `${eraserWidth}px`;
+    el.style.left = `${px}px`;
+    el.style.top = `${py}px`;
+    el.style.display = "block";
+  }
+  function hideEraserCursor() {
+    const el = eraserCurRef.current;
+    if (el) el.style.display = "none";
+  }
+  // 도구를 지우개가 아닌 것으로 바꾸면 커서 숨김.
+  useEffect(() => {
+    if (tool !== "eraser") hideEraserCursor();
+  }, [tool]);
 
   const storageKey = `mockexam_${examId}_p${pageIndex}`;
 
@@ -170,7 +190,11 @@ const PageCanvas = forwardRef<
   function pos(e: React.PointerEvent) {
     const canvas = canvasRef.current!;
     const r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    // 확대(CSS scale) 중이면 getBoundingClientRect가 확대된 크기라, 캔버스 내부
+    // CSS 좌표로 되돌리려면 실제 렌더 크기 대비 비율을 곱한다(확대해도 필기 정확).
+    const sx = r.width ? canvas.clientWidth / r.width : 1;
+    const sy = r.height ? canvas.clientHeight / r.height : 1;
+    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
   }
 
   // 시작점에 해당하는 글자 줄을 찾아 형광펜 띠를 만든다. 줄 데이터가 없거나
@@ -275,6 +299,7 @@ const PageCanvas = forwardRef<
   function onMove(e: React.PointerEvent) {
     if (e.pointerType === "touch") return;
     const p = pos(e);
+    if (tool === "eraser") showEraserCursor(p.x, p.y);
     if (tool === "ocr") {
       if (!selStart.current || !selRef.current) return;
       const s = selStart.current;
@@ -333,7 +358,7 @@ const PageCanvas = forwardRef<
     if (tool === "highlight") {
       if (!drawing.current) return;
       // 클릭만 하고 끌지 않았으면(러버밴드 미변경) 취소하고 스냅샷 복원.
-      if (hlSnap.current) paintHighlight(e.clientX - (canvasRef.current?.getBoundingClientRect().left ?? 0));
+      if (hlSnap.current) paintHighlight(pos(e).x);
       drawing.current = false;
       hlSnap.current = null;
       hlBand.current = null;
@@ -402,12 +427,23 @@ const PageCanvas = forwardRef<
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
+        onPointerEnter={(e) => { if (tool === "eraser" && e.pointerType !== "touch") { const p = pos(e); showEraserCursor(p.x, p.y); } }}
+        onPointerLeave={hideEraserCursor}
         style={{
           position: "absolute",
           inset: 0,
           touchAction: "pan-y",
-          cursor: tool === "ocr" ? "crosshair" : "crosshair",
+          cursor: tool === "eraser" ? "none" : "crosshair",
           opacity: sized ? 1 : 0,
+        }}
+      />
+      {/* 지우개 영역 표시 커서 */}
+      <div
+        ref={eraserCurRef}
+        style={{
+          position: "absolute", display: "none", pointerEvents: "none",
+          transform: "translate(-50%, -50%)", borderRadius: "50%",
+          border: "1.5px solid #6B7280", background: "rgba(148,163,184,0.25)", zIndex: 5,
         }}
       />
       <div
@@ -427,8 +463,115 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [eraserWidth, setEraserWidth] = useState(22);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const pageRefs = useRef<(PageHandle | null)[]>([]);
   const activePage = useRef(0);
+
+  // 손가락 핀치 확대/축소. 내부 스크롤 컨테이너(네이티브 스크롤=관성 유지)에
+  // content를 CSS scale로 확대하고, sizer로 확대된 만큼 스크롤 영역을 확보한다.
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 4;
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sizerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const pinch = useRef<{
+    active: boolean; startDist: number; startZoom: number;
+    contentX: number; contentY: number;
+  }>({ active: false, startDist: 0, startZoom: 1, contentX: 0, contentY: 0 });
+
+  // content 너비 = 뷰포트 너비(고정), sizer = content 자연 크기 × zoom.
+  // content 너비를 sizer 퍼센트로 두면 확대→sizer↑→content↑ 피드백 루프가 생기므로
+  // 반드시 뷰포트 기준 고정 px로 잡는다.
+  function syncSizer(z: number) {
+    const content = contentRef.current;
+    const sizer = sizerRef.current;
+    const sc = scrollRef.current;
+    if (!content || !sizer || !sc) return;
+    const baseW = sc.clientWidth;
+    content.style.width = `${baseW}px`;
+    sizer.style.width = `${baseW * z}px`;
+    sizer.style.height = `${content.offsetHeight * z}px`;
+  }
+
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+    syncSizer(zoom);
+  }, [zoom]);
+
+  // 이미지 로드로 content 자연 높이가 바뀌거나 뷰포트가 리사이즈되면 sizer 갱신.
+  useEffect(() => {
+    const content = contentRef.current;
+    const onResize = () => syncSizer(zoomRef.current);
+    window.addEventListener("resize", onResize);
+    let ro: ResizeObserver | undefined;
+    if (content && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => syncSizer(zoomRef.current));
+      ro.observe(content);
+    }
+    return () => {
+      window.removeEventListener("resize", onResize);
+      ro?.disconnect();
+    };
+  }, []);
+
+  // 핀치 제스처(두 손가락). 스타일러스가 섞이면 필기이므로 무시.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const mid = (t: TouchList) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+    const hasStylus = (t: TouchList) =>
+      Array.from(t).some((x) => (x as Touch & { touchType?: string }).touchType === "stylus");
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || hasStylus(e.touches)) return;
+      const r = el.getBoundingClientRect();
+      const m = mid(e.touches);
+      const z = zoomRef.current;
+      pinch.current = {
+        active: true,
+        startDist: dist(e.touches),
+        startZoom: z,
+        // 핀치 시작 midpoint가 가리키는 content 좌표(확대 기준점).
+        contentX: (el.scrollLeft + (m.x - r.left)) / z,
+        contentY: (el.scrollTop + (m.y - r.top)) / z,
+      };
+    };
+    const onMoveT = (e: TouchEvent) => {
+      if (!pinch.current.active || e.touches.length !== 2) return;
+      e.preventDefault();
+      const p = pinch.current;
+      const nz = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, (p.startZoom * dist(e.touches)) / p.startDist));
+      const r = el.getBoundingClientRect();
+      const m = mid(e.touches);
+      setZoom(nz);
+      syncSizer(nz);
+      // 핀치 시작점의 content 좌표가 현재 midpoint 아래 유지되도록 스크롤 보정.
+      el.scrollLeft = p.contentX * nz - (m.x - r.left);
+      el.scrollTop = p.contentY * nz - (m.y - r.top);
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinch.current.active = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: false });
+    el.addEventListener("touchmove", onMoveT, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMoveT);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
+
+  function resetZoom() {
+    setZoom(1);
+    const el = scrollRef.current;
+    if (el) { el.scrollLeft = 0; }
+  }
 
   async function runOcr(dataUrl: string) {
     setOcrBusy(true);
@@ -466,11 +609,11 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#EDEFF2" }}>
+    <div style={{ height: "100dvh", background: "#EDEFF2", display: "flex", flexDirection: "column" }}>
       {/* 툴바 */}
       <div
         style={{
-          position: "sticky", top: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #E5E7EB",
+          flexShrink: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #E5E7EB",
           padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px",
           display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
         }}
@@ -505,40 +648,74 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
             <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 90 }} aria-label="지우개 크기" />
           </div>
         )}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          {zoom > 1.01 && (
+            <button type="button" onClick={resetZoom} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#4E5968", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+              {Math.round(zoom * 100)}% ↺
+            </button>
+          )}
           <button type="button" onClick={() => pageRefs.current[activePage.current]?.undo()} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#4E5968", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>되돌리기</button>
-          <button type="button" onClick={() => { if (confirm("이 페이지 필기를 지울까요?")) pageRefs.current[activePage.current]?.clear(); }} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #FECACA", background: "#fff", color: "#EF4444", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>페이지 지우기</button>
+          <button type="button" onClick={() => setShowClearConfirm(true)} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #FECACA", background: "#fff", color: "#EF4444", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>페이지 지우기</button>
         </div>
       </div>
 
       {/* 안내 */}
-      <p style={{ margin: 0, padding: "8px 14px", fontSize: 12, color: "#8A909C", textAlign: "center" }}>
-        애플펜슬(펜)로 필기하고, 손가락으로 스크롤하세요. 형광펜은 글자 줄에 맞춰 반듯하게 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다.
+      <p style={{ margin: 0, padding: "8px 14px", fontSize: 12, color: "#8A909C", textAlign: "center", flexShrink: 0 }}>
+        애플펜슬(펜)로 필기하고, 손가락으로 스크롤·핀치 확대하세요. 형광펜은 글자 줄에 맞춰 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다.
       </p>
 
-      {/* 페이지들 */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
-        {exam.imageUrls.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>등록된 시험지 이미지가 없습니다.</p>
-        ) : (
-          exam.imageUrls.map((url, i) => (
-            <PageCanvas
-              key={url}
-              ref={(el) => { pageRefs.current[i] = el; }}
-              examId={exam.id}
-              pageIndex={i}
-              imageUrl={url}
-              lines={exam.lineBoxes?.[i] ?? []}
-              tool={tool}
-              color={activeColor}
-              width={width}
-              eraserWidth={eraserWidth}
-              onActive={() => { activePage.current = i; }}
-              onOcrRegion={runOcr}
-            />
-          ))
-        )}
+      {/* 페이지들 (내부 스크롤 + 핀치 확대) */}
+      <div
+        ref={scrollRef}
+        style={{ flex: 1, minHeight: 0, overflow: "auto", WebkitOverflowScrolling: "touch", touchAction: "pan-x pan-y" }}
+      >
+        <div ref={sizerRef} style={{ transformOrigin: "0 0" }}>
+          <div
+            ref={contentRef}
+            style={{ transformOrigin: "0 0", transform: `scale(${zoom})` }}
+          >
+            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
+              {exam.imageUrls.length === 0 ? (
+                <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>등록된 시험지 이미지가 없습니다.</p>
+              ) : (
+                exam.imageUrls.map((url, i) => (
+                  <PageCanvas
+                    key={url}
+                    ref={(el) => { pageRefs.current[i] = el; }}
+                    examId={exam.id}
+                    pageIndex={i}
+                    imageUrl={url}
+                    lines={exam.lineBoxes?.[i] ?? []}
+                    tool={tool}
+                    color={activeColor}
+                    width={width}
+                    eraserWidth={eraserWidth}
+                    onActive={() => { activePage.current = i; }}
+                    onOcrRegion={runOcr}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* 페이지 지우기 확인 모달 (WebView는 window.confirm 미동작 → 인앱 모달) */}
+      {showClearConfirm && (
+        <div
+          onClick={() => setShowClearConfirm(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 110, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "#fff", borderRadius: 18, padding: "22px 20px 16px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#191F28", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
+            <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>이 페이지의 필기를 모두 지울까요?</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={() => setShowClearConfirm(false)} style={{ flex: 1, height: 48, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
+              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "#EF4444", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>확인</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* OCR 결과 모달 */}
       {ocrText !== null && (
