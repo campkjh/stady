@@ -106,6 +106,19 @@ function timerUserRenderKey(user: TimerUser) {
   return `${user.userId}-${user.activeStartedAt || "idle"}-${user.activeElapsedSeconds}`;
 }
 
+// 오늘 총 공부시간(진행 중이면 라이브로 1초씩 증가) 표시. 자체 틱으로 이 부분만
+// 리렌더되므로 타이머 페이지 전체가 초당 리렌더되지 않는다.
+function LiveTodayTotal({ baseSeconds, startAt }: { baseSeconds: number; startAt: number | null }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (startAt == null) return;
+    const t = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [startAt]);
+  const elapsed = startAt != null ? Math.max(0, Math.floor((Date.now() - startAt) / 1000)) : 0;
+  return <>{formatTime(baseSeconds + elapsed)}</>;
+}
+
 function formatHours(sec: number): string {
   if (sec <= 0) return "0시간";
   const h = Math.floor(sec / 3600);
@@ -123,7 +136,6 @@ export default function TimerPage() {
   const [activeCount, setActiveCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [myElapsed, setMyElapsed] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges" | "analysis">("status");
   const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
@@ -136,7 +148,6 @@ export default function TimerPage() {
   const [myStats, setMyStats] = useState<TimerStats | null>(null);
   const [analysis, setAnalysis] = useState<TimerAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pingRef = useRef<NodeJS.Timeout | null>(null);
   // 내 세션 시작 시각(ms). 매초 +1이 아니라 벽시계로 경과를 계산해야
@@ -160,7 +171,6 @@ export default function TimerPage() {
       if (data.mySession) {
         setIsRunning(true);
         myStartAtRef.current = Date.now() - data.mySession.activeElapsedSeconds * 1000;
-        setMyElapsed(data.mySession.activeElapsedSeconds);
       } else {
         setIsRunning(false);
         myStartAtRef.current = null;
@@ -260,15 +270,8 @@ export default function TimerPage() {
     fetchFriends();
   };
 
-  useEffect(() => {
-    if (!isRunning) return;
-    intervalRef.current = setInterval(() => {
-      // 벽시계 기준(시작 시각과의 차) — 백그라운드에서 틱이 멈췄다 재개돼도 정확.
-      const startAt = myStartAtRef.current;
-      setMyElapsed((p) => (startAt != null ? Math.max(0, Math.floor((Date.now() - startAt) / 1000)) : p + 1));
-    }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isRunning]);
+  // 매초 경과 시계는 <LiveTodayTotal>가 자체 틱으로 그린다 — 여기서 페이지 전역
+  // 상태를 매초 갱신하지 않으므로 타이머 화면 전체가 초당 리렌더되지 않는다(버벅임 해결).
 
   // 앱/탭 복귀 시 서버 상태를 즉시 재조회(백그라운드 동안의 경과·상태 반영).
   useEffect(() => {
@@ -300,7 +303,6 @@ export default function TimerPage() {
     if (res.ok) {
       setIsRunning(true);
       myStartAtRef.current = Date.now();
-      setMyElapsed(0);
       setUsers((prev) => prev.map((user) => user.isMe ? { ...user, isActive: true, subject: "공부중", activeElapsedSeconds: 0 } : user));
       setTimeout(() => fetchData(), 350);
     }
@@ -309,10 +311,11 @@ export default function TimerPage() {
   const stop = async () => {
     const res = await fetch("/api/timer/stop", { method: "POST" });
     const data = await res.json().catch(() => ({}));
-    const finishedSeconds = Number(data.session?.totalSeconds || myElapsed || 0);
+    // 서버 값이 없으면 시작 시각(벽시계)으로 경과를 계산.
+    const localElapsed = myStartAtRef.current != null ? Math.max(0, Math.floor((Date.now() - myStartAtRef.current) / 1000)) : 0;
+    const finishedSeconds = Number(data.session?.totalSeconds || localElapsed || 0);
     setIsRunning(false);
     myStartAtRef.current = null;
-    setMyElapsed(0);
     setUsers((prev) => prev.map((user) => {
       if (!user.isMe) return user;
       const completedToday = user.todayTotalSeconds - user.activeElapsedSeconds + finishedSeconds;
@@ -330,7 +333,10 @@ export default function TimerPage() {
   };
 
   const myUser = useMemo(() => users.find((u) => u.isMe), [users]);
-  const myTodayTotal = Math.max(0, (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0) + myElapsed);
+  // 진행 중인 현재 세션을 제외한 "오늘 완료분" 기준값. 라이브 경과는 <LiveTodayTotal>가 더한다.
+  const myTodayBase = Math.max(0, (myUser?.todayTotalSeconds || 0) - (myUser?.activeElapsedSeconds || 0));
+  // 뱃지 진행도 등 초당 갱신이 필요 없는 곳용: 렌더 시점의 오늘 총합(폴링/탭전환 때 갱신).
+  const myTodayTotalNow = myTodayBase + (isRunning && myStartAtRef.current != null ? Math.max(0, Math.floor((Date.now() - myStartAtRef.current) / 1000)) : 0);
 
   // 공부현황: 현재 공부중(active)인 유저만 노출. 나(me)는 공부중일 때 맨 앞.
   const sortedUsers = useMemo(() => {
@@ -386,7 +392,7 @@ export default function TimerPage() {
           margin: 0,
           whiteSpace: "nowrap",
         }}>
-          {formatTime(myTodayTotal)}
+          <LiveTodayTotal baseSeconds={myTodayBase} startAt={isRunning ? myStartAtRef.current : null} />
         </p>
         <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
           {!isRunning && (
@@ -665,7 +671,7 @@ export default function TimerPage() {
         ) : (
           activeTab === "badges" ? (
           <div key="badges" className="timer-tab-panel">
-            <BadgeCollection stats={myStats} todaySeconds={myTodayTotal} />
+            <BadgeCollection stats={myStats} todaySeconds={myTodayTotalNow} />
           </div>
           ) : (
             <div key="analysis" className="timer-tab-panel">
