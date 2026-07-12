@@ -36,7 +36,7 @@ interface BookmarkItem {
 type TabFilter = "all" | "correct" | "wrong";
 
 // 정답률이 이 값 미만이면 "핵어려움"으로 표시(절대 기준).
-const HARD_ANSWER_RATE = 30;
+const HARD_ANSWER_RATE = 60;
 
 export default function OxQuizSolvePage() {
   const { id } = useParams<{ id: string }>();
