@@ -33,3 +33,23 @@ export async function computeAnswerRates(questionIds: string[]): Promise<Map<str
   }
   return map;
 }
+
+// 세트별 정답률(%) — 세트에 속한 모든 문항의 응답을 합산해 correct/total로 계산.
+// 홈 OX 카드에 "정답률 N%"를 표시하기 위한 집계(응답 없는 세트는 맵에서 제외).
+export async function computeSetAnswerRates(): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRawUnsafe<{ setId: string; total: bigint; correct: bigint }[]>(
+    `SELECT q."oxQuizSetId" AS "setId",
+            COUNT(*) FILTER (WHERE a."selected" IS NOT NULL) AS total,
+            COUNT(*) FILTER (WHERE a."selected" IS NOT NULL AND a."isCorrect") AS correct
+     FROM "OxAnswer" a
+     JOIN "OxQuestion" q ON q."id" = a."questionId"
+     GROUP BY q."oxQuizSetId"`
+  );
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const total = Number(r.total);
+    if (total < 1) continue;
+    map.set(r.setId, Math.round((Number(r.correct) / total) * 100));
+  }
+  return map;
+}

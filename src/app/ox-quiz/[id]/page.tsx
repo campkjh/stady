@@ -35,6 +35,9 @@ interface BookmarkItem {
 
 type TabFilter = "all" | "correct" | "wrong";
 
+// 정답률이 이 값 미만이면 "핵어려움"으로 표시(절대 기준).
+const HARD_ANSWER_RATE = 30;
+
 export default function OxQuizSolvePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -48,6 +51,7 @@ export default function OxQuizSolvePage() {
   >(new Map());
   const [tabFilter, setTabFilter] = useState<TabFilter>("all");
   const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState<{ correct: number; total: number; scorePct: number; topPercent: number | null } | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showList, setShowList] = useState(false);
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
@@ -220,8 +224,13 @@ export default function OxQuizSolvePage() {
       };
     });
 
+    // 로컬 채점(제출 실패해도 결과는 보여준다).
+    const correct = Array.from(answers.values()).filter((a) => a.isCorrect).length;
+    const total = quiz.questions.length;
+    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    let topPercent: number | null = null;
     try {
-      await fetch(`/api/ox-quiz/${id}/submit`, {
+      const res = await fetch(`/api/ox-quiz/${id}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -229,9 +238,12 @@ export default function OxQuizSolvePage() {
           timeTaken: Math.floor((Date.now() - startTime) / 1000),
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (typeof data.topPercent === "number") topPercent = data.topPercent;
     } catch {
       // allow viewing results even if submit fails
     }
+    setResult({ correct, total, scorePct, topPercent });
     if (progressKey) {
       fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, {
         method: "DELETE",
@@ -553,6 +565,17 @@ export default function OxQuizSolvePage() {
                       background: "#fff", border: "1px solid #D1D5DB", borderRadius: 6, padding: "3px 10px",
                     }}>
                       정답률 {currentQuestion.answerRate}%
+                    </span>
+                  )}
+                  {currentQuestion.answerRate != null && currentQuestion.answerRate < HARD_ANSWER_RATE && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      fontSize: 12, fontWeight: 800, color: "#F93052",
+                      background: "#FEF2F2", borderRadius: 6, padding: "3px 10px",
+                    }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/icons/fire-hard.svg" alt="" style={{ width: 14, height: 14 }} />
+                      핵어려움
                     </span>
                   )}
                 </div>
@@ -966,6 +989,30 @@ export default function OxQuizSolvePage() {
             },
           ]}
         />
+      )}
+
+      {/* 완료 결과: 정답률 + 상위 % */}
+      {result && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.45)" }} onClick={() => setResult(null)} />
+          <div style={{ position: "relative", width: "100%", maxWidth: 340, background: "#fff", borderRadius: 22, padding: "26px 22px 18px", textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.2)", animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#8A909C" }}>퀴즈 완료!</p>
+            <p style={{ margin: "10px 0 2px", fontSize: 44, fontWeight: 800, color: "#3787FF", lineHeight: 1 }}>{result.scorePct}%</p>
+            <p style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600, color: "#4B5563" }}>정답률 · {result.correct}/{result.total}개 정답</p>
+            {result.topPercent != null && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 999, background: "#FFF4E5", marginBottom: 20 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/fire-hard.svg" alt="" style={{ width: 18, height: 18 }} />
+                <span style={{ fontSize: 15, fontWeight: 800, color: "#F97316" }}>상위 {result.topPercent}%</span>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={() => setResult(null)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 16, fontWeight: 700, border: "none" }}>다시 보기</button>
+              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#3787FF", color: "#fff", fontSize: 16, fontWeight: 700, border: "none" }}>목록으로</button>
+            </div>
+          </div>
+          <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
+        </div>
       )}
     </div>
   );

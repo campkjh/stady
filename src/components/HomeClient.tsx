@@ -43,6 +43,7 @@ interface OxQuizSet {
   isPopular: boolean;
   createdAt: string | Date;
   category: Category;
+  answerRate?: number | null;
 }
 
 interface VocabQuizSet {
@@ -71,13 +72,14 @@ function vocabEyebrow(title: string): string {
 // 문제집(책) 표지 스타일 퀴즈 카드: 흰 표지 + 카테고리(연회색)·제목(네이비) +
 // 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기 뱃지와 진척도 바 포함.
 function QuizBookCard({
-  eyebrow, title, isNew, isPopular, progressPct, onClick,
+  eyebrow, title, isNew, isPopular, progressPct, answerRate, onClick,
 }: {
   eyebrow: string;
   title: string;
   isNew?: boolean;
   isPopular?: boolean;
   progressPct?: number | null;
+  answerRate?: number | null;
   onClick: () => void;
 }) {
   return (
@@ -216,6 +218,12 @@ function QuizBookCard({
           </div>
         )}
       </div>
+      {/* 카드 아래 정답률 (사용자 응답 집계) */}
+      {answerRate != null && (
+        <p style={{ margin: "6px 2px 0", fontSize: 12, fontWeight: 600, color: "#8A909C", letterSpacing: "-0.2px" }}>
+          정답률 <span style={{ color: "#3787FF", fontWeight: 700 }}>{answerRate}%</span>
+        </p>
+      )}
     </button>
   );
 }
@@ -848,6 +856,7 @@ export default function HomeClient({
                   title={ox.title}
                   isPopular={ox.isPopular}
                   progressPct={oxProgressPct(ox.id)}
+                  answerRate={ox.answerRate}
                   onClick={() => router.push(`/ox-quiz/${ox.id}`)}
                 />
               ))}

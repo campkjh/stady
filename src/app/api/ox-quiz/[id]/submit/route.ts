@@ -93,7 +93,31 @@ export async function POST(
       return created;
     });
 
-    return NextResponse.json({ attempt, score, totalScore: answerData.length });
+    // 상위 N% — 이 세트를 푼 사용자별 "최고 정답률"과 비교한 경쟁 백분위.
+    // 나보다 정답률이 높은 사람 수 higher → 내 순위=higher+1 → 상위=round(순위/전체*100).
+    const myFraction = answerData.length > 0 ? score / answerData.length : 0;
+    let topPercent: number | null = null;
+    try {
+      const rank = await prisma.$queryRawUnsafe<{ total: bigint; higher: bigint }[]>(
+        `WITH best AS (
+           SELECT "userId", MAX("score"::float / NULLIF("totalScore", 0)) AS frac
+           FROM "QuizAttempt"
+           WHERE "oxQuizSetId" = $1 AND "quizType" = 'ox' AND "totalScore" > 0
+           GROUP BY "userId"
+         )
+         SELECT (SELECT COUNT(*) FROM best) AS total,
+                (SELECT COUNT(*) FROM best WHERE frac > $2) AS higher`,
+        id,
+        myFraction
+      );
+      const total = Number(rank[0]?.total || 0);
+      const higher = Number(rank[0]?.higher || 0);
+      if (total > 0) topPercent = Math.max(1, Math.round(((higher + 1) / total) * 100));
+    } catch (e) {
+      console.error("OX percentile error:", e);
+    }
+
+    return NextResponse.json({ attempt, score, totalScore: answerData.length, topPercent });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
