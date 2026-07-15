@@ -26,6 +26,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(Array.isArray(body?.imageUrls)
         ? { imageUrls: body.imageUrls.map((u: unknown) => String(u || "").trim()).filter((u: string) => /^https?:\/\//.test(u)).slice(0, 50) }
         : {}),
+      ...(Array.isArray(body?.solutionImageUrls)
+        ? { solutionImageUrls: body.solutionImageUrls.map((u: unknown) => String(u || "").trim()).filter((u: string) => /^https?:\/\//.test(u)).slice(0, 50) }
+        : {}),
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -9,10 +9,11 @@ interface Exam {
   sortOrder: number;
   isActive: boolean;
   imageUrls: string[];
+  solutionImageUrls?: string[];
   createdAt: string;
 }
 
-const blank = { title: "", subtitle: "", sortOrder: 0, isActive: true, imageUrls: [] as string[] };
+const blank = { title: "", subtitle: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], solutionImageUrls: [] as string[] };
 
 export default function AdminMockExamsPage() {
   const [exams, setExams] = useState<Exam[]>([]);
@@ -21,7 +22,6 @@ export default function AdminMockExamsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   async function load() {
     const res = await fetch("/api/admin/mock-exams", { credentials: "include" });
@@ -40,41 +40,8 @@ export default function AdminMockExamsPage() {
   }
   function openEdit(ex: Exam) {
     setEditingId(ex.id);
-    setForm({ title: ex.title, subtitle: ex.subtitle ?? "", sortOrder: ex.sortOrder, isActive: ex.isActive, imageUrls: ex.imageUrls });
+    setForm({ title: ex.title, subtitle: ex.subtitle ?? "", sortOrder: ex.sortOrder, isActive: ex.isActive, imageUrls: ex.imageUrls, solutionImageUrls: ex.solutionImageUrls ?? [] });
     setShowForm(true);
-  }
-
-  async function uploadImages(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
-    if (files.length === 0) return;
-    setUploading(true);
-    try {
-      const urls: string[] = [];
-      for (const file of files) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
-        const data = await res.json();
-        if (res.ok && data.url) urls.push(data.url);
-        else alert(data.error || "이미지 업로드 실패");
-      }
-      if (urls.length) setForm((f) => ({ ...f, imageUrls: [...f.imageUrls, ...urls].slice(0, 50) }));
-    } finally {
-      setUploading(false);
-    }
-  }
-  function removeImage(url: string) {
-    setForm((f) => ({ ...f, imageUrls: f.imageUrls.filter((u) => u !== url) }));
-  }
-  function moveImage(idx: number, dir: -1 | 1) {
-    setForm((f) => {
-      const arr = [...f.imageUrls];
-      const j = idx + dir;
-      if (j < 0 || j >= arr.length) return f;
-      [arr[idx], arr[j]] = [arr[j], arr[idx]];
-      return { ...f, imageUrls: arr };
-    });
   }
 
   async function submit(e: React.FormEvent) {
@@ -88,6 +55,7 @@ export default function AdminMockExamsPage() {
         sortOrder: Number(form.sortOrder) || 0,
         isActive: form.isActive,
         imageUrls: form.imageUrls,
+        solutionImageUrls: form.solutionImageUrls,
       };
       const res = editingId
         ? await fetch(`/api/admin/mock-exams/${editingId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(payload) })
@@ -133,30 +101,17 @@ export default function AdminMockExamsPage() {
             <div><label style={label}>부제 (선택)</label><input style={input} value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="국어 · 45문항" /></div>
           </div>
 
-          <div style={{ marginBottom: 14 }}>
-            <label style={label}>시험지 이미지 (페이지 순서대로 · 최대 50장)</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-              {form.imageUrls.map((url, idx) => (
-                <div key={url} style={{ position: "relative", width: 100, height: 130, borderRadius: 10, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "1px 6px" }}>{idx + 1}</span>
-                  <button type="button" onClick={() => removeImage(url)} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 999, border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 14, lineHeight: 1, cursor: "pointer" }}>×</button>
-                  <div style={{ position: "absolute", bottom: 4, left: 4, right: 4, display: "flex", justifyContent: "space-between" }}>
-                    <button type="button" onClick={() => moveImage(idx, -1)} disabled={idx === 0} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "rgba(255,255,255,0.9)", color: idx === 0 ? "#ccc" : "#333", fontSize: 12, cursor: "pointer" }}>◀</button>
-                    <button type="button" onClick={() => moveImage(idx, 1)} disabled={idx === form.imageUrls.length - 1} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "rgba(255,255,255,0.9)", color: idx === form.imageUrls.length - 1 ? "#ccc" : "#333", fontSize: 12, cursor: "pointer" }}>▶</button>
-                  </div>
-                </div>
-              ))}
-              {form.imageUrls.length < 50 && (
-                <label style={{ width: 100, height: 130, borderRadius: 10, border: "1px dashed #C4CDD8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: uploading ? "default" : "pointer", color: "#8A909C", fontSize: 12, background: "#fff" }}>
-                  <span style={{ fontSize: 24, lineHeight: 1 }}>{uploading ? "…" : "+"}</span>
-                  {uploading ? "업로드 중" : "이미지 추가"}
-                  <input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={uploadImages} />
-                </label>
-              )}
-            </div>
-          </div>
+          <ExamImageGrid
+            label="시험지 이미지 (문제 · 페이지 순서대로 · 최대 50장)"
+            urls={form.imageUrls}
+            onChange={(fn) => setForm((f) => ({ ...f, imageUrls: fn(f.imageUrls) }))}
+          />
+          <ExamImageGrid
+            label="해설 이미지 (선택)"
+            hint="넣으면 사용자 화면에 '해설보기' 탭이 생겨 문제/해설을 전환할 수 있어요."
+            urls={form.solutionImageUrls}
+            onChange={(fn) => setForm((f) => ({ ...f, solutionImageUrls: fn(f.solutionImageUrls) }))}
+          />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14, alignItems: "end" }}>
             <div><label style={label}>정렬 순서(작을수록 위)</label><input type="number" style={input} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></div>
@@ -164,7 +119,7 @@ export default function AdminMockExamsPage() {
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} /> 노출
             </label>
           </div>
-          <button type="submit" disabled={busy || uploading} style={{ padding: "9px 20px", background: "#3787FF", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 }}>
+          <button type="submit" disabled={busy} style={{ padding: "9px 20px", background: "#3787FF", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 }}>
             {busy ? "저장 중..." : editingId ? "수정 저장" : "추가"}
           </button>
         </form>
@@ -185,7 +140,9 @@ export default function AdminMockExamsPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#191F28" }}>{ex.title}{!ex.isActive && <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>(숨김)</span>}</div>
                 {ex.subtitle && <div style={{ fontSize: 13, color: "#8A909C", marginTop: 2 }}>{ex.subtitle}</div>}
-                <div style={{ fontSize: 12, color: "#B0B8C1", marginTop: 4 }}>이미지 {ex.imageUrls.length}장 · 순서 {ex.sortOrder}</div>
+                <div style={{ fontSize: 12, color: "#B0B8C1", marginTop: 4 }}>
+                  문제 {ex.imageUrls.length}장{(ex.solutionImageUrls?.length ?? 0) > 0 ? ` · 해설 ${ex.solutionImageUrls!.length}장` : ""} · 순서 {ex.sortOrder}
+                </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
                 <button type="button" onClick={() => openEdit(ex)} style={{ padding: "5px 12px", border: "1px solid #E5E7EB", background: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#3787FF", cursor: "pointer" }}>수정</button>
@@ -195,6 +152,75 @@ export default function AdminMockExamsPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// 문제/해설 공용 이미지 업로더(썸네일·순서변경·삭제, /api/upload로 Blob 업로드).
+function ExamImageGrid({ label, hint, urls, onChange }: {
+  label: string;
+  hint?: string;
+  urls: string[];
+  onChange: (updater: (prev: string[]) => string[]) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  async function upload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const out: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", credentials: "include", body: fd });
+        const data = await res.json();
+        if (res.ok && data.url) out.push(data.url);
+        else alert(data.error || "이미지 업로드 실패");
+      }
+      if (out.length) onChange((prev) => [...prev, ...out].slice(0, 50));
+    } finally {
+      setUploading(false);
+    }
+  }
+  function remove(url: string) {
+    onChange((prev) => prev.filter((u) => u !== url));
+  }
+  function move(idx: number, dir: -1 | 1) {
+    onChange((prev) => {
+      const arr = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= arr.length) return prev;
+      [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      return arr;
+    });
+  }
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#2B313D", marginBottom: 6 }}>{label}</label>
+      {hint && <p style={{ margin: "-2px 0 8px", fontSize: 12, color: "#9CA3AF" }}>{hint}</p>}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+        {urls.map((url, idx) => (
+          <div key={url} style={{ position: "relative", width: 100, height: 130, borderRadius: 10, overflow: "hidden", border: "1px solid #E5E7EB", background: "#fff" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "1px 6px" }}>{idx + 1}</span>
+            <button type="button" onClick={() => remove(url)} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 999, border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 14, lineHeight: 1, cursor: "pointer" }}>×</button>
+            <div style={{ position: "absolute", bottom: 4, left: 4, right: 4, display: "flex", justifyContent: "space-between" }}>
+              <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "rgba(255,255,255,0.9)", color: idx === 0 ? "#ccc" : "#333", fontSize: 12, cursor: "pointer" }}>◀</button>
+              <button type="button" onClick={() => move(idx, 1)} disabled={idx === urls.length - 1} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "rgba(255,255,255,0.9)", color: idx === urls.length - 1 ? "#ccc" : "#333", fontSize: 12, cursor: "pointer" }}>▶</button>
+            </div>
+          </div>
+        ))}
+        {urls.length < 50 && (
+          <label style={{ width: 100, height: 130, borderRadius: 10, border: "1px dashed #C4CDD8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: uploading ? "default" : "pointer", color: "#8A909C", fontSize: 12, background: "#fff" }}>
+            <span style={{ fontSize: 24, lineHeight: 1 }}>{uploading ? "…" : "+"}</span>
+            {uploading ? "업로드 중" : "이미지 추가"}
+            <input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={upload} />
+          </label>
+        )}
+      </div>
     </div>
   );
 }

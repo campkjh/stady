@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       title,
       subtitle: body?.subtitle ? String(body.subtitle).trim() : null,
       imageUrls: parseImageUrls(body?.imageUrls),
+      solutionImageUrls: parseImageUrls(body?.solutionImageUrls),
       sortOrder: Number.isFinite(Number(body?.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body?.isActive !== false,
     });

@@ -14,6 +14,8 @@ interface Exam {
   subtitle: string | null;
   imageUrls: string[];
   lineBoxes: LineBox[][];
+  solutionImageUrls: string[];
+  solutionLineBoxes: LineBox[][];
 }
 
 // 형광펜이 그려질 가로 띠. top/height는 CSS px, left/right는 줄 가로 범위(없으면 null).
@@ -52,6 +54,7 @@ const PageCanvas = forwardRef<
   PageHandle,
   {
     examId: string;
+    section: "problem" | "solution";
     pageIndex: number;
     imageUrl: string;
     lines: LineBox[];
@@ -62,7 +65,7 @@ const PageCanvas = forwardRef<
     onActive: () => void;
     onOcrRegion: (dataUrl: string) => void;
   }
->(function PageCanvas({ examId, pageIndex, imageUrl, lines, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
+>(function PageCanvas({ examId, section, pageIndex, imageUrl, lines, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,7 +100,8 @@ const PageCanvas = forwardRef<
     if (tool !== "eraser") hideEraserCursor();
   }, [tool]);
 
-  const storageKey = `mockexam_${examId}_p${pageIndex}`;
+  // 문제/해설 필기가 섞이지 않게 섹션을 키에 포함(문제는 기존 키 유지=하위호환).
+  const storageKey = `mockexam_${examId}${section === "solution" ? "_sol" : ""}_p${pageIndex}`;
 
   // 애플펜슬 필기 중 화면이 같이 스크롤되는 문제 방지.
   // touch-action: pan-y는 포인터 종류를 구분하지 못해 펜 드래그도 팬(스크롤)으로
@@ -464,8 +468,13 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [section, setSection] = useState<"problem" | "solution">("problem");
   const pageRefs = useRef<(PageHandle | null)[]>([]);
   const activePage = useRef(0);
+
+  const hasSolution = exam.solutionImageUrls.length > 0;
+  const pages = section === "solution" ? exam.solutionImageUrls : exam.imageUrls;
+  const pageLines = section === "solution" ? exam.solutionLineBoxes : exam.lineBoxes;
 
   // 손가락 핀치 확대/축소. 내부 스크롤 컨테이너(네이티브 스크롤=관성 유지)에
   // content를 CSS scale로 확대하고, sizer로 확대된 만큼 스크롤 영역을 확보한다.
@@ -573,6 +582,17 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
     if (el) { el.scrollLeft = 0; }
   }
 
+  // 문제↔해설 탭 전환: 페이지 refs/스크롤/줌 초기화(다른 이미지 세트로 교체).
+  function switchSection(s: "problem" | "solution") {
+    if (s === section) return;
+    setSection(s);
+    pageRefs.current = [];
+    activePage.current = 0;
+    resetZoom();
+    const el = scrollRef.current;
+    if (el) el.scrollTop = 0;
+  }
+
   async function runOcr(dataUrl: string) {
     setOcrBusy(true);
     setOcrText("");
@@ -659,9 +679,34 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         </div>
       </div>
 
+      {/* 문제 / 해설 탭 (해설이 있을 때만) */}
+      {hasSolution && (
+        <div style={{ flexShrink: 0, display: "flex", justifyContent: "center", padding: "8px 12px 0", background: "#fff" }}>
+          <div style={{ display: "inline-flex", background: "#F1F3F5", borderRadius: 999, padding: 3, gap: 2 }}>
+            {([["problem", "문제"], ["solution", "해설보기"]] as const).map(([s, lbl]) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => switchSection(s)}
+                style={{
+                  padding: "7px 20px", borderRadius: 999, border: "none", cursor: "pointer",
+                  fontSize: 13, fontWeight: 800,
+                  background: section === s ? "#111827" : "transparent",
+                  color: section === s ? "#fff" : "#6B7280",
+                }}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 안내 */}
       <p style={{ margin: 0, padding: "8px 14px", fontSize: 12, color: "#8A909C", textAlign: "center", flexShrink: 0 }}>
-        애플펜슬(펜)로 필기하고, 손가락으로 스크롤·핀치 확대하세요. 형광펜은 글자 줄에 맞춰 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다.
+        {section === "solution"
+          ? "해설입니다. 펜/형광펜으로 표시하며 확인하세요. 문제는 위 탭에서 전환할 수 있어요."
+          : "애플펜슬(펜)로 필기하고, 손가락으로 스크롤·핀치 확대하세요. 형광펜은 글자 줄에 맞춰 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다."}
       </p>
 
       {/* 페이지들 (내부 스크롤 + 핀치 확대) */}
@@ -675,17 +720,20 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
             style={{ transformOrigin: "0 0", transform: `scale(${zoom})` }}
           >
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
-              {exam.imageUrls.length === 0 ? (
-                <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>등록된 시험지 이미지가 없습니다.</p>
+              {pages.length === 0 ? (
+                <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>
+                  {section === "solution" ? "해설 이미지가 없습니다." : "등록된 시험지 이미지가 없습니다."}
+                </p>
               ) : (
-                exam.imageUrls.map((url, i) => (
+                pages.map((url, i) => (
                   <PageCanvas
-                    key={url}
+                    key={`${section}-${url}`}
                     ref={(el) => { pageRefs.current[i] = el; }}
                     examId={exam.id}
+                    section={section}
                     pageIndex={i}
                     imageUrl={url}
-                    lines={exam.lineBoxes?.[i] ?? []}
+                    lines={pageLines?.[i] ?? []}
                     tool={tool}
                     color={activeColor}
                     width={width}

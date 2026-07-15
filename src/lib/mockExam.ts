@@ -17,8 +17,13 @@ export interface MockExamItem {
   imageUrls: string[];
   // imageUrls와 인덱스가 1:1로 대응. 줄 데이터가 없는 페이지는 빈 배열.
   lineBoxes: LineBox[][];
+  // 해설 페이지(별도 탭 "해설보기"). 없으면 빈 배열.
+  solutionImageUrls: string[];
+  solutionLineBoxes: LineBox[][];
   createdAt: Date;
 }
+
+type Section = "problem" | "solution";
 
 let ready = false;
 
@@ -46,23 +51,33 @@ export async function ensureMockExamTables(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "MockExamImage" ADD COLUMN IF NOT EXISTS "text_lines" TEXT`
   );
+  // 문제/해설 구분('problem'|'solution'). MockExamImage는 명시 컬럼으로만 조회하므로
+  // ALTER 안전(MockExam만 SELECT * — 그건 건드리지 않음). 기존 행은 'problem'.
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "MockExamImage" ADD COLUMN IF NOT EXISTS "section" TEXT NOT NULL DEFAULT 'problem'`
+  );
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "MockExamImage_exam_idx" ON "MockExamImage" ("exam_id")`
   );
   ready = true;
 }
 
-async function replaceImages(examId: string, urls: string[]): Promise<void> {
-  await prisma.$executeRawUnsafe(`DELETE FROM "MockExamImage" WHERE "exam_id" = $1`, examId);
+async function replaceImages(examId: string, urls: string[], section: Section = "problem"): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM "MockExamImage" WHERE "exam_id" = $1 AND "section" = $2`,
+    examId,
+    section
+  );
   for (let i = 0; i < urls.length; i++) {
     const url = String(urls[i] || "").trim();
     if (!url) continue;
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "MockExamImage" ("id", "exam_id", "image_url", "sort_order") VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO "MockExamImage" ("id", "exam_id", "image_url", "sort_order", "section") VALUES ($1, $2, $3, $4, $5)`,
       randomUUID(),
       examId,
       url,
-      i
+      i,
+      section
     );
   }
 }
@@ -90,19 +105,24 @@ async function attachImages(exams: MockExamItem[]): Promise<void> {
   if (exams.length === 0) return;
   const ids = exams.map((e) => e.id);
   const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
-  const imgs = await prisma.$queryRawUnsafe<{ exam_id: string; image_url: string; text_lines: string | null }[]>(
-    `SELECT "exam_id", "image_url", "text_lines" FROM "MockExamImage" WHERE "exam_id" IN (${ph}) ORDER BY "sort_order" ASC`,
+  const imgs = await prisma.$queryRawUnsafe<{ exam_id: string; image_url: string; text_lines: string | null; section: string }[]>(
+    `SELECT "exam_id", "image_url", "text_lines", "section" FROM "MockExamImage" WHERE "exam_id" IN (${ph}) ORDER BY "sort_order" ASC`,
     ...ids
   );
-  const byExam: Record<string, string[]> = {};
-  const linesByExam: Record<string, LineBox[][]> = {};
+  const probUrl: Record<string, string[]> = {};
+  const probLines: Record<string, LineBox[][]> = {};
+  const solUrl: Record<string, string[]> = {};
+  const solLines: Record<string, LineBox[][]> = {};
   for (const im of imgs) {
-    (byExam[im.exam_id] ??= []).push(im.image_url);
-    (linesByExam[im.exam_id] ??= []).push(parseLineBoxes(im.text_lines));
+    const isSol = im.section === "solution";
+    (isSol ? (solUrl[im.exam_id] ??= []) : (probUrl[im.exam_id] ??= [])).push(im.image_url);
+    (isSol ? (solLines[im.exam_id] ??= []) : (probLines[im.exam_id] ??= [])).push(parseLineBoxes(im.text_lines));
   }
   for (const e of exams) {
-    e.imageUrls = byExam[e.id] ?? [];
-    e.lineBoxes = linesByExam[e.id] ?? [];
+    e.imageUrls = probUrl[e.id] ?? [];
+    e.lineBoxes = probLines[e.id] ?? [];
+    e.solutionImageUrls = solUrl[e.id] ?? [];
+    e.solutionLineBoxes = solLines[e.id] ?? [];
   }
 }
 
@@ -115,6 +135,8 @@ function mapExam(r: ExamRow): MockExamItem {
     isActive: r.is_active,
     imageUrls: [],
     lineBoxes: [],
+    solutionImageUrls: [],
+    solutionLineBoxes: [],
     createdAt: r.created_at,
   };
 }
@@ -149,6 +171,7 @@ export async function createMockExam(input: {
   title: string;
   subtitle?: string | null;
   imageUrls?: string[];
+  solutionImageUrls?: string[];
   sortOrder?: number;
   isActive?: boolean;
 }): Promise<void> {
@@ -163,13 +186,16 @@ export async function createMockExam(input: {
     input.isActive ?? true
   );
   if (input.imageUrls && input.imageUrls.length > 0) {
-    await replaceImages(id, input.imageUrls);
+    await replaceImages(id, input.imageUrls, "problem");
+  }
+  if (input.solutionImageUrls && input.solutionImageUrls.length > 0) {
+    await replaceImages(id, input.solutionImageUrls, "solution");
   }
 }
 
 export async function updateMockExam(
   id: string,
-  fields: { title?: string; subtitle?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[] }
+  fields: { title?: string; subtitle?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[]; solutionImageUrls?: string[] }
 ): Promise<void> {
   await ensureMockExamTables();
   const sets: string[] = [];
@@ -184,7 +210,10 @@ export async function updateMockExam(
     await prisma.$executeRawUnsafe(`UPDATE "MockExam" SET ${sets.join(", ")} WHERE "id" = $${i}`, ...vals);
   }
   if (fields.imageUrls !== undefined) {
-    await replaceImages(id, fields.imageUrls);
+    await replaceImages(id, fields.imageUrls, "problem");
+  }
+  if (fields.solutionImageUrls !== undefined) {
+    await replaceImages(id, fields.solutionImageUrls, "solution");
   }
 }
 
