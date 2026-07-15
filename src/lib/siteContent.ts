@@ -20,6 +20,9 @@ export interface SiteContentItem {
   isRecent: boolean; // 생성 7일 이내 → "최근" 태그용
   popupEnabled: boolean; // 첫 진입 시 팝업으로 노출할지(공지 전용)
   popupHideDays: number; // 팝업 "N일 동안 안보기" 기간(일)
+  // 팝업/내용이 바뀔 때마다 커지는 버전(epoch ms). 클라의 "N일 안보기" 키에 포함해,
+  // 어드민이 팝업을 다시 켜거나 내용을 바꾸면 이미 숨긴 사용자에게도 다시 노출되게 한다.
+  popupVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,9 +78,14 @@ export async function ensureSiteContentTable(): Promise<void> {
     CREATE TABLE IF NOT EXISTS "SiteContentPopup" (
       "content_id" TEXT PRIMARY KEY,
       "popup_enabled" BOOLEAN NOT NULL DEFAULT false,
-      "hide_days" INTEGER NOT NULL DEFAULT 7
+      "hide_days" INTEGER NOT NULL DEFAULT 7,
+      "updated_at" TIMESTAMP NOT NULL DEFAULT now()
     )
   `);
+  // 기존 테이블에도 버전 컬럼 보장(명시 컬럼 조회라 ALTER 안전).
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "SiteContentPopup" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMP NOT NULL DEFAULT now()`
+  );
   tableReady = true;
   await seedIfEmpty();
 }
@@ -102,8 +110,8 @@ async function replaceImages(contentId: string, urls: string[]): Promise<void> {
 async function setPopupConfig(contentId: string, enabled: boolean, hideDays: number): Promise<void> {
   const days = Math.min(365, Math.max(1, Math.round(Number(hideDays) || 7)));
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "SiteContentPopup" ("content_id","popup_enabled","hide_days") VALUES ($1,$2,$3)
-     ON CONFLICT ("content_id") DO UPDATE SET "popup_enabled" = EXCLUDED."popup_enabled", "hide_days" = EXCLUDED."hide_days"`,
+    `INSERT INTO "SiteContentPopup" ("content_id","popup_enabled","hide_days","updated_at") VALUES ($1,$2,$3, now())
+     ON CONFLICT ("content_id") DO UPDATE SET "popup_enabled" = EXCLUDED."popup_enabled", "hide_days" = EXCLUDED."hide_days", "updated_at" = now()`,
     contentId,
     enabled,
     days
@@ -167,6 +175,7 @@ function mapRow(r: Row): SiteContentItem {
     isRecent: Date.now() - new Date(r.created_at).getTime() < RECENT_MS,
     popupEnabled: false,
     popupHideDays: 7,
+    popupVersion: 0, // 팝업 설정(SiteContentPopup)의 updated_at으로 listSiteContent에서 채움
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -197,15 +206,20 @@ export async function listSiteContent(kind: ContentKind, activeOnly = false): Pr
     for (const it of items) it.imageUrls = byContent[it.id] ?? [];
 
     // 팝업 설정도 별도 테이블에서 한 번에 조회해 붙인다.
-    const popups = await prisma.$queryRawUnsafe<{ content_id: string; popup_enabled: boolean; hide_days: number }[]>(
-      `SELECT "content_id", "popup_enabled", "hide_days" FROM "SiteContentPopup" WHERE "content_id" IN (${ph})`,
+    const popups = await prisma.$queryRawUnsafe<{ content_id: string; popup_enabled: boolean; hide_days: number; updated_at: Date }[]>(
+      `SELECT "content_id", "popup_enabled", "hide_days", "updated_at" FROM "SiteContentPopup" WHERE "content_id" IN (${ph})`,
       ...ids
     );
-    const popupBy: Record<string, { enabled: boolean; days: number }> = {};
-    for (const p of popups) popupBy[p.content_id] = { enabled: p.popup_enabled, days: p.hide_days };
+    const popupBy: Record<string, { enabled: boolean; days: number; ver: number }> = {};
+    for (const p of popups) popupBy[p.content_id] = { enabled: p.popup_enabled, days: p.hide_days, ver: new Date(p.updated_at).getTime() };
     for (const it of items) {
       const cfg = popupBy[it.id];
-      if (cfg) { it.popupEnabled = cfg.enabled; it.popupHideDays = cfg.days; }
+      if (cfg) {
+        it.popupEnabled = cfg.enabled;
+        it.popupHideDays = cfg.days;
+        // 팝업 설정 변경 시각만 버전으로 사용(공지 순서변경·노출토글 등 무관한 변경엔 안 올라감).
+        it.popupVersion = cfg.ver;
+      }
     }
   }
   return items;

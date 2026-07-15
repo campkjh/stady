@@ -10,14 +10,34 @@ interface Notice {
   imageUrls: string[];
   popupEnabled?: boolean;
   popupHideDays?: number;
+  popupVersion?: number;
 }
 
-// 진입 팝업: 어드민이 "팝업으로 노출"을 켠 공지 중 정렬 맨 위 공지를 보여준다.
+// 진입 팝업: 어드민이 "팝업으로 노출"을 켠 공지 중, 아직 안 숨긴 정렬 맨 위 공지를 보여준다.
 // "N일 동안 안보기"(N=어드민 설정)로 닫으면 그 공지는 N일간 안 뜨고,
 // "닫기"는 이번 세션만 닫는다(다음 진입 때 다시 노출). 켜진 공지가 없으면 아무것도 안 뜬다.
-const hideKey = (id: string) => `notice_popup_hidden_until_${id}`;
-const SESSION_KEY = "notice_popup_closed_session";
+//
+// 숨김 키에 팝업 버전(popupVersion)을 포함한다. 어드민이 팝업을 다시 켜거나 내용/기간을
+// 바꾸면 버전이 올라가 키가 달라지므로, 이미 "N일 안보기"를 눌렀던 사용자에게도 다시 뜬다.
 const DAY_MS = 24 * 60 * 60 * 1000;
+const ver = (n: Notice) => n.popupVersion ?? 0;
+const hideKey = (n: Notice) => `notice_popup_hidden_until_${n.id}_${ver(n)}`;
+const sessKey = (n: Notice) => `notice_popup_closed_${n.id}_${ver(n)}`;
+
+function isDismissed(n: Notice): boolean {
+  try {
+    const until = Number(localStorage.getItem(hideKey(n)));
+    if (Number.isFinite(until) && until > Date.now()) return true;
+  } catch {
+    /* localStorage 차단 시 노출 */
+  }
+  try {
+    if (sessionStorage.getItem(sessKey(n)) === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
 
 export default function NoticePopup() {
   const router = useRouter();
@@ -25,25 +45,15 @@ export default function NoticePopup() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/notices")
+    // 팝업 노출/버전이 stale하면 안 되므로 항상 최신을 받는다.
+    fetch("/api/notices", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!alive) return;
         const list: Notice[] = Array.isArray(d?.notices) ? d.notices : [];
-        const first = list.find((n) => n.popupEnabled === true);
-        if (!first) return;
-        try {
-          const until = Number(localStorage.getItem(hideKey(first.id)));
-          if (Number.isFinite(until) && until > Date.now()) return;
-        } catch {
-          /* localStorage 차단 시 노출 */
-        }
-        try {
-          if (sessionStorage.getItem(SESSION_KEY) === first.id) return;
-        } catch {
-          /* ignore */
-        }
-        setNotice(first);
+        // 팝업 켜진 공지(정렬순) 중 아직 안 숨긴 첫 번째를 노출(맨 위가 숨겨졌으면 다음으로).
+        const pick = list.filter((n) => n.popupEnabled === true).find((n) => !isDismissed(n));
+        if (pick) setNotice(pick);
       })
       .catch(() => {});
     return () => {
@@ -55,7 +65,7 @@ export default function NoticePopup() {
 
   function closeSession() {
     try {
-      if (notice) sessionStorage.setItem(SESSION_KEY, notice.id);
+      if (notice) sessionStorage.setItem(sessKey(notice), "1");
     } catch {
       /* ignore */
     }
@@ -63,7 +73,7 @@ export default function NoticePopup() {
   }
   function hideForDays() {
     try {
-      if (notice) localStorage.setItem(hideKey(notice.id), String(Date.now() + hideDays * DAY_MS));
+      if (notice) localStorage.setItem(hideKey(notice), String(Date.now() + hideDays * DAY_MS));
     } catch {
       /* ignore */
     }
