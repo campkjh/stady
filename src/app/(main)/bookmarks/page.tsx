@@ -166,19 +166,9 @@ export default function BookmarksPage() {
       .catch(() => setIsLoggedIn(false));
   }, []);
 
-  // 나갔다 다시 들어와도 선택했던 탭/분류가 유지되도록 복원
-  useEffect(() => {
-    try {
-      const savedTab = localStorage.getItem("bookmark_tab");
-      const savedCat = localStorage.getItem("bookmark_ox_category");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (savedTab) setActiveTab(savedTab);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (savedCat) setOxCategory(savedCat);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  // 진입 시엔 항상 "전체"로 시작해 모든 카테고리 책갈피를 한 번에 보여준다.
+  // (예전엔 마지막 선택 탭/분류를 복원해, 여러 카테고리에 책갈피가 있으면 한 카테고리만
+  //  보여 매번 필터를 바꿔야 하는 불편이 있었다.)
 
   useEffect(() => {
     if (isLoggedIn === false) return;
@@ -275,6 +265,18 @@ export default function BookmarksPage() {
     // OX 탭에서 분류가 선택되면 해당 분류만 노출
     .filter((b) => !(activeTab === "ox" && oxCategory) || b.categoryName === oxCategory);
 
+  // OX는 카테고리별, 문제집은 한 묶음으로 그룹핑해 여러 카테고리 책갈피를 한 화면에서 모두 본다.
+  const otherGroups = (() => {
+    const order: string[] = [];
+    const map = new Map<string, Bookmark[]>();
+    for (const b of otherBookmarks) {
+      const key = b.quizType === "ox" ? (b.categoryName || "OX퀴즈") : "문제집";
+      if (!map.has(key)) { map.set(key, []); order.push(key); }
+      map.get(key)!.push(b);
+    }
+    return order.map((key) => ({ key, items: map.get(key)! }));
+  })();
+
   return (
     <div className="px-4 pt-6">
       <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", paddingBottom: 8 }}>
@@ -313,10 +315,6 @@ export default function BookmarksPage() {
             onClick={() => {
               setActiveTab(tab.value);
               setOxCategory("");
-              try {
-                localStorage.setItem("bookmark_tab", tab.value);
-                localStorage.setItem("bookmark_ox_category", "");
-              } catch {}
             }}
             className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.value
@@ -337,10 +335,7 @@ export default function BookmarksPage() {
             return (
               <button
                 key={c.value || "__all"}
-                onClick={() => {
-                  setOxCategory(c.value);
-                  try { localStorage.setItem("bookmark_ox_category", c.value); } catch {}
-                }}
+                onClick={() => setOxCategory(c.value)}
                 className="shrink-0"
                 style={{
                   padding: "8px 12px 11px",
@@ -415,32 +410,38 @@ export default function BookmarksPage() {
             </div>
           )}
 
-          {/* Others section: card grid */}
-          {otherBookmarks.length > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              {otherBookmarks.map((bookmark) => (
-                <button
-                  key={bookmark.id}
-                  onClick={() => handleNavigate(bookmark)}
-                  className="flex flex-col items-start rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition-shadow hover:shadow-md"
-                >
-                  <p className="text-sm font-semibold text-gray-900 line-clamp-2">
-                    {bookmark.subtitle || bookmark.title || "문제"}
-                  </p>
-                  {bookmark.subtitle && bookmark.title && (
-                    <p className="mt-1 text-xs text-gray-500 line-clamp-1">
-                      {bookmark.title}
+          {/* Others section: 카테고리(OX)/문제집별 그룹 + 카드 그리드 */}
+          {otherGroups.map((group) => (
+            <div key={group.key}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "0 2px 10px" }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "#374151" }}>{group.key}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF" }}>{group.items.length}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {group.items.map((bookmark) => (
+                  <button
+                    key={bookmark.id}
+                    onClick={() => handleNavigate(bookmark)}
+                    className="flex flex-col items-start rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition-shadow hover:shadow-md"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                      {bookmark.subtitle || bookmark.title || "문제"}
                     </p>
-                  )}
-                  {bookmark.memo && (
-                    <p className="mt-2 w-full whitespace-pre-wrap rounded-lg bg-[#F8F9FB] p-2 text-xs text-gray-600 line-clamp-3">
-                      📝 {bookmark.memo}
-                    </p>
-                  )}
-                </button>
-              ))}
+                    {bookmark.subtitle && bookmark.title && (
+                      <p className="mt-1 text-xs text-gray-500 line-clamp-1">
+                        {bookmark.title}
+                      </p>
+                    )}
+                    {bookmark.memo && (
+                      <p className="mt-2 w-full whitespace-pre-wrap rounded-lg bg-[#F8F9FB] p-2 text-xs text-gray-600 line-clamp-3">
+                        📝 {bookmark.memo}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
+          ))}
         </div>
       )}
 
