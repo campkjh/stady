@@ -57,38 +57,38 @@ export async function GET() {
       WHERE "endedAt" IS NULL AND "lastPingAt" < ${staleCutoff}
     `;
 
-    // 2) 헤더 "X / N명 공부 중"의 N — 등록 유저 수(단일 count).
-    const totalRows = await prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT count(*) AS count FROM "User" WHERE "role" = 'user'
-    `;
-    const totalCount = Number(totalRows[0]?.count ?? 0);
-
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    // 3) 현재 공부중인 유저만 — 유저당 가장 최근 active 세션 1개.
-    const activeRows = await prisma.$queryRaw<ActiveRow[]>`
-      SELECT DISTINCT ON (s."userId")
-             s."userId", s."subject", s."startedAt",
-             u."nickname", u."avatar", u."statusMessage"
-      FROM "StudySession" s
-      JOIN "User" u ON u."id" = s."userId"
-      WHERE s."endedAt" IS NULL AND u."role" = 'user'
-      ORDER BY s."userId", s."startedAt" DESC
-    `;
-
-    // 4) 오늘 공부한 유저별 완료 시간 합(누적기록 랭킹용) — 오늘 세션이 있는 유저만.
-    const todayRows = await prisma.$queryRaw<TodayRow[]>`
-      SELECT s."userId",
-             SUM(s."totalSeconds")::int AS done,
-             u."nickname", u."avatar", u."statusMessage"
-      FROM "StudySession" s
-      JOIN "User" u ON u."id" = s."userId"
-      WHERE s."endedAt" IS NOT NULL
-        AND s."startedAt" >= ${startOfDay}
-        AND u."role" = 'user'
-      GROUP BY s."userId", u."nickname", u."avatar", u."statusMessage"
-    `;
+    // 2~4) 서로 독립인 조회는 병렬로(진입 지연 감소):
+    //  - 등록 유저 수(헤더 N), 현재 공부중, 오늘 완료 합, 내 통계.
+    const [totalRows, activeRows, todayRows, myStats] = await Promise.all([
+      prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT count(*) AS count FROM "User" WHERE "role" = 'user'
+      `,
+      prisma.$queryRaw<ActiveRow[]>`
+        SELECT DISTINCT ON (s."userId")
+               s."userId", s."subject", s."startedAt",
+               u."nickname", u."avatar", u."statusMessage"
+        FROM "StudySession" s
+        JOIN "User" u ON u."id" = s."userId"
+        WHERE s."endedAt" IS NULL AND u."role" = 'user'
+        ORDER BY s."userId", s."startedAt" DESC
+      `,
+      prisma.$queryRaw<TodayRow[]>`
+        SELECT s."userId",
+               SUM(s."totalSeconds")::int AS done,
+               u."nickname", u."avatar", u."statusMessage"
+        FROM "StudySession" s
+        JOIN "User" u ON u."id" = s."userId"
+        WHERE s."endedAt" IS NOT NULL
+          AND s."startedAt" >= ${startOfDay}
+          AND u."role" = 'user'
+        GROUP BY s."userId", u."nickname", u."avatar", u."statusMessage"
+      `,
+      me ? getMyTimerStats(me.id, now) : Promise.resolve(null),
+    ]);
+    const totalCount = Number(totalRows[0]?.count ?? 0);
 
     // 5) active ∪ today (+ me) 머지.
     const map = new Map<string, UserCard>();
@@ -152,7 +152,6 @@ export async function GET() {
     const userCards = Array.from(map.values());
     const activeCount = activeRows.length;
     const mySession = userCards.find((u) => u.isMe && u.isActive) || null;
-    const myStats = me ? await getMyTimerStats(me.id, now) : null;
 
     return NextResponse.json({
       users: userCards,

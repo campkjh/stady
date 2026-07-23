@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
+import { clientCache } from "@/lib/clientCache";
 
 interface TimerUser {
   userId: string;
@@ -109,14 +110,20 @@ function timerUserRenderKey(user: TimerUser) {
 // 오늘 총 공부시간(진행 중이면 라이브로 1초씩 증가) 표시. 자체 틱으로 이 부분만
 // 리렌더되므로 타이머 페이지 전체가 초당 리렌더되지 않는다.
 function LiveTodayTotal({ baseSeconds, startAt }: { baseSeconds: number; startAt: number | null }) {
-  const [, tick] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (startAt == null) return;
-    const t = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(t);
+    const calc = () => setElapsed(Math.max(0, Math.floor((Date.now() - startAt) / 1000)));
+    // 동기 setState 금지(React Compiler) → 0ms 타임아웃으로 즉시 1회 + 매초 갱신.
+    const t0 = setTimeout(calc, 0);
+    const t = setInterval(calc, 1000);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(t);
+    };
   }, [startAt]);
-  const elapsed = startAt != null ? Math.max(0, Math.floor((Date.now() - startAt) / 1000)) : 0;
-  return <>{formatTime(baseSeconds + elapsed)}</>;
+  // 정지 상태에선 경과분을 더하지 않는다(재시작 전 stale elapsed 무시).
+  return <>{formatTime(baseSeconds + (startAt != null ? elapsed : 0))}</>;
 }
 
 function formatHours(sec: number): string {
@@ -128,6 +135,24 @@ function formatHours(sec: number): string {
   return `${m}분`;
 }
 
+// 진입 속도용 SWR 캐시 키(SPA 세션 동안 유지). cachedAt으로 진행중 세션 경과를 보정한다.
+const SESS_CACHE_KEY = "timer:sessions";
+const FRIENDS_CACHE_KEY = "timer:friends";
+
+interface SessionsPayload {
+  users: TimerUser[];
+  activeCount: number;
+  totalCount: number;
+  mySession: TimerUser | null;
+  myStats: TimerStats | null;
+  cachedAt: number;
+}
+interface FriendsPayload {
+  incoming: FriendRequest[];
+  outgoing: FriendRequest[];
+  friends: TimerUser[];
+}
+
 export default function TimerPage() {
   const router = useRouter();
   const [startMessage] = useState(() => START_MESSAGES[Math.floor(Math.random() * START_MESSAGES.length)]);
@@ -136,7 +161,7 @@ export default function TimerPage() {
   const [activeCount, setActiveCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !clientCache.has(SESS_CACHE_KEY));
   const [activeTab, setActiveTab] = useState<"status" | "ranking" | "friends" | "badges" | "analysis">("status");
   const [selectedUser, setSelectedUser] = useState<TimerUser | null>(null);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
@@ -161,21 +186,37 @@ export default function TimerPage() {
       .catch(() => setIsLoggedIn(false));
   }, []);
 
+  // 세션 응답을 상태에 반영. at = 응답이 생성된 시각(캐시 재생 시 cachedAt) —
+  // 진행중 세션의 시작시각 앵커(at - elapsed)는 캐시가 오래돼도 정확하다.
+  const applySessions = (data: Omit<SessionsPayload, "cachedAt">, at: number) => {
+    setUsers(data.users || []);
+    setActiveCount(data.activeCount || 0);
+    setTotalCount(data.totalCount || 0);
+    if (data.mySession) {
+      setIsRunning(true);
+      myStartAtRef.current = at - data.mySession.activeElapsedSeconds * 1000;
+    } else {
+      setIsRunning(false);
+      myStartAtRef.current = null;
+    }
+    setMyStats(data.myStats || null);
+  };
+
   const fetchData = async () => {
     try {
       const res = await fetch("/api/timer/sessions");
       const data = await res.json();
-      setUsers(data.users || []);
-      setActiveCount(data.activeCount || 0);
-      setTotalCount(data.totalCount || 0);
-      if (data.mySession) {
-        setIsRunning(true);
-        myStartAtRef.current = Date.now() - data.mySession.activeElapsedSeconds * 1000;
-      } else {
-        setIsRunning(false);
-        myStartAtRef.current = null;
-      }
-      setMyStats(data.myStats || null);
+      const at = Date.now();
+      const payload: SessionsPayload = {
+        users: data.users || [],
+        activeCount: data.activeCount || 0,
+        totalCount: data.totalCount || 0,
+        mySession: data.mySession || null,
+        myStats: data.myStats || null,
+        cachedAt: at,
+      };
+      clientCache.set(SESS_CACHE_KEY, payload);
+      applySessions(payload, at);
     } catch {}
     setLoading(false);
   };
@@ -185,9 +226,16 @@ export default function TimerPage() {
       const res = await fetch("/api/timer/friends");
       if (!res.ok) return;
       const data = await res.json();
-      setIncomingRequests(data.incoming || []);
-      setOutgoingRequests(data.outgoing || []);
-      setFriends(data.friends || []);
+      const payload: FriendsPayload = {
+        incoming: data.incoming || [],
+        outgoing: data.outgoing || [],
+        friends: data.friends || [],
+      };
+      if (clientCache.set(FRIENDS_CACHE_KEY, payload)) {
+        setIncomingRequests(payload.incoming);
+        setOutgoingRequests(payload.outgoing);
+        setFriends(payload.friends);
+      }
     } catch {}
   };
 
@@ -204,10 +252,25 @@ export default function TimerPage() {
     }
   };
 
+  // 진입 즉시: 캐시가 있으면 바로 그리고(재진입 0ms 페인트), 네트워크는 auth/me를
+  // 기다리지 않고 병렬로 시작한다(예전엔 auth/me → sessions 직렬이라 진입이 느렸음).
   useEffect(() => {
-    if (isLoggedIn !== true) return;
+    const sess = clientCache.get<SessionsPayload>(SESS_CACHE_KEY);
+    if (sess) applySessions(sess, sess.cachedAt);
+    const fr = clientCache.get<FriendsPayload>(FRIENDS_CACHE_KEY);
+    if (fr) {
+      setIncomingRequests(fr.incoming);
+      setOutgoingRequests(fr.outgoing);
+      setFriends(fr.friends);
+    }
     fetchData();
     fetchFriends();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 폴링은 로그인 확인 후에만(비로그인 사용자에게 15초 폴링 낭비 방지).
+  useEffect(() => {
+    if (isLoggedIn !== true) return;
     pollRef.current = setInterval(() => {
       fetchData();
       fetchFriends();
@@ -215,6 +278,7 @@ export default function TimerPage() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -284,6 +348,7 @@ export default function TimerPage() {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -363,7 +428,7 @@ export default function TimerPage() {
     [users]
   );
 
-  if (isLoggedIn === null) return null;
+  // auth/me 응답 전에도 화면을 그린다(캐시/스피너) — 빈 화면 대기 제거.
   if (isLoggedIn === false) return <LoginRequired />;
 
   return (
