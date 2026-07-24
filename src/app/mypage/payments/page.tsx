@@ -35,7 +35,8 @@ export default function PaymentsLogPage() {
   if (authed === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
+    // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
+    <div style={{ width: "100%", minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
       <BackHeader title="결제로그" />
 
       {loading ? (

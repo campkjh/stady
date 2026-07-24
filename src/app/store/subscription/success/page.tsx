@@ -109,6 +109,8 @@ export default function SubscriptionSuccessPage() {
 }
 
 const pageStyle = {
+  // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
+  width: "100%",
   minHeight: "100vh",
   background: "#fff",
   maxWidth: 720,
