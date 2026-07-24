@@ -281,7 +281,7 @@ export default function BookmarksPage() {
     <div className="px-4 pt-6">
       <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", paddingBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-          <h1 className="text-xl font-bold" style={{ margin: 0 }}>찜</h1>
+          <h1 className="text-xl font-bold" style={{ margin: 0 }}>책갈피</h1>
           {!loading && bookmarks.length > 0 && (
             <button
               type="button"
