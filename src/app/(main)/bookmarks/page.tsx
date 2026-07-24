@@ -379,9 +379,15 @@ export default function BookmarksPage() {
             cursor: "pointer",
           }}
         >
-          {/* 우측 동심원 장식 */}
-          <span aria-hidden style={{ position: "absolute", top: -44, right: -30, width: 200, height: 200, borderRadius: "50%", border: "1.5px solid rgba(122,132,255,0.14)", pointerEvents: "none" }} />
-          <span aria-hidden style={{ position: "absolute", top: -8, right: 6, width: 128, height: 128, borderRadius: "50%", border: "1.5px solid rgba(122,132,255,0.18)", pointerEvents: "none" }} />
+          {/* 우측 동심원 장식 — 프리즘 라이트 트레인(테두리를 따라 빛이 흐르고 블러로 퍼짐) */}
+          <span aria-hidden className="bm-ring" style={{ top: -44, right: -30, width: 200, height: 200 }}>
+            <span className="bm-ring-glow" />
+            <span className="bm-ring-train" />
+          </span>
+          <span aria-hidden className="bm-ring bm-ring-rev" style={{ top: -8, right: 6, width: 128, height: 128 }}>
+            <span className="bm-ring-glow" />
+            <span className="bm-ring-train" />
+          </span>
 
           {/* 우측 아이콘 + 플로팅 칩 */}
           <span aria-hidden style={{ position: "absolute", top: 24, right: 18, width: 96, height: 96, pointerEvents: "none" }}>
@@ -486,6 +492,58 @@ export default function BookmarksPage() {
           ))}
         </div>
       )}
+
+      {/* 프리즘 라이트 트레인 링: conic 세그먼트를 radial 마스크로 얇은 링만 남기고 회전.
+          glow(두꺼운 링+blur)가 아래에서 은은하게 번지고, train(얇은 링)이 또렷한 빛줄기. */}
+      <style>{`
+        .bm-ring {
+          position: absolute;
+          border-radius: 9999px;
+          pointer-events: none;
+        }
+        .bm-ring::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          border: 1.5px solid rgba(122, 132, 255, 0.15);
+        }
+        .bm-ring-glow, .bm-ring-train {
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: conic-gradient(from 0deg,
+            transparent 0deg, transparent 260deg,
+            rgba(142, 197, 255, 0) 272deg,
+            rgba(142, 197, 255, 0.9) 300deg,
+            rgba(196, 168, 255, 1) 320deg,
+            rgba(255, 255, 255, 0.95) 332deg,
+            rgba(246, 183, 255, 0.9) 342deg,
+            rgba(159, 224, 255, 0) 356deg,
+            transparent 360deg);
+          animation: bmRingSpin 5.2s linear infinite;
+        }
+        .bm-ring-train {
+          -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 1.2px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 1.2px));
+        }
+        .bm-ring-glow {
+          -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 1px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 1px));
+          filter: blur(5px);
+          opacity: 0.9;
+        }
+        .bm-ring-rev .bm-ring-glow, .bm-ring-rev .bm-ring-train {
+          animation-duration: 4.1s;
+          animation-direction: reverse;
+        }
+        @keyframes bmRingSpin {
+          to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .bm-ring-glow, .bm-ring-train { animation: none; }
+        }
+      `}</style>
 
       {/* 모든 책갈피 취소 확인 모달 (WebView에서 window.confirm 미동작 → 인앱 모달) */}
       {showDeleteAllConfirm && (

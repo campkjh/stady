@@ -1227,6 +1227,16 @@ export async function adminSetCommunityCommentActive(id: string, isActive: boole
   );
 }
 
+// 댓글 내용 수정 (관리자).
+export async function adminUpdateCommunityCommentContent(id: string, content: string) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityComment" SET "content" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2`,
+    content,
+    id
+  );
+}
+
 // 댓글 영구 삭제 (관리자): 대댓글/좋아요는 ON DELETE CASCADE로 함께 삭제된다.
 export async function adminDeleteCommunityComment(id: string) {
   await ensureCommunityTables();

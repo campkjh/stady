@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import {
   adminSetCommunityCommentActive,
+  adminUpdateCommunityCommentContent,
   adminDeleteCommunityComment,
 } from "@/lib/community";
 
@@ -18,7 +19,7 @@ function adminError(error: unknown) {
   return NextResponse.json({ error: "처리 중 오류가 발생했습니다." }, { status: 500 });
 }
 
-// 댓글 노출/비노출 토글
+// 댓글 노출/비노출 토글 또는 내용 수정
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -26,11 +27,20 @@ export async function PATCH(
   try {
     await requireAdmin();
     const { id } = await params;
-    const { isActive } = (await request.json()) ?? {};
-    if (isActive === undefined) {
-      return NextResponse.json({ error: "isActive는 필수입니다." }, { status: 400 });
+    const { isActive, content } = (await request.json()) ?? {};
+    if (isActive === undefined && content === undefined) {
+      return NextResponse.json({ error: "isActive 또는 content가 필요합니다." }, { status: 400 });
     }
-    await adminSetCommunityCommentActive(id, !!isActive);
+    if (content !== undefined) {
+      const trimmed = String(content).trim();
+      if (!trimmed) {
+        return NextResponse.json({ error: "댓글 내용을 입력해주세요." }, { status: 400 });
+      }
+      await adminUpdateCommunityCommentContent(id, trimmed);
+    }
+    if (isActive !== undefined) {
+      await adminSetCommunityCommentActive(id, !!isActive);
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     return adminError(error);

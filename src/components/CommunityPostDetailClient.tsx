@@ -122,6 +122,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [uploadingEdit, setUploadingEdit] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // 관리자 댓글 관리(수정/삭제)
+  const [editingCommentId, setEditingCommentId] = useState("");
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [commentActionBusy, setCommentActionBusy] = useState(false);
+  const [deleteCommentId, setDeleteCommentId] = useState("");
 
   const loadDetail = useCallback(async (track = false) => {
     setLoading(true);
@@ -366,6 +371,52 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "댓글 공감을 처리하지 못했습니다.");
+    }
+  }
+
+  // 관리자: 댓글 수정 저장
+  async function submitCommentEdit(commentId: string) {
+    const content = editCommentContent.trim();
+    if (!content || commentActionBusy) return;
+    setCommentActionBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/community-comments/${encodeURIComponent(commentId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "댓글을 수정하지 못했습니다.");
+      setEditingCommentId("");
+      setEditCommentContent("");
+      await loadDetail();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "댓글을 수정하지 못했습니다.");
+    } finally {
+      setCommentActionBusy(false);
+    }
+  }
+
+  // 관리자: 댓글 삭제(대댓글 포함 영구 삭제)
+  async function doDeleteComment() {
+    if (!deleteCommentId || commentActionBusy) return;
+    setCommentActionBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/community-comments/${encodeURIComponent(deleteCommentId)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "댓글을 삭제하지 못했습니다.");
+      setDeleteCommentId("");
+      await loadDetail();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "댓글을 삭제하지 못했습니다.");
+    } finally {
+      setCommentActionBusy(false);
     }
   }
 
@@ -622,6 +673,21 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       replyTargetId={replyTargetId}
                       replyContent={replyContent}
                       replyPosting={replyPosting}
+                      isAdmin={isAdmin}
+                      editingCommentId={editingCommentId}
+                      editCommentContent={editCommentContent}
+                      commentActionBusy={commentActionBusy}
+                      onStartEdit={(c) => {
+                        setEditingCommentId(c.id);
+                        setEditCommentContent(c.content);
+                      }}
+                      onEditChange={setEditCommentContent}
+                      onCancelEdit={() => {
+                        setEditingCommentId("");
+                        setEditCommentContent("");
+                      }}
+                      onSubmitEdit={submitCommentEdit}
+                      onDelete={(id) => setDeleteCommentId(id)}
                       onToggleLike={toggleCommentLike}
                       onOpenReply={(id) => {
                         setReplyTargetId((current) => (current === id ? "" : id));
@@ -755,6 +821,18 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           ]}
         />
       )}
+
+      {deleteCommentId && (
+        <AlertModal
+          title={"댓글을 삭제할까요?"}
+          subtitle={"대댓글도 함께 삭제되며 되돌릴 수 없어요."}
+          onClose={() => setDeleteCommentId("")}
+          buttons={[
+            { label: "삭제", bgColor: "#E85D5D", color: "#fff", onClick: doDeleteComment },
+            { label: "취소", bgColor: "#F2F4F6", color: "#4B5563", onClick: () => setDeleteCommentId("") },
+          ]}
+        />
+      )}
     </main>
   );
 }
@@ -764,6 +842,15 @@ interface CommentItemProps {
   replyTargetId: string;
   replyContent: string;
   replyPosting: boolean;
+  isAdmin: boolean;
+  editingCommentId: string;
+  editCommentContent: string;
+  commentActionBusy: boolean;
+  onStartEdit: (comment: CommunityComment) => void;
+  onEditChange: (value: string) => void;
+  onCancelEdit: () => void;
+  onSubmitEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   onToggleLike: (id: string) => void;
   onOpenReply: (id: string) => void;
   onReplyChange: (value: string) => void;
@@ -775,25 +862,68 @@ function CommentItem({
   replyTargetId,
   replyContent,
   replyPosting,
+  isAdmin,
+  editingCommentId,
+  editCommentContent,
+  commentActionBusy,
+  onStartEdit,
+  onEditChange,
+  onCancelEdit,
+  onSubmitEdit,
+  onDelete,
   onToggleLike,
   onOpenReply,
   onReplyChange,
   onSubmitReply,
 }: CommentItemProps) {
+  const isEditing = editingCommentId === comment.id;
   return (
     <div style={commentBoxStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
         <span style={{ color: "#9CA3AF", fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("ko-KR")}</span>
       </div>
-      <p style={{ margin: "8px 0 0", color: "#374151", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
-      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+      {isEditing ? (
+        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+          <textarea
+            value={editCommentContent}
+            onChange={(event) => onEditChange(event.target.value)}
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
+          />
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" onClick={onCancelEdit} style={{ ...smallActionButtonStyle(false), cursor: "pointer" }}>취소</button>
+            <button
+              type="button"
+              onClick={() => onSubmitEdit(comment.id)}
+              disabled={commentActionBusy || !editCommentContent.trim()}
+              style={{ ...smallActionButtonStyle(true), cursor: "pointer", opacity: commentActionBusy ? 0.6 : 1 }}
+            >
+              {commentActionBusy ? "저장 중..." : "저장"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p style={{ margin: "8px 0 0", color: "#374151", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
+      )}
+      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <button type="button" className="community-action-button" onClick={() => onToggleLike(comment.id)} style={smallActionButtonStyle(comment.likedByMe)}>
           공감 {comment.likeCount}
         </button>
         <button type="button" className="community-reply-button" onClick={() => onOpenReply(comment.id)} style={smallActionButtonStyle(false)}>
           답글
         </button>
+        {isAdmin && !isEditing && (
+          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, alignItems: "center" }}>
+            <span style={{ padding: "2px 7px", borderRadius: 999, background: "#EEF5FF", color: "#1F5EDC", fontSize: 10.5, fontWeight: 800 }}>관리자</span>
+            <button type="button" onClick={() => onStartEdit(comment)} style={{ border: "none", background: "none", color: "#3787FF", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
+              수정
+            </button>
+            <button type="button" onClick={() => onDelete(comment.id)} style={{ border: "none", background: "none", color: "#E85D5D", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
+              삭제
+            </button>
+          </span>
+        )}
       </div>
 
       {replyTargetId === comment.id && (
@@ -820,6 +950,15 @@ function CommentItem({
               replyTargetId={replyTargetId}
               replyContent={replyContent}
               replyPosting={replyPosting}
+              isAdmin={isAdmin}
+              editingCommentId={editingCommentId}
+              editCommentContent={editCommentContent}
+              commentActionBusy={commentActionBusy}
+              onStartEdit={onStartEdit}
+              onEditChange={onEditChange}
+              onCancelEdit={onCancelEdit}
+              onSubmitEdit={onSubmitEdit}
+              onDelete={onDelete}
               onToggleLike={onToggleLike}
               onOpenReply={onOpenReply}
               onReplyChange={onReplyChange}
