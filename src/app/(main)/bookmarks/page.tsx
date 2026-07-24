@@ -358,24 +358,66 @@ export default function BookmarksPage() {
         </div>
       )}
 
-      {/* Re-test all collected questions of the active tab at once */}
+      {/* Re-test all collected questions of the active tab at once — 토스 스타일 카드 */}
       {!loading && bookmarks.length > 0 && (
         <button
           type="button"
           onClick={() => router.push(`/retest?source=bookmark&type=${activeTab || "all"}`)}
           className="press"
           style={{
-            width: "100%", height: 52, borderRadius: 14, border: "none", marginBottom: 20,
-            background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            boxShadow: "0 6px 18px rgba(55,135,255,0.28)",
+            position: "relative",
+            width: "100%",
+            minHeight: 128,
+            borderRadius: 20,
+            border: "none",
+            marginBottom: 20,
+            padding: "20px 18px",
+            background: "linear-gradient(115deg, #F2F6FC 0%, #F4F3FB 62%, #F3EFFA 100%)",
+            textAlign: "left",
+            overflow: "hidden",
+            display: "block",
+            cursor: "pointer",
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 1 0 9-9" />
-            <polyline points="3 4 3 9 8 9" />
-          </svg>
-          찜한 문제 한번에 풀기
+          {/* 우측 동심원 장식 */}
+          <span aria-hidden style={{ position: "absolute", top: -44, right: -30, width: 200, height: 200, borderRadius: "50%", border: "1.5px solid rgba(122,132,255,0.14)", pointerEvents: "none" }} />
+          <span aria-hidden style={{ position: "absolute", top: -8, right: 6, width: 128, height: 128, borderRadius: "50%", border: "1.5px solid rgba(122,132,255,0.18)", pointerEvents: "none" }} />
+
+          {/* 우측 아이콘 + 플로팅 칩 */}
+          <span aria-hidden style={{ position: "absolute", top: 24, right: 18, width: 96, height: 96, pointerEvents: "none" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/bookmark-book3d.png" alt="" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 8px 16px rgba(101,111,255,0.25))" }} />
+            <span style={{
+              position: "absolute", top: -12, right: -6,
+              padding: "5px 10px", borderRadius: 999, background: "#fff",
+              color: "#4B5563", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
+            }}>모아 풀기</span>
+          </span>
+
+          {/* 좌측 텍스트 */}
+          <span style={{ position: "relative", display: "block", paddingRight: 118 }}>
+            <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#6B7CF7", marginBottom: 6 }}>
+              모아둔 문제 복습
+            </span>
+            <span style={{ display: "block", fontSize: 17.5, fontWeight: 800, color: "#26282E", lineHeight: 1.38, letterSpacing: -0.2 }}>
+              책갈피한 문제만<br />한번에 풀어보는 복습
+            </span>
+          </span>
+
+          {/* 우하단 원형 화살표 */}
+          <span aria-hidden style={{
+            position: "absolute", right: 18, bottom: 16,
+            width: 34, height: 34, borderRadius: "50%",
+            background: "rgba(255,255,255,0.92)",
+            boxShadow: "0 4px 10px rgba(15,23,42,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </span>
         </button>
       )}
 
