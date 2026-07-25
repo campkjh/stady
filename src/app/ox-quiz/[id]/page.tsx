@@ -558,7 +558,8 @@ export default function OxQuizSolvePage() {
                       {currentQuestion.examYearMonth}
                     </span>
                   )}
-                  {currentQuestion.answerRate != null && (
+                  {/* 정답률·핵어려움은 정답 힌트가 되므로 문제를 푼 직후에만 공개 */}
+                  {!!answered && currentQuestion.answerRate != null && (
                     <span style={{
                       display: "inline-flex",
                       fontSize: 12, fontWeight: 700, color: "#374151",
@@ -567,7 +568,7 @@ export default function OxQuizSolvePage() {
                       정답률 {currentQuestion.answerRate}%
                     </span>
                   )}
-                  {currentQuestion.answerRate != null && currentQuestion.answerRate < HARD_ANSWER_RATE && (
+                  {!!answered && currentQuestion.answerRate != null && currentQuestion.answerRate < HARD_ANSWER_RATE && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
                       fontSize: 12, fontWeight: 800, color: "#F93052",

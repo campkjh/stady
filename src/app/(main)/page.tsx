@@ -33,7 +33,6 @@ export default async function HomePage() {
   ]);
 
   const categories = categoriesRaw.filter((c) => c.name !== "전체");
-  const isNewUser = cookieStore.get("isNewUser")?.value !== undefined && !user?.signupSource;
   const isAdmin = user?.role === "admin" || isMasterAdminEmail(user?.email);
 
   const oxQuizSetsWithRate = oxQuizSets.map((s) => ({ ...s, answerRate: setRates.get(s.id) ?? null }));
@@ -46,7 +45,6 @@ export default async function HomePage() {
       workbooks={workbooks}
       oxQuizSets={oxQuizSetsWithRate}
       vocabQuizSets={vocabQuizSets}
-      isNewUser={isNewUser}
     />
   );
 }
