@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import WelcomeOverlay from "@/components/WelcomeOverlay";
 import SurveyGate from "@/components/SurveyGate";
 import NoticePopup from "@/components/NoticePopup";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
@@ -245,7 +244,6 @@ interface HomeClientProps {
   workbooks: Workbook[];
   oxQuizSets: OxQuizSet[];
   vocabQuizSets: VocabQuizSet[];
-  isNewUser: boolean;
 }
 
 type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
@@ -297,24 +295,13 @@ export default function HomeClient({
   categories,
   oxQuizSets,
   vocabQuizSets,
-  isNewUser,
 }: HomeClientProps) {
   const router = useRouter();
-  const [showWelcome, setShowWelcome] = useState(isNewUser);
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
   const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
   const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>(() => clientCache.get<RecentQuiz[]>("home-recent") ?? []);
   const [oxProgress, setOxProgress] = useState<Record<string, number>>(() => clientCache.get<Record<string, number>>("home-oxprogress") ?? {});
-  const welcomeVisible = showWelcome && Boolean(userName);
-
-  const handleWelcomeComplete = useCallback(() => {
-    setShowWelcome(false);
-    document.cookie = "isNewUser=; path=/; max-age=0";
-    // 리뷰 프롬프트는 더 이상 온보딩 직후 띄우지 않는다. 퀴즈를 3개 이상 풀었을 때
-    // 계정당 1회만 띄우도록 서버 게이트(/api/app-review)로 일원화했다.
-  }, []);
-
   // 홈에서 앱 사용 3분 뒤 별점 팝업을 기기당 1회만 띄운다.
   useEffect(() => {
     return scheduleHomeRatingOnce();
@@ -437,9 +424,6 @@ export default function HomeClient({
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflowX: "clip" }}>
-      {welcomeVisible && userName && (
-        <WelcomeOverlay nickname={userName} onComplete={handleWelcomeComplete} />
-      )}
       {/* 첫 진입 평생 1회 온보딩 설문 */}
       <SurveyGate />
       {/* 진입 시 첫 공지 팝업(7일동안 안보기 / 닫기) */}
@@ -645,7 +629,7 @@ export default function HomeClient({
       {/* Divider */}
       <div style={{ height: 8, backgroundColor: "#F9FAFB" }} />
 
-      {popupBanner && !welcomeVisible && (
+      {popupBanner && (
         <div
           style={{
             position: "fixed",
