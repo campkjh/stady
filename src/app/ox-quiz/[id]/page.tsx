@@ -31,6 +31,7 @@ interface BookmarkItem {
   quizType: string;
   oxQuizSetId: string | null;
   oxQuestionId: string | null;
+  memo?: string | null;
 }
 
 type TabFilter = "all" | "correct" | "wrong";
@@ -57,9 +58,28 @@ export default function OxQuizSolvePage() {
   const [showSwipeGuide, setShowSwipeGuide] = useState(true);
   const [navigating, setNavigating] = useState(false);
   const [bookmarkToast, setBookmarkToast] = useState("");
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 토스트를 띄울 때 이전 타이머를 정리해, 오래된 타이머가 새 토스트를 지우지 않게 한다.
+  const showToast = useCallback((message: string, ms = 2000) => {
+    setBookmarkToast(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setBookmarkToast(""), ms);
+  }, []);
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkMode, setBookmarkMode] = useState({ enabled: false, focusId: null as string | null });
-  const [startTime] = useState(() => Date.now());
+  const [startTime, setStartTime] = useState(() => Date.now());
+  // 순서 섞기(회독용): 켜면 문제 순서를 랜덤으로. 순서를 localStorage에 저장해
+  // 이어풀기의 currentIndex가 어긋나지 않게 한다. 북마크 모드에선 미사용.
+  const [shuffleOn, setShuffleOn] = useState(false);
+  const [showShuffleConfirm, setShowShuffleConfirm] = useState(false);
+  const originalQuestionsRef = useRef<OxQuestion[] | null>(null);
+  // 퀴즈 노트(나만 보는 메모, 저장 시 해당 문제가 책갈피에 추가됨). 끄면 버튼 숨김.
+  const [noteEnabled, setNoteEnabled] = useState(true);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [showNoteLossConfirm, setShowNoteLossConfirm] = useState(false);
+  const [memoByQuestion, setMemoByQuestion] = useState<Map<string, string>>(new Map());
   const [progressReady, setProgressReady] = useState(false);
   const [pendingProgress, setPendingProgress] = useState<{
     answersJson: string;
@@ -101,18 +121,22 @@ export default function OxQuizSolvePage() {
         let nextQuiz = data.oxQuizSet as OxQuizSet;
         let bookmarkedIds = new Set<string>();
 
+        const memoMap = new Map<string, string>();
         try {
           const bmRes = await fetch("/api/bookmarks?quizType=ox");
           if (bmRes.ok) {
             const bmData = await bmRes.json();
-            bookmarkedIds = new Set(
-              ((bmData.bookmarks || []) as BookmarkItem[])
-                .filter((bm) => bm.oxQuizSetId === id && bm.oxQuestionId)
-                .map((bm) => bm.oxQuestionId as string)
+            const mine = ((bmData.bookmarks || []) as BookmarkItem[]).filter(
+              (bm) => bm.oxQuizSetId === id && bm.oxQuestionId
             );
+            bookmarkedIds = new Set(mine.map((bm) => bm.oxQuestionId as string));
+            for (const bm of mine) {
+              if (bm.memo) memoMap.set(bm.oxQuestionId as string, bm.memo);
+            }
           }
         } catch {}
         setBookmarkedQuestionIds(bookmarkedIds);
+        setMemoByQuestion(memoMap);
 
         if (bookmarkMode.enabled) {
           nextQuiz = {
@@ -121,6 +145,27 @@ export default function OxQuizSolvePage() {
             totalQuestions: bookmarkedIds.size,
             questions: nextQuiz.questions.filter((question) => bookmarkedIds.has(question.id)),
           };
+        } else {
+          // 저장된 셔플 순서가 있으면 복원(이어풀기의 currentIndex 정합 유지).
+          originalQuestionsRef.current = nextQuiz.questions;
+          try {
+            const raw = localStorage.getItem(`ox_shuffle_${id}`);
+            const order = raw ? (JSON.parse(raw) as string[]) : null;
+            if (Array.isArray(order) && order.length > 0) {
+              const byId = new Map(nextQuiz.questions.map((q) => [q.id, q]));
+              const reordered = order.map((qid) => byId.get(qid)).filter(Boolean) as OxQuestion[];
+              // 세트 재임포트로 id가 전부 바뀌었으면(매칭 0) 셔플을 무효로 본다.
+              if (reordered.length > 0) {
+                // 순서에 없는 새 문항은 뒤에 원래 순서로 붙인다(세트 수정 대비).
+                const inOrder = new Set(order);
+                for (const q of nextQuiz.questions) if (!inOrder.has(q.id)) reordered.push(q);
+                nextQuiz = { ...nextQuiz, questions: reordered };
+                setShuffleOn(true);
+              } else {
+                localStorage.removeItem(`ox_shuffle_${id}`);
+              }
+            }
+          } catch {}
         }
 
         setQuiz(nextQuiz);
@@ -245,11 +290,133 @@ export default function OxQuizSolvePage() {
     }
     setResult({ correct, total, scorePct, topPercent });
     if (progressKey) {
+      // 회독 완료 → 셔플 순서도 함께 버린다(다음에 다시 섞으면 새 순서).
+      // 북마크 모드(progressKey null)에선 본 세트의 순서를 건드리면 안 된다.
+      try { localStorage.removeItem(`ox_shuffle_${id}`); } catch {}
       fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, {
         method: "DELETE",
       }).catch(() => {});
     }
   }, [submitted, quiz, answers, id, startTime, progressKey]);
+
+  // 노트 기능 on/off 설정 복원(기기별).
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNoteEnabled(localStorage.getItem("quiz_note_off") !== "1");
+    } catch {}
+  }, []);
+
+  // 순서 섞기 적용/해제: 진행 중 답이 있으면 확인 모달을 거쳐 처음부터 다시 시작한다.
+  const applyShuffleToggle = useCallback(() => {
+    const original = originalQuestionsRef.current;
+    if (!quiz || !original) return;
+    setShowShuffleConfirm(false);
+    if (shuffleOn) {
+      // 원래 순서로 복원
+      try { localStorage.removeItem(`ox_shuffle_${id}`); } catch {}
+      setQuiz({ ...quiz, questions: original });
+      setShuffleOn(false);
+    } else {
+      // Fisher-Yates 셔플
+      const arr = [...original];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      try { localStorage.setItem(`ox_shuffle_${id}`, JSON.stringify(arr.map((q) => q.id))); } catch {}
+      setQuiz({ ...quiz, questions: arr });
+      setShuffleOn(true);
+    }
+    setAnswers(new Map());
+    setCurrentIndex(0);
+    setTabFilter("all");
+    // 새 회독 시작: 완료 상태/결과/이어풀기 프롬프트를 모두 리셋해야
+    // 다시 푼 뒤 제출이 막히거나(submitted 잔존) 삭제한 진행이 부활하지 않는다.
+    setSubmitted(false);
+    setResult(null);
+    setPendingProgress(null);
+    setProgressReady(true);
+    setStartTime(Date.now());
+    if (progressKey) {
+      fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
+    }
+  }, [quiz, shuffleOn, id, progressKey]);
+
+  // 책갈피 토글(서버는 memo 없이 오면 토글 → 해제 시 노트가 담긴 row 자체가 삭제됨).
+  const toggleBookmark = useCallback(async () => {
+    if (!currentQuestion || !quiz) return;
+    setShowNoteLossConfirm(false);
+    const hadNote = memoByQuestion.has(currentQuestion.id);
+    try {
+      const response = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id }),
+      });
+      if (!response.ok) throw new Error("Failed to toggle bookmark");
+      const data = await response.json();
+      setBookmarkedQuestionIds((prev) => {
+        const next = new Set(prev);
+        if (data.bookmarked) next.add(currentQuestion.id);
+        else next.delete(currentQuestion.id);
+        return next;
+      });
+      if (!data.bookmarked && hadNote) {
+        setMemoByQuestion((prev) => {
+          const next = new Map(prev);
+          next.delete(currentQuestion.id);
+          return next;
+        });
+      }
+      showToast(
+        data.bookmarked
+          ? "책갈피에 추가되었습니다"
+          : hadNote ? "책갈피가 취소되었습니다 · 노트도 삭제됐어요" : "책갈피가 취소되었습니다"
+      );
+    } catch {
+      showToast("책갈피 처리에 실패했어요");
+    }
+  }, [currentQuestion, quiz, memoByQuestion, showToast]);
+
+  // 퀴즈 노트 저장: 저장하면 해당 문제가 책갈피에 추가되고(업서트) 메모는 나만 본다.
+  const saveNote = useCallback(async () => {
+    if (!currentQuestion || !quiz || noteSaving) return;
+    const hadNote = memoByQuestion.has(currentQuestion.id);
+    // 빈 노트를 처음부터 저장하면 의미 없는 책갈피만 생기므로 그냥 닫는다.
+    if (!noteText.trim() && !hadNote) {
+      setNoteOpen(false);
+      return;
+    }
+    setNoteSaving(true);
+    try {
+      const res = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizType: "ox",
+          oxQuizSetId: quiz.id,
+          oxQuestionId: currentQuestion.id,
+          memo: noteText.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error("save failed");
+      const trimmed = noteText.trim();
+      setMemoByQuestion((prev) => {
+        const next = new Map(prev);
+        if (trimmed) next.set(currentQuestion.id, trimmed);
+        else next.delete(currentQuestion.id);
+        return next;
+      });
+      setBookmarkedQuestionIds((prev) => new Set(prev).add(currentQuestion.id));
+      setNoteOpen(false);
+      showToast(trimmed ? "노트가 저장됐어요 · 책갈피에서 볼 수 있어요" : "노트를 비웠어요", 2200);
+    } catch {
+      showToast("노트 저장에 실패했어요");
+    } finally {
+      setNoteSaving(false);
+    }
+  }, [currentQuestion, quiz, noteText, noteSaving, memoByQuestion, showToast]);
 
   const handleAnswer = (selected: boolean) => {
     if (!currentQuestion || answers.has(currentQuestion.id) || navigating) return;
@@ -367,6 +534,34 @@ export default function OxQuizSolvePage() {
             {breadcrumb}
           </h1>
         </div>
+        {!bookmarkMode.enabled && (
+          <button
+            type="button"
+            aria-label="문제 순서 섞기"
+            onClick={() => {
+              if (answers.size > 0) setShowShuffleConfirm(true);
+              else applyShuffleToggle();
+            }}
+            className="press"
+            style={{
+              display: "flex", alignItems: "center", gap: 4,
+              height: 32, padding: "0 10px", borderRadius: 999,
+              border: `1px solid ${shuffleOn ? "#3787FF" : "#E5E7EB"}`,
+              background: shuffleOn ? "#EEF5FF" : "#fff",
+              color: shuffleOn ? "#1F5EDC" : "#6B7280",
+              fontSize: 12.5, fontWeight: 800,
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 3 21 3 21 8" />
+              <line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" />
+              <line x1="15" y1="15" x2="21" y2="21" />
+              <line x1="4" y1="4" x2="9" y2="9" />
+            </svg>
+            섞기
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowList(true)}
@@ -486,34 +681,53 @@ export default function OxQuizSolvePage() {
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
+              {noteEnabled && (
+                <button
+                  type="button"
+                  aria-label="퀴즈 노트"
+                  onClick={() => {
+                    if (!currentQuestion) return;
+                    setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
+                    setNoteOpen(true);
+                  }}
+                  className="press"
+                  style={{
+                    marginLeft: "auto",
+                    height: 32,
+                    padding: "0 12px",
+                    borderRadius: 999,
+                    border: `1px solid ${currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#F5A623" : "#E5E7EB"}`,
+                    background: currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#FFF7E8" : "#fff",
+                    color: currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#B26A00" : "#6B7280",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 5,
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  노트
+                </button>
+              )}
               <button
                 type="button"
-                onClick={async () => {
-                  if (!currentQuestion || !quiz) return;
-                  try {
-                    const response = await fetch("/api/bookmarks", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ quizType: "ox", oxQuizSetId: quiz.id, oxQuestionId: currentQuestion.id }),
-                    });
-                    if (!response.ok) throw new Error("Failed to toggle bookmark");
-                    const data = await response.json();
-                    setBookmarkedQuestionIds((prev) => {
-                      const next = new Set(prev);
-                      if (data.bookmarked) {
-                        next.add(currentQuestion.id);
-                      } else {
-                        next.delete(currentQuestion.id);
-                      }
-                      return next;
-                    });
-                    setBookmarkToast(data.bookmarked ? "책갈피에 추가되었습니다" : "책갈피가 취소되었습니다");
-                    setTimeout(() => setBookmarkToast(""), 2000);
-                  } catch {}
+                onClick={() => {
+                  if (!currentQuestion) return;
+                  // 노트가 있는 문제의 책갈피를 해제하면 노트도 사라지므로 먼저 확인.
+                  if (isBookmarked && memoByQuestion.has(currentQuestion.id)) {
+                    setShowNoteLossConfirm(true);
+                    return;
+                  }
+                  toggleBookmark();
                 }}
                 className="press"
                 style={{
-                  marginLeft: "auto",
+                  marginLeft: noteEnabled ? 0 : "auto",
                   height: 32,
                   padding: "0 12px",
                   borderRadius: 999,
@@ -763,7 +977,8 @@ export default function OxQuizSolvePage() {
                 const ans = answers.get(q.id);
                 const status = ans ? (ans.isCorrect ? "correct" : "wrong") : "unanswered";
                 const prevSection = fIdx > 0 ? filteredQuestions[fIdx - 1].section : undefined;
-                const showSectionHeader = !!q.section && q.section !== prevSection;
+                // 셔플 중엔 섹션이 뒤섞여 헤더가 줄마다 반복되므로 숨긴다.
+                const showSectionHeader = !shuffleOn && !!q.section && q.section !== prevSection;
                 const sectionTotal = q.section
                   ? filteredQuestions.filter((x) => x.section === q.section).length
                   : 0;
@@ -785,8 +1000,8 @@ export default function OxQuizSolvePage() {
                     )}
                     <button
                       type="button"
-                      data-active={currentIndex === idx}
-                      onClick={() => { setCurrentIndex(idx); setShowList(false); }}
+                      data-active={currentIndex === fIdx}
+                      onClick={() => { setCurrentIndex(fIdx); setShowList(false); }}
                       className="press"
                       style={{
                         display: "flex",
@@ -794,7 +1009,7 @@ export default function OxQuizSolvePage() {
                         gap: 12,
                         width: "100%",
                         padding: "12px",
-                        background: currentIndex === idx ? "#F0F5FF" : "none",
+                        background: currentIndex === fIdx ? "#F0F5FF" : "none",
                         border: "none",
                         borderRadius: 10,
                         textAlign: "left",
@@ -843,6 +1058,20 @@ export default function OxQuizSolvePage() {
               <span style={{ color: "#3787FF", fontWeight: 600 }}>
                 정답률 {answers.size > 0 ? Math.round(Array.from(answers.values()).filter(a => a.isCorrect).length / answers.size * 100) : 0}%
               </span>
+            </div>
+            {/* 노트 기능 켜기/끄기(끈 상태에서 되돌릴 수 있는 유일한 자리) */}
+            <div style={{ padding: "10px 16px 16px", borderTop: "1px solid #F3F4F6" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !noteEnabled;
+                  setNoteEnabled(next);
+                  try { localStorage.setItem("quiz_note_off", next ? "0" : "1"); } catch {}
+                }}
+                style={{ background: "none", border: "none", fontSize: 13, fontWeight: 700, color: "#6B7280", cursor: "pointer", padding: 0 }}
+              >
+                {noteEnabled ? "퀴즈 노트 기능 끄기" : "퀴즈 노트 기능 켜기"}
+              </button>
             </div>
           </div>
           <style>{`
@@ -941,6 +1170,77 @@ export default function OxQuizSolvePage() {
           100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
         }
       `}</style>
+
+      {/* 퀴즈 노트 시트: 내 사고과정/연결 지식 메모(나만 보임, 저장 시 책갈피 추가) */}
+      {noteOpen && currentQuestion && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 320, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,0.5)" }} onClick={() => setNoteOpen(false)} />
+          <div style={{
+            position: "relative", width: "100%", maxWidth: 720, background: "#fff",
+            borderRadius: "20px 20px 0 0", padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
+            boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#191F28" }}>퀴즈 노트</p>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: "#9CA3AF" }}>나만 볼 수 있어요</span>
+            </div>
+            <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "#8B95A1", lineHeight: 1.5 }}>
+              어떤 사고로 답을 골랐는지, 연결해서 알게 된 내용을 남겨보세요. 저장하면 이 문제가 책갈피에 추가돼요.
+            </p>
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder={"예) 노직은 소유 권리의 역사(취득·이전)가 정당하면 분배도 정의롭다고 봄.\n→ 롤스라면? 차등의 원칙 위배 여부를 따졌을 것."}
+              rows={5}
+              maxLength={2000}
+              style={{
+                width: "100%", boxSizing: "border-box", borderRadius: 12, border: "1px solid #E5E7EB",
+                background: "#F9FAFB", padding: 12, fontSize: 16, lineHeight: 1.6, color: "#191F28",
+                resize: "vertical", outline: "none", fontFamily: "inherit",
+              }}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={saveNote}
+                disabled={noteSaving}
+                style={{ flex: 2, height: 46, borderRadius: 12, border: "none", background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800, cursor: noteSaving ? "default" : "pointer", opacity: noteSaving ? 0.6 : 1 }}
+              >
+                {noteSaving ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 노트가 있는 문제의 책갈피 해제 확인 */}
+      {showNoteLossConfirm && (
+        <AlertModal
+          title="책갈피를 취소할까요?"
+          subtitle="이 문제에 저장한 노트도 함께 삭제돼요."
+          onClose={() => setShowNoteLossConfirm(false)}
+          buttons={[
+            { label: "취소하기", bgColor: "#E85D5D", color: "#fff", onClick: toggleBookmark },
+            { label: "그대로 두기", bgColor: "#F2F3F5", color: "#51535C", onClick: () => setShowNoteLossConfirm(false) },
+          ]}
+        />
+      )}
+
+      {/* 순서 섞기/되돌리기 확인(진행 중 답이 있을 때만) */}
+      {showShuffleConfirm && (
+        <AlertModal
+          title={shuffleOn ? "원래 순서로 되돌릴까요?" : "문제 순서를 섞을까요?"}
+          subtitle={"지금까지 푼 이번 회차 기록이 초기화되고 처음부터 시작해요."}
+          onClose={() => setShowShuffleConfirm(false)}
+          buttons={[
+            { label: shuffleOn ? "되돌리기" : "섞기", onClick: applyShuffleToggle },
+            { label: "취소", bgColor: "#F2F3F5", color: "#51535C", onClick: () => setShowShuffleConfirm(false) },
+          ]}
+        />
+      )}
 
       {showExitConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>

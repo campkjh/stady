@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
 
     // 메모/필기를 보내면 토글이 아니라 저장(upsert)으로 동작한다.
     const isMemoSave = memo !== undefined || drawing !== undefined;
+    // 노트는 자유 텍스트라 서버에서 문자열/길이를 강제한다(클라 maxLength만 믿지 않음).
+    const safeMemo = memo === undefined ? undefined : String(memo ?? "").slice(0, 2000);
 
     if (!quizType) {
       return NextResponse.json(
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
         ? await prisma.bookmark.update({
             where: { id: existing.id },
             data: {
-              ...(memo !== undefined ? { memo: memo || null } : {}),
+              ...(safeMemo !== undefined ? { memo: safeMemo || null } : {}),
               ...(drawing !== undefined ? { drawing: drawing || null } : {}),
             },
           })
@@ -181,7 +183,7 @@ export async function POST(request: NextRequest) {
               problemId: problemId || null,
               oxQuestionId: oxQuestionId || null,
               vocabQuestionId: vocabQuestionId || null,
-              memo: memo || null,
+              memo: safeMemo || null,
               drawing: drawing || null,
             },
           });
