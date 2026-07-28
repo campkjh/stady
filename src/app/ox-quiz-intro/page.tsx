@@ -146,7 +146,10 @@ export default function OxQuizListPage() {
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                 {selectedGroup.items.map((qs, index) => {
-                  const sections = Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[];
+                  // 소분류가 세트 제목과 같으면(단원 단위로 분리된 세트) 중복 태그이므로 숨긴다.
+                  const sections = (
+                    Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[]
+                  ).filter((s) => s.trim() !== qs.title.trim());
                   return (
                     <button
                       key={qs.id}
@@ -164,7 +167,7 @@ export default function OxQuizListPage() {
                         {qs.title}
                       </span>
                       <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "#8A909C", textAlign: "center" }}>
-                        {sections.length}개 소분류 · {qs.totalQuestions}문항
+                        {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{qs.totalQuestions}문항
                       </span>
                       {sections.length > 0 && (
                         <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
