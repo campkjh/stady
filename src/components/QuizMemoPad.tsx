@@ -6,6 +6,8 @@ import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardR
 // 같은 종이 위에 펜으로 그림/도식을 그릴 수 있다(그림은 dataURL로 저장).
 const PAD_H = 264; // 종이 높이(px). 캔버스 좌표 안정성을 위해 고정.
 const LINE_H = 28; // 줄 간격 = textarea line-height
+const BAR_H = 38; // 종이 하단 도구 띠(글/그림 영역과 겹치지 않게 분리)
+const DRAW_H = PAD_H - BAR_H; // 실제 필기/그리기 영역 높이
 const PEN_COLORS = ["#1F2937", "#2563EB", "#DC2626", "#059669"];
 
 export interface MemoPadHandle {
@@ -41,7 +43,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const w = wrap.clientWidth;
-    const h = PAD_H;
+    const h = DRAW_H;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
@@ -156,60 +158,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
 
   return (
     <div>
-      {/* 모드 전환 + 펜 옵션 */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-        {(["write", "draw"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            style={{
-              height: 30, padding: "0 12px", borderRadius: 999, cursor: "pointer",
-              border: `1px solid ${mode === m ? "#B26A00" : "#E8DFA8"}`,
-              background: mode === m ? "#B26A00" : "#FFFDF0",
-              color: mode === m ? "#fff" : "#8A7A3C",
-              fontSize: 12.5, fontWeight: 800,
-            }}
-          >
-            {m === "write" ? "✏️ 쓰기" : "🖌️ 그리기"}
-          </button>
-        ))}
-        {mode === "draw" && (
-          <>
-            <span style={{ display: "inline-flex", gap: 5, marginLeft: 2 }}>
-              {PEN_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-label={`펜 색상 ${c}`}
-                  onClick={() => { setColor(c); setEraser(false); }}
-                  style={{
-                    width: 22, height: 22, borderRadius: "50%", background: c, cursor: "pointer",
-                    border: !eraser && color === c ? "3px solid #B26A00" : "2px solid #fff",
-                    boxShadow: "0 0 0 1px #E5E7EB",
-                  }}
-                />
-              ))}
-            </span>
-            <button
-              type="button"
-              onClick={() => setEraser((v) => !v)}
-              style={{
-                height: 30, padding: "0 10px", borderRadius: 999, cursor: "pointer",
-                border: `1px solid ${eraser ? "#B26A00" : "#E8DFA8"}`,
-                background: eraser ? "#FFF3C4" : "#FFFDF0", color: "#8A7A3C",
-                fontSize: 12, fontWeight: 800,
-              }}
-            >
-              지우개
-            </button>
-            <button type="button" onClick={undo} style={miniBtn}>되돌리기</button>
-            <button type="button" onClick={clearAll} style={miniBtn}>전체 지우기</button>
-          </>
-        )}
-      </div>
-
-      {/* 노란 메모지 */}
+      {/* 노란 메모지(도구는 종이 안쪽 우상단에 최소한으로) */}
       <div
         ref={wrapRef}
         style={{
@@ -233,6 +182,50 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
             boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 3, pointerEvents: "none",
           }}
         />
+
+        {/* 도구: 쓰기/그리기 전환 + (그리기일 때) 색·지우개·되돌리기 */}
+        <div style={{
+          position: "absolute", left: 0, right: 0, bottom: 0, height: BAR_H, zIndex: 4,
+          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4,
+          padding: "0 34px 0 10px",
+          borderTop: "1px solid rgba(190,170,90,0.45)",
+          background: "linear-gradient(180deg, rgba(255,248,184,0.75) 0%, #FFF6A8 60%)",
+        }}>
+          {mode === "draw" && (
+            <>
+              {PEN_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={`펜 색상 ${c}`}
+                  onClick={() => { setColor(c); setEraser(false); }}
+                  style={{
+                    width: 18, height: 18, borderRadius: "50%", background: c, cursor: "pointer", padding: 0,
+                    border: !eraser && color === c ? "2.5px solid #fff" : "1.5px solid rgba(255,255,255,0.75)",
+                    boxShadow: !eraser && color === c ? "0 0 0 1.5px #8A6A00" : "0 1px 2px rgba(0,0,0,0.12)",
+                  }}
+                />
+              ))}
+              <button type="button" onClick={() => setEraser((v) => !v)} aria-label="지우개" style={iconBtn(eraser)}>⌫</button>
+              <button type="button" onClick={undo} aria-label="되돌리기" style={iconBtn(false)}>↺</button>
+              <button type="button" onClick={clearAll} aria-label="전체 지우기" style={iconBtn(false)}>✕</button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === "write" ? "draw" : "write"))}
+            aria-label={mode === "write" ? "그리기로 전환" : "쓰기로 전환"}
+            style={{
+              height: 26, padding: "0 10px", borderRadius: 999, cursor: "pointer",
+              border: "1px solid rgba(138,106,0,0.25)",
+              background: mode === "draw" ? "#B26A00" : "rgba(255,255,255,0.7)",
+              color: mode === "draw" ? "#fff" : "#8A7A3C",
+              fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap",
+            }}
+          >
+            {mode === "write" ? "✏️ 쓰기" : "🖌️ 그리기"}
+          </button>
+        </div>
         <textarea
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
@@ -240,7 +233,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
           maxLength={2000}
           readOnly={mode === "draw"}
           style={{
-            position: "absolute", inset: 0, width: "100%", height: "100%",
+            position: "absolute", top: 0, left: 0, right: 0, height: DRAW_H,
             boxSizing: "border-box", padding: `14px 16px`,
             background: "transparent", border: "none", outline: "none", resize: "none",
             fontSize: 16, lineHeight: `${LINE_H}px`, color: "#3A3320",
@@ -256,19 +249,10 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
           onPointerLeave={onUp}
           onPointerCancel={onUp}
           style={{
-            position: "absolute", inset: 0, zIndex: 2,
+            position: "absolute", top: 0, left: 0, right: 0, height: DRAW_H, zIndex: 2,
             touchAction: mode === "draw" ? "none" : "auto",
             pointerEvents: mode === "draw" ? "auto" : "none",
             cursor: mode === "draw" ? "crosshair" : "default",
-          }}
-        />
-        {/* 접힌 모서리 */}
-        <span
-          aria-hidden
-          style={{
-            position: "absolute", right: 0, bottom: 0, width: 26, height: 26, zIndex: 3,
-            background: "linear-gradient(135deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.06) 50%, #FFFDF0 50%)",
-            pointerEvents: "none",
           }}
         />
       </div>
@@ -276,10 +260,14 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
   );
 });
 
-const miniBtn: React.CSSProperties = {
-  height: 30, padding: "0 10px", borderRadius: 999, cursor: "pointer",
-  border: "1px solid #E8DFA8", background: "#FFFDF0", color: "#8A7A3C",
-  fontSize: 12, fontWeight: 800,
-};
+function iconBtn(active: boolean): React.CSSProperties {
+  return {
+    width: 26, height: 26, borderRadius: 999, cursor: "pointer", padding: 0,
+    border: "1px solid rgba(138,106,0,0.22)",
+    background: active ? "#B26A00" : "rgba(255,255,255,0.7)",
+    color: active ? "#fff" : "#8A7A3C",
+    fontSize: 13, fontWeight: 800, lineHeight: 1,
+  };
+}
 
 export default QuizMemoPad;

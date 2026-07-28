@@ -1200,19 +1200,12 @@ export default function OxQuizSolvePage() {
             borderRadius: "20px 20px 0 0", padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
             boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#191F28" }}>퀴즈 노트</p>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: "#9CA3AF" }}>나만 볼 수 있어요</span>
-            </div>
-            <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "#8B95A1", lineHeight: 1.5 }}>
-              어떤 사고로 답을 골랐는지, 연결해서 알게 된 내용을 남겨보세요. 저장하면 이 문제가 책갈피에 추가돼요.
-            </p>
             <QuizMemoPad
               ref={memoPadRef}
               text={noteText}
               onTextChange={setNoteText}
               initialDrawing={drawingByQuestion.get(currentQuestion.id) ?? null}
-              placeholder={"예) 노직은 소유 권리의 역사(취득·이전)가 정당하면 분배도 정의롭다고 봄.\n→ 롤스라면? 차등의 원칙 위배 여부를 따졌을 것."}
+              placeholder={"메모..."}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
