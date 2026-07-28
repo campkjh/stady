@@ -190,7 +190,7 @@ export default function ThirdPartyPage() {
 
       {/* Footer */}
       <div className="border-t border-[#E5E7EB] px-4 pt-6 pb-4 text-xs leading-5 text-gray-400">
-        <p>헬스스헬 | 우 16891</p>
+        <p>스타디 | 우 16891</p>
         <p>경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
         <p>T 010-4726-9276 | E tlsdml0507@naver.com</p>
         <p>대표자 김지승 | 사업자 등록 번호 852-06-03583</p>

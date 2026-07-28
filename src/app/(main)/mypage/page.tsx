@@ -200,7 +200,7 @@ export default function MyPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/stady-logo.svg" alt="Stady" style={{ width: 64, height: "auto", filter: "grayscale(100%)", opacity: 0.25, marginBottom: 12 }} />
         <div style={{ fontSize: 11, lineHeight: 1.8, color: "#C0C0C0" }}>
-          <p>헬스스헬 | 우 06314  경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
+          <p>스타디 | 우 06314  경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
           <p>T 01047269276 | E tlsdml0507@naver.com</p>
           <p>대표자 김지승 | 사업자 등록 번호 852-06-03583</p>
           <p>Copyright© stady. All right reserved.</p>

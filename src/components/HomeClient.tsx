@@ -879,7 +879,7 @@ export default function HomeClient({
           <Link href="/withdraw" style={{ fontSize: 12, color: "#D1D5DB", textDecoration: "none" }}>회원탈퇴</Link>
         </div>
         <div style={{ fontSize: 11, color: "#D1D5DB", lineHeight: 1.6 }}>
-          <p>헬스스헬 | 대표자 김지승</p>
+          <p>스타디 | 대표자 김지승</p>
           <p>사업자 등록 번호 852-06-03583</p>
           <p>경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
           <p>T 010-4726-9276 | E tlsdml0507@naver.com</p>
