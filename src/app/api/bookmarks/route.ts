@@ -111,6 +111,16 @@ export async function POST(request: NextRequest) {
     const isMemoSave = memo !== undefined || drawing !== undefined;
     // 노트는 자유 텍스트라 서버에서 문자열/길이를 강제한다(클라 maxLength만 믿지 않음).
     const safeMemo = memo === undefined ? undefined : String(memo ?? "").slice(0, 2000);
+    // 그림은 dataURL(PNG). 형식/용량을 서버에서 강제한다(빈 문자열이면 그림 삭제).
+    const rawDrawing = drawing === undefined ? undefined : String(drawing ?? "");
+    const safeDrawing =
+      rawDrawing === undefined
+        ? undefined
+        : rawDrawing === ""
+          ? ""
+          : /^data:image\/(png|jpeg|webp);base64,/.test(rawDrawing) && rawDrawing.length <= 1_500_000
+            ? rawDrawing
+            : "";
 
     if (!quizType) {
       return NextResponse.json(
@@ -170,7 +180,7 @@ export async function POST(request: NextRequest) {
             where: { id: existing.id },
             data: {
               ...(safeMemo !== undefined ? { memo: safeMemo || null } : {}),
-              ...(drawing !== undefined ? { drawing: drawing || null } : {}),
+              ...(safeDrawing !== undefined ? { drawing: safeDrawing || null } : {}),
             },
           })
         : await prisma.bookmark.create({
@@ -184,7 +194,7 @@ export async function POST(request: NextRequest) {
               oxQuestionId: oxQuestionId || null,
               vocabQuestionId: vocabQuestionId || null,
               memo: safeMemo || null,
-              drawing: drawing || null,
+              drawing: safeDrawing || null,
             },
           });
       return NextResponse.json({ bookmarked: true, saved: true, bookmark });

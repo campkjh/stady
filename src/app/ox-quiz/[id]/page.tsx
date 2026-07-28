@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
+import QuizMemoPad, { type MemoPadHandle } from "@/components/QuizMemoPad";
 import LoginRequired from "@/components/LoginRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 
@@ -32,6 +33,7 @@ interface BookmarkItem {
   oxQuizSetId: string | null;
   oxQuestionId: string | null;
   memo?: string | null;
+  drawing?: string | null;
 }
 
 type TabFilter = "all" | "correct" | "wrong";
@@ -79,6 +81,8 @@ export default function OxQuizSolvePage() {
   const [noteText, setNoteText] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   const [showNoteLossConfirm, setShowNoteLossConfirm] = useState(false);
+  const [drawingByQuestion, setDrawingByQuestion] = useState<Map<string, string>>(new Map());
+  const memoPadRef = useRef<MemoPadHandle>(null);
   const [memoByQuestion, setMemoByQuestion] = useState<Map<string, string>>(new Map());
   const [progressReady, setProgressReady] = useState(false);
   const [pendingProgress, setPendingProgress] = useState<{
@@ -122,6 +126,7 @@ export default function OxQuizSolvePage() {
         let bookmarkedIds = new Set<string>();
 
         const memoMap = new Map<string, string>();
+        const drawMap = new Map<string, string>();
         try {
           const bmRes = await fetch("/api/bookmarks?quizType=ox");
           if (bmRes.ok) {
@@ -132,11 +137,13 @@ export default function OxQuizSolvePage() {
             bookmarkedIds = new Set(mine.map((bm) => bm.oxQuestionId as string));
             for (const bm of mine) {
               if (bm.memo) memoMap.set(bm.oxQuestionId as string, bm.memo);
+              if (bm.drawing) drawMap.set(bm.oxQuestionId as string, bm.drawing);
             }
           }
         } catch {}
         setBookmarkedQuestionIds(bookmarkedIds);
         setMemoByQuestion(memoMap);
+        setDrawingByQuestion(drawMap);
 
         if (bookmarkMode.enabled) {
           nextQuiz = {
@@ -347,7 +354,7 @@ export default function OxQuizSolvePage() {
   const toggleBookmark = useCallback(async () => {
     if (!currentQuestion || !quiz) return;
     setShowNoteLossConfirm(false);
-    const hadNote = memoByQuestion.has(currentQuestion.id);
+    const hadNote = memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id);
     try {
       const response = await fetch("/api/bookmarks", {
         method: "POST",
@@ -368,6 +375,11 @@ export default function OxQuizSolvePage() {
           next.delete(currentQuestion.id);
           return next;
         });
+        setDrawingByQuestion((prev) => {
+          const next = new Map(prev);
+          next.delete(currentQuestion.id);
+          return next;
+        });
       }
       showToast(
         data.bookmarked
@@ -377,14 +389,15 @@ export default function OxQuizSolvePage() {
     } catch {
       showToast("책갈피 처리에 실패했어요");
     }
-  }, [currentQuestion, quiz, memoByQuestion, showToast]);
+  }, [currentQuestion, quiz, memoByQuestion, drawingByQuestion, showToast]);
 
   // 퀴즈 노트 저장: 저장하면 해당 문제가 책갈피에 추가되고(업서트) 메모는 나만 본다.
   const saveNote = useCallback(async () => {
     if (!currentQuestion || !quiz || noteSaving) return;
-    const hadNote = memoByQuestion.has(currentQuestion.id);
-    // 빈 노트를 처음부터 저장하면 의미 없는 책갈피만 생기므로 그냥 닫는다.
-    if (!noteText.trim() && !hadNote) {
+    const hadNote = memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id);
+    const drawing = memoPadRef.current?.exportDrawing() ?? null;
+    // 글도 그림도 없이 저장하면 의미 없는 책갈피만 생기므로 그냥 닫는다.
+    if (!noteText.trim() && !drawing && !hadNote) {
       setNoteOpen(false);
       return;
     }
@@ -398,6 +411,7 @@ export default function OxQuizSolvePage() {
           oxQuizSetId: quiz.id,
           oxQuestionId: currentQuestion.id,
           memo: noteText.trim(),
+          drawing: drawing ?? "",
         }),
       });
       if (!res.ok) throw new Error("save failed");
@@ -408,15 +422,21 @@ export default function OxQuizSolvePage() {
         else next.delete(currentQuestion.id);
         return next;
       });
+      setDrawingByQuestion((prev) => {
+        const next = new Map(prev);
+        if (drawing) next.set(currentQuestion.id, drawing);
+        else next.delete(currentQuestion.id);
+        return next;
+      });
       setBookmarkedQuestionIds((prev) => new Set(prev).add(currentQuestion.id));
       setNoteOpen(false);
-      showToast(trimmed ? "노트가 저장됐어요 · 책갈피에서 볼 수 있어요" : "노트를 비웠어요", 2200);
+      showToast(trimmed || drawing ? "노트가 저장됐어요 · 책갈피에서 볼 수 있어요" : "노트를 비웠어요", 2200);
     } catch {
       showToast("노트 저장에 실패했어요");
     } finally {
       setNoteSaving(false);
     }
-  }, [currentQuestion, quiz, noteText, noteSaving, memoByQuestion, showToast]);
+  }, [currentQuestion, quiz, noteText, noteSaving, memoByQuestion, drawingByQuestion, showToast]);
 
   const handleAnswer = (selected: boolean) => {
     if (!currentQuestion || answers.has(currentQuestion.id) || navigating) return;
@@ -696,9 +716,9 @@ export default function OxQuizSolvePage() {
                     height: 32,
                     padding: "0 12px",
                     borderRadius: 999,
-                    border: `1px solid ${currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#F5A623" : "#E5E7EB"}`,
-                    background: currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#FFF7E8" : "#fff",
-                    color: currentQuestion && memoByQuestion.has(currentQuestion.id) ? "#B26A00" : "#6B7280",
+                    border: `1px solid ${currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#F5A623" : "#E5E7EB"}`,
+                    background: currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#FFF7E8" : "#fff",
+                    color: currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#B26A00" : "#6B7280",
                     fontSize: 13,
                     fontWeight: 700,
                     display: "inline-flex",
@@ -719,7 +739,7 @@ export default function OxQuizSolvePage() {
                 onClick={() => {
                   if (!currentQuestion) return;
                   // 노트가 있는 문제의 책갈피를 해제하면 노트도 사라지므로 먼저 확인.
-                  if (isBookmarked && memoByQuestion.has(currentQuestion.id)) {
+                  if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
                     setShowNoteLossConfirm(true);
                     return;
                   }
@@ -1187,17 +1207,12 @@ export default function OxQuizSolvePage() {
             <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "#8B95A1", lineHeight: 1.5 }}>
               어떤 사고로 답을 골랐는지, 연결해서 알게 된 내용을 남겨보세요. 저장하면 이 문제가 책갈피에 추가돼요.
             </p>
-            <textarea
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
+            <QuizMemoPad
+              ref={memoPadRef}
+              text={noteText}
+              onTextChange={setNoteText}
+              initialDrawing={drawingByQuestion.get(currentQuestion.id) ?? null}
               placeholder={"예) 노직은 소유 권리의 역사(취득·이전)가 정당하면 분배도 정의롭다고 봄.\n→ 롤스라면? 차등의 원칙 위배 여부를 따졌을 것."}
-              rows={5}
-              maxLength={2000}
-              style={{
-                width: "100%", boxSizing: "border-box", borderRadius: 12, border: "1px solid #E5E7EB",
-                background: "#F9FAFB", padding: 12, fontSize: 16, lineHeight: 1.6, color: "#191F28",
-                resize: "vertical", outline: "none", fontFamily: "inherit",
-              }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>

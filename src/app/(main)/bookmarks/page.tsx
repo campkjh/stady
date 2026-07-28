@@ -480,10 +480,24 @@ export default function BookmarksPage() {
                         {bookmark.title}
                       </p>
                     )}
-                    {bookmark.memo && (
-                      <p className="mt-2 w-full whitespace-pre-wrap rounded-lg bg-[#F8F9FB] p-2 text-xs text-gray-600 line-clamp-3">
-                        📝 {bookmark.memo}
-                      </p>
+                    {(bookmark.memo || bookmark.drawing) && (
+                      // 퀴즈 노트: 노란 메모지 느낌으로 글/그림을 함께 보여준다.
+                      <div className="mt-2 w-full rounded-lg p-2" style={{ background: "#FFF8B8", border: "1px solid #EFE39A" }}>
+                        {bookmark.memo && (
+                          <p className="whitespace-pre-wrap text-xs line-clamp-3" style={{ color: "#4A4224" }}>
+                            {bookmark.memo}
+                          </p>
+                        )}
+                        {bookmark.drawing && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={bookmark.drawing}
+                            alt="노트 그림"
+                            className={bookmark.memo ? "mt-1.5" : ""}
+                            style={{ width: "100%", borderRadius: 6, background: "rgba(255,255,255,0.5)" }}
+                          />
+                        )}
+                      </div>
                     )}
                   </button>
                 ))}
