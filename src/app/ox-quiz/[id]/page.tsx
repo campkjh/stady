@@ -674,7 +674,7 @@ export default function OxQuizSolvePage() {
                     backgroundColor: "#F9FAFB",
                     marginTop: 4,
                   }}>
-                    <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>
+                    <p style={{ fontSize: 15.5, color: "#4B5563", lineHeight: 1.65 }}>
                       {currentQuestion.explanation}
                     </p>
                   </div>

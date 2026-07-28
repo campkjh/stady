@@ -300,7 +300,7 @@ function RetestContent() {
                 </p>
                 {current.explanation && (
                   <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 12, background: "#F9FAFB" }}>
-                    <p style={{ fontSize: 13, color: "#4B5563", lineHeight: 1.65 }}>{current.explanation}</p>
+                    <p style={{ fontSize: 15.5, color: "#4B5563", lineHeight: 1.65 }}>{current.explanation}</p>
                   </div>
                 )}
               </div>
