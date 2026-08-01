@@ -23,6 +23,8 @@ export interface SiteContentItem {
   // 팝업/내용이 바뀔 때마다 커지는 버전(epoch ms). 클라의 "N일 안보기" 키에 포함해,
   // 어드민이 팝업을 다시 켜거나 내용을 바꾸면 이미 숨긴 사용자에게도 다시 노출되게 한다.
   popupVersion: number;
+  // 커뮤니티에 미러링된 글 id(공지 전용). 있으면 공감/댓글을 붙일 수 있다.
+  postId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +88,14 @@ export async function ensureSiteContentTable(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "SiteContentPopup" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMP NOT NULL DEFAULT now()`
   );
+  // 공지 ↔ 커뮤니티 글 매핑(공지를 커뮤니티에 미러링해 공감/댓글을 붙인다).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SiteContentPost" (
+      "content_id" TEXT PRIMARY KEY,
+      "post_id" TEXT NOT NULL,
+      "created_at" TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
   tableReady = true;
   await seedIfEmpty();
 }
@@ -124,6 +134,31 @@ async function getPopupConfig(contentId: string): Promise<{ enabled: boolean; da
     contentId
   );
   return rows[0] ? { enabled: rows[0].popup_enabled, days: rows[0].hide_days } : null;
+}
+
+// 공지 ↔ 커뮤니티 글 매핑 조회/등록/해제.
+export async function getMirroredPostId(contentId: string): Promise<string | null> {
+  await ensureSiteContentTable();
+  const rows = await prisma.$queryRawUnsafe<{ post_id: string }[]>(
+    `SELECT "post_id" FROM "SiteContentPost" WHERE "content_id" = $1`,
+    contentId
+  );
+  return rows[0]?.post_id ?? null;
+}
+
+export async function setMirroredPostId(contentId: string, postId: string): Promise<void> {
+  await ensureSiteContentTable();
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "SiteContentPost" ("content_id","post_id") VALUES ($1,$2)
+     ON CONFLICT ("content_id") DO UPDATE SET "post_id" = EXCLUDED."post_id"`,
+    contentId,
+    postId
+  );
+}
+
+export async function clearMirroredPost(contentId: string): Promise<void> {
+  await ensureSiteContentTable();
+  await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentPost" WHERE "content_id" = $1`, contentId);
 }
 
 // 기존 하드코딩 공지/FAQ를 최초 1회 시드(테이블이 비어있을 때만) → 내용 보존 + 편집 가능.
@@ -176,6 +211,7 @@ function mapRow(r: Row): SiteContentItem {
     popupEnabled: false,
     popupHideDays: 7,
     popupVersion: 0, // 팝업 설정(SiteContentPopup)의 updated_at으로 listSiteContent에서 채움
+    postId: null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -221,6 +257,15 @@ export async function listSiteContent(kind: ContentKind, activeOnly = false): Pr
         it.popupVersion = cfg.ver;
       }
     }
+
+    // 커뮤니티 미러 글 id도 함께 조회(공지에서 공감/댓글 진입점으로 사용).
+    const posts = await prisma.$queryRawUnsafe<{ content_id: string; post_id: string }[]>(
+      `SELECT "content_id", "post_id" FROM "SiteContentPost" WHERE "content_id" IN (${ph})`,
+      ...ids
+    );
+    const postBy: Record<string, string> = {};
+    for (const r of posts) postBy[r.content_id] = r.post_id;
+    for (const it of items) it.postId = postBy[it.id] ?? null;
   }
   return items;
 }
@@ -294,5 +339,6 @@ export async function deleteSiteContent(id: string): Promise<void> {
   await ensureSiteContentTable();
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentImage" WHERE "content_id" = $1`, id);
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentPopup" WHERE "content_id" = $1`, id);
+  await prisma.$executeRawUnsafe(`DELETE FROM "SiteContentPost" WHERE "content_id" = $1`, id);
   await prisma.$executeRawUnsafe(`DELETE FROM "SiteContent" WHERE "id" = $1`, id);
 }

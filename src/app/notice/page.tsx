@@ -1,5 +1,6 @@
 import BackHeader from "@/components/BackHeader";
 import Accordion from "@/components/Accordion";
+import NoticeReactions from "@/components/NoticeReactions";
 import { listSiteContent } from "@/lib/siteContent";
 
 // 공지는 관리자가 수시로 바꾸므로 항상 최신을 보여준다.
@@ -43,6 +44,8 @@ export default async function NoticePage({
             ))}
           </div>
         )}
+        {/* 공감/댓글 — 커뮤니티에 미러링된 글에 달린다. */}
+        {notice.postId && <NoticeReactions postId={notice.postId} />}
       </div>
     ),
     };

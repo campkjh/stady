@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { listSiteContent, createSiteContent, type ContentKind } from "@/lib/siteContent";
+import { syncNoticeToCommunity } from "@/lib/noticeMirror";
 
 function adminError(error: unknown) {
   if (error instanceof Error && error.message === "Unauthorized") {
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 // 어드민: 공지/FAQ 추가.
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const body = await request.json().catch(() => ({}));
     const kind = parseKind(body?.kind);
     if (!kind) return NextResponse.json({ error: "kind가 올바르지 않습니다." }, { status: 400 });
@@ -53,6 +54,21 @@ export async function POST(request: NextRequest) {
       popupEnabled: body?.popupEnabled === true,
       popupHideDays: Number.isFinite(Number(body?.popupHideDays)) ? Number(body.popupHideDays) : 7,
     });
+    // 공지는 커뮤니티 '공지' 게시판에도 올려 사용자가 공감/댓글을 달 수 있게 한다.
+    if (kind === "notice") {
+      const items = await listSiteContent("notice");
+      const created = items.find((it) => it.title === title && !it.postId);
+      if (created) {
+        await syncNoticeToCommunity({
+          contentId: created.id,
+          title: created.title,
+          body: created.body,
+          imageUrls: created.imageUrls,
+          authorId: admin.id,
+          isActive: created.isActive,
+        });
+      }
+    }
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
     return adminError(error);
