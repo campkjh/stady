@@ -666,9 +666,9 @@ export default function OxQuizSolvePage() {
         {/* 3행: 필터 칩 */}
         <div style={{ display: "flex", gap: 6, padding: "0 12px 10px" }}>
           {[
-            { key: "all" as TabFilter, label: "전체", count: answers.size, tint: "#2B313D", bg: "#EEF0F3" },
-            { key: "correct" as TabFilter, label: "맞은 문제", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "#1F5EDC", bg: "#EAF2FF" },
-            { key: "wrong" as TabFilter, label: "틀린 문제", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "#D93A4E", bg: "#FFEFF1" },
+            { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "#2B313D", bg: "#EEF0F3" },
+            { key: "correct" as TabFilter, label: "맞은 문제", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "#1F5EDC", bg: "#EAF2FF" },
+            { key: "wrong" as TabFilter, label: "틀린 문제", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "#D93A4E", bg: "#FFEFF1" },
           ].map((tab) => {
             const on = tabFilter === tab.key;
             return (
@@ -679,14 +679,20 @@ export default function OxQuizSolvePage() {
                 className="press"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  height: 28, padding: "0 11px", borderRadius: 999, cursor: "pointer",
+                  height: 30, padding: "0 11px 0 8px", borderRadius: 999, cursor: "pointer",
                   border: `1px solid ${on ? "transparent" : "#EDF0F3"}`,
                   background: on ? tab.bg : "#fff",
                   color: on ? tab.tint : "#8B95A1",
                   fontSize: 12.5, fontWeight: 800, letterSpacing: "-0.2px",
-                  transition: "background 0.16s ease, color 0.16s ease",
+                  transition: "background 0.16s ease, color 0.16s ease, opacity 0.16s ease",
                 }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={tab.icon}
+                  alt=""
+                  style={{ width: 18, height: 18, display: "block", opacity: on ? 1 : 0.45, transition: "opacity 0.16s ease" }}
+                />
                 {tab.label}
                 <span style={{ fontSize: 11.5, fontWeight: 800, opacity: on ? 0.85 : 0.7, fontVariantNumeric: "tabular-nums" }}>
                   {tab.count}
