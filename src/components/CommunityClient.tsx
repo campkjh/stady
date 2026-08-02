@@ -1026,7 +1026,7 @@ function CommunityStyles() {
         display: flex;
         gap: 8px;
         overflow-x: auto;
-        padding: 1px 1px 3px;
+        padding: 2px 1px 4px;
         scrollbar-width: none;
       }
       .community-chip-row::-webkit-scrollbar {
@@ -1147,35 +1147,44 @@ function CommunityStyles() {
   );
 }
 
+// 카테고리 알약 칩: 선택은 짙은 차콜, 나머지는 연회색(보더 없이 면으로만 구분).
 function chipStyle(active: boolean, stacked: boolean) {
   return {
     width: stacked ? "100%" : undefined,
     flex: "0 0 auto",
-    border: `1px solid ${active ? "#111827" : "#E5E8EB"}`,
+    border: "1px solid transparent",
     borderRadius: 999,
-    background: active ? "#111827" : "#E5E8EB",
+    background: active ? "#33363D" : "#F2F3F6",
     color: active ? "#fff" : "#4E5968",
-    padding: stacked ? "10px 12px" : "9px 13px",
-    fontSize: 14,
-    fontWeight: active ? 600 : 400,
+    padding: stacked ? "11px 14px" : "10px 18px",
+    fontSize: 15,
+    fontWeight: active ? 700 : 600,
+    letterSpacing: "-0.3px",
+    lineHeight: 1.2,
+    whiteSpace: "nowrap" as const,
     cursor: "pointer",
     textAlign: "left",
+    transition: "background 0.16s ease, color 0.16s ease",
   } as const;
 }
 
+// 태그 칩: 카테고리 알약과 같은 팔레트로, 한 단계 작게(하위 필터임을 시각적으로 구분).
 function tagChipStyle(active: boolean, stacked: boolean) {
   return {
     width: stacked ? "100%" : undefined,
     flex: "0 0 auto",
-    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "transparent" : "#EDF0F3"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#4B5563",
-    padding: stacked ? "9px 12px" : "8px 11px",
-    fontSize: 13,
-    fontWeight: 600,
+    background: active ? "#33363D" : "#fff",
+    color: active ? "#fff" : "#4E5968",
+    padding: stacked ? "9px 12px" : "8px 13px",
+    fontSize: 13.5,
+    fontWeight: active ? 700 : 600,
+    letterSpacing: "-0.2px",
+    whiteSpace: "nowrap" as const,
     cursor: "pointer",
     textAlign: "left",
+    transition: "background 0.16s ease, color 0.16s ease",
   } as const;
 }
 
