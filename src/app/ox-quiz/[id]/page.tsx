@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import QuizMemoPad, { type MemoPadHandle } from "@/components/QuizMemoPad";
+import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 
@@ -530,122 +531,184 @@ export default function OxQuizSolvePage() {
 
   return (
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 720, margin: "0 auto", overflow: "hidden" }}>
-      {/* Header */}
-      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
-        <button
-          type="button"
-          onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
-          className="press"
-          style={{ background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40 }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <div className="flex-1" style={{ minWidth: 0 }}>
-          <h1 style={{
-            fontSize: 14,
-            fontWeight: 800,
-            color: "#111",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}>
-            {breadcrumb}
-          </h1>
-        </div>
-        {!bookmarkMode.enabled && (
+      {/* Header — 제목/타이머, 진행도·도구, 필터를 한 덩어리로 통합 */}
+      <header
+        style={{
+          position: "relative", zIndex: 20, flexShrink: 0,
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+          borderBottom: "1px solid #EDF0F3",
+          boxShadow: "0 1px 12px rgba(15,23,42,0.04)",
+        }}
+      >
+        {/* 1행: 나가기 · 제목/소분류 · 타이머 · 목록 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 6px" }}>
           <button
             type="button"
-            aria-label="문제 순서 섞기"
-            onClick={() => {
-              if (answers.size > 0) setShowShuffleConfirm(true);
-              else applyShuffleToggle();
-            }}
+            aria-label="나가기"
+            onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
             className="press"
-            style={{
-              display: "flex", alignItems: "center", gap: 4,
-              height: 32, padding: "0 10px", borderRadius: 999,
-              border: `1px solid ${shuffleOn ? "#3787FF" : "#E5E7EB"}`,
-              background: shuffleOn ? "#EEF5FF" : "#fff",
-              color: shuffleOn ? "#1F5EDC" : "#6B7280",
-              fontSize: 12.5, fontWeight: 800,
-            }}
+            style={{ ...hIconBtn, background: "none", border: "none" }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 3 21 3 21 8" />
-              <line x1="4" y1="20" x2="21" y2="3" />
-              <polyline points="21 16 21 21 16 21" />
-              <line x1="15" y1="15" x2="21" y2="21" />
-              <line x1="4" y1="4" x2="9" y2="9" />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B313D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
             </svg>
-            섞기
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => setShowList(true)}
-          className="press"
-          style={{ background: "none", border: "none" }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-      </header>
-
-      {/* Tab filter */}
-      <div style={{ display: "flex", gap: 12, padding: "8px 16px", justifyContent: "center", position: "relative", zIndex: 20 }}>
-        {[
-          { key: "all" as TabFilter, icon: "/icons/emoji-solved.svg", label: "풀은문제", count: answers.size },
-          { key: "correct" as TabFilter, icon: "/icons/emoji-correct.svg", label: "맞춘문제", count: Array.from(answers.values()).filter(a => a.isCorrect).length },
-          { key: "wrong" as TabFilter, icon: "/icons/emoji-wrong.svg", label: "틀린문제", count: Array.from(answers.values()).filter(a => !a.isCorrect).length },
-        ].map((tab) => (
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{
+              margin: 0, fontSize: 14.5, fontWeight: 800, color: "#191F28", letterSpacing: "-0.3px",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {quiz.title}
+            </p>
+            <p style={{
+              margin: "1px 0 0", fontSize: 11.5, fontWeight: 600, color: "#9CA3AF",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {[
+                quiz.category?.name,
+                currentQuestion?.section && currentQuestion.section.trim() !== quiz.title.trim()
+                  ? currentQuestion.section
+                  : null,
+              ].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          <QuizTimer startAt={startTime} paused={submitted} />
           <button
-            key={tab.key}
-            onClick={() => setTabFilter(tab.key)}
+            type="button"
+            aria-label="문제 목록"
+            onClick={() => setShowList(true)}
             className="press"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-              background: "none",
-              border: "none",
-              opacity: tabFilter === tab.key ? 1 : 0.4,
-              transition: "opacity 0.2s ease",
-              position: "relative",
-            }}
+            style={{ ...hIconBtn, background: "none", border: "none" }}
           >
-            <div style={{ position: "relative" }}>
-              <img src={tab.icon} alt="" style={{ width: 32, height: 32 }} />
-              {tab.count > 0 && (
-                <span style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -8,
-                  minWidth: 18,
-                  height: 18,
-                  borderRadius: 9,
-                  backgroundColor: "#E85D5D",
-                  color: "#fff",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "0 4px",
-                }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B313D" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="4" y1="7" x2="20" y2="7" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="17" x2="20" y2="17" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 2행: 진행도(N/M) · 이전/다음 · 섞기/노트/책갈피 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 8px" }}>
+          <button type="button" aria-label="이전 문제" onClick={goPrev} disabled={currentIndex === 0} className="press"
+            style={{ ...hRoundBtn, opacity: currentIndex === 0 ? 0.28 : 1 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4E5968" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#191F28", letterSpacing: "-0.3px", fontVariantNumeric: "tabular-nums" }}>
+            {currentIndex + 1}
+            <span style={{ color: "#B0B8C1", fontWeight: 700 }}> / {filteredQuestions.length}</span>
+          </span>
+          <button type="button" aria-label="다음 문제" onClick={goNext} disabled={currentIndex >= filteredQuestions.length - 1} className="press"
+            style={{ ...hRoundBtn, opacity: currentIndex >= filteredQuestions.length - 1 ? 0.28 : 1 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4E5968" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+            {!bookmarkMode.enabled && (
+              <button
+                type="button" aria-label="문제 순서 섞기"
+                onClick={() => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); }}
+                className="press" style={hToolBtn(shuffleOn, "#3787FF", "#EEF5FF")}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 3 21 3 21 8" />
+                  <line x1="4" y1="20" x2="21" y2="3" />
+                  <polyline points="21 16 21 21 16 21" />
+                  <line x1="15" y1="15" x2="21" y2="21" />
+                  <line x1="4" y1="4" x2="9" y2="9" />
+                </svg>
+              </button>
+            )}
+            {noteEnabled && (
+              <button
+                type="button" aria-label="퀴즈 노트"
+                onClick={() => {
+                  if (!currentQuestion) return;
+                  setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
+                  setNoteOpen(true);
+                }}
+                className="press"
+                style={hToolBtn(
+                  !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
+                  "#B26A00", "#FFF7E8"
+                )}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
+            )}
+            <button
+              type="button" aria-label="책갈피"
+              onClick={() => {
+                if (!currentQuestion) return;
+                if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
+                  setShowNoteLossConfirm(true);
+                  return;
+                }
+                toggleBookmark();
+              }}
+              className="press" style={hToolBtn(isBookmarked, "#3787FF", "#EEF5FF")}
+            >
+              <svg width="16" height="16" viewBox="0 0 30 30" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" />
+              </svg>
+            </button>
+          </span>
+        </div>
+
+        {/* 3행: 필터 칩 */}
+        <div style={{ display: "flex", gap: 6, padding: "0 12px 10px" }}>
+          {[
+            { key: "all" as TabFilter, label: "전체", count: answers.size, tint: "#2B313D", bg: "#EEF0F3" },
+            { key: "correct" as TabFilter, label: "맞은 문제", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "#1F5EDC", bg: "#EAF2FF" },
+            { key: "wrong" as TabFilter, label: "틀린 문제", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "#D93A4E", bg: "#FFEFF1" },
+          ].map((tab) => {
+            const on = tabFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setTabFilter(tab.key)}
+                className="press"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  height: 28, padding: "0 11px", borderRadius: 999, cursor: "pointer",
+                  border: `1px solid ${on ? "transparent" : "#EDF0F3"}`,
+                  background: on ? tab.bg : "#fff",
+                  color: on ? tab.tint : "#8B95A1",
+                  fontSize: 12.5, fontWeight: 800, letterSpacing: "-0.2px",
+                  transition: "background 0.16s ease, color 0.16s ease",
+                }}
+              >
+                {tab.label}
+                <span style={{ fontSize: 11.5, fontWeight: 800, opacity: on ? 0.85 : 0.7, fontVariantNumeric: "tabular-nums" }}>
                   {tab.count}
                 </span>
-              )}
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 진행 게이지 */}
+        <div style={{ height: 3, background: "#F1F3F5" }}>
+          <div
+            style={{
+              height: "100%",
+              width: `${quiz.questions.length > 0 ? Math.min(100, (answers.size / quiz.questions.length) * 100) : 0}%`,
+              background: "linear-gradient(90deg, #7DC4FF, #3787FF)",
+              borderTopRightRadius: 3, borderBottomRightRadius: 3,
+              transition: "width 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+          />
+        </div>
+      </header>
 
       <SideTapNavigation
         onPrev={goPrev}
@@ -664,117 +727,11 @@ export default function OxQuizSolvePage() {
       >
         {currentQuestion ? (
           <>
-            {/* Question counter + nav + bookmark */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, position: "relative", zIndex: 20 }}>
-              <button
-                type="button"
-                onClick={goPrev}
-                disabled={currentIndex === 0}
-                className="press"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 28, height: 28, borderRadius: "50%",
-                  border: "1px solid #E5E7EB", background: "#fff",
-                  opacity: currentIndex === 0 ? 0.3 : 1,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              <span style={{ fontSize: 14, color: "#9CA3AF" }}>
-                {currentIndex + 1} / {filteredQuestions.length}
-              </span>
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={currentIndex >= filteredQuestions.length - 1}
-                className="press"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 28, height: 28, borderRadius: "50%",
-                  border: "1px solid #E5E7EB", background: "#fff",
-                  opacity: currentIndex >= filteredQuestions.length - 1 ? 0.3 : 1,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-              {noteEnabled && (
-                <button
-                  type="button"
-                  aria-label="퀴즈 노트"
-                  onClick={() => {
-                    if (!currentQuestion) return;
-                    setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
-                    setNoteOpen(true);
-                  }}
-                  className="press"
-                  style={{
-                    marginLeft: "auto",
-                    height: 32,
-                    padding: "0 12px",
-                    borderRadius: 999,
-                    border: `1px solid ${currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#F5A623" : "#E5E7EB"}`,
-                    background: currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#FFF7E8" : "#fff",
-                    color: currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)) ? "#B26A00" : "#6B7280",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 5,
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  노트
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!currentQuestion) return;
-                  // 노트가 있는 문제의 책갈피를 해제하면 노트도 사라지므로 먼저 확인.
-                  if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
-                    setShowNoteLossConfirm(true);
-                    return;
-                  }
-                  toggleBookmark();
-                }}
-                className="press"
-                style={{
-                  marginLeft: noteEnabled ? 0 : "auto",
-                  height: 32,
-                  padding: "0 12px",
-                  borderRadius: 999,
-                  border: `1px solid ${isBookmarked ? "#3787FF" : "#E5E7EB"}`,
-                  background: isBookmarked ? "#3787FF" : "#fff",
-                  color: isBookmarked ? "#fff" : "#6B7280",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                  transition: "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-                  <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="currentColor"/>
-                </svg>
-                책갈피
-              </button>
-            </div>
-
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ position: "relative", zIndex: 10 }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                  {currentQuestion.section && (
+                  {currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() && (
                     <span style={{
                       display: "inline-flex",
                       fontSize: 12, fontWeight: 700, color: "#3787FF",
@@ -1325,4 +1282,28 @@ export default function OxQuizSolvePage() {
       )}
     </div>
   );
+}
+
+// 헤더 공용 스타일
+const hIconBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: 34, height: 34, flexShrink: 0, cursor: "pointer", padding: 0,
+};
+
+const hRoundBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+  border: "1px solid #E9ECEF", background: "#fff", cursor: "pointer", padding: 0,
+};
+
+// 섞기/노트/책갈피 같은 토글형 도구 버튼(활성 시 색·배경 강조).
+function hToolBtn(active: boolean, tint: string, bg: string): React.CSSProperties {
+  return {
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    width: 32, height: 32, borderRadius: 10, flexShrink: 0, cursor: "pointer", padding: 0,
+    border: `1px solid ${active ? "transparent" : "#EDF0F3"}`,
+    background: active ? bg : "#fff",
+    color: active ? tint : "#8B95A1",
+    transition: "background 0.16s ease, color 0.16s ease",
+  };
 }
