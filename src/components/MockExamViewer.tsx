@@ -47,6 +47,7 @@ async function loadTesseract(): Promise<any> {
 
 interface PageHandle {
   undo: () => void;
+  redo: () => void;
   clear: () => void;
 }
 
@@ -64,8 +65,9 @@ const PageCanvas = forwardRef<
     eraserWidth: number;
     onActive: () => void;
     onOcrRegion: (dataUrl: string) => void;
+    onHistoryChange?: (h: { canUndo: boolean; canRedo: boolean }) => void;
   }
->(function PageCanvas({ examId, section, pageIndex, imageUrl, lines, tool, color, width, eraserWidth, onActive, onOcrRegion }, ref) {
+>(function PageCanvas({ examId, section, pageIndex, imageUrl, lines, tool, color, width, eraserWidth, onActive, onOcrRegion, onHistoryChange }, ref) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,6 +75,11 @@ const PageCanvas = forwardRef<
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
   const undoStack = useRef<string[]>([]);
+  // 되돌리기로 빠져나온 상태를 쌓아두는 '앞으로' 스택(새 획을 그으면 비운다).
+  const redoStack = useRef<string[]>([]);
+  const notifyHistory = () => {
+    onHistoryChange?.({ canUndo: undoStack.current.length > 1, canRedo: redoStack.current.length > 0 });
+  };
   const selStart = useRef<{ x: number; y: number } | null>(null);
   // 형광펜 스냅용: 시작 시점의 캔버스 스냅샷 + 시작 x + 대상 줄 띠.
   const hlSnap = useRef<ImageData | null>(null);
@@ -175,11 +182,27 @@ const PageCanvas = forwardRef<
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx) return;
-      undoStack.current.pop();
+      // 스택 맨 앞은 '아무것도 안 그린 상태'이므로 그 아래로는 되돌리지 않는다.
+      if (undoStack.current.length <= 1) return;
+      const popped = undoStack.current.pop();
+      if (popped) redoStack.current.push(popped);
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       const prev = undoStack.current[undoStack.current.length - 1];
       if (prev) restore(prev);
       persist();
+      notifyHistory();
+    },
+    redo() {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const next = redoStack.current.pop();
+      if (!next) return;
+      undoStack.current.push(next);
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      restore(next);
+      persist();
+      notifyHistory();
     },
     clear() {
       const canvas = canvasRef.current;
@@ -187,7 +210,9 @@ const PageCanvas = forwardRef<
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       undoStack.current = [];
+      redoStack.current = [];
       try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+      notifyHistory();
     },
   }));
 
@@ -370,8 +395,10 @@ const PageCanvas = forwardRef<
       if (canvas) {
         undoStack.current.push(canvas.toDataURL("image/png"));
         if (undoStack.current.length > 25) undoStack.current.shift();
+        redoStack.current = [];
       }
       persist();
+      notifyHistory();
       return;
     }
     if (!drawing.current) return;
@@ -381,8 +408,10 @@ const PageCanvas = forwardRef<
     if (canvas) {
       undoStack.current.push(canvas.toDataURL("image/png"));
       if (undoStack.current.length > 25) undoStack.current.shift();
+      redoStack.current = [];
     }
     persist();
+    notifyHistory();
   }
 
   // 이미지 원본 해상도에서 선택 영역을 잘라 OCR로 넘긴다.
@@ -468,6 +497,8 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // 현재 보고 있는 페이지의 되돌리기/앞으로 가능 여부(버튼 활성 표시용).
+  const [hist, setHist] = useState({ canUndo: false, canRedo: false });
   const [section, setSection] = useState<"problem" | "solution">("problem");
   const pageRefs = useRef<(PageHandle | null)[]>([]);
   const activePage = useRef(0);
@@ -588,6 +619,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
     setSection(s);
     pageRefs.current = [];
     activePage.current = 0;
+    setHist({ canUndo: false, canRedo: false });
     resetZoom();
     const el = scrollRef.current;
     if (el) el.scrollTop = 0;
@@ -666,9 +698,26 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
             {Math.round(zoom * 100)}%
           </button>
         )}
-        <button type="button" onClick={() => pageRefs.current[activePage.current]?.undo()} aria-label="되돌리기" title="되돌리기" style={barBtn}>
+        <button
+          type="button"
+          onClick={() => { pageRefs.current[activePage.current]?.undo(); }}
+          disabled={!hist.canUndo}
+          aria-label="되돌리기" title="되돌리기"
+          style={{ ...barBtn, opacity: hist.canUndo ? 1 : 0.35, cursor: hist.canUndo ? "pointer" : "default" }}
+        >
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 4 3 9 8 9" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => { pageRefs.current[activePage.current]?.redo(); }}
+          disabled={!hist.canRedo}
+          aria-label="앞으로" title="앞으로"
+          style={{ ...barBtn, opacity: hist.canRedo ? 1 : 0.35, cursor: hist.canRedo ? "pointer" : "default" }}
+        >
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7" /><polyline points="21 4 21 9 16 9" />
           </svg>
         </button>
         <button type="button" onClick={() => setShowClearConfirm(true)} aria-label="페이지 지우기" title="페이지 지우기" style={barBtn}>
@@ -760,8 +809,8 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         )}
       </div>
 
-      {/* 문제 / 해설 탭 (해설이 있을 때만) */}
-      {hasSolution && (
+      {/* 문제 / 해설 탭 (해설이 없어도 탭은 보여주고, 빈 상태로 안내) */}
+      {(
         <div style={{ flexShrink: 0, display: "flex", justifyContent: "center", padding: "8px 12px 0", background: "#fff" }}>
           <div style={{ display: "inline-flex", background: "#F1F3F5", borderRadius: 999, padding: 3, gap: 2 }}>
             {([["problem", "문제"], ["solution", "해설보기"]] as const).map(([s, lbl]) => (
@@ -773,7 +822,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                   padding: "7px 20px", borderRadius: 999, border: "none", cursor: "pointer",
                   fontSize: 13, fontWeight: 800,
                   background: section === s ? "#111827" : "transparent",
-                  color: section === s ? "#fff" : "#6B7280",
+                  color: section === s ? "#fff" : (s === "solution" && !hasSolution ? "#B0B8C1" : "#6B7280"),
                 }}
               >
                 {lbl}
@@ -803,7 +852,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
               {pages.length === 0 ? (
                 <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>
-                  {section === "solution" ? "해설 이미지가 없습니다." : "등록된 시험지 이미지가 없습니다."}
+                  {section === "solution" ? "이 시험지는 아직 해설이 등록되지 않았어요." : "등록된 시험지 이미지가 없습니다."}
                 </p>
               ) : (
                 pages.map((url, i) => (
@@ -821,6 +870,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                     eraserWidth={eraserWidth}
                     onActive={() => { activePage.current = i; }}
                     onOcrRegion={runOcr}
+                    onHistoryChange={(h) => { if (activePage.current === i) setHist(h); }}
                   />
                 ))
               )}
