@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { listMockExams, createMockExam } from "@/lib/mockExam";
+import { parseExamMeta } from "@/lib/examSubjects";
 
 function adminError(error: unknown) {
   if (error instanceof Error && error.message === "Unauthorized") {
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       solutionImageUrls: parseImageUrls(body?.solutionImageUrls),
       sortOrder: Number.isFinite(Number(body?.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body?.isActive !== false,
+      ...parseExamMeta(body),
     });
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

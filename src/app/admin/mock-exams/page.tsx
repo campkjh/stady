@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SUBJECT_GROUPS, EXAM_MONTHS } from "@/lib/examSubjects";
 
 interface Exam {
   id: string;
@@ -10,10 +11,16 @@ interface Exam {
   isActive: boolean;
   imageUrls: string[];
   solutionImageUrls?: string[];
+  year: number | null;
+  month: number | null;
+  subject: string | null;
   createdAt: string;
 }
 
-const blank = { title: "", subtitle: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], solutionImageUrls: [] as string[] };
+const blank = { title: "", subtitle: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], solutionImageUrls: [] as string[], year: "", month: "", subject: "" };
+
+// 등록 폼의 연도 선택지(올해부터 8년 전까지).
+const YEAR_CHOICES = Array.from({ length: 9 }, (_, i) => new Date().getFullYear() - i);
 
 export default function AdminMockExamsPage() {
   const [exams, setExams] = useState<Exam[]>([]);
@@ -40,7 +47,11 @@ export default function AdminMockExamsPage() {
   }
   function openEdit(ex: Exam) {
     setEditingId(ex.id);
-    setForm({ title: ex.title, subtitle: ex.subtitle ?? "", sortOrder: ex.sortOrder, isActive: ex.isActive, imageUrls: ex.imageUrls, solutionImageUrls: ex.solutionImageUrls ?? [] });
+    setForm({
+      title: ex.title, subtitle: ex.subtitle ?? "", sortOrder: ex.sortOrder, isActive: ex.isActive,
+      imageUrls: ex.imageUrls, solutionImageUrls: ex.solutionImageUrls ?? [],
+      year: ex.year != null ? String(ex.year) : "", month: ex.month != null ? String(ex.month) : "", subject: ex.subject ?? "",
+    });
     setShowForm(true);
   }
 
@@ -56,6 +67,9 @@ export default function AdminMockExamsPage() {
         isActive: form.isActive,
         imageUrls: form.imageUrls,
         solutionImageUrls: form.solutionImageUrls,
+        year: form.year ? Number(form.year) : null,
+        month: form.month ? Number(form.month) : null,
+        subject: form.subject || null,
       };
       const res = editingId
         ? await fetch(`/api/admin/mock-exams/${editingId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(payload) })
@@ -101,6 +115,34 @@ export default function AdminMockExamsPage() {
             <div><label style={label}>부제 (선택)</label><input style={input} value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="국어 · 45문항" /></div>
           </div>
 
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 12, marginBottom: 14 }}>
+            <div>
+              <label style={label}>시행 연도</label>
+              <select style={input} value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })}>
+                <option value="">미분류</option>
+                {YEAR_CHOICES.map((y) => <option key={y} value={y}>{y}년</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={label}>시행 월</label>
+              <select style={input} value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })}>
+                <option value="">미분류</option>
+                {EXAM_MONTHS.map((m) => <option key={m} value={m}>{m}월</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={label}>과목</label>
+              <select style={input} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}>
+                <option value="">미분류</option>
+                {SUBJECT_GROUPS.map((g) => (
+                  <optgroup key={g.key} label={g.label}>
+                    {g.subjects.map((sub) => <option key={sub.id} value={sub.id}>{sub.label}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <ExamImageGrid
             label="시험지 이미지 (문제 · 페이지 순서대로 · 최대 50장)"
             urls={form.imageUrls}
@@ -141,6 +183,8 @@ export default function AdminMockExamsPage() {
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#191F28" }}>{ex.title}{!ex.isActive && <span style={{ marginLeft: 8, fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>(숨김)</span>}</div>
                 {ex.subtitle && <div style={{ fontSize: 13, color: "#8A909C", marginTop: 2 }}>{ex.subtitle}</div>}
                 <div style={{ fontSize: 12, color: "#B0B8C1", marginTop: 4 }}>
+                  {ex.year ? `${ex.year}년 ` : ""}{ex.month ? `${ex.month}월 · ` : ""}
+                  {SUBJECT_GROUPS.flatMap((g) => g.subjects).find((sub) => sub.id === ex.subject)?.label ?? "미분류"} ·{" "}
                   문제 {ex.imageUrls.length}장{(ex.solutionImageUrls?.length ?? 0) > 0 ? ` · 해설 ${ex.solutionImageUrls!.length}장` : ""} · 순서 {ex.sortOrder}
                 </div>
               </div>

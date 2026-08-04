@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { updateMockExam, deleteMockExam } from "@/lib/mockExam";
+import { parseExamMeta } from "@/lib/examSubjects";
 
 function adminError(error: unknown) {
   if (error instanceof Error && error.message === "Unauthorized") {
@@ -28,6 +29,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         : {}),
       ...(Array.isArray(body?.solutionImageUrls)
         ? { solutionImageUrls: body.solutionImageUrls.map((u: unknown) => String(u || "").trim()).filter((u: string) => /^https?:\/\//.test(u)).slice(0, 50) }
+        : {}),
+      // 연도/월/과목은 한 세트로 저장한다(하나만 와도 나머지는 비움).
+      ...(body?.year !== undefined || body?.month !== undefined || body?.subject !== undefined
+        ? parseExamMeta(body)
         : {}),
     });
     return NextResponse.json({ ok: true });

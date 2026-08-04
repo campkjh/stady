@@ -20,6 +20,10 @@ export interface MockExamItem {
   // 해설 페이지(별도 탭 "해설보기"). 없으면 빈 배열.
   solutionImageUrls: string[];
   solutionLineBoxes: LineBox[][];
+  // 분류(시행 연도 / 시행 월 / 과목 id). 미분류면 null.
+  year: number | null;
+  month: number | null;
+  subject: string | null;
   createdAt: Date;
 }
 
@@ -59,7 +63,49 @@ export async function ensureMockExamTables(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "MockExamImage_exam_idx" ON "MockExamImage" ("exam_id")`
   );
+  // 분류(시행 연도/월/과목)는 별도 테이블. MockExam은 SELECT *로 조회하므로 컬럼을
+  // 추가하면 Neon 캐시 플랜이 깨진다("cached plan must not change result type").
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "MockExamMeta" (
+      "exam_id" TEXT PRIMARY KEY,
+      "year" INTEGER,
+      "month" INTEGER,
+      "subject" TEXT
+    )
+  `);
   ready = true;
+}
+
+// 분류 저장(있으면 갱신). 값이 null이면 '미분류'로 비운다.
+async function saveMeta(
+  examId: string,
+  meta: { year?: number | null; month?: number | null; subject?: string | null }
+): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "MockExamMeta" ("exam_id","year","month","subject") VALUES ($1,$2,$3,$4)
+     ON CONFLICT ("exam_id") DO UPDATE SET "year" = EXCLUDED."year", "month" = EXCLUDED."month", "subject" = EXCLUDED."subject"`,
+    examId,
+    meta.year ?? null,
+    meta.month ?? null,
+    meta.subject ?? null
+  );
+}
+
+async function attachMeta(exams: MockExamItem[]): Promise<void> {
+  if (exams.length === 0) return;
+  const ids = exams.map((e) => e.id);
+  const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
+  const rows = await prisma.$queryRawUnsafe<{ exam_id: string; year: number | null; month: number | null; subject: string | null }[]>(
+    `SELECT "exam_id", "year", "month", "subject" FROM "MockExamMeta" WHERE "exam_id" IN (${ph})`,
+    ...ids
+  );
+  const byId = new Map(rows.map((r) => [r.exam_id, r]));
+  for (const e of exams) {
+    const m = byId.get(e.id);
+    e.year = m?.year ?? null;
+    e.month = m?.month ?? null;
+    e.subject = m?.subject ?? null;
+  }
 }
 
 async function replaceImages(examId: string, urls: string[], section: Section = "problem"): Promise<void> {
@@ -137,6 +183,9 @@ function mapExam(r: ExamRow): MockExamItem {
     lineBoxes: [],
     solutionImageUrls: [],
     solutionLineBoxes: [],
+    year: null,
+    month: null,
+    subject: null,
     createdAt: r.created_at,
   };
 }
@@ -151,7 +200,7 @@ export async function listMockExams(activeOnly = false): Promise<MockExamItem[]>
         `SELECT * FROM "MockExam" ORDER BY "sort_order" ASC, "created_at" DESC`
       );
   const exams = rows.map(mapExam);
-  await attachImages(exams);
+  await Promise.all([attachImages(exams), attachMeta(exams)]);
   return exams;
 }
 
@@ -163,7 +212,7 @@ export async function getMockExam(id: string): Promise<MockExamItem | null> {
   );
   if (rows.length === 0) return null;
   const exam = mapExam(rows[0]);
-  await attachImages([exam]);
+  await Promise.all([attachImages([exam]), attachMeta([exam])]);
   return exam;
 }
 
@@ -174,6 +223,9 @@ export async function createMockExam(input: {
   solutionImageUrls?: string[];
   sortOrder?: number;
   isActive?: boolean;
+  year?: number | null;
+  month?: number | null;
+  subject?: string | null;
 }): Promise<void> {
   await ensureMockExamTables();
   const id = randomUUID();
@@ -191,11 +243,22 @@ export async function createMockExam(input: {
   if (input.solutionImageUrls && input.solutionImageUrls.length > 0) {
     await replaceImages(id, input.solutionImageUrls, "solution");
   }
+  await saveMeta(id, { year: input.year ?? null, month: input.month ?? null, subject: input.subject ?? null });
 }
 
 export async function updateMockExam(
   id: string,
-  fields: { title?: string; subtitle?: string | null; sortOrder?: number; isActive?: boolean; imageUrls?: string[]; solutionImageUrls?: string[] }
+  fields: {
+    title?: string;
+    subtitle?: string | null;
+    sortOrder?: number;
+    isActive?: boolean;
+    imageUrls?: string[];
+    solutionImageUrls?: string[];
+    year?: number | null;
+    month?: number | null;
+    subject?: string | null;
+  }
 ): Promise<void> {
   await ensureMockExamTables();
   const sets: string[] = [];
@@ -215,10 +278,14 @@ export async function updateMockExam(
   if (fields.solutionImageUrls !== undefined) {
     await replaceImages(id, fields.solutionImageUrls, "solution");
   }
+  if (fields.year !== undefined || fields.month !== undefined || fields.subject !== undefined) {
+    await saveMeta(id, { year: fields.year ?? null, month: fields.month ?? null, subject: fields.subject ?? null });
+  }
 }
 
 export async function deleteMockExam(id: string): Promise<void> {
   await ensureMockExamTables();
   await prisma.$executeRawUnsafe(`DELETE FROM "MockExamImage" WHERE "exam_id" = $1`, id);
+  await prisma.$executeRawUnsafe(`DELETE FROM "MockExamMeta" WHERE "exam_id" = $1`, id);
   await prisma.$executeRawUnsafe(`DELETE FROM "MockExam" WHERE "id" = $1`, id);
 }
