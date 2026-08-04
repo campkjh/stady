@@ -69,6 +69,28 @@ body {
   width: 100%;
   margin: 0 auto;
 }
+
+/* 네비게이션 위쪽으로 흰색 그라데이션을 깔아, 스크롤되는 본문이 네비 영역으로
+   자연스럽게 사라지도록 한다(폰=바 위쪽 페이드, 태블릿=떠 있는 바 뒤 페이드).
+   ⚠️ 태블릿에서 .main-nav에 transform이 걸리면 그 안의 position:fixed가 nav에
+   갇히므로, 그라데이션은 반드시 nav 바깥의 독립 레이어로 둔다. */
+.main-nav-fade {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 132px;
+  pointer-events: none;
+  z-index: 49;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.72) 42%,
+    rgba(255, 255, 255, 0.96) 72%,
+    #fff 100%
+  );
+}
+
 @media (min-width: 744px) {
   .app-shell {
     padding-left: 20px;
@@ -120,37 +142,44 @@ body {
     justify-content: start;
   }
 
-  /* 하단 네비게이션 → 좌측 긴 세로 알약 형태. 본문은 그만큼 왼쪽 여백. */
+  /* 하단 중앙에 떠 있는 가로 알약 네비게이션(활성 탭은 흰 카드로 떠오름). */
   .main-content-wrap {
-    padding-bottom: 0 !important;
-    padding-left: calc(84px + env(safe-area-inset-left, 0px)) !important;
+    padding-left: 0 !important;
+    padding-bottom: calc(122px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .main-nav {
-    top: 50% !important;
-    bottom: auto !important;
-    left: calc(12px + env(safe-area-inset-left, 0px)) !important;
+    top: auto !important;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 50% !important;
     right: auto !important;
-    transform: translateY(-50%);
+    transform: translateX(-50%);
     width: auto !important;
     border-top: none !important;
     background-color: transparent !important;
     padding-bottom: 0 !important;
   }
   .main-nav-list {
-    flex-direction: column !important;
-    height: auto !important;
-    width: 66px !important;
+    height: 74px !important;
     max-width: none !important;
-    padding: 16px 0 !important;
-    gap: 8px;
-    background: #fff;
-    border-radius: 999px;
-    box-shadow: 0 10px 34px rgba(15, 23, 42, 0.16);
+    padding: 0 8px !important;
+    gap: 2px;
+    background: #F2F4F6;
+    border-radius: 26px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
   }
   .main-nav-list > li {
     display: flex;
     justify-content: center;
-    width: 100%;
+  }
+  /* 트랙 위에서 각 탭은 여백을 갖고, 활성 탭만 흰 카드로 떠오른다. */
+  .main-nav-list a {
+    padding: 9px 16px;
+    border-radius: 18px;
+    transition: background 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  }
+  .main-nav-list a[data-active="true"] {
+    background: #fff;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
   }
 }
 

@@ -95,6 +95,9 @@ export default function BottomNav() {
   }
 
   return (
+    <>
+    {/* 본문이 네비 영역으로 자연스럽게 사라지도록 하는 흰색 페이드(네비 바깥 레이어) */}
+    <div className="main-nav-fade" aria-hidden="true" />
     <nav className="main-nav" style={{
       position: "fixed",
       bottom: 0,
@@ -134,6 +137,7 @@ export default function BottomNav() {
                 <Link
                   href="/community"
                   onClick={markCommunityVisited}
+                  data-active={isActive("/community") ? "true" : "false"}
                   style={{
                     position: "relative",
                     display: "flex",
@@ -170,6 +174,7 @@ export default function BottomNav() {
               <li>
                 <Link
                   href="/timer"
+                  data-active={isActive("/timer") ? "true" : "false"}
                   style={{
                     display: "flex",
                     flexDirection: "column",
@@ -191,6 +196,7 @@ export default function BottomNav() {
             <li>
               <Link
                 href={tab.href}
+                data-active={isActive(tab.href) ? "true" : "false"}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -263,5 +269,6 @@ export default function BottomNav() {
         }
       `}</style>
     </nav>
+    </>
   );
 }
