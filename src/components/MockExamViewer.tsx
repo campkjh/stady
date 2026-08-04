@@ -612,71 +612,152 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const setActiveColor = tool === "highlight" ? setHlColor : setPenColor;
   const eraserPreview = Math.round(10 + ((eraserWidth - 8) / 52) * 16); // 10~26px 미리보기 원
 
-  const toolBtn = (t: Tool, label: string, icon: string) => (
-    <button
-      type="button"
-      onClick={() => setTool(t)}
-      style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 52,
-        padding: "6px 8px", borderRadius: 10, border: "none",
-        background: tool === t ? "#111827" : "#F1F3F5", color: tool === t ? "#fff" : "#4E5968",
-        fontSize: 11, fontWeight: 700, cursor: "pointer",
-      }}
-    >
-      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
-      {label}
-    </button>
+  // 굿노트풍 도구 아이콘 버튼(선택 시 연한 배경 + 진한 아이콘).
+  const toolBtn = (t: Tool, label: string, icon: React.ReactNode) => {
+    const on = tool === t;
+    return (
+      <button
+        type="button"
+        onClick={() => setTool(t)}
+        aria-label={label}
+        title={label}
+        style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 40, height: 36, borderRadius: 9, border: "none", flexShrink: 0,
+          background: on ? "#E9ECF1" : "transparent",
+          color: on ? "#191F28" : "#8B95A1",
+          cursor: "pointer", padding: 0,
+          transition: "background 0.15s ease, color 0.15s ease",
+        }}
+      >
+        {icon}
+      </button>
+    );
+  };
+
+  const divider = (
+    <span aria-hidden style={{ width: 1, height: 22, background: "#E5E8EB", flexShrink: 0, margin: "0 2px" }} />
   );
+
+  // 펜/형광펜 굵기 프리셋(굿노트처럼 얇게·보통·굵게).
+  const widthPresets = tool === "highlight" ? [12, 18, 26] : [2, 4, 7];
 
   return (
     <div style={{ height: "100dvh", background: "#EDEFF2", display: "flex", flexDirection: "column" }}>
-      {/* 툴바 */}
+      {/* 상단 바 — 시험지 제목/문서 액션 */}
       <div
         style={{
-          flexShrink: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #E5E7EB",
-          padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px",
-          display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+          flexShrink: 0, zIndex: 21, background: "#41444B",
+          padding: "calc(env(safe-area-inset-top, 0px) + 7px) 10px 7px",
+          display: "flex", alignItems: "center", gap: 4,
         }}
       >
-        <button type="button" onClick={() => router.back()} aria-label="뒤로" style={{ border: "none", background: "none", padding: 4, cursor: "pointer" }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        <button type="button" onClick={() => router.back()} aria-label="뒤로" style={barBtn}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#191F28", marginRight: 4, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exam.title}</div>
-        {toolBtn("pen", "펜", "✏️")}
-        {toolBtn("highlight", "형광펜", "🖍️")}
-        {toolBtn("eraser", "지우개", "🧽")}
-        {toolBtn("ocr", "OCR", "🔤")}
+        <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+            {exam.title}
+          </span>
+        </div>
+        {zoom > 1.01 && (
+          <button type="button" onClick={resetZoom} aria-label="확대 초기화"
+            style={{ ...barBtn, width: "auto", padding: "0 9px", color: "#fff", fontSize: 12.5, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+            {Math.round(zoom * 100)}%
+          </button>
+        )}
+        <button type="button" onClick={() => pageRefs.current[activePage.current]?.undo()} aria-label="되돌리기" title="되돌리기" style={barBtn}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 4 3 9 8 9" />
+          </svg>
+        </button>
+        <button type="button" onClick={() => setShowClearConfirm(true)} aria-label="페이지 지우기" title="페이지 지우기" style={barBtn}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" />
+          </svg>
+        </button>
+      </div>
+
+      {/* 도구 바 — 펜/형광펜/지우개/OCR · 색상 · 굵기 */}
+      <div
+        style={{
+          flexShrink: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #E5E8EB",
+          padding: "6px 10px",
+          display: "flex", alignItems: "center", gap: 3,
+          overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+        }}
+      >
+        {toolBtn("pen", "펜",
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" />
+          </svg>)}
+        {toolBtn("highlight", "형광펜",
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 11l-4 4v3h3l4-4" /><path d="M14.5 3.5l6 6-8 8-6-6 8-8z" /><path d="M3 21h8" />
+          </svg>)}
+        {toolBtn("eraser", "지우개",
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 16.5L12.5 8a2.5 2.5 0 0 1 3.5 0l3.5 3.5a2.5 2.5 0 0 1 0 3.5L14 20H7l-3-3.5z" /><path d="M9 20h11" />
+          </svg>)}
+        {toolBtn("ocr", "글자 인식",
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 8V5a2 2 0 0 1 2-2h3" /><path d="M16 3h3a2 2 0 0 1 2 2v3" /><path d="M21 16v3a2 2 0 0 1-2 2h-3" /><path d="M8 21H5a2 2 0 0 1-2-2v-3" /><path d="M8 8h8" /><path d="M12 8v8" />
+          </svg>)}
+
         {(tool === "pen" || tool === "highlight") && (
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {colors.map((c) => (
-              <button key={c} type="button" onClick={() => setActiveColor(c)} aria-label={c}
-                style={{ width: 24, height: 24, borderRadius: 999, background: c, border: activeColor === c ? "3px solid #111827" : "2px solid #fff", boxShadow: "0 0 0 1px #E5E7EB", cursor: "pointer" }} />
-            ))}
-          </div>
+          <>
+            {divider}
+            {colors.map((c) => {
+              const on = activeColor === c;
+              return (
+                <button
+                  key={c} type="button" onClick={() => setActiveColor(c)} aria-label={`색상 ${c}`}
+                  style={{
+                    width: 30, height: 30, borderRadius: 999, flexShrink: 0, padding: 0, cursor: "pointer",
+                    background: c,
+                    border: on ? "2.5px solid #fff" : "1px solid rgba(15,23,42,0.10)",
+                    boxShadow: on ? `0 0 0 2px ${c}` : "none",
+                    transition: "box-shadow 0.15s ease",
+                  }}
+                />
+              );
+            })}
+            {divider}
+            {widthPresets.map((w) => {
+              const on = tool === "pen" ? width === w : false;
+              return (
+                <button
+                  key={w} type="button"
+                  onClick={() => tool === "pen" && setWidth(w)}
+                  aria-label={`굵기 ${w}`}
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    width: 36, height: 34, borderRadius: 9, border: "none", flexShrink: 0, cursor: "pointer",
+                    background: on ? "#E9ECF1" : "transparent", padding: 0,
+                  }}
+                >
+                  <span style={{ display: "block", width: 20, height: Math.max(2, Math.round(w * 0.9)), borderRadius: 999, background: on ? "#191F28" : "#8B95A1" }} />
+                </button>
+              );
+            })}
+          </>
         )}
-        {tool === "pen" && (
-          <input type="range" min={1} max={8} value={width} onChange={(e) => setWidth(Number(e.target.value))} style={{ width: 70 }} aria-label="펜 굵기" />
-        )}
+
         {tool === "eraser" && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span
-              aria-hidden
-              style={{ display: "inline-flex", width: 28, height: 28, alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-            >
+          <>
+            {divider}
+            <span aria-hidden style={{ display: "inline-flex", width: 30, height: 30, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ display: "inline-block", width: eraserPreview, height: eraserPreview, borderRadius: "50%", background: "#CBD2DA", border: "1px solid #AEB6C0" }} />
             </span>
-            <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 90 }} aria-label="지우개 크기" />
-          </div>
+            <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 104, flexShrink: 0 }} aria-label="지우개 크기" />
+          </>
         )}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-          {zoom > 1.01 && (
-            <button type="button" onClick={resetZoom} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#4E5968", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-              {Math.round(zoom * 100)}% ↺
-            </button>
-          )}
-          <button type="button" onClick={() => pageRefs.current[activePage.current]?.undo()} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#4E5968", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>되돌리기</button>
-          <button type="button" onClick={() => setShowClearConfirm(true)} style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid #FECACA", background: "#fff", color: "#EF4444", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>페이지 지우기</button>
-        </div>
+
+        {tool === "ocr" && (
+          <span style={{ marginLeft: 6, fontSize: 12, color: "#8B95A1", fontWeight: 600, whiteSpace: "nowrap" }}>
+            글자 영역을 드래그하세요
+          </span>
+        )}
       </div>
 
       {/* 문제 / 해설 탭 (해설이 있을 때만) */}
@@ -787,3 +868,10 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
     </div>
   );
 }
+
+// 상단 다크 바의 아이콘 버튼.
+const barBtn: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+  width: 36, height: 34, borderRadius: 9, flexShrink: 0,
+  border: "none", background: "transparent", cursor: "pointer", padding: 0,
+};
