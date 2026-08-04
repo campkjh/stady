@@ -8,8 +8,8 @@ import NudgeBubble from "@/components/NudgeBubble";
 import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
 
 // 게시글 목록 캐시 키(필터 조합별).
-const postsKey = (groupId: string, tagId: string, q: string) =>
-  `community-posts:${groupId}:${tagId}:${q.trim()}`;
+const postsKey = (groupId: string, q: string) =>
+  `community-posts:${groupId}:${q.trim()}`;
 
 interface CategoryGroup {
   id: string;
@@ -66,16 +66,14 @@ export default function CommunityClient() {
   const topbarRef = useRef<HTMLElement | null>(null);
   // 캐시된 값으로 초기화 → 탭 재진입 시 즉시 표시(로딩/깜빡임 없음).
   const [groups, setGroups] = useState<CategoryGroup[]>(() => clientCache.get<CategoryGroup[]>("community-groups") ?? []);
-  const [filterTags, setFilterTags] = useState<CommunityTag[]>([]);
-  const [posts, setPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>(postsKey("", "", "")) ?? []);
+  const [posts, setPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>(postsKey("", "")) ?? []);
   const [weeklyPosts, setWeeklyPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>("community-weekly") ?? []);
   const [selectedGroupId, setSelectedGroupId] = useState("");
-  const [selectedTagId, setSelectedTagId] = useState("");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [message, setMessage] = useState("");
   // 캐시가 있으면 로딩 표시 안 함(데이터 변동 시에만 갱신).
-  const [loading, setLoading] = useState(() => !clientCache.has(postsKey("", "", "")));
+  const [loading, setLoading] = useState(() => !clientCache.has(postsKey("", "")));
   const [topbarHeight, setTopbarHeight] = useState(0);
   const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
   const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
@@ -119,24 +117,15 @@ export default function CommunityClient() {
   }, []);
 
   useEffect(() => {
-    if (!selectedGroupId) {
-      setFilterTags([]);
-      setSelectedTagId("");
-      return;
-    }
-    loadTags(selectedGroupId, setFilterTags);
-  }, [selectedGroupId]);
-
-  useEffect(() => {
     loadPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroupId, selectedTagId, query]);
+  }, [selectedGroupId, query]);
 
   // 상세에서 돌아왔을 때(목록 첫 로드 완료 시점) 저장해둔 스크롤 위치로 복원.
   useEffect(() => {
     if (scrollRestoredRef.current) return;
     if (loading || posts.length === 0) return; // 실제 목록이 렌더된 뒤에만 복원
-    if (selectedGroupId || selectedTagId || query.trim()) {
+    if (selectedGroupId || query.trim()) {
       scrollRestoredRef.current = true;
       return;
     }
@@ -184,20 +173,8 @@ export default function CommunityClient() {
     }
   }
 
-  async function loadTags(groupId: string, setter: (tags: CommunityTag[]) => void) {
-    try {
-      const response = await fetch(`/api/tags?groupId=${encodeURIComponent(groupId)}`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "태그를 불러오지 못했습니다.");
-      setter(data.tags || []);
-    } catch (error) {
-      setter([]);
-      setMessage(error instanceof Error ? error.message : "태그를 불러오지 못했습니다.");
-    }
-  }
-
   async function loadPosts() {
-    const key = postsKey(selectedGroupId, selectedTagId, query);
+    const key = postsKey(selectedGroupId, query);
     // 캐시가 있으면 즉시 표시하고 로딩을 띄우지 않는다(백그라운드 재검증).
     const cached = clientCache.get<CommunityPost[]>(key);
     if (cached) {
@@ -209,7 +186,6 @@ export default function CommunityClient() {
     try {
       const params = new URLSearchParams();
       if (selectedGroupId) params.set("groupId", selectedGroupId);
-      if (selectedTagId) params.set("tagId", selectedTagId);
       if (query.trim()) params.set("q", query.trim());
       const response = await fetch(`/api/community/posts?${params.toString()}`);
       const data = await response.json();
@@ -328,13 +304,6 @@ export default function CommunityClient() {
             selectedGroupId={selectedGroupId}
             onSelect={(id) => setSelectedGroupId(id)}
           />
-          {selectedGroupId && (
-            <TagChips
-              tags={filterTags}
-              selectedTagId={selectedTagId}
-              onSelect={(id) => setSelectedTagId(id)}
-            />
-          )}
         </div>
       </header>
 
@@ -349,17 +318,6 @@ export default function CommunityClient() {
               stacked
             />
           </div>
-          {selectedGroupId && (
-            <div className="community-filter-block">
-              <p className="community-filter-title">태그</p>
-              <TagChips
-                tags={filterTags}
-                selectedTagId={selectedTagId}
-                onSelect={(id) => setSelectedTagId(id)}
-                stacked
-              />
-            </div>
-          )}
         </aside>
 
         <section className="community-feed">
@@ -369,7 +327,7 @@ export default function CommunityClient() {
             </div>
           )}
 
-          {!selectedGroupId && !selectedTagId && !query.trim() && weeklyPosts.length > 0 && (
+          {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
               <h2 className="weekly-popular-title">
                 <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4 }} />
@@ -577,31 +535,6 @@ function CategoryChips({
       {groups.map((group) => (
         <button key={group.id} type="button" className="community-chip" onClick={() => onSelect(group.id)} style={chipStyle(selectedGroupId === group.id, stacked)}>
           {group.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TagChips({
-  tags,
-  selectedTagId,
-  onSelect,
-  stacked = false,
-}: {
-  tags: CommunityTag[];
-  selectedTagId: string;
-  onSelect: (id: string) => void;
-  stacked?: boolean;
-}) {
-  return (
-    <div className={stacked ? "community-chip-column" : "community-chip-row community-tag-row"}>
-      <button type="button" className="community-chip" onClick={() => onSelect("")} style={tagChipStyle(!selectedTagId, stacked)}>
-        전체 태그
-      </button>
-      {tags.map((tag) => (
-        <button key={tag.id} type="button" className="community-chip" onClick={() => onSelect(tag.id)} style={tagChipStyle(selectedTagId === tag.id, stacked)}>
-          #{tag.name}
         </button>
       ))}
     </div>
@@ -1070,8 +1003,7 @@ function CommunityStyles() {
       .community-floating-write:active {
         transform: scale(0.97);
       }
-      .community-search-input,
-      .community-tag-row {
+      .community-search-input {
         animation: communitySearchIn 0.18s ease both;
       }
       .community-icon-button:hover {
@@ -1192,25 +1124,6 @@ function chipStyle(active: boolean, stacked: boolean) {
 }
 
 // 태그 칩: 카테고리 알약과 같은 팔레트로, 한 단계 작게(하위 필터임을 시각적으로 구분).
-function tagChipStyle(active: boolean, stacked: boolean) {
-  return {
-    width: stacked ? "100%" : undefined,
-    flex: "0 0 auto",
-    border: `1px solid ${active ? "transparent" : "#EDF0F3"}`,
-    borderRadius: 999,
-    background: active ? "#33363D" : "#fff",
-    color: active ? "#fff" : "#4E5968",
-    padding: stacked ? "9px 12px" : "8px 13px",
-    fontSize: 13.5,
-    fontWeight: active ? 700 : 600,
-    letterSpacing: "-0.2px",
-    whiteSpace: "nowrap" as const,
-    cursor: "pointer",
-    textAlign: "left",
-    transition: "background 0.16s ease, color 0.16s ease",
-  } as const;
-}
-
 const iconButtonStyle = {
   width: 40,
   height: 40,

@@ -91,6 +91,36 @@ body {
   );
 }
 
+/* 아래로 스크롤하면 네비 라벨이 사라지면서 그만큼 바 높이가 줄고,
+   위로 올리면 되돌아온다(BottomNav가 data-compact를 토글).
+   ⚠️ .main-nav-list는 인라인 style로 height가 박혀 있어 !important가 필요하다. */
+.main-nav-list {
+  transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.main-nav-label {
+  display: block;
+  max-height: 14px;
+  overflow: hidden;
+  opacity: 1;
+  transition: max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.main-nav[data-compact="true"] .main-nav-label {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.main-nav[data-compact="true"] .main-nav-list {
+  /* 라벨 높이(14px)만큼만 정확히 줄인다. */
+  height: 68px !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .main-nav-list,
+  .main-nav-label {
+    transition: none;
+  }
+}
+
 @media (min-width: 744px) {
   .app-shell {
     padding-left: 20px;
@@ -180,6 +210,10 @@ body {
   .main-nav-list a[data-active="true"] {
     background: #fff;
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
+  }
+  /* 태블릿 알약 네비도 같은 폭만큼 낮아진다. */
+  .main-nav[data-compact="true"] .main-nav-list {
+    height: 60px !important;
   }
 }
 
