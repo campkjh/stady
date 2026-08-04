@@ -208,7 +208,8 @@ export default function DailyQuizCard() {
         </p>
 
         {/* 보기 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "26px 16px 16px" }}>
+        {/* 폰은 세로 2줄, 태블릿부터는 예/아니요를 가로로 나란히(globals.css) */}
+        <div className="daily-quiz-options" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "26px 16px 16px" }}>
           <button
             type="button"
             className="daily-opt"
