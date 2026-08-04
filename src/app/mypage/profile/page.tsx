@@ -161,7 +161,9 @@ export default function ProfilePage() {
 
         {/* Nickname */}
         <div style={{ width: "100%" }}>
-          <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/ui-user.svg" alt="" width={18} height={18} />
             닉네임
           </label>
           <input
@@ -186,7 +188,9 @@ export default function ProfilePage() {
         {/* Status Message */}
         <div style={{ width: "100%", marginTop: 18 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#374151" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#374151" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/ui-chat.svg" alt="" width={18} height={18} />
               상태메세지
             </label>
             <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 700 }}>

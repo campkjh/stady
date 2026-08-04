@@ -1,0 +1,27 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<mask id="mask0_55663_3808" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="4" y="1" width="17" height="17">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4 1.19995H20.5996V17.8148H4V1.19995Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_55663_3808)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20.6005 17.8147V2.27259C20.6005 1.68014 20.1198 1.19946 19.5274 1.19946H6.64165C5.18337 1.19946 4.00049 2.38235 4.00049 3.84164V17.8147H20.6005Z" fill="#FFC33A"/>
+</g>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20.5978 18.3287V15.5361H14.721H14.2037L6.73245 16.0483C6.71111 16.0483 6.68977 16.0483 6.66843 16.0483C5.74367 16.0656 5.00792 16.8298 5.0252 17.7556C5.04248 18.6813 5.80668 19.4171 6.73245 19.3998H19.5267C20.1181 19.3978 20.5968 18.9191 20.5978 18.3287Z" fill="#FFDD78"/>
+<mask id="mask1_55663_3808" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="4" y="1" width="17" height="22">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4 22.9979H20.6V1.19995H4V22.9979Z" fill="white"/>
+</mask>
+<g mask="url(#mask1_55663_3808)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M7.63916 6.43544H9.83217V4.24243H7.63916V6.43544Z" fill="white"/>
+</g>
+<mask id="mask2_55663_3808" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="4" y="1" width="17" height="22">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4 22.9979H20.6V1.19995H4V22.9979Z" fill="white"/>
+</mask>
+<g mask="url(#mask2_55663_3808)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M7.63916 9.28603H9.83217V7.09302H7.63916V9.28603Z" fill="white"/>
+</g>
+<mask id="mask3_55663_3808" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="4" y="1" width="17" height="22">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4 22.9979H20.6V1.19995H4V22.9979Z" fill="white"/>
+</mask>
+<g mask="url(#mask3_55663_3808)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M7.63916 12.1884H9.83217V9.99536H7.63916V12.1884Z" fill="white"/>
+</g>
+</svg>
