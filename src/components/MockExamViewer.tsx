@@ -499,6 +499,19 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   // 현재 보고 있는 페이지의 되돌리기/앞으로 가능 여부(버튼 활성 표시용).
   const [hist, setHist] = useState({ canUndo: false, canRedo: false });
+  // 제목 옆 chevron으로 여는 문제/해설 드롭다운.
+  const [sectionMenuOpen, setSectionMenuOpen] = useState(false);
+  // 바깥을 누르면 닫히도록.
+  useEffect(() => {
+    if (!sectionMenuOpen) return;
+    const close = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.(".mock-section-menu") || t?.closest?.("[aria-expanded]")) return;
+      setSectionMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [sectionMenuOpen]);
   const [section, setSection] = useState<"problem" | "solution">("problem");
   const pageRefs = useRef<(PageHandle | null)[]>([]);
   const activePage = useRef(0);
@@ -679,6 +692,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       {/* 상단 바 — 시험지 제목/문서 액션 */}
       <div
         style={{
+          position: "relative",
           flexShrink: 0, zIndex: 21, background: "#41444B",
           padding: "calc(env(safe-area-inset-top, 0px) + 7px) 10px 7px",
           display: "flex", alignItems: "center", gap: 4,
@@ -687,11 +701,78 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         <button type="button" onClick={() => router.back()} aria-label="뒤로" style={barBtn}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
-        <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-          <span style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-            {exam.title}
-          </span>
+        {/* 제목: 좌우 버튼 개수와 무관하게 항상 화면 정중앙 */}
+        <div
+          style={{
+            position: "absolute", left: "50%", transform: "translateX(-50%)",
+            top: "calc(env(safe-area-inset-top, 0px) + 7px)", height: 34,
+            display: "flex", alignItems: "center", maxWidth: "58%",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSectionMenuOpen((v) => !v)}
+            aria-expanded={sectionMenuOpen}
+            aria-label="문제/해설 전환"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5, maxWidth: "100%",
+              height: 34, padding: "0 10px", borderRadius: 9, border: "none",
+              background: sectionMenuOpen ? "rgba(255,255,255,0.14)" : "transparent",
+              cursor: "pointer",
+              transition: "background 0.16s ease",
+            }}
+          >
+            <span style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {exam.title}
+            </span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "#C9CDD4", flexShrink: 0 }}>
+              {section === "solution" ? "해설" : "문제"}
+            </span>
+            <svg
+              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.4"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ flexShrink: 0, transform: sectionMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.22s cubic-bezier(0.22,1,0.36,1)" }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {sectionMenuOpen && (
+            <div
+              className="mock-section-menu"
+              style={{
+                position: "absolute", top: "calc(100% + 6px)", left: "50%",
+                transformOrigin: "top center",
+                minWidth: 176, background: "#fff", borderRadius: 14, padding: 6,
+                boxShadow: "0 16px 40px rgba(15,23,42,0.28)", zIndex: 40,
+              }}
+            >
+              {([["problem", "문제"], ["solution", "해설보기"]] as const).map(([s2, lbl]) => {
+                const on = section === s2;
+                const disabled = s2 === "solution" && !hasSolution;
+                return (
+                  <button
+                    key={s2}
+                    type="button"
+                    onClick={() => { switchSection(s2); setSectionMenuOpen(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8, width: "100%",
+                      padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: on ? "#F1F3F5" : "transparent",
+                      color: disabled ? "#B0B8C1" : "#191F28",
+                      fontSize: 14, fontWeight: on ? 800 : 600, textAlign: "left",
+                    }}
+                  >
+                    <span style={{ width: 16, flexShrink: 0, color: "#3787FF", fontWeight: 900 }}>{on ? "✓" : ""}</span>
+                    {lbl}
+                    {disabled && <span style={{ marginLeft: "auto", fontSize: 11, color: "#B0B8C1", fontWeight: 700 }}>없음</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+        <span style={{ flex: 1 }} />
         {zoom > 1.01 && (
           <button type="button" onClick={resetZoom} aria-label="확대 초기화"
             style={{ ...barBtn, width: "auto", padding: "0 9px", color: "#fff", fontSize: 12.5, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
@@ -718,11 +799,6 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         >
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-3-6.7" /><polyline points="21 4 21 9 16 9" />
-          </svg>
-        </button>
-        <button type="button" onClick={() => setShowClearConfirm(true)} aria-label="페이지 지우기" title="페이지 지우기" style={barBtn}>
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" />
           </svg>
         </button>
       </div>
@@ -799,6 +875,22 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               <span style={{ display: "inline-block", width: eraserPreview, height: eraserPreview, borderRadius: "50%", background: "#CBD2DA", border: "1px solid #AEB6C0" }} />
             </span>
             <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 104, flexShrink: 0 }} aria-label="지우개 크기" />
+            {divider}
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
+                height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
+                border: "1px solid #FBD5D5", background: "#FFF5F5", color: "#E03131",
+                fontSize: 12.5, fontWeight: 800, whiteSpace: "nowrap",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" />
+              </svg>
+              전체 삭제
+            </button>
           </>
         )}
 
@@ -809,35 +901,18 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         )}
       </div>
 
-      {/* 문제 / 해설 탭 (해설이 없어도 탭은 보여주고, 빈 상태로 안내) */}
-      {(
-        <div style={{ flexShrink: 0, display: "flex", justifyContent: "center", padding: "8px 12px 0", background: "#fff" }}>
-          <div style={{ display: "inline-flex", background: "#F1F3F5", borderRadius: 999, padding: 3, gap: 2 }}>
-            {([["problem", "문제"], ["solution", "해설보기"]] as const).map(([s, lbl]) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => switchSection(s)}
-                style={{
-                  padding: "7px 20px", borderRadius: 999, border: "none", cursor: "pointer",
-                  fontSize: 13, fontWeight: 800,
-                  background: section === s ? "#111827" : "transparent",
-                  color: section === s ? "#fff" : (s === "solution" && !hasSolution ? "#B0B8C1" : "#6B7280"),
-                }}
-              >
-                {lbl}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 안내 */}
-      <p style={{ margin: 0, padding: "8px 14px", fontSize: 12, color: "#8A909C", textAlign: "center", flexShrink: 0 }}>
-        {section === "solution"
-          ? "해설입니다. 펜/형광펜으로 표시하며 확인하세요. 문제는 위 탭에서 전환할 수 있어요."
-          : "애플펜슬(펜)로 필기하고, 손가락으로 스크롤·핀치 확대하세요. 형광펜은 글자 줄에 맞춰 그어집니다. OCR은 글자 영역을 드래그해 선택하면 됩니다."}
-      </p>
+      <style>{`
+        .mock-section-menu {
+          animation: mockSectionMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes mockSectionMenuIn {
+          from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.94); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mock-section-menu { animation: none; transform: translateX(-50%); }
+        }
+      `}</style>
 
       {/* 페이지들 (내부 스크롤 + 핀치 확대) */}
       <div
