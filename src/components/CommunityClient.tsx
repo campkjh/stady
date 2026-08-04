@@ -516,6 +516,33 @@ export default function CommunityClient() {
   );
 }
 
+// 카테고리 이름별 아이콘(public/icons/cg-*.svg). 활성 칩은 배경이 어두워서
+// 흰색(-on) 버전을 쓴다. 표에 없는 새 카테고리는 태그 아이콘으로 대체.
+const GROUP_ICONS: Record<string, string> = {
+  자유: "cg-free",
+  입시: "cg-admission",
+  질문게시판: "cg-question",
+  공지: "cg-notice",
+  건의게시판: "cg-suggest",
+  대학: "cg-college",
+};
+function groupIcon(name: string): string {
+  return GROUP_ICONS[name.trim()] ?? "cg-etc";
+}
+
+function ChipIcon({ icon, active }: { icon: string; active: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/icons/${icon}${active ? "-on" : ""}.svg`}
+      alt=""
+      width={16}
+      height={16}
+      style={{ display: "block", flexShrink: 0, marginRight: 6 }}
+    />
+  );
+}
+
 function CategoryChips({
   groups,
   selectedGroupId,
@@ -530,10 +557,12 @@ function CategoryChips({
   return (
     <div className={stacked ? "community-chip-column" : "community-chip-row"}>
       <button type="button" className="community-chip" onClick={() => onSelect("")} style={chipStyle(!selectedGroupId, stacked)}>
+        <ChipIcon icon="cg-all" active={!selectedGroupId} />
         전체
       </button>
       {groups.map((group) => (
         <button key={group.id} type="button" className="community-chip" onClick={() => onSelect(group.id)} style={chipStyle(selectedGroupId === group.id, stacked)}>
+          <ChipIcon icon={groupIcon(group.name)} active={selectedGroupId === group.id} />
           {group.name}
         </button>
       ))}
@@ -1107,11 +1136,14 @@ function chipStyle(active: boolean, stacked: boolean) {
   return {
     width: stacked ? "100%" : undefined,
     flex: "0 0 auto",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: stacked ? "flex-start" : "center",
     border: "1px solid transparent",
     borderRadius: 999,
     background: active ? "#33363D" : "#F2F3F6",
     color: active ? "#fff" : "#4E5968",
-    padding: stacked ? "11px 14px" : "10px 18px",
+    padding: stacked ? "11px 14px" : "10px 16px",
     fontSize: 15,
     fontWeight: active ? 700 : 600,
     letterSpacing: "-0.3px",
