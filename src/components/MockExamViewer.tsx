@@ -51,6 +51,14 @@ interface PageHandle {
   clear: () => void;
 }
 
+// 한 획이 바꾼 사각형 영역의 이전/이후 픽셀(디바이스 px 좌표).
+interface StrokePatch {
+  x: number;
+  y: number;
+  before: ImageData;
+  after: ImageData;
+}
+
 const PageCanvas = forwardRef<
   PageHandle,
   {
@@ -74,18 +82,33 @@ const PageCanvas = forwardRef<
   const selRef = useRef<HTMLDivElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
-  const undoStack = useRef<string[]>([]);
-  // 되돌리기로 빠져나온 상태를 쌓아두는 '앞으로' 스택(새 획을 그으면 비운다).
-  const redoStack = useRef<string[]>([]);
+  // 캔버스 픽셀 비율. ImageData는 항상 디바이스 픽셀 기준이라 CSS 좌표 변환에 쓴다.
+  const dprRef = useRef(1);
+  // 직전 획까지의 픽셀을 담아두는 그림자 캔버스(되돌리기의 '이전 상태' 소스).
+  const shadowRef = useRef<HTMLCanvasElement | null>(null);
+  // 획 단위 되돌리기/앞으로. 획이 건드린 사각형의 before/after 픽셀만 보관한다.
+  // 전체 캔버스를 PNG로 인코딩(toDataURL)하면 아이패드에서 획당 수백 ms 동안
+  // 메인 스레드가 멈추고, 그 사이 시작된 다음 획이 통째로 인식되지 않았다.
+  const undoStack = useRef<StrokePatch[]>([]);
+  const redoStack = useRef<StrokePatch[]>([]);
+  // 현재 획이 지나간 영역(CSS px). 커밋할 때 이 사각형만 잘라 저장한다.
+  const strokeBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  // 필기 중에는 저장을 미루는 타이머(연속 필기 중 localStorage 쓰기로 끊기지 않게).
+  const persistTimer = useRef<number | null>(null);
+  // 획을 긋는 동안 고정해두는 캔버스 위치/배율(매 move마다 레이아웃 강제 계산 방지).
+  const rectRef = useRef<{ left: number; top: number; sx: number; sy: number } | null>(null);
   const notifyHistory = () => {
-    onHistoryChange?.({ canUndo: undoStack.current.length > 1, canRedo: redoStack.current.length > 0 });
+    onHistoryChange?.({ canUndo: undoStack.current.length > 0, canRedo: redoStack.current.length > 0 });
   };
   const selStart = useRef<{ x: number; y: number } | null>(null);
-  // 형광펜 스냅용: 시작 시점의 캔버스 스냅샷 + 시작 x + 대상 줄 띠.
+  // 형광펜 스냅용: 시작 시점의 띠 영역 스냅샷 + 시작 x + 대상 줄 띠.
   const hlSnap = useRef<ImageData | null>(null);
+  const hlSnapY = useRef(0);
   const hlStartX = useRef(0);
   const hlBand = useRef<HighlightBand | null>(null);
   const eraserCurRef = useRef<HTMLDivElement>(null);
+  // 마지막으로 캔버스를 맞춘 크기(같은 크기로 다시 맞추면 필기가 지워지므로).
+  const fittedSize = useRef({ w: 0, h: 0 });
   const [sized, setSized] = useState(false);
 
   // 지우개 커서: 지울 영역만큼의 원형 보더를 포인터 위치에 표시.
@@ -109,6 +132,21 @@ const PageCanvas = forwardRef<
 
   // 문제/해설 필기가 섞이지 않게 섹션을 키에 포함(문제는 기존 키 유지=하위호환).
   const storageKey = `mockexam_${examId}${section === "solution" ? "_sol" : ""}_p${pageIndex}`;
+
+  // 캔버스 크기 맞추기는 이미지 onLoad에만 기대면 안 된다. 캐시된 이미지는
+  // 리액트가 핸들러를 붙이기 전에 이미 로드가 끝나 onLoad가 오지 않아서, 그
+  // 페이지 캔버스가 초기화되지 않은 채(=필기해도 아무것도 안 그려짐) 남았다.
+  // 마운트 시 한 번 맞추고, 이후 레이아웃 크기가 실제로 바뀔 때만 다시 맞춘다.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    fit();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 애플펜슬 필기 중 화면이 같이 스크롤되는 문제 방지.
   // touch-action: pan-y는 포인터 종류를 구분하지 못해 펜 드래그도 팬(스크롤)으로
@@ -139,7 +177,11 @@ const PageCanvas = forwardRef<
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
     if (w === 0 || h === 0) return;
+    // 같은 크기로 다시 부르면 그린 내용과 되돌리기 이력만 날아가므로 무시한다.
+    if (fittedSize.current.w === w && fittedSize.current.h === h) return;
+    fittedSize.current = { w, h };
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dprRef.current = dpr;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     canvas.style.width = `${w}px`;
@@ -147,10 +189,16 @@ const PageCanvas = forwardRef<
     const ctx = canvas.getContext("2d");
     if (ctx) ctx.scale(dpr, dpr);
     setSized(true);
+    // 크기가 바뀌면 이전 패치 좌표가 어긋나므로 되돌리기 이력은 초기화.
+    undoStack.current = [];
+    redoStack.current = [];
+    shadowRef.current = null;
+    notifyHistory();
     // 저장된 필기 복원.
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) restore(saved);
+      else syncShadow();
     } catch {
       /* ignore */
     }
@@ -164,11 +212,34 @@ const PageCanvas = forwardRef<
     im.onload = () => {
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight);
+      syncShadow();
     };
     im.src = dataUrl;
   }
 
+  // 그림자 캔버스를 현재 캔버스와 같은 크기로 만들고 내용을 그대로 복사한다.
+  function syncShadow() {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    let shadow = shadowRef.current;
+    if (!shadow || shadow.width !== canvas.width || shadow.height !== canvas.height) {
+      shadow = document.createElement("canvas");
+      shadow.width = canvas.width;
+      shadow.height = canvas.height;
+      shadowRef.current = shadow;
+    }
+    const sctx = shadow.getContext("2d");
+    if (!sctx) return null;
+    sctx.clearRect(0, 0, shadow.width, shadow.height);
+    sctx.drawImage(canvas, 0, 0);
+    return shadow;
+  }
+
   function persist() {
+    if (persistTimer.current != null) {
+      window.clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
     try {
       const canvas = canvasRef.current;
       if (canvas) localStorage.setItem(storageKey, canvas.toDataURL("image/png"));
@@ -177,31 +248,60 @@ const PageCanvas = forwardRef<
     }
   }
 
+  // 저장(전체 캔버스 PNG 인코딩 + localStorage 쓰기)은 무겁다. 획이 끝날 때마다
+  // 바로 하지 않고 손을 뗀 뒤 잠깐 쉴 때 한 번만 처리해, 연속으로 쓰는 동안
+  // 메인 스레드가 막혀 다음 획을 놓치는 일이 없게 한다.
+  function schedulePersist() {
+    if (persistTimer.current != null) window.clearTimeout(persistTimer.current);
+    persistTimer.current = window.setTimeout(() => {
+      persistTimer.current = null;
+      if (drawing.current) {
+        schedulePersist(); // 아직 쓰는 중이면 더 미룬다.
+        return;
+      }
+      persist();
+    }, 900);
+  }
+
+  // 화면을 벗어나거나 앱이 백그라운드로 갈 때는 밀린 저장을 즉시 반영.
+  useEffect(() => {
+    const flush = () => {
+      if (persistTimer.current != null) persist();
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 패치 하나를 캔버스와 그림자에 그대로 덮어쓴다(putImageData는 합성 없이 교체).
+  function applyPatch(pixels: ImageData, x: number, y: number) {
+    const ctx = canvasRef.current?.getContext("2d");
+    const sctx = (shadowRef.current ?? syncShadow())?.getContext("2d");
+    if (!ctx) return;
+    ctx.putImageData(pixels, x, y);
+    sctx?.putImageData(pixels, x, y);
+  }
+
   useImperativeHandle(ref, () => ({
     undo() {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-      // 스택 맨 앞은 '아무것도 안 그린 상태'이므로 그 아래로는 되돌리지 않는다.
-      if (undoStack.current.length <= 1) return;
-      const popped = undoStack.current.pop();
-      if (popped) redoStack.current.push(popped);
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      const prev = undoStack.current[undoStack.current.length - 1];
-      if (prev) restore(prev);
-      persist();
+      const patch = undoStack.current.pop();
+      if (!patch) return;
+      applyPatch(patch.before, patch.x, patch.y);
+      redoStack.current.push(patch);
+      schedulePersist();
       notifyHistory();
     },
     redo() {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-      const next = redoStack.current.pop();
-      if (!next) return;
-      undoStack.current.push(next);
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      restore(next);
-      persist();
+      const patch = redoStack.current.pop();
+      if (!patch) return;
+      applyPatch(patch.after, patch.x, patch.y);
+      undoStack.current.push(patch);
+      schedulePersist();
       notifyHistory();
     },
     clear() {
@@ -209,21 +309,79 @@ const PageCanvas = forwardRef<
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      syncShadow();
       undoStack.current = [];
       redoStack.current = [];
+      if (persistTimer.current != null) {
+        window.clearTimeout(persistTimer.current);
+        persistTimer.current = null;
+      }
       try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
       notifyHistory();
     },
   }));
 
-  function pos(e: React.PointerEvent) {
+  // 획이 지나간 영역을 넓혀 기록(선 굵기의 절반 + 여유).
+  function markBox(x: number, y: number, r: number) {
+    const b = strokeBox.current;
+    if (!b) {
+      strokeBox.current = { x0: x - r, y0: y - r, x1: x + r, y1: y + r };
+      return;
+    }
+    if (x - r < b.x0) b.x0 = x - r;
+    if (y - r < b.y0) b.y0 = y - r;
+    if (x + r > b.x1) b.x1 = x + r;
+    if (y + r > b.y1) b.y1 = y + r;
+  }
+
+  // 획을 끝내며 바뀐 영역만 잘라 되돌리기 스택에 넣는다(작은 getImageData 2번).
+  function commitStroke() {
+    const box = strokeBox.current;
+    strokeBox.current = null;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !box) return;
+    const shadow = shadowRef.current ?? syncShadow();
+    const sctx = shadow?.getContext("2d");
+    if (!shadow || !sctx) return;
+    const dpr = dprRef.current;
+    const x = Math.max(0, Math.floor(box.x0 * dpr));
+    const y = Math.max(0, Math.floor(box.y0 * dpr));
+    const w = Math.min(canvas.width - x, Math.ceil((box.x1 - box.x0) * dpr) + 2);
+    const h = Math.min(canvas.height - y, Math.ceil((box.y1 - box.y0) * dpr) + 2);
+    if (w <= 0 || h <= 0) return;
+    const before = sctx.getImageData(x, y, w, h);
+    const after = ctx.getImageData(x, y, w, h);
+    undoStack.current.push({ x, y, before, after });
+    if (undoStack.current.length > 40) undoStack.current.shift();
+    redoStack.current = [];
+    sctx.putImageData(after, x, y);
+    schedulePersist();
+    notifyHistory();
+  }
+
+  // 확대(CSS scale) 중이면 getBoundingClientRect가 확대된 크기라, 캔버스 내부
+  // CSS 좌표로 되돌리려면 실제 렌더 크기 대비 비율을 곱한다(확대해도 필기 정확).
+  function measure() {
     const canvas = canvasRef.current!;
     const r = canvas.getBoundingClientRect();
-    // 확대(CSS scale) 중이면 getBoundingClientRect가 확대된 크기라, 캔버스 내부
-    // CSS 좌표로 되돌리려면 실제 렌더 크기 대비 비율을 곱한다(확대해도 필기 정확).
-    const sx = r.width ? canvas.clientWidth / r.width : 1;
-    const sy = r.height ? canvas.clientHeight / r.height : 1;
-    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+    return {
+      left: r.left,
+      top: r.top,
+      sx: r.width ? canvas.clientWidth / r.width : 1,
+      sy: r.height ? canvas.clientHeight / r.height : 1,
+    };
+  }
+
+  // 획을 긋는 동안에는 시작 시점에 잰 값을 재사용한다. 매 move마다 rect를 재면
+  // 포인터 이벤트마다 레이아웃이 강제 계산돼 빠르게 쓸 때 이벤트가 밀린다.
+  function point(clientX: number, clientY: number) {
+    const m = rectRef.current ?? measure();
+    return { x: (clientX - m.left) * m.sx, y: (clientY - m.top) * m.sy };
+  }
+
+  function pos(e: { clientX: number; clientY: number }) {
+    return point(e.clientX, e.clientY);
   }
 
   // 시작점에 해당하는 글자 줄을 찾아 형광펜 띠를 만든다. 줄 데이터가 없거나
@@ -270,7 +428,7 @@ const PageCanvas = forwardRef<
     const ctx = canvas?.getContext("2d");
     const band = hlBand.current;
     if (!canvas || !ctx || !band || !hlSnap.current) return;
-    ctx.putImageData(hlSnap.current, 0, 0);
+    ctx.putImageData(hlSnap.current, 0, hlSnapY.current);
     let x0 = Math.min(hlStartX.current, curX);
     let x1 = Math.max(hlStartX.current, curX);
     if (band.left != null && band.right != null) {
@@ -278,6 +436,8 @@ const PageCanvas = forwardRef<
       x1 = Math.min(x1, band.right);
     }
     if (x1 - x0 < 1) return;
+    markBox(x0, band.top, 0);
+    markBox(x1, band.top + band.height, 0);
     ctx.save();
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 0.4;
@@ -286,10 +446,20 @@ const PageCanvas = forwardRef<
     ctx.restore();
   }
 
+  // 포인터가 이미 놓였거나 캡처가 불가한 상황에서 예외로 획이 끊기지 않게 감싼다.
+  function capture(e: React.PointerEvent) {
+    try {
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
   function onDown(e: React.PointerEvent) {
     // 손가락(touch)은 스크롤용 — 펜/마우스만 필기/선택.
     if (e.pointerType === "touch") return;
     onActive();
+    rectRef.current = measure();
     const p = pos(e);
     if (tool === "ocr") {
       selStart.current = p;
@@ -300,29 +470,40 @@ const PageCanvas = forwardRef<
         selRef.current.style.width = "0px";
         selRef.current.style.height = "0px";
       }
-      (e.target as Element).setPointerCapture?.(e.pointerId);
+      capture(e);
       return;
     }
     if (tool === "highlight") {
       // 글자 줄에 스냅한 일직선 형광펜. 시작 시점 스냅샷을 떠서 러버밴드로 그린다.
       drawing.current = true;
       hlStartX.current = p.x;
-      hlBand.current = bandAt(p.x, p.y);
+      const band = bandAt(p.x, p.y);
+      hlBand.current = band;
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (canvas && ctx) {
-        if (undoStack.current.length === 0) undoStack.current.push(canvas.toDataURL("image/png"));
-        hlSnap.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        // 전체가 아니라 띠 높이만큼만 떠 둔다(전체 스냅샷은 아이패드에서 수십 ms).
+        const dpr = dprRef.current;
+        const y = Math.max(0, Math.floor((band.top - 2) * dpr));
+        const h = Math.min(canvas.height - y, Math.ceil((band.height + 4) * dpr));
+        if (h > 0) {
+          hlSnapY.current = y;
+          hlSnap.current = ctx.getImageData(0, y, canvas.width, h);
+        }
       }
-      (e.target as Element).setPointerCapture?.(e.pointerId);
+      capture(e);
       return;
     }
     drawing.current = true;
     last.current = p;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    // 스트로크 시작 전 상태를 undo 스택에 저장.
-    const canvas = canvasRef.current;
-    if (canvas && undoStack.current.length === 0) undoStack.current.push(canvas.toDataURL("image/png"));
+    // 실제로 그려진 게 없으면(탭만 하고 뗌) 되돌리기 이력도 남기지 않는다.
+    strokeBox.current = null;
+    capture(e);
+  }
+
+  // 획이 캔버스에 남기는 최대 반경(선 굵기 절반 + 여유).
+  function strokeRadius() {
+    return (tool === "eraser" ? eraserWidth : width * 1.5) / 2 + 2;
   }
 
   function onMove(e: React.PointerEvent) {
@@ -349,7 +530,8 @@ const PageCanvas = forwardRef<
     if (!ctx) return;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    if (tool === "eraser") {
+    const eraser = tool === "eraser";
+    if (eraser) {
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "rgba(0,0,0,1)";
       ctx.lineWidth = eraserWidth;
@@ -357,15 +539,29 @@ const PageCanvas = forwardRef<
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
       ctx.globalAlpha = 1;
-      const pressure = e.pressure && e.pressure > 0 ? e.pressure : 0.5;
-      ctx.lineWidth = width * (0.5 + pressure);
     }
-    ctx.beginPath();
-    ctx.moveTo(last.current.x, last.current.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    // 브라우저가 한 프레임에 몰아 준 중간 지점까지 모두 그린다. 빠르게 쓸 때
+    // 이벤트가 합쳐지면서 획 일부가 잘려 보이던 문제를 막는다.
+    const native = e.nativeEvent as PointerEvent & { getCoalescedEvents?: () => PointerEvent[] };
+    const steps = native.getCoalescedEvents?.() ?? [];
+    const moves = steps.length > 0 ? steps : [e.nativeEvent as PointerEvent];
+    const r = strokeRadius();
+    markBox(last.current.x, last.current.y, r);
+    for (const m of moves) {
+      const q = point(m.clientX, m.clientY);
+      if (!eraser) {
+        // 필압은 구간마다 달라지므로 구간 단위로 그린다.
+        const pressure = m.pressure && m.pressure > 0 ? m.pressure : 0.5;
+        ctx.lineWidth = width * (0.5 + pressure);
+      }
+      ctx.beginPath();
+      ctx.moveTo(last.current.x, last.current.y);
+      ctx.lineTo(q.x, q.y);
+      ctx.stroke();
+      markBox(q.x, q.y, r);
+      last.current = q;
+    }
     ctx.globalAlpha = 1;
-    last.current = p;
   }
 
   function onUp(e: React.PointerEvent) {
@@ -391,27 +587,15 @@ const PageCanvas = forwardRef<
       drawing.current = false;
       hlSnap.current = null;
       hlBand.current = null;
-      const canvas = canvasRef.current;
-      if (canvas) {
-        undoStack.current.push(canvas.toDataURL("image/png"));
-        if (undoStack.current.length > 25) undoStack.current.shift();
-        redoStack.current = [];
-      }
-      persist();
-      notifyHistory();
+      rectRef.current = null;
+      commitStroke();
       return;
     }
     if (!drawing.current) return;
     drawing.current = false;
     last.current = null;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      undoStack.current.push(canvas.toDataURL("image/png"));
-      if (undoStack.current.length > 25) undoStack.current.shift();
-      redoStack.current = [];
-    }
-    persist();
-    notifyHistory();
+    rectRef.current = null;
+    commitStroke();
   }
 
   // 이미지 원본 해상도에서 선택 영역을 잘라 OCR로 넘긴다.
