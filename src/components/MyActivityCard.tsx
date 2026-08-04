@@ -17,12 +17,13 @@ const TIER_MIN: Record<string, number> = {
   iron: 0, silver: 40, gold: 120, emerald: 300, diamond: 600, master: 1200,
 };
 // 경험치 가중치(서버 getUserActivityScore와 동일).
+// 아이콘은 공용 아이콘 세트(design/icon-set)에서 가져온 SVG.
 const XP_RULES = [
-  { emoji: "✍️", label: "커뮤니티 글 쓰기", xp: 10 },
-  { emoji: "💬", label: "댓글 남기기", xp: 3 },
-  { emoji: "❤️", label: "내 글이 공감 받기", xp: 2 },
-  { emoji: "🧠", label: "데일리 퀴즈 정답", xp: 5 },
-  { emoji: "📝", label: "퀴즈 풀기(1회)", xp: 1 },
+  { icon: "xp-write", label: "커뮤니티 글 쓰기", xp: 10 },
+  { icon: "xp-comment", label: "댓글 남기기", xp: 3 },
+  { icon: "xp-like", label: "내 글이 공감 받기", xp: 2 },
+  { icon: "xp-daily", label: "데일리 퀴즈 정답", xp: 5 },
+  { icon: "xp-quiz", label: "퀴즈 풀기(1회)", xp: 1 },
 ];
 const LABEL: Record<string, string> = {
   iron: "아이언",
@@ -160,8 +161,9 @@ export default function MyActivityCard() {
                 <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 800, color: "#4E5968" }}>경험치(XP) 쌓는 방법</p>
                 <div style={{ display: "grid", gap: 6 }}>
                   {XP_RULES.map((r) => (
-                    <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 15, width: 20, textAlign: "center" }}>{r.emoji}</span>
+                    <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/icons/${r.icon}.svg`} alt="" width={21} height={21} style={{ flexShrink: 0, display: "block" }} />
                       <span style={{ flex: 1, fontSize: 13, color: "#4E5968", fontWeight: 600 }}>{r.label}</span>
                       <span style={{ fontSize: 13, fontWeight: 800, color: "#3787FF", fontVariantNumeric: "tabular-nums" }}>+{r.xp} XP</span>
                     </div>
