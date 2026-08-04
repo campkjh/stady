@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clientCache } from "@/lib/clientCache";
+import { markWroteToday } from "@/lib/writeNudge";
 
 interface CategoryGroup {
   id: string;
@@ -194,6 +195,8 @@ export default function CommunityWriteClient() {
       if (!response.ok) throw new Error(data.error || "게시글을 저장하지 못했습니다.");
       // 새 글이 목록에 바로 보이도록 커뮤니티 목록 캐시 무효화.
       clientCache.clearPrefix("community-");
+      // 오늘 글을 썼으니 "하루에 한번 글 쓰기" 말풍선은 내일 다시.
+      markWroteToday();
       router.replace("/community");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "게시글을 저장하지 못했습니다.");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
+import NudgeBubble from "@/components/NudgeBubble";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -623,6 +624,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
               )}
 
               <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+                <NudgeBubble
+                  icon="xp-like"
+                  text="공감하면 작성자에게 경험치 +2"
+                  tailAlign="start"
+                  tailInset={18}
+                  compact
+                  style={{ justifySelf: "start", marginBottom: -4 }}
+                />
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", position: "relative" }}>
                   <button
                     type="button"
@@ -649,6 +658,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
             <section className="community-detail-panel" style={panelStyle}>
               <h2 style={{ margin: 0, color: "#111827", fontSize: 18, fontWeight: 700 }}>댓글</h2>
+              <NudgeBubble
+                icon="xp-comment"
+                text="댓글 남기고 경험치 쌓기"
+                xp={3}
+                tailAlign="start"
+                tailInset={20}
+                style={{ justifySelf: "start", margin: "-6px 0 -8px" }}
+              />
               <form onSubmit={submitComment} style={{ display: "grid", gap: 10 }}>
                 <textarea
                   value={comment}
@@ -928,6 +945,15 @@ function CommentItem({
 
       {replyTargetId === comment.id && (
         <form onSubmit={(event) => onSubmitReply(event, comment.id)} style={{ display: "grid", gap: 8, marginTop: 10 }}>
+          <NudgeBubble
+            icon="xp-comment"
+            text="답글도 경험치가 쌓여요"
+            xp={3}
+            tailAlign="start"
+            tailInset={16}
+            compact
+            style={{ justifySelf: "start", marginBottom: -6 }}
+          />
           <textarea
             value={replyContent}
             onChange={(event) => onReplyChange(event.target.value)}

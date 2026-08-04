@@ -4,6 +4,8 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
+import NudgeBubble from "@/components/NudgeBubble";
+import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
 
 // 게시글 목록 캐시 키(필터 조합별).
 const postsKey = (groupId: string, tagId: string, q: string) =>
@@ -80,10 +82,20 @@ export default function CommunityClient() {
   const [weeklyAtEnd, setWeeklyAtEnd] = useState(false);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
+  // 오늘 아직 글을 안 썼을 때만 글쓰기 말풍선을 띄운다(서버 렌더 깜빡임 방지로 기본 false).
+  const [showWriteNudge, setShowWriteNudge] = useState(false);
 
   useEffect(() => {
     loadGroups();
     loadWeeklyPopular();
+  }, []);
+
+  useEffect(() => {
+    try {
+      setShowWriteNudge(localStorage.getItem(WRITE_NUDGE_KEY) !== todayKey());
+    } catch {
+      setShowWriteNudge(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -522,14 +534,25 @@ export default function CommunityClient() {
         </section>
       </div>
 
-      <button
-        type="button"
-        className="community-floating-write"
-        onClick={() => router.push("/community/write")}
-        style={floatingWriteButtonStyle}
-      >
-        게시글 +
-      </button>
+      <div style={floatingWriteDockStyle}>
+        {showWriteNudge && (
+          <NudgeBubble
+            icon="xp-write"
+            text="하루에 한번 커뮤니티 글 쓰기"
+            xp={10}
+            tailAlign="end"
+            tailInset={26}
+          />
+        )}
+        <button
+          type="button"
+          className="community-floating-write"
+          onClick={() => router.push("/community/write")}
+          style={floatingWriteButtonStyle}
+        >
+          게시글 +
+        </button>
+      </div>
       <CommunityStyles />
     </main>
   );
@@ -1227,10 +1250,22 @@ const emptyPanelStyle = {
   padding: "22px 2px",
 } as const;
 
-const floatingWriteButtonStyle = {
+// 말풍선 넛지 + 글쓰기 버튼을 함께 띄우는 도크(둘을 세로로 쌓아 우하단 고정).
+const floatingWriteDockStyle = {
   position: "fixed",
   right: "max(18px, calc((100vw - 720px) / 2 + 18px))",
   bottom: "calc(98px + env(safe-area-inset-bottom, 0px))",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  gap: 6,
+  zIndex: 55,
+  // 도크의 빈 영역(말풍선 옆/아래)이 목록 터치를 먹지 않도록 버튼에서만 입력을 받는다.
+  pointerEvents: "none",
+} as const;
+
+const floatingWriteButtonStyle = {
+  pointerEvents: "auto",
   border: "none",
   borderRadius: 999,
   background: "#111827",

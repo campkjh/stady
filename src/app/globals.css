@@ -183,6 +183,83 @@ body {
   }
 }
 
+/* 둥둥 떠다니는 말풍선 넛지(NudgeBubble) — 글쓰기 버튼·댓글 입력창 옆에 붙는다. */
+.nudge-bubble-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  will-change: transform;
+  animation: nudgeBubbleFloat 2.6s ease-in-out infinite;
+}
+.nudge-bubble-wrap.is-tail-up {
+  flex-direction: column-reverse;
+}
+.nudge-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 7px 13px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
+  white-space: nowrap;
+}
+.is-compact .nudge-bubble {
+  padding: 6px 11px;
+  border-radius: 14px;
+  gap: 5px;
+}
+.nudge-bubble-text {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  background: linear-gradient(110deg, #8B95A1 0%, #8B95A1 26%, #3182F6 42%, #333D4B 58%, #333D4B 100%);
+  background-size: 230% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: nudgeBubbleText 2.8s ease-in-out infinite;
+}
+.is-compact .nudge-bubble-text {
+  font-size: 12.5px;
+}
+.nudge-bubble-xp {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #3182F6;
+  background: #EEF5FF;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-variant-numeric: tabular-nums;
+}
+.is-compact .nudge-bubble-xp {
+  font-size: 10.5px;
+  padding: 1px 5px;
+}
+.nudge-bubble-tail {
+  margin-top: -1px;
+  filter: drop-shadow(0 6px 4px rgba(15, 23, 42, 0.10));
+}
+.is-tail-up .nudge-bubble-tail {
+  margin-top: 0;
+  margin-bottom: -1px;
+  transform: rotate(180deg);
+}
+@keyframes nudgeBubbleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes nudgeBubbleText {
+  0% { background-position: 150% 0; }
+  100% { background-position: -50% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nudge-bubble-wrap { animation: none; }
+  .nudge-bubble-text { animation: none; background-position: 50% 0; }
+}
+
 /* 토스 스타일 인터렉션 */
 .press {
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
