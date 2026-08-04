@@ -18,17 +18,20 @@ export interface BrowserExam {
 
 const ALL = "all";
 
+// 좌측(모바일은 상단) 메뉴 항목. 시행 연도/월 + 과목 대분류 7개.
+// 아이콘은 공용 mono 세트에서 가져온 mxi-*.svg(활성은 -on 접미사로 진한 버전).
+const SECTIONS = [
+  { key: "year", label: "시행 연도", icon: "mxi-year" },
+  { key: "month", label: "시행 월", icon: "mxi-month" },
+  ...SUBJECT_GROUPS.map((g) => ({ key: g.key, label: g.label, icon: g.icon })),
+];
+
 export default function MockExamBrowser({ exams, years }: { exams: BrowserExam[]; years: number[] }) {
   const [year, setYear] = useState<number | typeof ALL>(ALL);
   const [month, setMonth] = useState<number | typeof ALL>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
-  // 연도 칩은 기본 7개만 보여주고 "+"로 나머지를 펼친다(첨부 UI와 동일).
-  const [allYears, setAllYears] = useState(false);
-  // 모바일 컴팩트 바에서 여는 시트: null이면 닫힘.
-  const [sheet, setSheet] = useState<null | "year" | "month" | "subject">(null);
-
-  const shownYears = allYears ? years : years.slice(0, 7);
-  const hasMoreYears = years.length > shownYears.length;
+  // 펼쳐진 메뉴 섹션. null이면 접힌 상태(첨부 이미지처럼 아이콘만 보임).
+  const [open, setOpen] = useState<string | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -41,295 +44,222 @@ export default function MockExamBrowser({ exams, years }: { exams: BrowserExam[]
     [exams, year, month, subject]
   );
 
-  const activeCount = (year !== ALL ? 1 : 0) + (month !== ALL ? 1 : 0) + (subject !== ALL ? 1 : 0);
   const subjectHit = findSubject(subject === ALL ? null : subject);
+  const activeCount = (year !== ALL ? 1 : 0) + (month !== ALL ? 1 : 0) + (subject !== ALL ? 1 : 0);
+
+  function isActive(key: string) {
+    if (key === "year") return year !== ALL;
+    if (key === "month") return month !== ALL;
+    return subjectHit?.group.key === key;
+  }
+
+  // 접혀 있어도 뭘 골랐는지 보이도록 항목 아래에 선택값을 적는다.
+  function pickedLabel(key: string): string | null {
+    if (key === "year") return year !== ALL ? `${year}` : null;
+    if (key === "month") return month !== ALL ? `${month}월` : null;
+    return subjectHit?.group.key === key ? subjectHit.subject.label : null;
+  }
 
   function reset() {
     setYear(ALL);
     setMonth(ALL);
     setSubject(ALL);
+    setOpen(null);
   }
 
+  const openGroup = SUBJECT_GROUPS.find((g) => g.key === open);
+
   return (
-    <div className="mx-wrap">
-      {/* ───── 모바일: 헤더 바로 아래 컴팩트 필터 바 ───── */}
-      <div className="mx-compact">
-        <div className="mx-compact-row">
-          <CompactPill label="연도" value={year === ALL ? "전체" : `${year}년`} active={year !== ALL} onClick={() => setSheet("year")} />
-          <CompactPill label="월" value={month === ALL ? "전체" : `${month}월`} active={month !== ALL} onClick={() => setSheet("month")} />
-          <CompactPill
-            label="과목"
-            value={subjectHit ? subjectHit.subject.label : "전체"}
-            icon={subjectHit ? subjectHit.group.icon : undefined}
-            active={subject !== ALL}
-            onClick={() => setSheet("subject")}
-          />
-          {activeCount > 0 && (
-            <button type="button" className="mx-reset" onClick={reset} aria-label="필터 초기화">
-              초기화
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ───── 태블릿/데스크톱: 펼쳐진 분류 패널 ───── */}
-      <div className="mx-panels">
-        <section className="mx-card">
-          <div className="mx-row">
-            <span className="mx-row-label">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/filter-year.svg" alt="" width={18} height={18} />
-              시행 연도
-            </span>
-            <div className="mx-chips">
-              <Chip active={year === ALL} onClick={() => setYear(ALL)}>전체</Chip>
-              {shownYears.map((y) => (
-                <Chip key={y} active={year === y} onClick={() => setYear(y)}>{y}</Chip>
-              ))}
-              {hasMoreYears && (
-                <button type="button" className="mx-more" onClick={() => setAllYears(true)} aria-label="연도 더 보기">＋</button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-card">
-          <div className="mx-row">
-            <span className="mx-row-label">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/filter-month.svg" alt="" width={18} height={18} />
-              시행 월
-            </span>
-            <div className="mx-chips">
-              <Chip active={month === ALL} onClick={() => setMonth(ALL)}>전체</Chip>
-              {EXAM_MONTHS.map((m) => (
-                <Chip key={m} active={month === m} onClick={() => setMonth(m)}>{m}월</Chip>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-card">
-          <div className="mx-row">
-            <span className="mx-row-label">과목</span>
-            <div className="mx-chips">
-              <Chip active={subject === ALL} onClick={() => setSubject(ALL)}>전체</Chip>
-            </div>
-          </div>
-          {SUBJECT_GROUPS.map((g) => (
-            <div key={g.key} className="mx-row mx-row-sub">
-              <span className="mx-row-label">
+    <div className="mx-shell">
+      {/* ───── 메뉴: 태블릿은 좌측 레일, 모바일은 상단 바 ───── */}
+      <nav className="mx-rail" aria-label="모의고사 분류">
+        {SECTIONS.map((s) => {
+          const on = isActive(s.key);
+          const expanded = open === s.key;
+          const picked = pickedLabel(s.key);
+          return (
+            <button
+              key={s.key}
+              type="button"
+              className={`mx-rail-item${on ? " is-on" : ""}${expanded ? " is-open" : ""}`}
+              onClick={() => setOpen((cur) => (cur === s.key ? null : s.key))}
+              aria-expanded={expanded}
+            >
+              <span className="mx-rail-ico">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/icons/${g.icon}.svg`} alt="" width={18} height={18} />
-                {g.label}
+                <img src={`/icons/${s.icon}${on || expanded ? "-on" : ""}.svg`} alt="" width={24} height={24} />
               </span>
-              <div className="mx-chips">
-                {g.subjects.map((s) => (
-                  <Chip key={s.id} active={subject === s.id} onClick={() => setSubject(s.id)}>{s.label}</Chip>
+              <span className="mx-rail-label">{s.label}</span>
+              {picked && <span className="mx-rail-picked">{picked}</span>}
+            </button>
+          );
+        })}
+        {activeCount > 0 && (
+          <button type="button" className="mx-rail-reset" onClick={reset}>초기화</button>
+        )}
+      </nav>
+
+      {/* ───── 펼침 패널: 태블릿은 레일 오른쪽, 모바일은 바 아래로 ───── */}
+      {open && (
+        <div className="mx-panel">
+          <div className="mx-panel-head">
+            {SECTIONS.find((s) => s.key === open)?.label}
+            <button type="button" className="mx-panel-close" onClick={() => setOpen(null)} aria-label="닫기">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.6" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="mx-panel-body">
+            {open === "year" && (
+              <>
+                <PanelChip active={year === ALL} onClick={() => setYear(ALL)}>전체</PanelChip>
+                {years.map((y) => (
+                  <PanelChip key={y} active={year === y} onClick={() => setYear(y)}>{y}</PanelChip>
                 ))}
-              </div>
-            </div>
-          ))}
-        </section>
-      </div>
+              </>
+            )}
+            {open === "month" && (
+              <>
+                <PanelChip active={month === ALL} onClick={() => setMonth(ALL)}>전체</PanelChip>
+                {EXAM_MONTHS.map((m) => (
+                  <PanelChip key={m} active={month === m} onClick={() => setMonth(m)}>{m}월</PanelChip>
+                ))}
+              </>
+            )}
+            {openGroup && (
+              <>
+                <PanelChip active={subject === ALL} onClick={() => setSubject(ALL)}>전체</PanelChip>
+                {openGroup.subjects.map((s) => (
+                  <PanelChip key={s.id} active={subject === s.id} onClick={() => setSubject(s.id)}>{s.label}</PanelChip>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ───── 결과 ───── */}
-      <div className="mx-result-head">
-        <span className="mx-count">
-          모의고사 <b>{filtered.length}</b>개
-        </span>
-        {activeCount > 0 && (
-          <button type="button" className="mx-reset-wide" onClick={reset}>필터 초기화</button>
+      <div className="mx-main">
+        <div className="mx-result-head">
+          <span className="mx-count">모의고사 <b>{filtered.length}</b>개</span>
+          {activeCount > 0 && <button type="button" className="mx-reset-wide" onClick={reset}>필터 초기화</button>}
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="mx-empty">{exams.length === 0 ? "등록된 모의고사가 없습니다." : "조건에 맞는 모의고사가 없어요."}</p>
+        ) : (
+          <div className="mx-grid">
+            {filtered.map((ex) => {
+              const hit = findSubject(ex.subject);
+              return (
+                <Link key={ex.id} href={`/mock-exam/${ex.id}`} className="hover-lift mx-item">
+                  <div className="mx-thumb">
+                    {ex.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ex.coverUrl} alt="" />
+                    ) : (
+                      <span className="mx-thumb-empty">📄</span>
+                    )}
+                    {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
+                  </div>
+                  <p className="mx-title">{ex.title}</p>
+                  <p className="mx-sub">
+                    {hit ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/icons/${hit.group.icon}.svg`} alt="" width={13} height={13} />
+                        {hit.subject.label}
+                      </>
+                    ) : (
+                      ex.subtitle || `${ex.pageCount}페이지`
+                    )}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </div>
-
-      {filtered.length === 0 ? (
-        <p className="mx-empty">{exams.length === 0 ? "등록된 모의고사가 없습니다." : "조건에 맞는 모의고사가 없어요."}</p>
-      ) : (
-        <div className="mx-grid">
-          {filtered.map((ex) => {
-            const hit = findSubject(ex.subject);
-            return (
-              <Link key={ex.id} href={`/mock-exam/${ex.id}`} className="hover-lift mx-item">
-                <div className="mx-thumb">
-                  {ex.coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={ex.coverUrl} alt="" />
-                  ) : (
-                    <span className="mx-thumb-empty">📄</span>
-                  )}
-                  {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
-                </div>
-                <p className="mx-title">{ex.title}</p>
-                <p className="mx-sub">
-                  {hit && (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/icons/${hit.group.icon}.svg`} alt="" width={13} height={13} />
-                      {hit.subject.label}
-                    </>
-                  )}
-                  {!hit && (ex.subtitle || `${ex.pageCount}페이지`)}
-                </p>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ───── 모바일 바텀시트 ───── */}
-      {sheet && (
-        <div className="mx-sheet-dim" onClick={() => setSheet(null)} role="presentation">
-          <div className="mx-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-sheet-grab" />
-            <div className="mx-sheet-head">
-              {sheet === "year" ? "시행 연도" : sheet === "month" ? "시행 월" : "과목"}
-            </div>
-            <div className="mx-sheet-body">
-              {sheet === "year" && (
-                <div className="mx-sheet-grid">
-                  <SheetChip active={year === ALL} onClick={() => { setYear(ALL); setSheet(null); }}>전체</SheetChip>
-                  {years.map((y) => (
-                    <SheetChip key={y} active={year === y} onClick={() => { setYear(y); setSheet(null); }}>{y}</SheetChip>
-                  ))}
-                </div>
-              )}
-              {sheet === "month" && (
-                <div className="mx-sheet-grid">
-                  <SheetChip active={month === ALL} onClick={() => { setMonth(ALL); setSheet(null); }}>전체</SheetChip>
-                  {EXAM_MONTHS.map((m) => (
-                    <SheetChip key={m} active={month === m} onClick={() => { setMonth(m); setSheet(null); }}>{m}월</SheetChip>
-                  ))}
-                </div>
-              )}
-              {sheet === "subject" && (
-                <>
-                  <button type="button" className={`mx-sheet-item${subject === ALL ? " is-on" : ""}`} onClick={() => { setSubject(ALL); setSheet(null); }}>
-                    전체 과목
-                    {subject === ALL && <CheckMark />}
-                  </button>
-                  {SUBJECT_GROUPS.map((g) => (
-                    <div key={g.key} className="mx-sheet-group">
-                      <div className="mx-sheet-group-head">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/icons/${g.icon}.svg`} alt="" width={17} height={17} />
-                        {g.label}
-                      </div>
-                      {g.subjects.map((s) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          className={`mx-sheet-item${subject === s.id ? " is-on" : ""}`}
-                          onClick={() => { setSubject(s.id); setSheet(null); }}
-                        >
-                          {s.label}
-                          {subject === s.id && <CheckMark />}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <BrowserStyles />
     </div>
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function PanelChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" className={`mx-chip${active ? " is-on" : ""}`} onClick={onClick}>
+    <button type="button" className={`mx-pchip${active ? " is-on" : ""}`} onClick={onClick}>
       {children}
     </button>
-  );
-}
-
-function SheetChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" className={`mx-sheet-chip${active ? " is-on" : ""}`} onClick={onClick}>
-      {children}
-    </button>
-  );
-}
-
-function CompactPill({ label, value, icon, active, onClick }: { label: string; value: string; icon?: string; active: boolean; onClick: () => void }) {
-  return (
-    <button type="button" className={`mx-pill${active ? " is-on" : ""}`} onClick={onClick}>
-      {icon && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/icons/${icon}.svg`} alt="" width={15} height={15} />
-      )}
-      <span className="mx-pill-label">{label}</span>
-      <span className="mx-pill-value">{value}</span>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
-    </button>
-  );
-}
-
-function CheckMark() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3787FF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
   );
 }
 
 function BrowserStyles() {
   return (
     <style>{`
-      .mx-wrap { padding-bottom: 40px; }
-
-      /* ── 모바일 컴팩트 바(기본). 헤더 바로 아래 붙어 스크롤에도 따라온다. ── */
-      .mx-compact {
+      /* ── 기본(모바일): 메뉴가 헤더 아래 가로로 붙고, 누르면 아래로 펼쳐진다 ── */
+      .mx-shell { padding-bottom: 40px; }
+      .mx-rail {
         position: sticky; top: 0; z-index: 20;
-        background: rgba(255,255,255,0.94);
+        display: flex; align-items: flex-start; gap: 2px;
+        padding: 8px 10px; overflow-x: auto; scrollbar-width: none;
+        background: rgba(255,255,255,0.95);
         backdrop-filter: saturate(180%) blur(10px);
         -webkit-backdrop-filter: saturate(180%) blur(10px);
         border-bottom: 1px solid #F2F4F6;
       }
-      .mx-compact-row {
-        display: flex; align-items: center; gap: 6px;
-        padding: 9px 14px; overflow-x: auto; scrollbar-width: none;
+      .mx-rail-item {
+        flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px;
+        width: 64px; padding: 4px 2px 6px; border: none; background: none; cursor: pointer;
+        font-family: inherit; -webkit-tap-highlight-color: transparent;
       }
-      .mx-pill {
-        display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-        max-width: 46vw;
-        padding: 7px 11px; border-radius: 999px;
-        border: 1px solid #E9EDF3; background: #fff; color: #4E5968;
-        font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: border-color .15s ease, background .15s ease, color .15s ease;
+      .mx-rail-ico {
+        display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px;
+        transition: background .16s ease, transform .16s ease;
       }
-      .mx-pill:active { transform: scale(0.97); }
-      .mx-pill.is-on { border-color: #3787FF; background: #F2F7FF; color: #1F5EDC; }
-      .mx-pill-label { color: #B0B8C1; font-weight: 600; font-size: 12px; }
-      .mx-pill.is-on .mx-pill-label { color: #7DAAF5; }
-      .mx-pill-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .mx-reset {
-        flex-shrink: 0; border: none; background: none; color: #8B95A1;
-        font-size: 12.5px; font-weight: 700; padding: 6px 4px; cursor: pointer; font-family: inherit;
+      .mx-rail-item.is-on .mx-rail-ico, .mx-rail-item.is-open .mx-rail-ico { background: #F2F4F6; }
+      .mx-rail-item:active .mx-rail-ico { transform: scale(0.94); }
+      .mx-rail-label {
+        font-size: 11px; font-weight: 700; color: #B0B8C1; letter-spacing: -0.3px;
+        white-space: nowrap; transition: color .16s ease;
       }
-      .mx-panels { display: none; }
+      .mx-rail-item.is-on .mx-rail-label, .mx-rail-item.is-open .mx-rail-label { color: #333D4B; }
+      .mx-rail-picked {
+        font-size: 10px; font-weight: 800; color: #3787FF; max-width: 62px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .mx-rail-reset {
+        flex: 0 0 auto; align-self: center; border: none; background: none; color: #8B95A1;
+        font-size: 12px; font-weight: 700; padding: 6px 8px; cursor: pointer; font-family: inherit;
+      }
+
+      .mx-panel {
+        border-bottom: 1px solid #F2F4F6; background: #FBFCFE; overflow: hidden;
+        animation: mxPanelDown .22s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .mx-panel-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px 2px; font-size: 13px; font-weight: 800; color: #333D4B;
+      }
+      .mx-panel-close { border: none; background: none; padding: 4px; cursor: pointer; line-height: 0; }
+      .mx-panel-body { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 16px 14px; }
+      .mx-pchip {
+        padding: 8px 13px; border-radius: 999px; border: 1px solid #E9EDF3; background: #fff;
+        font-size: 13.5px; font-weight: 700; color: #4E5968; cursor: pointer; font-family: inherit;
+        white-space: nowrap; transition: border-color .15s ease, background .15s ease, color .15s ease;
+      }
+      .mx-pchip.is-on { border-color: #3787FF; background: #F2F7FF; color: #1F5EDC; }
+      @keyframes mxPanelDown { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+      @media (prefers-reduced-motion: reduce) { .mx-panel { animation: none } }
 
       /* ── 결과 ── */
-      .mx-result-head {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 18px 8px;
-      }
+      .mx-result-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 8px; }
       .mx-count { font-size: 13px; color: #8B95A1; font-weight: 600; }
       .mx-count b { color: #191F28; font-weight: 800; }
       .mx-reset-wide { display: none; }
       .mx-empty { padding: 48px 20px; text-align: center; color: #9CA3AF; font-size: 14px; margin: 0; }
-      .mx-grid {
-        padding: 4px 16px 40px; display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px;
-      }
+      .mx-grid { padding: 4px 16px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
       .mx-item { text-decoration: none; display: block; }
       .mx-thumb {
         position: relative; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
@@ -341,95 +271,57 @@ function BrowserStyles() {
         position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
         background: rgba(17,24,39,0.72); color: #fff; font-size: 10.5px; font-weight: 800;
       }
-      .mx-title {
-        margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: #191F28;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
+      .mx-title { margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: #191F28; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mx-sub {
-        margin: 3px 2px 0; font-size: 12px; color: #8A909C;
-        display: flex; align-items: center; gap: 4px;
+        margin: 3px 2px 0; font-size: 12px; color: #8A909C; display: flex; align-items: center; gap: 4px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
 
-      /* ── 바텀시트(모바일) ── */
-      .mx-sheet-dim {
-        position: fixed; inset: 0; z-index: 200; background: rgba(15,23,42,0.42);
-        display: flex; align-items: flex-end; animation: mxDim .18s ease both;
-      }
-      .mx-sheet {
-        width: 100%; max-height: 76vh; background: #fff;
-        border-radius: 20px 20px 0 0; display: flex; flex-direction: column;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-        animation: mxSheetUp .26s cubic-bezier(0.22, 1, 0.36, 1) both;
-      }
-      .mx-sheet-grab { width: 40px; height: 4px; border-radius: 999px; background: #E5E8EB; margin: 9px auto 2px; }
-      .mx-sheet-head { padding: 8px 20px 10px; font-size: 16px; font-weight: 800; color: #191F28; }
-      .mx-sheet-body { overflow-y: auto; padding: 0 14px 18px; }
-      .mx-sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 4px 6px; }
-      .mx-sheet-chip {
-        padding: 12px 4px; border-radius: 12px; border: 1px solid #EEF0F3; background: #F9FAFB;
-        font-size: 14px; font-weight: 700; color: #4E5968; cursor: pointer; font-family: inherit;
-      }
-      .mx-sheet-chip.is-on { border-color: #3787FF; background: #F2F7FF; color: #1F5EDC; }
-      .mx-sheet-group { margin-top: 6px; }
-      .mx-sheet-group-head {
-        display: flex; align-items: center; gap: 6px;
-        padding: 12px 10px 6px; font-size: 12.5px; font-weight: 800; color: #8B95A1;
-      }
-      .mx-sheet-item {
-        display: flex; align-items: center; justify-content: space-between; width: 100%;
-        padding: 12px 10px; border: none; background: none; border-radius: 12px;
-        font-size: 15px; font-weight: 600; color: #333D4B; cursor: pointer; font-family: inherit; text-align: left;
-      }
-      .mx-sheet-item.is-on { background: #F2F7FF; color: #1F5EDC; font-weight: 800; }
-      @keyframes mxDim { from { opacity: 0 } to { opacity: 1 } }
-      @keyframes mxSheetUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
-      @media (prefers-reduced-motion: reduce) {
-        .mx-sheet-dim, .mx-sheet { animation: none; }
-      }
-
-      /* ── 태블릿/데스크톱: 펼친 패널로 교체 ── */
+      /* ── 태블릿/데스크톱: 메뉴가 좌측에 세로로 붙고, 누르면 옆으로 펼쳐진다 ── */
       @media (min-width: 744px) {
-        .mx-compact { display: none; }
-        .mx-panels { display: block; padding: 16px 20px 4px; background: #F4F7FC; }
-        .mx-card {
-          background: #fff; border: 1px solid #EDF1F7; border-radius: 16px;
-          box-shadow: 0 2px 10px rgba(15,23,42,0.04);
-          padding: 14px 18px; margin-bottom: 12px;
+        .mx-shell {
+          display: grid;
+          grid-template-columns: 92px auto minmax(0, 1fr);
+          align-items: start;
+          padding: 10px 16px 40px;
         }
-        .mx-row { display: flex; align-items: flex-start; gap: 14px; padding: 4px 0; }
-        .mx-row-sub { border-top: 1px solid #F4F6FA; padding-top: 10px; margin-top: 6px; }
-        .mx-row-label {
-          display: inline-flex; align-items: center; gap: 6px; flex: 0 0 116px;
-          font-size: 14px; font-weight: 800; color: #1F5EDC; padding-top: 7px;
+        .mx-rail {
+          position: sticky; top: 12px;
+          display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+          padding: 10px 6px; overflow: visible;
+          background: #fff; border: 1px solid #F1F4F8; border-radius: 20px;
+          box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+          backdrop-filter: none; -webkit-backdrop-filter: none;
         }
-        .mx-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; flex: 1; min-width: 0; }
-        .mx-chip {
-          position: relative; padding: 7px 15px; border: 1.5px solid transparent; border-radius: 999px;
-          background: none; color: #4E5968; font-size: 14px; font-weight: 600;
-          cursor: pointer; font-family: inherit; white-space: nowrap;
-          transition: color .15s ease, border-color .15s ease, background .15s ease;
+        .mx-rail-item { width: 100%; padding: 7px 2px 9px; }
+        .mx-rail-ico { width: 44px; height: 44px; border-radius: 14px; margin: 0 auto; }
+        .mx-rail-label { font-size: 11.5px; }
+        .mx-rail-reset { margin-top: 6px; padding-top: 10px; border-top: 1px solid #F2F4F6; width: 100%; }
+
+        .mx-panel {
+          position: sticky; top: 12px; width: 216px; margin-left: 12px;
+          border: 1px solid #F1F4F8; border-radius: 20px; background: #fff;
+          border-bottom: 1px solid #F1F4F8;
+          box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+          animation: mxPanelRight .22s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .mx-chip + .mx-chip::before {
-          content: ""; position: absolute; left: -1px; top: 50%; transform: translateY(-50%);
-          width: 1px; height: 12px; background: #E5E8EB;
+        .mx-panel-head { padding: 14px 16px 4px; font-size: 13.5px; }
+        .mx-panel-body {
+          flex-direction: column; align-items: stretch; gap: 2px; padding: 8px 10px 12px;
+          max-height: calc(100vh - 160px); overflow-y: auto;
         }
-        .mx-chip:hover { color: #191F28; }
-        .mx-chip.is-on {
-          border-color: #3787FF; background: #fff; color: #1F5EDC; font-weight: 800;
-        }
-        .mx-chip.is-on::before, .mx-chip.is-on + .mx-chip::before { display: none; }
-        .mx-more {
-          margin-left: auto; width: 34px; height: 34px; border-radius: 10px;
-          border: 1.5px solid #3787FF; background: #fff; color: #3787FF;
-          font-size: 17px; font-weight: 700; cursor: pointer; line-height: 1; font-family: inherit;
-        }
-        .mx-result-head { padding: 18px 22px 10px; }
+        .mx-pchip { text-align: left; border: none; background: none; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+        .mx-pchip:hover { background: #F7F9FC; }
+        .mx-pchip.is-on { background: #F2F7FF; color: #1F5EDC; font-weight: 800; }
+        @keyframes mxPanelRight { from { opacity: 0; transform: translateX(-10px) } to { opacity: 1; transform: translateX(0) } }
+
+        .mx-main { padding-left: 14px; }
+        .mx-result-head { padding: 8px 6px 10px; }
         .mx-reset-wide {
           display: inline-block; border: none; background: none; color: #8B95A1;
           font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
         }
-        .mx-grid { padding: 4px 20px 40px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+        .mx-grid { padding: 0 4px 40px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
       }
     `}</style>
   );

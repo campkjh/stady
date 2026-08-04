@@ -9,7 +9,8 @@ export interface SubjectItem {
 export interface SubjectGroup {
   key: string;
   label: string;
-  // public/icons/ 아래 아이콘 파일명(확장자 제외). 공용 아이콘 세트에서 가져옴.
+  // public/icons/ 아래 아이콘 파일명(확장자 제외). mono 아이콘 세트에서 가져왔고,
+  // 활성 상태는 같은 이름에 -on을 붙인 진한 버전을 쓴다.
   icon: string;
   subjects: SubjectItem[];
 }
@@ -18,7 +19,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "korean",
     label: "국어",
-    icon: "subj-korean",
+    icon: "mxi-korean",
     subjects: [
       { id: "kor-hwajak", label: "화법과 작문" },
       { id: "kor-eonmae", label: "언어와 매체" },
@@ -28,7 +29,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "math",
     label: "수학",
-    icon: "subj-math",
+    icon: "mxi-math",
     subjects: [
       { id: "math-prob", label: "확률과 통계" },
       { id: "math-calc", label: "미적분" },
@@ -39,7 +40,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "english",
     label: "영어/한국사",
-    icon: "subj-english",
+    icon: "mxi-english",
     subjects: [
       { id: "eng", label: "영어" },
       { id: "korhist", label: "한국사" },
@@ -48,7 +49,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "social",
     label: "사회탐구",
-    icon: "subj-social",
+    icon: "mxi-social",
     subjects: [
       { id: "soc-life-ethics", label: "생활과 윤리" },
       { id: "soc-ethics-thought", label: "윤리와 사상" },
@@ -65,7 +66,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "science",
     label: "과학탐구",
-    icon: "subj-science",
+    icon: "mxi-science",
     subjects: [
       { id: "sci-physics1", label: "물리학Ⅰ" },
       { id: "sci-physics2", label: "물리학Ⅱ" },
@@ -81,7 +82,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "job",
     label: "직업탐구",
-    icon: "subj-job",
+    icon: "mxi-job",
     subjects: [
       { id: "job-agri", label: "농업 기초 기술" },
       { id: "job-industry", label: "공업 일반" },
@@ -95,7 +96,7 @@ export const SUBJECT_GROUPS: SubjectGroup[] = [
   {
     key: "lang2",
     label: "제2외/한문",
-    icon: "subj-lang2",
+    icon: "mxi-lang2",
     subjects: [
       { id: "l2-de", label: "독일어Ⅰ" },
       { id: "l2-fr", label: "프랑스어Ⅰ" },

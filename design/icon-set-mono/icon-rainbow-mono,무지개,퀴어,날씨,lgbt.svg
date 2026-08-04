@@ -1,0 +1,42 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<mask id="mask0_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="1" y="0" width="22" height="23">
+<mask id="mask1_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="1" y="0" width="22" height="23">
+<mask id="mask2_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="1" y="0" width="22" height="23">
+<mask id="mask3_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="1" y="0" width="22" height="23">
+<path d="M1 0.833008H23V22.9997H1V0.833008Z" fill="white"/>
+</mask>
+<g mask="url(#mask3_55587_1012)">
+<path d="M0 0H24V24H0V0Z" fill="white"/>
+</g>
+</mask>
+<g mask="url(#mask2_55587_1012)">
+<path d="M0 0H24V24H0V0Z" fill="white"/>
+</g>
+</mask>
+<g mask="url(#mask1_55587_1012)">
+<rect width="24" height="24" fill="url(#pattern0_55587_1012)"/>
+</g>
+</mask>
+<g mask="url(#mask0_55587_1012)">
+<mask id="mask4_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="1" y="0" width="22" height="23">
+<path d="M1 0.833008H23V22.9997H1V0.833008Z" fill="white"/>
+</mask>
+<g mask="url(#mask4_55587_1012)">
+<mask id="mask5_55587_1012" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+<path d="M0 0H24V24H0V0Z" fill="white"/>
+</mask>
+<g mask="url(#mask5_55587_1012)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M23 4.2002V0.950195C11.1 1.5002 1.53333 11.0669 1 22.9669H4.25C4.78333 12.8669 12.9 4.7502 23 4.2002Z" fill="#B0B8C1"/>
+</g>
+</g>
+</g>
+<path opacity="0.4" fill-rule="evenodd" clip-rule="evenodd" d="M5.7168 22.966H9.0668C9.58346 15.4993 15.5501 9.51602 23.0001 8.98268V5.66602C13.7001 6.19935 6.25013 13.666 5.7168 22.966Z" fill="#B0B8C1"/>
+<path opacity="0.6" fill-rule="evenodd" clip-rule="evenodd" d="M10.6665 22.9663H14.2165C14.7165 18.3497 18.3832 14.683 22.9832 14.183V10.583C16.4332 11.1163 11.1832 16.383 10.6665 22.9663Z" fill="#B0B8C1"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M23 4.19922V0.949219C11.1 1.49922 1.53333 11.0659 1 22.9659H4.25C4.78333 12.8659 12.9 4.74922 23 4.19922Z" fill="#B0B8C1"/>
+<defs>
+<pattern id="pattern0_55587_1012" patternContentUnits="objectBoundingBox" width="1" height="1">
+<use xlink:href="#image0_55587_1012" transform="scale(0.00694444)"/>
+</pattern>
+<image id="image0_55587_1012" width="144" height="144" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADnRuK4AAAACXBIWXMAAAsSAAALEgHS3X78AAABeUlEQVR4nO3SoQ2AQBBFwYNQGYXTAEWBRZBLyDOIGb1rft4AAAC+WSbXuy15ON7GmAV0WY+H11ZWC1EIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhkmzyfpgUAAIDfGGPcGPcD1uysV9cAAAAASUVORK5CYII="/>
+</defs>
+</svg>
