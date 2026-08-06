@@ -27,11 +27,12 @@ interface Bookmark {
   categoryName: string;
 }
 
+// 탭 아이콘은 앱에 이미 있는 SVG를 그대로 쓴다(비활성은 회색조로 눌러 표시).
 const TABS = [
-  { label: "전체", value: "" },
-  { label: "문제집", value: "workbook" },
-  { label: "OX퀴즈", value: "ox" },
-  { label: "영단어", value: "vocab" },
+  { label: "전체", value: "", icon: "/icons/전체.svg" },
+  { label: "문제집", value: "workbook", icon: "/icons/notebook.svg" },
+  { label: "OX퀴즈", value: "ox", icon: "/icons/banner-ox.svg" },
+  { label: "영단어", value: "vocab", icon: "/icons/banner-vocab.svg" },
 ];
 
 function SwipeableVocabBookmarkItem({
@@ -308,21 +309,23 @@ export default function BookmarksPage() {
       </div>
 
       {/* Tab filters */}
-      <div className={`flex gap-2 overflow-x-auto ${activeTab === "ox" && oxCategories.length > 0 ? "mb-3" : "mb-6"}`}>
+      <div className={`tabrail is-illustrated ${activeTab === "ox" && oxCategories.length > 0 ? "mb-3" : "mb-6"}`}>
         {TABS.map((tab) => (
           <button
             key={tab.value}
+            type="button"
             onClick={() => {
               setActiveTab(tab.value);
               setOxCategory("");
             }}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.value
-                ? "bg-gray-900 text-white"
-                : "border border-[#E5E7EB] bg-white text-gray-600"
-            }`}
+            className={`tabrail-item${activeTab === tab.value ? " is-on" : ""}`}
+            aria-current={activeTab === tab.value ? "true" : undefined}
           >
-            {tab.label}
+            <span className="tabrail-ico">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tab.icon} alt="" width={24} height={24} />
+            </span>
+            <span className="tabrail-label">{tab.label}</span>
           </button>
         ))}
       </div>
