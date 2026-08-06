@@ -124,6 +124,19 @@ export default function CommunityClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId, query]);
 
+  // 접혔을 때 항목 너비(아이콘 30 + 여백 + 라벨). 라벨 길이가 제각각이라 실제로 재서 넣는다.
+  useEffect(() => {
+    const bar = topbarRef.current;
+    if (!bar) return;
+    bar.querySelectorAll<HTMLElement>(".tabrail-item").forEach((item) => {
+      const label = item.querySelector<HTMLElement>(".tabrail-label");
+      if (!label) return;
+      // 라벨은 접히면 11px → 12.5px 로 커지므로 그 비율만큼 넉넉히 잡는다.
+      const w = Math.ceil(label.scrollWidth * (12.5 / 11));
+      item.style.setProperty("--cw", `${38 + w + 10}px`);
+    });
+  }, [groups]);
+
   useEffect(() => {
     let lastY = window.scrollY;
     const onScroll = () => {
@@ -665,22 +678,48 @@ function CommunityStyles() {
         padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
         transition: gap 0.24s cubic-bezier(0.22, 1, 0.36, 1), padding 0.24s cubic-bezier(0.22, 1, 0.36, 1);
       }
-      /* 스크롤을 내리면 카테고리 탭이 '아이콘 위·라벨 아래'에서
-         '아이콘 옆 라벨'로 접히며 헤더가 그만큼 낮아진다. */
-      .community-topbar.is-compact {
-        gap: 6px;
-        padding-bottom: 6px;
-      }
-      .community-topbar.is-compact .tabrail {
+      /* 스크롤을 내리면 카테고리 탭이 '아이콘 위·라벨 아래'에서 '아이콘 옆 라벨'로
+         접히며 헤더가 그만큼 낮아진다. flex-direction은 애니메이션이 안 되므로
+         라벨을 절대배치로 두고 위치·크기만 바꾼다 → 매 프레임 부드럽게 이어진다.
+         (--cw = 접혔을 때 항목 너비. 라벨 길이가 달라 마운트 후 JS로 재서 넣는다) */
+      .community-topbar .tabrail-item {
+        position: relative;
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 64px;
+        height: 67px;
         padding: 0;
+        transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), height 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .community-topbar .tabrail-ico {
+        position: absolute;
+        left: 50%;
+        top: 4px;
+        transform: translateX(-50%);
+        transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), width 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+          height 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.26s ease, background 0.16s ease;
+      }
+      .community-topbar .tabrail-ico img {
+        transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), height 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .community-topbar .tabrail-label {
+        position: absolute;
+        left: 50%;
+        top: 47px;
+        transform: translateX(-50%);
+        transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), font-size 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+          color 0.16s ease;
       }
       .community-topbar.is-compact .tabrail-item {
-        flex-direction: row;
-        width: auto;
-        gap: 5px;
-        padding: 3px 10px 3px 3px;
+        width: var(--cw, 96px);
+        height: 36px;
       }
       .community-topbar.is-compact .tabrail-ico {
+        left: 3px;
+        top: 3px;
+        transform: none;
         width: 30px;
         height: 30px;
         border-radius: 10px;
@@ -690,6 +729,9 @@ function CommunityStyles() {
         height: 19px;
       }
       .community-topbar.is-compact .tabrail-label {
+        left: 38px;
+        top: 50%;
+        transform: translateY(-50%);
         font-size: 12.5px;
       }
       @media (prefers-reduced-motion: reduce) {
