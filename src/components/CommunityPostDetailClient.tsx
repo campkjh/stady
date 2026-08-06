@@ -6,6 +6,7 @@ import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
+import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -457,7 +458,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             <article className="community-detail-panel community-post-detail-card" style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <span style={{ borderRadius: 999, border: "1px solid #EEF0F3", background: "transparent", color: "#374151", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
-                <span style={{ color: "#8A909C", fontSize: 12 }}>{new Date(post.createdAt).toLocaleString("ko-KR")}</span>
+                <span style={{ color: "#8A909C", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
               </div>
               {editing ? (
                 <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>
@@ -898,7 +899,7 @@ function CommentItem({
     <div style={commentBoxStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
-        <span style={{ color: "#9CA3AF", fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("ko-KR")}</span>
+        <span style={{ color: "#9CA3AF", fontSize: 12 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
       </div>
       {isEditing ? (
         <div style={{ display: "grid", gap: 8, marginTop: 8 }}>

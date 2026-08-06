@@ -6,6 +6,7 @@ import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
 import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
+import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
 
 // 게시글 목록 캐시 키(필터 조합별).
 const postsKey = (groupId: string, q: string) =>
@@ -426,7 +427,7 @@ export default function CommunityClient() {
                     </div>
                     <div>
                       <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /></p>
-                      <p className="community-post-date">{new Date(post.createdAt).toLocaleString("ko-KR")}</p>
+                      <p className="community-post-date" title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</p>
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
                   </div>
