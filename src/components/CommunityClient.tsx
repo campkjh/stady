@@ -1219,7 +1219,8 @@ function chipStyle(active: boolean, stacked: boolean) {
     alignItems: "center",
     justifyContent: stacked ? "flex-start" : "center",
     border: "1px solid transparent",
-    borderRadius: 999,
+    // 넓은 화면 좌측 목록(stacked)은 알약 대신 살짝 둥근 사각형.
+    borderRadius: stacked ? 16 : 999,
     background: active ? "#33363D" : "#F2F3F6",
     color: active ? "#fff" : "#4E5968",
     padding: stacked ? "11px 14px" : "10px 16px",
