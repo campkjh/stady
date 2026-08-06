@@ -271,6 +271,26 @@ export default function CommunityClient() {
           <div>
             <h1 className="community-title">커뮤니티</h1>
           </div>
+          {/* 넓은 화면: 아이콘 버튼 대신 헤더에 검색창을 그대로 편다. */}
+          <div className="community-search-inline">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
+              <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="무엇을 검색하실건가요?"
+              aria-label="커뮤니티 검색"
+            />
+            {query && (
+              <button type="button" className="community-search-clear" onClick={() => setQuery("")} aria-label="검색어 지우기">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
           <button
             type="button"
             className="community-icon-button"
@@ -641,6 +661,56 @@ function CommunityStyles() {
         max-width: 1120px;
         width: 100%;
         margin: 0 auto;
+      }
+      /* 폰에서는 숨기고 아이콘 버튼을 쓴다(아래 미디어쿼리에서 뒤바뀜). */
+      .community-search-inline {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        flex: 1 1 auto;
+        max-width: 420px;
+        margin-left: auto;
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 14px;
+        background: #f2f4f6;
+        border: 1px solid transparent;
+        color: #8b95a1;
+        box-sizing: border-box;
+        transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+      }
+      .community-search-inline:focus-within {
+        background: #fff;
+        border-color: #3787ff;
+        box-shadow: 0 0 0 3px rgba(55, 135, 255, 0.12);
+      }
+      .community-search-inline input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: none;
+        outline: none;
+        font-size: 15px;
+        font-family: inherit;
+        color: #191f28;
+        letter-spacing: -0.2px;
+      }
+      .community-search-inline input::placeholder {
+        color: #8b95a1;
+      }
+      .community-search-clear {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 999px;
+        background: #dfe3e8;
+        color: #fff;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
       }
       .community-eyebrow {
         margin: 0 0 2px;
@@ -1064,6 +1134,15 @@ function CommunityStyles() {
         }
         .community-mobile-filters {
           display: none;
+        }
+        /* 넓은 화면에선 검색 아이콘 버튼 대신 펼쳐진 검색창을 쓴다. */
+        .community-search-inline {
+          display: flex;
+        }
+        /* 아이콘 버튼은 인라인 style에 display:flex가 있어 !important가 필요하다. */
+        .community-topbar .community-icon-button,
+        .community-topbar .community-search-input {
+          display: none !important;
         }
         .community-layout {
           grid-template-columns: 248px minmax(0, 1fr);
