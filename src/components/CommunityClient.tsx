@@ -83,6 +83,8 @@ export default function CommunityClient() {
   const restoreTimerRef = useRef<number | null>(null);
   // 오늘 아직 글을 안 썼을 때만 글쓰기 말풍선을 띄운다(서버 렌더 깜빡임 방지로 기본 false).
   const [showWriteNudge, setShowWriteNudge] = useState(false);
+  // 아래로 스크롤하면 카테고리 탭을 한 줄(아이콘+라벨)로 접어 헤더를 낮춘다.
+  const [compactHeader, setCompactHeader] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -121,6 +123,21 @@ export default function CommunityClient() {
     loadPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId, query]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const dy = y - lastY;
+      // 손떨림 정도(6px 미만)는 방향으로 치지 않는다.
+      if (Math.abs(dy) < 6) return;
+      lastY = y;
+      // 최상단 근처에서는 항상 펼쳐둔다.
+      setCompactHeader(y > 60 && dy > 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // 상세에서 돌아왔을 때(목록 첫 로드 완료 시점) 저장해둔 스크롤 위치로 복원.
   useEffect(() => {
@@ -267,7 +284,7 @@ export default function CommunityClient() {
   );
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
-      <header ref={topbarRef} className="community-topbar">
+      <header ref={topbarRef} className={`community-topbar${compactHeader ? " is-compact" : ""}`}>
         <div className="community-topbar-inner">
           <div>
             <h1 className="community-title">커뮤니티</h1>
@@ -643,11 +660,42 @@ function CommunityStyles() {
         display: grid;
         gap: 12px;
         transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.88);
-        border-bottom: 1px solid rgba(229, 231, 235, 0.8);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        background: #fff;
+        border-bottom: 1px solid #EEF0F3;
         padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
+        transition: gap 0.24s cubic-bezier(0.22, 1, 0.36, 1), padding 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      /* 스크롤을 내리면 카테고리 탭이 '아이콘 위·라벨 아래'에서
+         '아이콘 옆 라벨'로 접히며 헤더가 그만큼 낮아진다. */
+      .community-topbar.is-compact {
+        gap: 6px;
+        padding-bottom: 6px;
+      }
+      .community-topbar.is-compact .tabrail {
+        padding: 0;
+      }
+      .community-topbar.is-compact .tabrail-item {
+        flex-direction: row;
+        width: auto;
+        gap: 5px;
+        padding: 3px 10px 3px 3px;
+      }
+      .community-topbar.is-compact .tabrail-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+      }
+      .community-topbar.is-compact .tabrail-ico img {
+        width: 19px;
+        height: 19px;
+      }
+      .community-topbar.is-compact .tabrail-label {
+        font-size: 12.5px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .community-topbar {
+          transition: none;
+        }
       }
       .community-topbar-inner {
         display: flex;

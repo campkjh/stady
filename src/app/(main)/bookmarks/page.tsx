@@ -28,11 +28,14 @@ interface Bookmark {
 }
 
 // 탭 아이콘은 앱에 이미 있는 SVG를 그대로 쓴다(비활성은 회색조로 눌러 표시).
+// size: 파일마다 내부 여백·비율이 달라 같은 24px로 그리면 보이는 크기가 제각각이다.
+// (실측 잉크 크기 @24px — 전체 8.3, 문제집 20.4, OX 18.2×12.6, 영단어 22.2×13.5)
+// 문제집을 기준으로 '넓이×높이의 기하평균'이 같아지도록 파일별 렌더 크기를 맞췄다.
 const TABS = [
-  { label: "전체", value: "", icon: "/icons/전체.svg" },
-  { label: "문제집", value: "workbook", icon: "/icons/notebook.svg" },
-  { label: "OX퀴즈", value: "ox", icon: "/icons/banner-ox.svg" },
-  { label: "영단어", value: "vocab", icon: "/icons/banner-vocab.svg" },
+  { label: "전체", value: "", icon: "/icons/전체.svg", size: 56 },
+  { label: "문제집", value: "workbook", icon: "/icons/notebook.svg", size: 24 },
+  { label: "OX퀴즈", value: "ox", icon: "/icons/banner-ox.svg", size: 31 },
+  { label: "영단어", value: "vocab", icon: "/icons/banner-vocab.svg", size: 27 },
 ];
 
 function SwipeableVocabBookmarkItem({
@@ -323,7 +326,7 @@ export default function BookmarksPage() {
           >
             <span className="tabrail-ico">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={tab.icon} alt="" width={24} height={24} />
+              <img src={tab.icon} alt="" width={tab.size} height={tab.size} />
             </span>
             <span className="tabrail-label">{tab.label}</span>
           </button>

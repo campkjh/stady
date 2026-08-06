@@ -387,6 +387,9 @@ body {
 }
 .tabrail-ico img {
   display: block;
+  /* 아이콘 파일마다 여백이 달라 박스(40px)보다 크게 그려 맞추는 경우가 있다.
+     tailwind preflight의 img{max-width:100%}가 그걸 잘라내므로 푼다. */
+  max-width: none;
 }
 /* 컬러 일러스트 아이콘을 쓰는 레일(.is-illustrated)만 — 아이콘 자체에 회색 버전이
    없으므로 비활성을 회색조로 눌러 활성만 도드라지게 한다. mono 아이콘 레일은
