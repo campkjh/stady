@@ -331,7 +331,6 @@ export default function CommunityClient() {
       <div className="community-layout">
         <aside className="community-filter-panel">
           <div className="community-filter-block">
-            <p className="community-filter-title">카테고리</p>
             <CategoryChips
               groups={groups}
               selectedGroupId={selectedGroupId}
@@ -551,19 +550,6 @@ function groupIcon(name: string): string {
   return GROUP_ICONS[name.trim()] ?? "cg-etc";
 }
 
-function ChipIcon({ icon, active }: { icon: string; active: boolean }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`/icons/${icon}${active ? "-on" : ""}.svg`}
-      alt=""
-      width={16}
-      height={16}
-      style={{ display: "block", flexShrink: 0, marginRight: 6 }}
-    />
-  );
-}
-
 function CategoryChips({
   groups,
   selectedGroupId,
@@ -575,19 +561,28 @@ function CategoryChips({
   onSelect: (id: string) => void;
   stacked?: boolean;
 }) {
+  const items = [{ id: "", name: "전체", icon: "cg-all" }, ...groups.map((g) => ({ id: g.id, name: g.name, icon: groupIcon(g.name) }))];
   return (
-    <div className={stacked ? "community-chip-column" : "community-chip-row"}>
-      <button type="button" className="community-chip" onClick={() => onSelect("")} style={chipStyle(!selectedGroupId, stacked)}>
-        <ChipIcon icon="cg-all" active={!selectedGroupId} />
-        전체
-      </button>
-      {groups.map((group) => (
-        <button key={group.id} type="button" className="community-chip" onClick={() => onSelect(group.id)} style={chipStyle(selectedGroupId === group.id, stacked)}>
-          <ChipIcon icon={groupIcon(group.name)} active={selectedGroupId === group.id} />
-          {group.name}
-        </button>
-      ))}
-    </div>
+    <nav className={`cm-rail${stacked ? " is-stacked" : ""}`} aria-label="커뮤니티 카테고리">
+      {items.map((it) => {
+        const on = selectedGroupId === it.id;
+        return (
+          <button
+            key={it.id || "all"}
+            type="button"
+            className={`cm-rail-item${on ? " is-on" : ""}`}
+            onClick={() => onSelect(it.id)}
+            aria-current={on ? "true" : undefined}
+          >
+            <span className="cm-rail-ico">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/icons/${it.icon}${on ? "-on" : ""}.svg`} alt="" width={24} height={24} />
+            </span>
+            <span className="cm-rail-label">{it.name}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -944,7 +939,7 @@ function CommunityStyles() {
       }
       .community-post-card:focus-visible,
       .community-icon-button:focus-visible,
-      .community-chip:focus-visible,
+      .cm-rail-item:focus-visible,
       .community-floating-write:focus-visible {
         outline: 2px solid #111827;
         outline-offset: 3px;
@@ -1078,27 +1073,82 @@ function CommunityStyles() {
         align-items: center;
         gap: 4px;
       }
-      .community-chip-row {
+      /* 카테고리 탭 — 모의고사 목록의 좌측 레일(.mx-rail)과 같은 형태:
+         아이콘 위 / 라벨 아래, 선택된 항목만 아이콘 뒤에 회색 라운드 박스. */
+      .cm-rail {
         display: flex;
-        gap: 8px;
+        align-items: flex-start;
+        gap: 2px;
         overflow-x: auto;
-        padding: 2px 1px 4px;
         scrollbar-width: none;
+        padding: 2px 0 4px;
       }
-      .community-chip-row::-webkit-scrollbar {
+      .cm-rail::-webkit-scrollbar {
         display: none;
       }
-      .community-chip-column {
+      .cm-rail-item {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        width: 64px;
+        padding: 4px 2px 6px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-family: inherit;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .cm-rail-ico {
         display: grid;
-        gap: 8px;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        transition: background 0.16s ease, transform 0.16s ease;
       }
-      .community-chip {
-        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      .cm-rail-item.is-on .cm-rail-ico {
+        background: #f2f4f6;
       }
-      .community-chip:hover {
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+      .cm-rail-item:active .cm-rail-ico {
+        transform: scale(0.94);
       }
-      .community-chip:active,
+      .cm-rail-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #b0b8c1;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        transition: color 0.16s ease;
+      }
+      .cm-rail-item.is-on .cm-rail-label {
+        color: #333d4b;
+      }
+      /* 넓은 화면 좌측: 세로 레일(흰 카드) */
+      .cm-rail.is-stacked {
+        flex-direction: column;
+        align-items: stretch;
+        overflow: visible;
+        padding: 10px 6px;
+        background: #fff;
+        border: 1px solid #f1f4f8;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      }
+      .cm-rail.is-stacked .cm-rail-item {
+        width: 100%;
+        padding: 7px 2px 9px;
+      }
+      .cm-rail.is-stacked .cm-rail-ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        margin: 0 auto;
+      }
+      .cm-rail.is-stacked .cm-rail-label {
+        font-size: 11.5px;
+      }
       .community-icon-button:active,
       .community-floating-write:active {
         transform: scale(0.97);
@@ -1146,7 +1196,7 @@ function CommunityStyles() {
           display: none !important;
         }
         .community-layout {
-          grid-template-columns: 248px minmax(0, 1fr);
+          grid-template-columns: 104px minmax(0, 1fr);
           align-items: start;
           gap: 28px;
           padding: 22px 24px;
@@ -1156,9 +1206,8 @@ function CommunityStyles() {
           top: 92px;
           display: grid;
           gap: 14px;
-          border-right: 1px solid #eef0f3;
           background: transparent;
-          padding: 4px 18px 4px 0;
+          padding: 4px 0;
         }
         .community-filter-block {
           display: grid;
@@ -1212,31 +1261,6 @@ function CommunityStyles() {
 }
 
 // 카테고리 알약 칩: 선택은 짙은 차콜, 나머지는 연회색(보더 없이 면으로만 구분).
-function chipStyle(active: boolean, stacked: boolean) {
-  return {
-    width: stacked ? "100%" : undefined,
-    flex: "0 0 auto",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: stacked ? "flex-start" : "center",
-    border: "1px solid transparent",
-    // 넓은 화면 좌측 목록(stacked)은 알약 대신 살짝 둥근 사각형.
-    borderRadius: stacked ? 16 : 999,
-    background: active ? "#33363D" : "#F2F3F6",
-    color: active ? "#fff" : "#4E5968",
-    padding: stacked ? "11px 14px" : "10px 16px",
-    fontSize: 15,
-    fontWeight: active ? 700 : 600,
-    letterSpacing: "-0.3px",
-    lineHeight: 1.2,
-    whiteSpace: "nowrap" as const,
-    cursor: "pointer",
-    textAlign: "left",
-    transition: "background 0.16s ease, color 0.16s ease",
-  } as const;
-}
-
-// 태그 칩: 카테고리 알약과 같은 팔레트로, 한 단계 작게(하위 필터임을 시각적으로 구분).
 const iconButtonStyle = {
   width: 40,
   height: 40,
