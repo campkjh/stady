@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -39,12 +39,26 @@ const tabs = [
   },
 ];
 
+// 아이콘 래퍼: 누른 탭만 key가 바뀌며 다시 마운트돼 바운스가 매번 처음부터 재생된다.
+function NavIcon({ on, n, children }: { on: boolean; n: number; children: React.ReactNode }) {
+  return (
+    <span key={on ? `b${n}` : "i"} className={`main-nav-ico${on ? " is-bounce" : ""}`}>
+      {children}
+    </span>
+  );
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
   const [showCommunityTip, setShowCommunityTip] = useState(false);
   const [hasNewCommunity, setHasNewCommunity] = useState(false);
   // 아래로 스크롤하면 라벨을 접어 네비를 낮추고, 위로 올리면 다시 펼친다.
   const [compact, setCompact] = useState(false);
+  // 태블릿 알약 네비: 활성 탭 자리로 미끄러지는 흰 카드의 위치/크기.
+  const listRef = useRef<HTMLUListElement>(null);
+  const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  // 탭을 누르면 그 아이콘만 쫀득하게 튀도록(누를 때마다 다시 재생되게 카운터를 올린다).
+  const [bounce, setBounce] = useState<{ href: string; n: number }>({ href: "", n: 0 });
 
   // Show the floating "새로운 커뮤니티" tooltip only to users who have never
   // opened the community. Visiting /community marks it as seen forever.
@@ -107,6 +121,42 @@ export default function BottomNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
 
+  // 활성 탭의 실제 위치를 재서 흰 카드를 그 자리로 옮긴다. 라벨이 접혀 높이가
+  // 변하는 동안에도 따라오도록 ResizeObserver로 계속 다시 잰다.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const measure = () => {
+      const el = list.querySelector<HTMLElement>('a[data-active="true"]');
+      if (!el) {
+        setPill(null);
+        return;
+      }
+      const lr = list.getBoundingClientRect();
+      const er = el.getBoundingClientRect();
+      const next = {
+        x: Math.round(er.left - lr.left),
+        y: Math.round(er.top - lr.top),
+        w: Math.round(er.width),
+        h: Math.round(er.height),
+      };
+      // 값이 그대로면 리렌더하지 않는다(리사이즈 옵저버가 매 프레임 부르므로).
+      setPill((cur) => (cur && cur.x === next.x && cur.y === next.y && cur.w === next.w && cur.h === next.h ? cur : next));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(list);
+    return () => {
+      window.removeEventListener("resize", measure);
+      ro?.disconnect();
+    };
+  }, [pathname]);
+
+  function pop(href: string) {
+    setBounce((b) => ({ href, n: b.n + 1 }));
+  }
+
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
@@ -130,7 +180,8 @@ export default function BottomNav() {
       backgroundColor: "#fff",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
-      <ul className="main-nav-list" style={{
+      <ul ref={listRef} className="main-nav-list" style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
@@ -140,6 +191,15 @@ export default function BottomNav() {
         listStyle: "none",
         padding: 0,
       }}>
+        {/* 활성 탭 뒤에 깔리는 흰 카드(태블릿에서만 보임). 첫 측정 뒤에만 그리므로
+            처음부터 제자리에 나타나고, 이후 탭 이동 때만 미끄러진다. */}
+        {pill && (
+          <span
+            className="main-nav-pill"
+            aria-hidden="true"
+            style={{ transform: `translate3d(${pill.x}px, ${pill.y}px, 0)`, width: pill.w, height: pill.h }}
+          />
+        )}
         {tabs.map((tab, tabIdx) => (
           <React.Fragment key={tab.href}>
             {/* Community and timer tabs inserted after 홈 */}
@@ -158,7 +218,7 @@ export default function BottomNav() {
                 )}
                 <Link
                   href="/community"
-                  onClick={markCommunityVisited}
+                  onClick={() => { markCommunityVisited(); pop("/community"); }}
                   data-active={isActive("/community") ? "true" : "false"}
                   style={{
                     position: "relative",
@@ -186,16 +246,17 @@ export default function BottomNav() {
                       }}
                     />
                   )}
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <NavIcon on={bounce.href === "/community"} n={bounce.n}><svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <path fillRule="evenodd" clipRule="evenodd" d="M13.2578 16.9901C12.8778 17.2098 12.4467 17.3253 12.0078 17.3251C11.569 17.3259 11.1377 17.2106 10.7578 16.9911L4.34277 13.2871V17.1891C4.34277 17.5461 4.53277 17.8761 4.84277 18.0541L11.5078 21.9031C11.8178 22.0811 12.1978 22.0811 12.5078 21.9031L19.1728 18.0531C19.4828 17.8761 19.6728 17.5461 19.6728 17.1891V13.2871L13.2578 16.9901Z" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
                     <path fillRule="evenodd" clipRule="evenodd" d="M23.0529 7.87195L12.5069 1.78195C12.3548 1.69447 12.1823 1.64844 12.0069 1.64844C11.8314 1.64844 11.659 1.69447 11.5069 1.78195L0.96187 7.87195C0.809863 7.95972 0.683636 8.08596 0.595876 8.23797C0.508116 8.38999 0.461914 8.56242 0.461914 8.73795C0.461914 8.91348 0.508116 9.08591 0.595876 9.23793C0.683636 9.38994 0.809863 9.51618 0.96187 9.60395L11.5089 15.6919C11.6608 15.7799 11.8333 15.8262 12.0089 15.8262C12.1844 15.8262 12.3569 15.7799 12.5089 15.6919L20.9069 10.8439V15.1329H22.4069V9.97695L23.0549 9.60295C23.2069 9.51518 23.3331 9.38894 23.4209 9.23693C23.5086 9.08491 23.5548 8.91248 23.5548 8.73695C23.5548 8.56142 23.5086 8.38899 23.4209 8.23697C23.3331 8.08496 23.2069 7.95872 23.0549 7.87095" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
-                  </svg>
+                  </svg></NavIcon>
                   <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR }}>커뮤니티</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/timer"
+                  onClick={() => pop("/timer")}
                   data-active={isActive("/timer") ? "true" : "false"}
                   style={{
                     display: "flex",
@@ -206,10 +267,10 @@ export default function BottomNav() {
                     opacity: isActive("/timer") ? 1 : 0.44,
                   }}
                 >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <NavIcon on={bounce.href === "/timer"} n={bounce.n}><svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <path d="M19.999 5.99885C20.223 7.61185 20.05 8.72985 18.82 8.72985C17.031 8.72985 17.031 4.85285 14.01 2.73385C10.99 0.514851 8.86502 1.01885 8.75202 1.12085C11.213 3.03785 9.87102 6.10785 8.19302 6.91485C6.62702 7.72185 4.81802 6.63685 5.71302 4.21685C3.35202 6.26285 1.99902 8.72685 1.99902 12.0009C1.99902 17.5069 6.51502 22.0009 11.996 22.0009C17.999 22.0009 21.999 17.0009 21.999 12.0009C21.999 10.0009 21.471 8.00085 20 5.99985L19.999 5.99885ZM11.996 20.9329C9.77702 20.9329 8.06202 19.2179 8.06202 16.9989C8.06202 13.7719 11.996 11.5529 11.996 11.5529C11.996 11.5529 15.93 13.7719 15.93 16.9989C15.93 19.1159 14.215 20.9329 11.996 20.9329Z" fill={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
                     <path opacity="0.5" d="M11.9999 11.5537C11.9999 11.5537 8.06592 13.7727 8.06592 16.9997C8.06592 19.2187 9.78092 20.9337 11.9999 20.9337C14.2189 20.9337 15.9339 19.1187 15.9339 16.9997C15.9339 13.7727 11.9999 11.5537 11.9999 11.5537Z" fill={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
-                  </svg>
+                  </svg></NavIcon>
                   <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR }}>타이머</span>
                 </Link>
               </li>
@@ -218,6 +279,7 @@ export default function BottomNav() {
             <li>
               <Link
                 href={tab.href}
+                onClick={() => pop(tab.href)}
                 data-active={isActive(tab.href) ? "true" : "false"}
                 style={{
                   display: "flex",
@@ -228,7 +290,7 @@ export default function BottomNav() {
                   opacity: isActive(tab.href) ? 1 : 0.44,
                 }}
               >
-                {tab.icon(isActive(tab.href) ? ACTIVE_COLOR : INACTIVE_COLOR)}
+                <NavIcon on={bounce.href === tab.href} n={bounce.n}>{tab.icon(isActive(tab.href) ? ACTIVE_COLOR : INACTIVE_COLOR)}</NavIcon>
                 <span className="main-nav-label" style={{
                   fontSize: 10,
                   fontWeight: 500,
