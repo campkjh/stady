@@ -87,6 +87,7 @@ interface CommunityPostDetail {
   poll: CommunityPoll | null;
   imageUrls: string[];
   tags: CommunityTag[];
+  pinnedCommentId?: string | null;
 }
 
 const REACTIONS: { key: string; emoji: string; label: string }[] = [
@@ -129,6 +130,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [editCommentContent, setEditCommentContent] = useState("");
   const [commentActionBusy, setCommentActionBusy] = useState(false);
   const [deleteCommentId, setDeleteCommentId] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
 
   const loadDetail = useCallback(async (track = false) => {
     setLoading(true);
@@ -398,6 +400,29 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       setMessage(error instanceof Error ? error.message : "댓글을 수정하지 못했습니다.");
     } finally {
       setCommentActionBusy(false);
+    }
+  }
+
+  // 글쓴이(또는 관리자)가 댓글을 상단 고정 / 해제. 글당 1개만 고정된다.
+  async function togglePinComment(commentId: string) {
+    if (!post || pinBusy) return;
+    const next = post.pinnedCommentId === commentId ? null : commentId;
+    setPinBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ commentId: next }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "댓글 고정을 처리하지 못했습니다.");
+      await loadDetail();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "댓글 고정을 처리하지 못했습니다.");
+    } finally {
+      setPinBusy(false);
     }
   }
 
@@ -692,6 +717,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       replyContent={replyContent}
                       replyPosting={replyPosting}
                       isAdmin={isAdmin}
+                      canPin={!!post && (isAdmin || (!!currentUserId && post.userId === currentUserId))}
+                      isPinned={post?.pinnedCommentId === item.id}
+                      pinBusy={pinBusy}
+                      onTogglePin={togglePinComment}
                       editingCommentId={editingCommentId}
                       editCommentContent={editCommentContent}
                       commentActionBusy={commentActionBusy}
@@ -861,6 +890,11 @@ interface CommentItemProps {
   replyContent: string;
   replyPosting: boolean;
   isAdmin: boolean;
+  /** 글쓴이(또는 관리자)만 댓글을 고정할 수 있다. 답글은 대상이 아니다. */
+  canPin?: boolean;
+  isPinned?: boolean;
+  pinBusy?: boolean;
+  onTogglePin?: (id: string) => void;
   editingCommentId: string;
   editCommentContent: string;
   commentActionBusy: boolean;
@@ -881,6 +915,10 @@ function CommentItem({
   replyContent,
   replyPosting,
   isAdmin,
+  canPin = false,
+  isPinned = false,
+  pinBusy = false,
+  onTogglePin,
   editingCommentId,
   editCommentContent,
   commentActionBusy,
@@ -896,7 +934,14 @@ function CommentItem({
 }: CommentItemProps) {
   const isEditing = editingCommentId === comment.id;
   return (
-    <div style={commentBoxStyle}>
+    <div style={isPinned ? { ...commentBoxStyle, background: "#FFFBEB", border: "1px solid #FFE9A8", borderRadius: 14, padding: 14 } : commentBoxStyle}>
+      {isPinned && (
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/pin-star.svg" alt="" width={15} height={15} style={{ display: "block" }} />
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: "#B7791F" }}>고정</span>
+        </div>
+      )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
         <span style={{ color: "#9CA3AF", fontSize: 12 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
@@ -931,6 +976,22 @@ function CommentItem({
         <button type="button" className="community-reply-button" onClick={() => onOpenReply(comment.id)} style={smallActionButtonStyle(false)}>
           답글
         </button>
+        {canPin && (
+          <button
+            type="button"
+            onClick={() => onTogglePin?.(comment.id)}
+            disabled={pinBusy}
+            style={{
+              ...smallActionButtonStyle(isPinned),
+              display: "inline-flex", alignItems: "center", gap: 4,
+              cursor: pinBusy ? "default" : "pointer", opacity: pinBusy ? 0.6 : 1,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/pin-star.svg" alt="" width={14} height={14} style={{ display: "block" }} />
+            {isPinned ? "고정 해제" : "고정"}
+          </button>
+        )}
         {isAdmin && !isEditing && (
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, alignItems: "center" }}>
             <span style={{ padding: "2px 7px", borderRadius: 999, background: "#EEF5FF", color: "#1F5EDC", fontSize: 10.5, fontWeight: 800 }}>관리자</span>

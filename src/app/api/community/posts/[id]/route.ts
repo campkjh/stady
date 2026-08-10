@@ -111,6 +111,7 @@ export async function GET(
         poll: detail.post.poll ?? null,
         imageUrls: detail.post.images.map((image) => image.image_url),
         tags: detail.post.tags.map(mapTag),
+        pinnedCommentId: detail.post.pinned_comment_id ?? null,
       },
       comments: detail.comments.map((comment) => mapComment(comment, tiers, answerKings)),
     });

@@ -265,6 +265,16 @@ export async function ensureCommunityTables() {
     ALTER TABLE "CommunityPostLike" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'heart'
   `);
 
+  // --- 글쓴이가 고른 '고정 댓글' (글당 1개) ---
+  // CommunityComment는 c.* 로 조회하므로 컬럼을 붙이면 Neon 캐시 플랜이 깨진다 → 별도 테이블.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityPinnedComment" (
+      "post_id" TEXT PRIMARY KEY REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "comment_id" TEXT NOT NULL REFERENCES "CommunityComment"("id") ON DELETE CASCADE,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // --- Poll options + votes (max 4 options, one vote per user) ---
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CommunityPollOption" (
@@ -938,6 +948,17 @@ export async function getCommunityPostDetail(
     viewerId
   );
 
+  const pinnedRows = await prisma.$queryRawUnsafe<{ comment_id: string }[]>(
+    `SELECT "comment_id" FROM "CommunityPinnedComment" WHERE "post_id" = $1 LIMIT 1`,
+    postId
+  );
+  const pinnedId = pinnedRows[0]?.comment_id ?? null;
+  const tree = buildCommentTree(commentRows);
+  // 고정된 댓글은 맨 위로(대댓글은 고정 대상이 아니라 최상위만 본다).
+  const comments = pinnedId
+    ? [...tree].sort((a, b) => (a.id === pinnedId ? -1 : b.id === pinnedId ? 1 : 0))
+    : tree;
+
   return {
     post: {
       ...post,
@@ -946,9 +967,50 @@ export async function getCommunityPostDetail(
       reaction_counts: reactions.counts,
       my_reaction: reactions.myReaction,
       poll,
+      pinned_comment_id: pinnedId,
     },
-    comments: buildCommentTree(commentRows),
+    comments,
   };
+}
+
+/**
+ * 글쓴이(또는 관리자)가 자기 글의 댓글 하나를 상단 고정한다.
+ * commentId가 null이면 고정 해제. 글당 1개만 고정되고, 대댓글은 고정할 수 없다.
+ */
+export async function setPinnedComment(
+  postId: string,
+  userId: string,
+  commentId: string | null,
+  isAdmin = false
+): Promise<{ pinnedCommentId: string | null }> {
+  await ensureCommunityTables();
+  const postRows = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+    `SELECT "user_id" FROM "CommunityPost" WHERE "id" = $1 AND "is_active" = true LIMIT 1`,
+    postId
+  );
+  if (postRows.length === 0) throw new Error("CommunityPostNotFound");
+  if (!isAdmin && postRows[0].user_id !== userId) throw new Error("CommunityForbidden");
+
+  if (!commentId) {
+    await prisma.$executeRawUnsafe(`DELETE FROM "CommunityPinnedComment" WHERE "post_id" = $1`, postId);
+    return { pinnedCommentId: null };
+  }
+
+  const commentRows = await prisma.$queryRawUnsafe<{ parent_id: string | null }[]>(
+    `SELECT "parent_id" FROM "CommunityComment" WHERE "id" = $1 AND "post_id" = $2 AND "is_active" = true LIMIT 1`,
+    commentId,
+    postId
+  );
+  if (commentRows.length === 0) throw new Error("CommunityCommentNotFound");
+  if (commentRows[0].parent_id) throw new Error("CommunityCommentNotPinnable");
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "CommunityPinnedComment" ("post_id", "comment_id") VALUES ($1, $2)
+     ON CONFLICT ("post_id") DO UPDATE SET "comment_id" = EXCLUDED."comment_id", "created_at" = CURRENT_TIMESTAMP`,
+    postId,
+    commentId
+  );
+  return { pinnedCommentId: commentId };
 }
 
 function buildCommentTree(rows: CommunityCommentRow[]) {
