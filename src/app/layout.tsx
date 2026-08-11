@@ -25,6 +25,10 @@ export default function RootLayout({
     <html lang="ko" className={`${geistSans.variable} h-full antialiased`} style={{ WebkitTextSizeAdjust: "100%" }}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* 안드로이드 다크 테마에서 WebView가 페이지를 자동으로 어둡게 뒤집는(force-dark)
+            것을 막는다. 앱은 라이트 테마 하나로만 디자인돼 있어서, 자동 반전이 걸리면
+            흰 카드가 딤과 비슷한 톤으로 어두워져 공지 팝업이 안 보이는 것처럼 된다. */}
+        <meta name="color-scheme" content="light" />
       </head>
       <body
         className="min-h-full flex flex-col bg-white app-body"

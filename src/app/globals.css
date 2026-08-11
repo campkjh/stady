@@ -25,6 +25,12 @@
   --color-gray-900: #111827;
 }
 
+/* 라이트 테마 전용 앱임을 명시 — 안드로이드 WebView/브라우저의 강제 다크 변환을 끈다.
+   (선언이 없으면 다크 테마 기기에서 흰 카드·텍스트가 자동 반전돼 UI가 깨진다) */
+:root {
+  color-scheme: light;
+}
+
 *::-webkit-scrollbar {
   display: none;
 }
