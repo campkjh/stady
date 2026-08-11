@@ -116,7 +116,7 @@ export default function VocabQuizListPage() {
                 width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "#fff",
                 border: "1px solid #D9E3F5", fontSize: 16, fontWeight: 700, color: "#2B313D", textAlign: "center",
                 boxShadow: "0 4px 16px rgba(126,166,232,0.12)", flexShrink: 0,
-                animation: `quizItemFadeUp 0.5s ${0.08 * i}s both`,
+                animation: "quizItemFadeUp 0.5s",
               }}
             >
               {qs.title}

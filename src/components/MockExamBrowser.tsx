@@ -236,7 +236,7 @@ function BrowserStyles() {
 
       .mx-panel {
         border-bottom: 1px solid #F2F4F6; background: #FBFCFE; overflow: hidden;
-        animation: mxPanelDown .22s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation: mxPanelDown .22s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .mx-panel-head {
         display: flex; align-items: center; justify-content: space-between;
@@ -303,7 +303,7 @@ function BrowserStyles() {
           border: 1px solid #F1F4F8; border-radius: 20px; background: #fff;
           border-bottom: 1px solid #F1F4F8;
           box-shadow: 0 4px 16px rgba(15,23,42,0.05);
-          animation: mxPanelRight .22s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: mxPanelRight .22s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .mx-panel-head { padding: 14px 16px 4px; font-size: 13.5px; }
         .mx-panel-body {

@@ -431,7 +431,7 @@ export default function CommunityWriteClient() {
         }
         .community-write-panel {
           margin-top: 14px;
-          animation: communitySlideUp 0.22s ease both;
+          animation: communitySlideUp 0.22s ease;
         }
         .community-submit-button {
           transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;

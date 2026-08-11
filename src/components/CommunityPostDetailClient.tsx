@@ -794,7 +794,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           font-weight: 700;
         }
         .community-detail-panel {
-          animation: communityDetailIn 0.22s ease both;
+          animation: communityDetailIn 0.22s ease;
         }
         .community-post-detail-card {
           margin-top: 14px;

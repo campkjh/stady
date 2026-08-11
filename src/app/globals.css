@@ -522,7 +522,13 @@ body {
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* 페이드인 애니메이션 */
+/* 페이드인 애니메이션
+   ⚠️ 예전엔 animation-fill-mode: both + animation-delay 조합이었는데, 애니메이션이
+   시작되지 않는 환경(일부 안드로이드 웹뷰)에서 시작 상태(opacity:0)를 그대로 붙잡아
+   콘텐츠가 통째로 안 보이는 사고가 있었다(공지 팝업이 딤만 뜨고 카드가 안 보임).
+   → fill-mode를 쓰지 않는다. 애니메이션이 안 돌면 '처음부터 보이는' 상태가 된다.
+   지연이 필요한 항목은 delay 대신 키프레임 앞부분을 비워 같은 효과를 낸다
+   (delay + fill-mode 없이 하면 시작 전에 잠깐 보였다가 사라지는 깜빡임이 생김). */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -533,15 +539,41 @@ body {
     transform: translateY(0);
   }
 }
-
-.fade-in-up {
-  animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+@keyframes fadeInUpD1 {
+  0%, 9% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUpD2 {
+  0%, 16% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUpD3 {
+  0%, 23% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUpD4 {
+  0%, 28% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-.fade-in-up-1 { animation-delay: 0.05s; }
-.fade-in-up-2 { animation-delay: 0.1s; }
-.fade-in-up-3 { animation-delay: 0.15s; }
-.fade-in-up-4 { animation-delay: 0.2s; }
+.fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fade-in-up-1 { animation: fadeInUpD1 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.fade-in-up-2 { animation: fadeInUpD2 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.fade-in-up-3 { animation: fadeInUpD3 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.fade-in-up-4 { animation: fadeInUpD4 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up,
+  .fade-in-up-1,
+  .fade-in-up-2,
+  .fade-in-up-3,
+  .fade-in-up-4 {
+    animation: none;
+  }
+}
 
 /* 검색 아이콘 호버 */
 .search-btn {

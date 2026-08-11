@@ -1019,7 +1019,7 @@ function CommunityStyles() {
         background: transparent;
         padding: 17px 2px 18px;
         cursor: pointer;
-        animation: communityCardIn 0.22s ease both;
+        animation: communityCardIn 0.22s ease;
         transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, background 0.18s ease;
       }
       .community-post-card:hover {
@@ -1168,7 +1168,7 @@ function CommunityStyles() {
         transform: scale(0.97);
       }
       .community-search-input {
-        animation: communitySearchIn 0.18s ease both;
+        animation: communitySearchIn 0.18s ease;
       }
       .community-icon-button:hover {
         background: #f9fafb !important;

@@ -125,7 +125,7 @@ export default function OxQuizListPage() {
                   width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "#fff",
                   border: "none", color: "#2B313D", textAlign: "center",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
-                  animation: `quizItemFadeUp 0.5s ${0.06 * index}s both`,
+                  animation: "quizItemFadeUp 0.5s",
                 }}
               >
                 <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>{group.name}</span>
@@ -160,7 +160,7 @@ export default function OxQuizListPage() {
                         width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",
                         border: "none", color: "#2B313D", textAlign: "left",
                         boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
-                        animation: `quizItemFadeUp 0.5s ${0.06 * index}s both`,
+                        animation: "quizItemFadeUp 0.5s",
                       }}
                     >
                       <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>

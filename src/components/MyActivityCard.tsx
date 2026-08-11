@@ -214,7 +214,7 @@ export default function MyActivityCard() {
       </div>
 
       <style>{`
-        .tier-guide { animation: tierGuideIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .tier-guide { animation: tierGuideIn 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
         @keyframes tierGuideIn {
           from { opacity: 0; transform: translateY(-6px); }
           to { opacity: 1; transform: translateY(0); }

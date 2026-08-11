@@ -1087,7 +1087,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
       <style>{`
         .mock-section-menu {
-          animation: mockSectionMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: mockSectionMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
         }
         @keyframes mockSectionMenuIn {
           from { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.94); }
