@@ -38,33 +38,39 @@ struct WebView: UIViewRepresentable {
         // pushed pages and external flows (e.g. the Toss billing/정기결제 page).
         webView.allowsBackForwardNavigationGestures = true
 
-        // Clear any stale cached web bundle on launch. WKWebView caches the HTML
-        // document to disk (NSURLCache), so after a web (Vercel) deploy the app can
-        // keep serving the OLD bundle — old JS chunks — even across full app
-        // restarts; a normal relaunch does NOT clear this. Wipe the disk/memory
-        // cache once at startup so the WebView always loads the latest deployed code.
-        let cacheTypes: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
-        WKWebsiteDataStore.default().removeData(
-            ofTypes: cacheTypes,
-            modifiedSince: Date(timeIntervalSince1970: 0)
-        ) {}
+        // NOTE: 예전엔 여기서 매 실행마다 디스크/메모리 캐시를 통째로 지웠다
+        // (WKWebsiteDataStore.removeData). "배포 후 옛 번들이 고착된다"는 이유였는데
+        // 그 전제가 사실이 아니다 — stady.kr 문서 응답은
+        //   cache-control: private, no-cache, no-store, max-age=0, must-revalidate
+        // 라 HTML 은 애초에 캐시되지 않는다. 반대로 /_next/static/* 는 파일명에 해시가 박힌
+        // immutable 자산이고 업로드 이미지(blob)는 1년 캐시라, 캐시를 지우면 실행할 때마다
+        // JS 청크와 이미지를 전부 다시 받게 된다. 그래서 지우지 않는다.
+        // 되돌리지 말 것 — 되돌리면 이미지 전송 비용이 그대로 되살아난다.
 
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        // Bypass the local cache on every load so a fresh HTML document (and thus
-        // the current JS chunk hashes) is always fetched after a deploy.
-        // (URLRequest's cachePolicy initializer also requires timeoutInterval.)
-        let request = URLRequest(
-            url: url,
-            cachePolicy: .reloadIgnoringLocalCacheData,
-            timeoutInterval: 60
-        )
-        webView.load(request)
+        // 최초 1회만 로드한다.
+        // 예전엔 조건 없이 load() 를 불렀는데, SwiftUI 는 화면 회전·다크모드 전환·크기 변화
+        // 같은 환경 변화에도 updateUIView 를 호출한다. 그때마다 stady.kr 이 통째로 리로드돼
+        // 스크롤 위치는 물론 **작성 중이던 커뮤니티 글이 그대로 날아갔다**(웹 쪽에 임시저장이 없다).
+        //
+        // ⚠️ url 비교(webView.url != url)로 가드하면 안 된다. url 은 StadyApp.swift 의
+        // 컴파일타임 상수라 절대 안 바뀌는 반면 webView.url 은 사용자가 이동할 때마다 바뀐다.
+        // 그러면 "홈이 아닐 때 update 가 오면 홈으로 되돌린다"가 되어 더 나쁘다.
+        // 그래서 Coordinator 에 1회성 플래그를 둔다.
+        guard !context.coordinator.hasLoaded else { return }
+        context.coordinator.hasLoaded = true
+        // 기본 캐시 정책(useProtocolCachePolicy). HTML 은 no-store 라 항상 새로 받고,
+        // 해시가 박힌 정적 자산과 이미지는 캐시를 그대로 활용한다.
+        webView.load(URLRequest(url: url))
     }
 
     final class Coordinator: NSObject, WKScriptMessageHandler {
+        // updateUIView 가 여러 번 불려도 최초 1회만 로드하기 위한 플래그.
+        var hasLoaded = false
+
         // 앱 스토어 ID(웹 src/lib/appReview.ts와 동일).
         private static let appStoreId = "6761746105"
 
