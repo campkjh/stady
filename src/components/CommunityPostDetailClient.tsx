@@ -7,6 +7,8 @@ import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
+import { compressImage } from "@/lib/image/compress";
+import { createPortal } from "react-dom";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -115,6 +117,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [replyContent, setReplyContent] = useState("");
   const [replyPosting, setReplyPosting] = useState(false);
   const [revealBlind, setRevealBlind] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null); // 이미지 확대(라이트박스)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [voting, setVoting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -188,9 +193,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       const next: string[] = [];
       for (const file of files) {
         if (!isImageFile(file)) throw new Error("이미지 파일만 업로드할 수 있습니다.");
-        if (file.size > 10 * 1024 * 1024) throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
+        // 업로드 전 브라우저에서 압축(서버 저장·대역폭 절감). 실패 시 원본 반환.
+        const upload = await compressImage(file);
+        if (upload.size > 10 * 1024 * 1024) throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", upload);
         const response = await fetch("/api/community/uploads", {
           method: "POST",
           credentials: "include",
@@ -575,18 +582,22 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
               )}
               {!editing && post.imageUrls.length > 0 && (
                 <div className="community-detail-image-list" style={{ position: "relative" }}>
-                  {post.imageUrls.map((imageUrl, index) => (
-                    <img
-                      key={imageUrl}
-                      src={imageUrl}
-                      alt={`${post.title} 이미지 ${index + 1}`}
-                      style={
-                        post.isBlinded && !revealBlind
-                          ? { filter: "blur(24px)", transform: "scale(1.04)" }
-                          : undefined
-                      }
-                    />
-                  ))}
+                  {post.imageUrls.map((imageUrl, index) => {
+                    const blurred = post.isBlinded && !revealBlind;
+                    return (
+                      <img
+                        key={imageUrl}
+                        src={imageUrl}
+                        alt={`${post.title} 이미지 ${index + 1}`}
+                        onClick={blurred ? undefined : () => setZoomedImage(imageUrl)}
+                        style={
+                          blurred
+                            ? { filter: "blur(24px)", transform: "scale(1.04)" }
+                            : { cursor: "zoom-in" }
+                        }
+                      />
+                    );
+                  })}
                   {post.isBlinded && !revealBlind && (
                     <button type="button" onClick={() => setRevealBlind(true)} style={blindOverlayStyle}>
                       <span style={{ fontSize: 24 }}>🙈</span>
@@ -880,6 +891,66 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           ]}
         />
       )}
+
+      {/* 이미지 확대 라이트박스 — body 포털 + fixed 로 네비 위에 전체화면 표시 */}
+      {mounted &&
+        zoomedImage &&
+        createPortal(
+          <div
+            onClick={() => setZoomedImage(null)}
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              zIndex: 100000,
+              background: "rgba(0,0,0,0.92)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              boxSizing: "border-box",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setZoomedImage(null)}
+              aria-label="닫기"
+              style={{
+                position: "absolute",
+                top: "calc(12px + env(safe-area-inset-top, 0px))",
+                right: 14,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.16)",
+                color: "#fff",
+                fontSize: 22,
+                lineHeight: 1,
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zoomedImage}
+              alt=""
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                objectFit: "contain",
+                borderRadius: 6,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
+            />
+          </div>,
+          document.body
+        )}
     </main>
   );
 }

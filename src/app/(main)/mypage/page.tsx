@@ -141,25 +141,61 @@ export default function MyPage() {
               }`
             : "1등급을 위한 학습자료를 놓치지 마세요!"}
         </p>
-        <button
-          type="button"
-          onClick={() => setShowSub(true)}
-          className="press"
-          style={{
-            display: "inline-block",
-            marginTop: 16,
-            border: "none",
-            borderRadius: 8,
-            background: "rgba(7,25,76,0.05)",
-            color: "#4E5968",
-            padding: "9px 18px",
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          {active ? "구독 관리" : "구독하기"}
-        </button>
+        <div style={{ position: "relative", display: "inline-block", marginTop: 16 }}>
+          {!active && (
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                bottom: "calc(100% + 8px)",
+                whiteSpace: "nowrap",
+                background: "#3182F6",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: "-0.2px",
+                padding: "7px 12px",
+                borderRadius: 12,
+                boxShadow: "0 6px 16px rgba(49,130,246,0.32)",
+                animation: "subOpenBubble 2.2s ease-in-out infinite",
+                pointerEvents: "none",
+              }}
+            >
+              구독하기 기능이 오픈되었어요 🎉
+              <span
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 20,
+                  width: 0,
+                  height: 0,
+                  borderLeft: "6px solid transparent",
+                  borderRight: "6px solid transparent",
+                  borderTop: "6px solid #3182F6",
+                }}
+              />
+              <style>{"@keyframes subOpenBubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}"}</style>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowSub(true)}
+            className="press"
+            style={{
+              display: "inline-block",
+              border: "none",
+              borderRadius: 8,
+              background: "rgba(7,25,76,0.05)",
+              color: "#4E5968",
+              padding: "9px 18px",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {active ? "구독 관리" : "구독하기"}
+          </button>
+        </div>
       </div>
 
       {/* Menu group 1 */}

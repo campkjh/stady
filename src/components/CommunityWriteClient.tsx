@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
+import { compressImage } from "@/lib/image/compress";
 
 interface CategoryGroup {
   id: string;
@@ -125,12 +126,14 @@ export default function CommunityWriteClient() {
         if (!isImageFile(file)) {
           throw new Error("이미지 파일만 업로드할 수 있습니다.");
         }
-        if (file.size > 10 * 1024 * 1024) {
+        // 업로드 전 브라우저에서 압축(서버 저장·대역폭 절감). 실패 시 원본 반환.
+        const upload = await compressImage(file);
+        if (upload.size > 10 * 1024 * 1024) {
           throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
         }
 
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", upload);
         const response = await fetch("/api/community/uploads", {
           method: "POST",
           credentials: "include",
