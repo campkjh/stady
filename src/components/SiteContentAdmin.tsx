@@ -95,7 +95,10 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
         dateLabel: withDate ? form.dateLabel : null,
         sortOrder: Number(form.sortOrder) || 0,
         isActive: form.isActive,
-        imageUrls: withImages ? form.imageUrls : [],
+        // 이미지를 다루는 화면(공지)에서만 키를 넣는다. FAQ 화면은 이미지 UI 자체가 없는데도
+        // 예전엔 imageUrls: [] 를 항상 보내서, 서버가 그걸 "전량 교체"로 받아 붙어 있던
+        // 이미지를 지웠다(지금은 이미지 붙은 항목이 없어 드러나지 않았을 뿐).
+        ...(withImages ? { imageUrls: form.imageUrls } : {}),
         ...(withPopup ? { popupEnabled: form.popupEnabled, popupHideDays: Number(form.popupHideDays) || 7 } : {}),
       };
       const res = editingId
