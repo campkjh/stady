@@ -32,8 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, "-").slice(-80) || "image";
+    // 경로에 Date.now()+randomUUID() 가 박혀 URL 이 구조적으로 불변이고(덮어쓰기는
+    // allowOverwrite 기본 false 라 불가능) 캐시버스팅 쿼리스트링도 쓰지 않으므로 1년이 안전하다.
+    // 기본값 30일로 두면 만료 후 재요청이 CDN MISS 가 되고, MISS 는 Origin Transfer 단가가
+    // 붙어 일반 전송보다 비싸다 — 캐시 히트 유지가 곧 단가 절감이다.
     const blob = await put(`community/${user.id}/${Date.now()}-${randomUUID()}-${safeName}`, file, {
       access: "public",
+      cacheControlMaxAge: 365 * 24 * 60 * 60,
     });
 
     return NextResponse.json({ url: blob.url });

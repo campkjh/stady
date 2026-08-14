@@ -1,9 +1,10 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
+import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 
 interface CategoryGroup {
   id: string;
@@ -18,6 +19,8 @@ interface CommunityTag {
 
 interface UploadedImage {
   url: string;
+  /** 미리보기는 로컬 objectURL(원격 blob 을 되받지 않기 위해). */
+  previewUrl: string;
   name: string;
 }
 
@@ -50,6 +53,17 @@ export default function CommunityWriteClient() {
   const [postType, setPostType] = useState<"normal" | "poll">("normal");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [isBlinded, setIsBlinded] = useState(false);
+
+  // 언마운트 시 남은 프리뷰 objectURL 해제(WebView 메모리 누수 방지).
+  // 최신 목록을 ref 로 들고 있어야 정리 이펙트를 deps [] 로 한 번만 걸 수 있다.
+  const previewsRef = useRef<UploadedImage[]>([]);
+  previewsRef.current = uploadedImages;
+  useEffect(
+    () => () => {
+      previewsRef.current.forEach((image) => revokeUploadPreview(image.previewUrl));
+    },
+    []
+  );
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
 
@@ -128,17 +142,8 @@ export default function CommunityWriteClient() {
         if (file.size > 10 * 1024 * 1024) {
           throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
         }
-
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await fetch("/api/community/uploads", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "이미지 업로드에 실패했습니다.");
-        nextImages.push({ url: data.url, name: file.name });
+        // 축소 → 업로드. 프리뷰는 로컬 파일을 쓰므로 방금 올린 이미지를 되받지 않는다.
+        nextImages.push(await uploadCommunityImage(file));
       }
       setUploadedImages((current) => [...current, ...nextImages]);
     } catch (error) {
@@ -149,7 +154,10 @@ export default function CommunityWriteClient() {
   }
 
   function removeImage(url: string) {
-    setUploadedImages((current) => current.filter((image) => image.url !== url));
+    setUploadedImages((current) => {
+      revokeUploadPreview(current.find((image) => image.url === url)?.previewUrl);
+      return current.filter((image) => image.url !== url);
+    });
   }
 
   async function submitPost(event: FormEvent<HTMLFormElement>) {
@@ -356,7 +364,7 @@ export default function CommunityWriteClient() {
               <div className="community-image-preview-grid">
                 {uploadedImages.map((image) => (
                   <div key={image.url} className="community-image-preview">
-                    <img src={image.url} alt={image.name} />
+                    <img src={image.previewUrl} alt={image.name} />
                     <button type="button" onClick={() => removeImage(image.url)} aria-label="이미지 삭제">
                       ×
                     </button>

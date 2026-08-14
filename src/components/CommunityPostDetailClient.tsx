@@ -1,12 +1,13 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
+import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 
 // Android WebView often returns gallery files with an empty/generic MIME type,
 // so fall back to the file extension (same logic as the write form).
@@ -122,7 +123,19 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<string[]>([]);
+  // 이번 편집에서 새로 올린 이미지의 로컬 프리뷰(서버 URL → objectURL).
+  // 기존 이미지는 File 이 없으므로 여기 없고, 그때는 서버 URL 로 폴백한다.
+  const [editPreviews, setEditPreviews] = useState<Record<string, string>>({});
   const [uploadingEdit, setUploadingEdit] = useState(false);
+  // 언마운트 시 남은 프리뷰 objectURL 해제(WebView 메모리 누수 방지).
+  const editPreviewsRef = useRef<Record<string, string>>({});
+  editPreviewsRef.current = editPreviews;
+  useEffect(
+    () => () => {
+      Object.values(editPreviewsRef.current).forEach(revokeUploadPreview);
+    },
+    []
+  );
   const [actionBusy, setActionBusy] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // 관리자 댓글 관리(수정/삭제)
@@ -186,21 +199,17 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     setMessage("");
     try {
       const next: string[] = [];
+      const previews: Record<string, string> = {};
       for (const file of files) {
         if (!isImageFile(file)) throw new Error("이미지 파일만 업로드할 수 있습니다.");
         if (file.size > 10 * 1024 * 1024) throw new Error("이미지는 10MB 이하만 업로드할 수 있습니다.");
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await fetch("/api/community/uploads", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "이미지 업로드에 실패했습니다.");
-        next.push(data.url);
+        // 축소 → 업로드. 프리뷰는 로컬 파일로 그려 방금 올린 이미지를 되받지 않는다.
+        const uploaded = await uploadCommunityImage(file);
+        next.push(uploaded.url);
+        previews[uploaded.url] = uploaded.previewUrl;
       }
       setEditImages((cur) => [...cur, ...next]);
+      setEditPreviews((cur) => ({ ...cur, ...previews }));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.");
     } finally {
@@ -210,6 +219,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
   function removeEditImage(url: string) {
     setEditImages((cur) => cur.filter((u) => u !== url));
+    setEditPreviews((cur) => {
+      if (!cur[url]) return cur;
+      revokeUploadPreview(cur[url]);
+      const next = { ...cur };
+      delete next[url];
+      return next;
+    });
   }
 
   async function saveEdit() {
@@ -519,7 +535,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                         {editImages.map((url) => (
                           <div key={url} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", border: "1px solid #EEF0F3", background: "#F9FAFB" }}>
-                            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            <img
+                              src={editPreviews[url] ?? url}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
                             <button
                               type="button"
                               onClick={() => removeEditImage(url)}
@@ -580,6 +602,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       key={imageUrl}
                       src={imageUrl}
                       alt={`${post.title} 이미지 ${index + 1}`}
+                      // 첫 장은 바로 보이므로 즉시, 나머지는 스크롤해서 닿을 때만 받는다.
+                      loading={index === 0 ? "eager" : "lazy"}
+                      decoding="async"
                       style={
                         post.isBlinded && !revealBlind
                           ? { filter: "blur(24px)", transform: "scale(1.04)" }

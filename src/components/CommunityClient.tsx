@@ -295,6 +295,12 @@ export default function CommunityClient() {
     () => groups.find((group) => group.id === selectedGroupId),
     [groups, selectedGroupId]
   );
+  // 목록 이미지는 전부 lazy 인데, 그중 처음 보이는 한 장만 예외로 즉시 받는다(LCP).
+  // 맨 위 글에 이미지가 없는 경우가 흔해서 "이미지가 있는 첫 글"을 기준으로 잡는다.
+  const firstImagePostIndex = useMemo(
+    () => posts.findIndex((post) => post.imageUrls.length > 0),
+    [posts]
+  );
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
       <header ref={topbarRef} className={`community-topbar${compactHeader ? " is-compact" : ""}`}>
@@ -430,7 +436,7 @@ export default function CommunityClient() {
                 <p style={{ margin: 0, color: "#6B7280", fontSize: 14, fontWeight: 500 }}>아직 게시글이 없습니다.</p>
               </div>
             ) : (
-              posts.map((post) => (
+              posts.map((post, postIndex) => (
                 <article
                   key={post.id}
                   className="community-post-card"
@@ -489,6 +495,17 @@ export default function CommunityClient() {
                           <img
                             src={imageUrl}
                             alt={post.isBlinded ? "블라인드 이미지" : `${post.title} 이미지 ${index + 1}`}
+                            // 목록은 최신 100개 글을 한 번에 그리는데 화면에 보이는 건 두세 개뿐이다.
+                            // lazy 가 없던 동안은 화면 밖 이미지까지 전부 즉시 받아서, 진입 1회에
+                            // 실측 53.6MB 를 내려받았다(초기 뷰포트에 실제로 필요한 건 ~3MB).
+                            // 썸네일 칸은 CSS 로 aspect-ratio 가 고정돼 있어 지연 로드해도 레이아웃이 밀리지 않는다.
+                            // 화면에 처음 보이는 이미지가 LCP 후보다. lazy 는 프리로드 스캐너가
+                            // 못 집어 시작이 늦으므로 그 한 장만 예외로 즉시 받는다.
+                            // (맨 위 카드에 이미지가 없는 경우가 흔해서 "첫 카드"가 아니라
+                            //  "이미지가 있는 첫 카드" 기준으로 잡는다.)
+                            loading={postIndex === firstImagePostIndex && index === 0 ? "eager" : "lazy"}
+                            fetchPriority={postIndex === firstImagePostIndex && index === 0 ? "high" : undefined}
+                            decoding="async"
                             style={post.isBlinded ? { filter: "blur(18px)", transform: "scale(1.05)" } : undefined}
                           />
                           {post.isBlinded && (
