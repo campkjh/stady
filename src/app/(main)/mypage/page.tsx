@@ -4,18 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import LoginRequired from "@/components/LoginRequired";
 import MyActivityCard from "@/components/MyActivityCard";
+import SubscribePopup from "@/components/SubscribePopup";
 
-interface SubscriptionState {
-  status: string;
+interface Entitlement {
   active: boolean;
-  amount: number;
-  cardCompany: string | null;
-  cardNumber: string | null;
-  currentPeriodEnd: string;
-  nextBillingAt: string;
+  planId: string | null;
+  status: string | null;
+  expiresAt: string | null;
+  autoRenew: boolean;
 }
 
-const PLAN_ID = "monthly-pass";
+const PLAN_NAMES: Record<string, string> = {
+  monthly: "월간 구독",
+  suneung_annual: "수능 구독",
+};
 
 function fmtDate(value: string) {
   return new Date(value).toLocaleDateString("ko-KR");
@@ -65,14 +67,13 @@ export default function MyPage() {
       .catch(() => setIsLoggedIn(false));
   }, []);
 
-  const [sub, setSub] = useState<SubscriptionState | null>(null);
-  const [subBusy, setSubBusy] = useState(false);
+  const [ent, setEnt] = useState<Entitlement | null>(null);
 
   const loadSub = useCallback(async () => {
     try {
-      const res = await fetch(`/api/subscription/status?planId=${PLAN_ID}`, { credentials: "include" });
+      const res = await fetch("/api/iap/status", { credentials: "include" });
       const data = await res.json();
-      setSub(data.subscription ?? null);
+      setEnt(data.entitlement ?? null);
     } catch {
       /* ignore */
     }
@@ -82,35 +83,19 @@ export default function MyPage() {
     if (isLoggedIn) loadSub();
   }, [isLoggedIn, loadSub]);
 
-  function handleSubscribe() {
-    // 월정액 서비스 준비중 — 결제 플로우는 아직 열지 않는다.
-    alert("월정액 서비스는 준비중입니다.");
-  }
+  // 프리미엄 구독 팝업 — 마이페이지의 '구독하기'를 눌렀을 때만 노출(자동 노출 안 함).
+  const [showSub, setShowSub] = useState(false);
 
-  async function handleCancelSub() {
-    if (!window.confirm("월정액 패키지 자동결제를 해지할까요?\n남은 이용 기간까지는 계속 이용할 수 있어요.")) return;
-    setSubBusy(true);
-    try {
-      const res = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: PLAN_ID }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "해지에 실패했습니다.");
-      }
-      await loadSub();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "해지 중 오류가 발생했습니다.");
-    } finally {
-      setSubBusy(false);
-    }
-  }
+  const subPopup = <SubscribePopup open={showSub} onClose={() => setShowSub(false)} />;
 
   if (isLoggedIn === null) return null;
-  if (isLoggedIn === false) return <LoginRequired />;
+  if (isLoggedIn === false)
+    return (
+      <>
+        {subPopup}
+        <LoginRequired />
+      </>
+    );
 
   async function handleLogout() {
     try {
@@ -119,11 +104,12 @@ export default function MyPage() {
     window.location.href = "/";
   }
 
-  const isActiveAuto = sub?.status === "ACTIVE";
-  const isCanceledActive = sub?.status === "CANCELED" && sub?.active;
+  const active = !!ent?.active;
+  const planName = ent?.planId ? PLAN_NAMES[ent.planId] ?? "프리미엄" : "프리미엄";
 
   return (
     <div style={{ background: "#fff", minHeight: "100vh" }}>
+      {subPopup}
       {/* Profile settings */}
       <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
         <span style={iconBox}>
@@ -144,21 +130,23 @@ export default function MyPage() {
       {/* Subscription package */}
       <div style={{ padding: "24px 20px 22px" }}>
         <h2 style={{ fontSize: 23, fontWeight: 800, margin: 0, lineHeight: 1.3, letterSpacing: "-0.4px" }}>
-          <span style={{ color: "#3182F6" }}>스타디</span> <span style={{ color: "#191F28" }}>월정액 패키지</span>
+          <span style={{ color: "#3182F6" }}>스타디</span> <span style={{ color: "#191F28" }}>프리미엄</span>
         </h2>
         <p style={{ fontSize: 14.5, color: "#8B95A1", margin: "10px 0 0", fontWeight: 500 }}>
-          {isActiveAuto
-            ? `구독 중 · 다음 결제일 ${fmtDate(sub!.nextBillingAt)}${sub!.cardCompany ? ` · ${sub!.cardCompany}` : ""}`
-            : isCanceledActive
-              ? `${fmtDate(sub!.currentPeriodEnd)}까지 이용할 수 있어요`
-              : "1등급을 위한 학습자료를 놓치지 마세요!"}
+          {active
+            ? `${planName} 이용 중${
+                ent?.expiresAt
+                  ? ` · ${ent.autoRenew ? "다음 갱신일" : "이용 종료일"} ${fmtDate(ent.expiresAt)}`
+                  : ""
+              }`
+            : "1등급을 위한 학습자료를 놓치지 마세요!"}
         </p>
         <button
           type="button"
-          onClick={isActiveAuto ? handleCancelSub : handleSubscribe}
-          disabled={subBusy}
+          onClick={() => setShowSub(true)}
           className="press"
           style={{
+            display: "inline-block",
             marginTop: 16,
             border: "none",
             borderRadius: 8,
@@ -168,10 +156,9 @@ export default function MyPage() {
             fontSize: 14,
             fontWeight: 700,
             cursor: "pointer",
-            opacity: subBusy ? 0.6 : 1,
           }}
         >
-          {subBusy ? "처리 중..." : isActiveAuto ? "구독 해지" : isCanceledActive ? "다시 구독하기" : "구독하기"}
+          {active ? "구독 관리" : "구독하기"}
         </button>
       </div>
 
