@@ -8,6 +8,7 @@ import SurveyGate from "@/components/SurveyGate";
 import NoticePopup from "@/components/NoticePopup";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
+import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
 
@@ -237,18 +238,6 @@ interface HomeBanner {
   bannerType: "slide" | "modal";
 }
 
-// 홈 모의고사 카드용(목록 화면 카드와 같은 정보).
-export interface HomeMockExam {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  coverUrl: string | null;
-  pageCount: number;
-  hasSolution: boolean;
-  subjectLabel: string | null;
-  subjectIcon: string | null;
-}
-
 interface HomeClientProps {
   userName: string | null;
   isAdmin: boolean;
@@ -256,7 +245,8 @@ interface HomeClientProps {
   workbooks: Workbook[];
   oxQuizSets: OxQuizSet[];
   vocabQuizSets: VocabQuizSet[];
-  mockExams: HomeMockExam[];
+  mockExams: BrowserExam[];
+  mockExamYears: number[];
 }
 
 type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
@@ -302,6 +292,7 @@ export default function HomeClient({
   oxQuizSets,
   vocabQuizSets,
   mockExams,
+  mockExamYears,
 }: HomeClientProps) {
   const router = useRouter();
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
@@ -777,38 +768,17 @@ export default function HomeClient({
         </section>
         )}
 
-        {/* 모의고사 — 목록 화면(/mock-exam)의 카드와 같은 디자인(3:4 썸네일 + 해설 배지 + 과목). */}
+        {/* 모의고사 — 목록 화면(/mock-exam)과 같은 분류 탭(시행 연도/월/과목) + 같은 카드.
+            두 화면이 갈라지지 않도록 컴포넌트를 그대로 재사용한다(embedded 로 페이지 여백만 끈다). */}
         {mockExams.length > 0 && (
           <section>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", margin: 0 }}>모의고사</h2>
               <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "#8A909C", textDecoration: "none" }}>
                 전체보기 ›
               </Link>
             </div>
-            <div className="home-exam-grid">
-              {mockExams.map((ex) => (
-                <Link key={ex.id} href={`/mock-exam/${ex.id}`} className="hover-lift home-exam-item">
-                  <div className="home-exam-thumb">
-                    {ex.coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" />
-                    ) : (
-                      <span className="home-exam-thumb-empty">📄</span>
-                    )}
-                    {ex.hasSolution && <span className="home-exam-badge">해설</span>}
-                  </div>
-                  <p className="home-exam-title">{ex.title}</p>
-                  <p className="home-exam-sub">
-                    {ex.subjectIcon && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`/icons/${ex.subjectIcon}.svg`} alt="" width={13} height={13} />
-                    )}
-                    {ex.subjectLabel ?? ex.subtitle ?? `${ex.pageCount}페이지`}
-                  </p>
-                </Link>
-              ))}
-            </div>
+            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded />
           </section>
         )}
       </div>

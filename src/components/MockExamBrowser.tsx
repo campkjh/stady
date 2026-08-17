@@ -14,6 +14,8 @@ export interface BrowserExam {
   year: number | null;
   month: number | null;
   subject: string | null;
+  /** 문항별 풀이(모바일)가 준비된 시험지면 카드에 "문제 풀기"가 붙는다. */
+  hasQuestions?: boolean;
 }
 
 const ALL = "all";
@@ -26,7 +28,17 @@ const SECTIONS = [
   ...SUBJECT_GROUPS.map((g) => ({ key: g.key, label: g.label, icon: g.icon })),
 ];
 
-export default function MockExamBrowser({ exams, years }: { exams: BrowserExam[]; years: number[] }) {
+export default function MockExamBrowser({
+  exams,
+  years,
+  // 홈 섹션 안에 넣을 때. 레일의 sticky/블러와 페이지 여백을 끄고, 좁은 우측 컬럼에 맞게
+  // 태블릿에서도 "레일이 위에 붙는" 한 단 레이아웃을 유지한다.
+  embedded = false,
+}: {
+  exams: BrowserExam[];
+  years: number[];
+  embedded?: boolean;
+}) {
   const [year, setYear] = useState<number | typeof ALL>(ALL);
   const [month, setMonth] = useState<number | typeof ALL>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
@@ -70,7 +82,7 @@ export default function MockExamBrowser({ exams, years }: { exams: BrowserExam[]
   const openGroup = SUBJECT_GROUPS.find((g) => g.key === open);
 
   return (
-    <div className="mx-shell">
+    <div className={`mx-shell${embedded ? " is-embedded" : ""}`}>
       {/* ───── 메뉴: 태블릿은 좌측 레일, 모바일은 상단 바 ───── */}
       <nav className="mx-rail" aria-label="모의고사 분류">
         {SECTIONS.map((s) => {
@@ -153,29 +165,38 @@ export default function MockExamBrowser({ exams, years }: { exams: BrowserExam[]
             {filtered.map((ex) => {
               const hit = findSubject(ex.subject);
               return (
-                <Link key={ex.id} href={`/mock-exam/${ex.id}`} className="hover-lift mx-item">
-                  <div className="mx-thumb">
-                    {ex.coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={ex.coverUrl} alt="" />
-                    ) : (
-                      <span className="mx-thumb-empty">📄</span>
-                    )}
-                    {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
-                  </div>
-                  <p className="mx-title">{ex.title}</p>
-                  <p className="mx-sub">
-                    {hit ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/icons/${hit.group.icon}.svg`} alt="" width={13} height={13} />
-                        {hit.subject.label}
-                      </>
-                    ) : (
-                      ex.subtitle || `${ex.pageCount}페이지`
-                    )}
-                  </p>
-                </Link>
+                // 카드 전체(→ 필기 뷰어)와 "문제 풀기"(→ 문항 풀이)는 형제 링크로 둔다.
+                // 링크 안에 링크를 넣으면 안 되기 때문.
+                <div key={ex.id} className="mx-item-wrap">
+                  <Link href={`/mock-exam/${ex.id}`} className="hover-lift mx-item">
+                    <div className="mx-thumb">
+                      {ex.coverUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        <span className="mx-thumb-empty">📄</span>
+                      )}
+                      {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
+                    </div>
+                    <p className="mx-title">{ex.title}</p>
+                    <p className="mx-sub">
+                      {hit ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`/icons/${hit.group.icon}.svg`} alt="" width={13} height={13} />
+                          {hit.subject.label}
+                        </>
+                      ) : (
+                        ex.subtitle || `${ex.pageCount}페이지`
+                      )}
+                    </p>
+                  </Link>
+                  {ex.hasQuestions && (
+                    <Link href={`/mock-exam/${ex.id}/solve`} className="mx-solve">
+                      문제 풀기
+                    </Link>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -260,7 +281,16 @@ function BrowserStyles() {
       .mx-reset-wide { display: none; }
       .mx-empty { padding: 48px 20px; text-align: center; color: #9CA3AF; font-size: 14px; margin: 0; }
       .mx-grid { padding: 4px 16px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+      .mx-item-wrap { position: relative; }
       .mx-item { text-decoration: none; display: block; }
+      /* 썸네일 위에 얹는 "문제 풀기" — 카드 링크와 겹치지 않게 형제로 두고 위에 띄운다. */
+      .mx-solve {
+        position: absolute; right: 7px; top: 7px; z-index: 2;
+        padding: 5px 10px; border-radius: 999px; text-decoration: none;
+        background: #3787FF; color: #fff; font-size: 11px; font-weight: 800;
+        box-shadow: 0 2px 8px rgba(55,135,255,0.35);
+      }
+      .mx-solve:active { transform: scale(0.94); }
       .mx-thumb {
         position: relative; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
         border: 1px solid #EEF0F3; background: #F3F4F6; box-shadow: 0 4px 14px rgba(15,23,42,0.06);
@@ -277,15 +307,31 @@ function BrowserStyles() {
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
 
+      /* ── 홈 섹션에 끼워 넣을 때(embedded) ──
+         페이지 전용 장치(레일 sticky·블러·페이지 여백)를 끈다. 홈은 자체 헤더가 있어서
+         레일까지 sticky 로 붙으면 두 겹이 되고, 우측 컬럼이 좁아 좌측 레일 2단도 안 맞는다. */
+      .mx-shell.is-embedded { padding: 0; display: block; }
+      .mx-shell.is-embedded .mx-rail {
+        position: static; background: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+        border-bottom: none; padding: 0 0 6px; margin: 0;
+      }
+      .mx-shell.is-embedded .mx-panel {
+        border: 1px solid #EEF0F3; border-radius: 14px; margin: 0 0 10px;
+      }
+      .mx-shell.is-embedded .mx-main { padding: 0; }
+      .mx-shell.is-embedded .mx-result-head { padding: 0 2px 10px; }
+      .mx-shell.is-embedded .mx-grid { padding: 0; }
+      .mx-shell.is-embedded .mx-empty { padding: 24px 0; }
+
       /* ── 태블릿/데스크톱: 메뉴가 좌측에 세로로 붙고, 누르면 옆으로 펼쳐진다 ── */
       @media (min-width: 744px) {
-        .mx-shell {
+        .mx-shell:not(.is-embedded) {
           display: grid;
           grid-template-columns: 92px auto minmax(0, 1fr);
           align-items: start;
           padding: 10px 16px 40px;
         }
-        .mx-rail {
+        .mx-shell:not(.is-embedded) .mx-rail {
           position: sticky; top: 12px;
           display: flex; flex-direction: column; align-items: stretch; gap: 2px;
           padding: 10px 6px; overflow: visible;
@@ -293,35 +339,35 @@ function BrowserStyles() {
           box-shadow: 0 4px 16px rgba(15,23,42,0.05);
           backdrop-filter: none; -webkit-backdrop-filter: none;
         }
-        .mx-rail-item { width: 100%; padding: 7px 2px 9px; }
-        .mx-rail-ico { width: 44px; height: 44px; border-radius: 14px; margin: 0 auto; }
-        .mx-rail-label { font-size: 11.5px; }
-        .mx-rail-reset { margin-top: 6px; padding-top: 10px; border-top: 1px solid #F2F4F6; width: 100%; }
+        .mx-shell:not(.is-embedded) .mx-rail-item { width: 100%; padding: 7px 2px 9px; }
+        .mx-shell:not(.is-embedded) .mx-rail-ico { width: 44px; height: 44px; border-radius: 14px; margin: 0 auto; }
+        .mx-shell:not(.is-embedded) .mx-rail-label { font-size: 11.5px; }
+        .mx-shell:not(.is-embedded) .mx-rail-reset { margin-top: 6px; padding-top: 10px; border-top: 1px solid #F2F4F6; width: 100%; }
 
-        .mx-panel {
+        .mx-shell:not(.is-embedded) .mx-panel {
           position: sticky; top: 12px; width: 216px; margin-left: 12px;
           border: 1px solid #F1F4F8; border-radius: 20px; background: #fff;
           border-bottom: 1px solid #F1F4F8;
           box-shadow: 0 4px 16px rgba(15,23,42,0.05);
           animation: mxPanelRight .22s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .mx-panel-head { padding: 14px 16px 4px; font-size: 13.5px; }
-        .mx-panel-body {
+        .mx-shell:not(.is-embedded) .mx-panel-head { padding: 14px 16px 4px; font-size: 13.5px; }
+        .mx-shell:not(.is-embedded) .mx-panel-body {
           flex-direction: column; align-items: stretch; gap: 2px; padding: 8px 10px 12px;
           max-height: calc(100vh - 160px); overflow-y: auto;
         }
-        .mx-pchip { text-align: left; border: none; background: none; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
-        .mx-pchip:hover { background: #F7F9FC; }
+        .mx-shell:not(.is-embedded) .mx-pchip { text-align: left; border: none; background: none; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+        .mx-shell:not(.is-embedded) .mx-pchip:hover { background: #F7F9FC; }
         .mx-pchip.is-on { background: #F2F7FF; color: #1F5EDC; font-weight: 800; }
         @keyframes mxPanelRight { from { opacity: 0; transform: translateX(-10px) } to { opacity: 1; transform: translateX(0) } }
 
-        .mx-main { padding-left: 14px; }
-        .mx-result-head { padding: 8px 6px 10px; }
-        .mx-reset-wide {
+        .mx-shell:not(.is-embedded) .mx-main { padding-left: 14px; }
+        .mx-shell:not(.is-embedded) .mx-result-head { padding: 8px 6px 10px; }
+        .mx-shell:not(.is-embedded) .mx-reset-wide {
           display: inline-block; border: none; background: none; color: #8B95A1;
           font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
         }
-        .mx-grid { padding: 0 4px 40px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+        .mx-shell:not(.is-embedded) .mx-grid { padding: 0 4px 40px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
       }
     `}</style>
   );

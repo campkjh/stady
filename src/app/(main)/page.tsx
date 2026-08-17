@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
 import { isMasterAdminEmail } from "@/lib/auth";
 import { computeSetAnswerRates } from "@/lib/oxAnswerRate";
-import HomeClient, { type HomeMockExam } from "@/components/HomeClient";
+import HomeClient from "@/components/HomeClient";
+import { type BrowserExam } from "@/components/MockExamBrowser";
 import { listMockExams } from "@/lib/mockExam";
-import { findSubject } from "@/lib/examSubjects";
+import { yearOptions } from "@/lib/examSubjects";
+import { examIdsWithQuestions } from "@/lib/mockExamQuestion";
 
 export default async function HomePage() {
   await ensureInitialWorkbookDataRemoved();
@@ -40,30 +42,32 @@ export default async function HomePage() {
 
   const oxQuizSetsWithRate = oxQuizSets.map((s) => ({ ...s, answerRate: setRates.get(s.id) ?? null }));
 
-  // 홈 모의고사 섹션(티저 12개). 최근에 올린 회차를 먼저 보여주되, 한 회차 안에서는
-  // 목록 화면과 같은 과목 순서(sort_order)를 지킨다. 등록 시각만으로 정렬하면 24과목이
-  // 초 단위로 들어가 과목 순서가 뒤집히고 홈에 과탐만 깔린다.
+  // 홈 모의고사 섹션은 목록 화면과 같은 분류 탭을 쓰므로 전체를 넘긴다(필터가 골라낸다).
+  // 카드 순서는 최근 회차 먼저, 한 회차 안에서는 목록 화면과 같은 과목 순서(sort_order).
+  // 등록 시각만으로 정렬하면 24과목이 초 단위로 들어간 탓에 과목 순서가 뒤집힌다.
   const examDay = (d: Date) => d.toISOString().slice(0, 10);
-  const mockExams: HomeMockExam[] = [...mockExamsRaw]
+  const withQuestions = await examIdsWithQuestions(mockExamsRaw.map((e) => e.id));
+  const mockExams: BrowserExam[] = [...mockExamsRaw]
     .sort((a, b) =>
       examDay(a.createdAt) === examDay(b.createdAt)
         ? a.sortOrder - b.sortOrder
         : examDay(b.createdAt).localeCompare(examDay(a.createdAt))
     )
-    .slice(0, 12)
-    .map((e) => {
-      const hit = findSubject(e.subject);
-      return {
-        id: e.id,
-        title: e.title,
-        subtitle: e.subtitle,
-        coverUrl: e.imageUrls[0] ?? null,
-        pageCount: e.imageUrls.length,
-        hasSolution: e.solutionImageUrls.length > 0,
-        subjectLabel: hit?.subject.label ?? null,
-        subjectIcon: hit?.group.icon ?? null,
-      };
-    });
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      subtitle: e.subtitle,
+      coverUrl: e.imageUrls[0] ?? null,
+      pageCount: e.imageUrls.length,
+      solutionCount: e.solutionImageUrls.length,
+      year: e.year,
+      month: e.month,
+      subject: e.subject,
+      hasQuestions: withQuestions.has(e.id),
+    }));
+  const mockExamYears = yearOptions(
+    mockExamsRaw.map((e) => e.year).filter((y): y is number => typeof y === "number")
+  );
 
   return (
     <HomeClient
@@ -74,6 +78,7 @@ export default async function HomePage() {
       oxQuizSets={oxQuizSetsWithRate}
       vocabQuizSets={vocabQuizSets}
       mockExams={mockExams}
+      mockExamYears={mockExamYears}
     />
   );
 }
