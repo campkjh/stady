@@ -237,6 +237,18 @@ interface HomeBanner {
   bannerType: "slide" | "modal";
 }
 
+// 홈 모의고사 카드용(목록 화면 카드와 같은 정보).
+export interface HomeMockExam {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  coverUrl: string | null;
+  pageCount: number;
+  hasSolution: boolean;
+  subjectLabel: string | null;
+  subjectIcon: string | null;
+}
+
 interface HomeClientProps {
   userName: string | null;
   isAdmin: boolean;
@@ -244,6 +256,7 @@ interface HomeClientProps {
   workbooks: Workbook[];
   oxQuizSets: OxQuizSet[];
   vocabQuizSets: VocabQuizSet[];
+  mockExams: HomeMockExam[];
 }
 
 type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
@@ -282,25 +295,18 @@ const BANNER_ITEMS: BannerItem[] = [
   },
 ];
 
-interface RecentQuiz {
-  key: string;
-  type: "ox" | "vocab";
-  id: string;
-  title: string;
-}
-
 export default function HomeClient({
   userName,
   isAdmin,
   categories,
   oxQuizSets,
   vocabQuizSets,
+  mockExams,
 }: HomeClientProps) {
   const router = useRouter();
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
   const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
-  const [recentQuizzes, setRecentQuizzes] = useState<RecentQuiz[]>(() => clientCache.get<RecentQuiz[]>("home-recent") ?? []);
   const [oxProgress, setOxProgress] = useState<Record<string, number>>(() => clientCache.get<Record<string, number>>("home-oxprogress") ?? {});
   // 홈에서 앱 사용 3분 뒤 별점 팝업을 기기당 1회만 띄운다.
   useEffect(() => {
@@ -316,31 +322,6 @@ export default function HomeClient({
     }
     router.push(linkUrl);
   }, [router]);
-
-  // 최근에 푼 OX·단어 퀴즈 (세트별 가장 최근 1개씩, 최대 6개).
-  useEffect(() => {
-    if (!userName) return;
-    fetch("/api/attempts", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const attempts = data?.attempts;
-        if (!Array.isArray(attempts)) return;
-        const seen = new Set<string>();
-        const recent: RecentQuiz[] = [];
-        for (const a of attempts) {
-          if (a.oxQuizSet) {
-            const k = `ox:${a.oxQuizSet.id}`;
-            if (!seen.has(k)) { seen.add(k); recent.push({ key: k, type: "ox", id: a.oxQuizSet.id, title: a.oxQuizSet.title }); }
-          } else if (a.vocabQuizSet) {
-            const k = `vocab:${a.vocabQuizSet.id}`;
-            if (!seen.has(k)) { seen.add(k); recent.push({ key: k, type: "vocab", id: a.vocabQuizSet.id, title: a.vocabQuizSet.title }); }
-          }
-          if (recent.length >= 6) break;
-        }
-        if (clientCache.set("home-recent", recent)) setRecentQuizzes(recent);
-      })
-      .catch(() => {});
-  }, [userName]);
 
   // OX 퀴즈별 진척도(내가 답한 문항 수). 카드에 얇은 막대로 표시.
   useEffect(() => {
@@ -721,25 +702,6 @@ export default function HomeClient({
 
       {/* Content */}
       <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
-        {recentQuizzes.length > 0 && (
-          <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
-              최근에 푼 퀴즈
-            </h2>
-            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {recentQuizzes.map((q) => (
-                <QuizBookCard
-                  key={q.key}
-                  eyebrow={quizEyebrow(q.type, q.id)}
-                  title={q.title}
-                  progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
-                  onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
         {newQuizzes.length > 0 && (
           <section>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
@@ -815,53 +777,36 @@ export default function HomeClient({
         </section>
         )}
 
-        {userName && (
+        {/* 모의고사 — 목록 화면(/mock-exam)의 카드와 같은 디자인(3:4 썸네일 + 해설 배지 + 과목). */}
+        {mockExams.length > 0 && (
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
-              준비중
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0" }}>
-              <Image src="/icons/under-construction.svg" alt="" width={52} height={52} unoptimized style={{ marginBottom: 12 }} />
-              <p style={{ fontSize: 14, color: "#9CA3AF" }}>문제집은 현재 준비중입니다.</p>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", margin: 0 }}>모의고사</h2>
+              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "#8A909C", textDecoration: "none" }}>
+                전체보기 ›
+              </Link>
             </div>
-          </section>
-        )}
-
-        {oxQuizSets.length > 0 && (
-          <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
-              OX 퀴즈
-            </h2>
-            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {oxQuizSets.map((ox) => (
-                <QuizBookCard
-                  key={ox.id}
-                  eyebrow={`${ox.category.name}OX`}
-                  title={ox.title}
-                  isPopular={ox.isPopular}
-                  progressPct={oxProgressPct(ox.id)}
-                  answerRate={ox.answerRate}
-                  onClick={() => router.push(`/ox-quiz/${ox.id}`)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {vocabQuizSets.length > 0 && (
-          <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
-              단어 퀴즈
-            </h2>
-            <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-              {vocabQuizSets.map((vq) => (
-                <QuizBookCard
-                  key={vq.id}
-                  eyebrow={vocabEyebrow(vq.title)}
-                  title={vq.title}
-                  isPopular={vq.isPopular}
-                  onClick={() => router.push(`/vocab-quiz/${vq.id}`)}
-                />
+            <div className="home-exam-grid">
+              {mockExams.map((ex) => (
+                <Link key={ex.id} href={`/mock-exam/${ex.id}`} className="hover-lift home-exam-item">
+                  <div className="home-exam-thumb">
+                    {ex.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span className="home-exam-thumb-empty">📄</span>
+                    )}
+                    {ex.hasSolution && <span className="home-exam-badge">해설</span>}
+                  </div>
+                  <p className="home-exam-title">{ex.title}</p>
+                  <p className="home-exam-sub">
+                    {ex.subjectIcon && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`/icons/${ex.subjectIcon}.svg`} alt="" width={13} height={13} />
+                    )}
+                    {ex.subjectLabel ?? ex.subtitle ?? `${ex.pageCount}페이지`}
+                  </p>
+                </Link>
               ))}
             </div>
           </section>
