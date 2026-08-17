@@ -54,3 +54,10 @@ ios/build/
 ios/**/xcuserdata/
 ios/**/*.xcuserstate
 ios/DerivedData/
+
+# 모의고사 임포트 산출물(이미지/업로드기록/빌드 바이너리)
+scripts/mock-exam-import/pages/
+scripts/mock-exam-import/uploaded.json
+scripts/mock-exam-import/manifest.json
+scripts/mock-exam-import/render
+scripts/mock-exam-import/pdfinfo
