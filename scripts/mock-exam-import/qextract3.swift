@@ -57,15 +57,25 @@ for p in 1...doc.numberOfPages {
     guard let page = doc.page(at: p), let img = renderForOCR(page) else { continue }
     let ls = ocrLines(img)
     pageLines[p] = ls
-    // 푸터: 하단 8% 안에서 숫자/쪽표시만 있는 줄
-    for l in ls where l.yTop > 0.9 {
+    // 푸터(쪽번호 "20 / 36" 도형): 하단 12% 안에서 짧은 숫자만 있는 줄. 도형 안의 현재
+    // 쪽번호는 Vision 이 못 읽고 총 쪽수("20")만 읽히므로 숫자 1~3자리 단독 줄로 잡는다.
+    // 페이지 폭 가운데 부근에 있어야 한다(본문 줄과 구분).
+    for l in ls where l.yTop > 0.88 {
         let t = l.text.trimmingCharacters(in: .whitespaces)
-        if t.range(of: "^[0-9]+[[:space:]]*/?[[:space:]]*[0-9]*$", options: .regularExpression) != nil {
+        let isNum = t.range(of: "^[0-9]{1,3}([[:space:]]*/[[:space:]]*[0-9]{1,3})?$", options: .regularExpression) != nil
+        if isNum && l.x > 0.3 && l.x < 0.7 {
             footTop[p] = min(footTop[p] ?? 1.0, l.yTop)
         }
     }
 }
-func colBottom(_ p: Int) -> Double { min(0.952, (footTop[p] ?? 1.0) - 0.008) }
+// 쪽번호 도형은 읽힌 숫자보다 위로 더 올라와 있다(박스 위 사선). 넉넉히 0.02 위에서 자른다.
+// Vision 이 푸터를 못 읽는 페이지가 실제로 있어(도형 안 숫자), 검출 실패 시에도 문서 전체에서
+// 관측된 푸터 위치(최솟값)를 폴백으로 쓴다 — 쪽번호 위치는 시험지 전체에서 같다.
+var globalFootTop: Double = 1.0
+func colBottom(_ p: Int) -> Double {
+    let ft = footTop[p] ?? globalFootTop
+    return min(0.94, ft - 0.02)
+}
 // 페이지 상단 제목 밴드("…학력평가 문제지 / 국어 영역 / 제N교시") 아래가 본문 시작이다.
 // 연속 단(다음 페이지로 이어지는 문항/지문)의 시작을 여기로 잡지 않으면 헤더가 크롭에 딸려 들어온다.
 var contentTopCache: [Int: Double] = [:]
@@ -84,10 +94,12 @@ func contentTop(_ p: Int) -> Double {
     return v
 }
 
+globalFootTop = footTop.values.min() ?? 1.0
 // ── 2) 문항번호/지문머리 검출 ──
 struct Mark { let num: Int; let num2: Int; let page: Int; let col: Int; let x: Double; let yTop: Double; let isHead: Bool }
 let qRe = try! NSRegularExpression(pattern: "^\\s*(\\d{1,2})\\s*[.．]")
-let hRe = try! NSRegularExpression(pattern: "^\\s*\\[\\s*(\\d{1,2})\\s*[~～\\-]\\s*(\\d{1,2})\\s*\\]")
+// Vision 이 여는 대괄호 "[" 를 "L" 이나 "I" 로 읽는 경우가 있다("L11~12] 다음 자료를…").
+let hRe = try! NSRegularExpression(pattern: "^\\s*[\\[LI\\(]\\s*(\\d{1,2})\\s*[~～\\-]\\s*(\\d{1,2})\\s*[\\]\\)]")
 
 func pageTwoCol(_ p: Int) -> Bool {
     guard let page = doc.page(at: p) else { return false }
@@ -151,9 +163,12 @@ for m in qMarks {
     } else { bestQ[m.num] = m }
 }
 let seq = bestQ.values.sorted { $0.num < $1.num }
+// 지문 머리([11~12] …)는 "[숫자~숫자]" 형태라 오탐 여지가 거의 없다. 과목에 따라 번호 여백보다
+// 오른쪽으로 들여 쓰이기도 해서(정치와 법), 단 안에만 있으면 인정한다 — 여백 조건으로 걸러내면
+// 앞 문항이 그 지문을 통째로 물고 내려간다(정법 10번 ⑤ 사고).
 let heads = rawMarks.filter { m in
     guard m.isHead, let mg = marginByCol[m.col] else { return false }
-    return m.x - mg < 0.05
+    return m.x - mg < 0.12 && m.x - mg > -0.02
 }
 
 func readOrder(_ p: Int, _ c: Int, _ y: Double) -> Double { Double(p) * 100 + Double(c) * 10 + y }
