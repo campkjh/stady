@@ -26,6 +26,8 @@ interface Graded extends Question {
   answer: number;
   selected: number | null;
   isCorrect: boolean;
+  /** 해설 이미지(채점 후에만 옴). */
+  solutionUrl?: string | null;
 }
 interface Result {
   total: number;
@@ -208,6 +210,13 @@ export default function MockExamSolver({
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={q.imageUrl} alt={`${q.number}번 문항`} loading="lazy" decoding="async" />
+                {q.solutionUrl && (
+                  <details className="solver-solution">
+                    <summary>해설 보기</summary>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={q.solutionUrl} alt={`${q.number}번 해설`} loading="lazy" decoding="async" />
+                  </details>
+                )}
               </div>
             ))}
           </div>
@@ -286,21 +295,26 @@ export default function MockExamSolver({
         </div>
       )}
 
+      {/* 선택지가 한 줄에 몰려 분리가 안 된 객관식("① ㄱ,ㄴ ② ㄱ,ㄷ …" — 수학·과탐 조합형):
+          문장 카드를 만들 수 없어 번호 탭으로 고른다. 예전엔 하단 고정 바에 있었는데
+          문제 이미지 바로 아래로 옮겨 "문제 → 답" 한 흐름으로 읽히게 했다. */}
+      {!current.choiceUrls && current.choiceCount > 0 && (
+        <div className="solver-choices-inline">
+          {CIRCLE.slice(0, current.choiceCount).map((c, i) => (
+            <button
+              key={c}
+              type="button"
+              className={`solver-choice${picked === i + 1 ? " is-on" : ""}`}
+              onClick={() => pick(i + 1)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="solver-answer">
-        {current.choiceUrls ? null : current.choiceCount > 0 ? (
-          <div className="solver-choices">
-            {CIRCLE.slice(0, current.choiceCount).map((c, i) => (
-              <button
-                key={c}
-                type="button"
-                className={`solver-choice${picked === i + 1 ? " is-on" : ""}`}
-                onClick={() => pick(i + 1)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        ) : (
+        {current.choiceCount > 0 ? null : (
           <div className="solver-short">
             <input
               type="number"
@@ -441,6 +455,7 @@ function Styles() {
 
       .solver-answer { position: sticky; bottom: 0; background: #fff; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
         border-top: 1px solid #F2F4F6; margin-top: 14px; }
+      .solver-choices-inline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 12px 12px 0; }
       .solver-choices { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
       .solver-choice { height: 52px; border-radius: 14px; border: 1.5px solid #E5E7EB; background: #fff;
         font-size: 21px; color: #4E5968; cursor: pointer; transition: transform .12s ease, background .12s ease, border-color .12s ease; }
@@ -492,11 +507,17 @@ function Styles() {
       .solver-review-ans { font-size: 12.5px; color: #8B95A1; font-weight: 600; }
       .solver-review-ans b { color: #059669; }
       .solver-review-item img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid #EEF0F3; }
+      .solver-solution { margin-top: 8px; border-radius: 12px; background: #F7F9FC; }
+      .solver-solution summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 800; color: #1F5EDC; }
+      .solver-solution summary::-webkit-details-marker { display: none; }
+      .solver-solution summary::before { content: "▸ "; }
+      .solver-solution[open] summary::before { content: "▾ "; }
+      .solver-solution img { margin: 0 10px 10px; width: calc(100% - 20px); border: none; background: #fff; }
 
       /* 태블릿: 문항 이미지가 너무 커지지 않게 가운데 정렬로 폭을 제한 */
       @media (min-width: 744px) {
         .solver-image, .solver-review-item img { max-width: 620px; margin-left: auto; margin-right: auto; }
-        .solver-answer, .solver-choice-list, .solver-passage { max-width: 620px; margin-left: auto; margin-right: auto; }
+        .solver-answer, .solver-choice-list, .solver-choices-inline, .solver-passage { max-width: 620px; margin-left: auto; margin-right: auto; }
         .solver-passage { margin-bottom: 10px; }
       }
     `}</style>

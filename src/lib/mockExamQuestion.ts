@@ -26,6 +26,8 @@ export interface MockExamQuestion {
   stemUrl: string | null;
   /** 발문이 헤더 제목과 같은 한 문장뿐이면 true(앱이 stem 이미지를 생략). */
   stemIsTitle: boolean;
+  /** 해설 이미지(해설 PDF 에서 문항별로 잘라낸 것). 채점 결과에서만 내려간다. */
+  solutionUrl: string | null;
   /**
    * 선택지 ①~⑤ 를 각각 잘라낸 이미지 5장. 있으면 앱은 이 이미지를 탭해 고르는 UI 를 쓴다.
    * "① ㄱ,ㄴ ② ㄱ,ㄷ…" 처럼 다섯 개가 한 줄에 몰린 문항은 쪼갤 수 없어 null —
@@ -71,6 +73,9 @@ export async function ensureMockExamQuestionTables(): Promise<void> {
   );
   await prisma.$executeRawUnsafe(
     `ALTER TABLE "MockExamQuestion" ADD COLUMN IF NOT EXISTS "stem_is_title" TEXT`
+  );
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "MockExamQuestion" ADD COLUMN IF NOT EXISTS "solution_url" TEXT`
   );
   await prisma.$executeRawUnsafe(
     `CREATE UNIQUE INDEX IF NOT EXISTS "MockExamQuestion_exam_num_key" ON "MockExamQuestion" ("exam_id", "number")`
@@ -125,6 +130,8 @@ export async function listQuestions(examId: string): Promise<Omit<MockExamQuesti
       passageUrls: parseJsonArray(r.passage_urls),
       stemUrl: r.stem_url,
       stemIsTitle: r.stem_is_title === "1",
+      // 해설은 채점 응답에서만. 풀기 전엔 내려가지 않는다.
+      solutionUrl: null,
       // 5장이 온전히 있을 때만 탭 UI 를 쓴다(일부만 있으면 통짜로 폴백).
       choiceUrls: choices.length === 5 && r.stem_url ? choices : null,
     };
@@ -189,9 +196,9 @@ export async function grade(userId: string, examId: string): Promise<{
 }> {
   await ensureMockExamQuestionTables();
   const rows = await prisma.$queryRawUnsafe<
-    { number: number; image_url: string; answer: number; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null; stem_is_title: string | null; selected: number | null }[]
+    { number: number; image_url: string; answer: number; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null; stem_is_title: string | null; solution_url: string | null; selected: number | null }[]
   >(
-    `SELECT q."number", q."image_url", q."answer", q."choice_count", q."title", q."passage_urls", q."stem_url", q."choice_urls", q."stem_is_title", a."selected"
+    `SELECT q."number", q."image_url", q."answer", q."choice_count", q."title", q."passage_urls", q."stem_url", q."choice_urls", q."stem_is_title", q."solution_url", a."selected"
      FROM "MockExamQuestion" q
      LEFT JOIN "MockExamAnswer" a
        ON a."exam_id" = q."exam_id" AND a."number" = q."number" AND a."user_id" = $2
@@ -211,6 +218,7 @@ export async function grade(userId: string, examId: string): Promise<{
       passageUrls: parseJsonArray(r.passage_urls),
       stemUrl: r.stem_url,
       stemIsTitle: r.stem_is_title === "1",
+      solutionUrl: r.solution_url,
       choiceUrls: choices.length === 5 && r.stem_url ? choices : null,
       selected: r.selected,
       // answer 0 = 전항 정답 → 아무거나 고르기만 하면 정답.
