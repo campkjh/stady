@@ -3,13 +3,13 @@ import { PrismaClient } from "@prisma/client";
 import { readFileSync, existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 
-const uploaded = JSON.parse(readFileSync("uploaded-q3.json","utf8"));
+const uploaded = JSON.parse(readFileSync("uploaded-q6.json","utf8"));
 const answers = JSON.parse(readFileSync("answers.json","utf8"));
 const prisma = new PrismaClient();
 const TITLE = "2026학년도 7월 학력평가";
 const SHORT = [16,17,18,19,20,21,22,29,30];
 
-for (const col of ["passage_urls","stem_url","choice_urls","title"]) {
+for (const col of ["passage_urls","stem_url","choice_urls","title","stem_is_title"]) {
   await prisma.$executeRawUnsafe(`ALTER TABLE "MockExamQuestion" ADD COLUMN IF NOT EXISTS "${col}" TEXT`);
 }
 const exams = await prisma.$queryRawUnsafe(
@@ -21,9 +21,9 @@ for (const a of answers) {
   const examId = bySubject.get(a.subject);
   if (!examId) { console.error(`!! ${a.label}: 시험지 없음`); continue; }
   const urls = uploaded[a.subject] ?? {};
-  const qmeta = JSON.parse(readFileSync(`questions3/${a.subject}/_questions.json`,"utf8"));
-  const passages = existsSync(`questions3/${a.subject}/_passages.json`)
-    ? JSON.parse(readFileSync(`questions3/${a.subject}/_passages.json`,"utf8")) : [];
+  const qmeta = JSON.parse(readFileSync(`questions6/${a.subject}/_questions.json`,"utf8"));
+  const passages = existsSync(`questions6/${a.subject}/_passages.json`)
+    ? JSON.parse(readFileSync(`questions6/${a.subject}/_passages.json`,"utf8")) : [];
   if (qmeta.length !== a.expected) { console.error(`!! ${a.label}: 문항 ${qmeta.length} ≠ ${a.expected}`); continue; }
 
   const passageOf = {};
@@ -47,16 +47,17 @@ for (const a of answers) {
       title: useTitle && q.title ? String(q.title).slice(0, 200) : null,
       stem: stem ?? null,
       choices: choices && choices.length===5 ? JSON.stringify(choices) : null,
-      passages: passageOf[n] ? JSON.stringify(passageOf[n]) : null });
+      passages: passageOf[n] ? JSON.stringify(passageOf[n]) : null,
+      stemIsTitle: q.stemIsTitle === true ? "1" : null });
   }
   if (rows.length !== a.expected) { console.error(`!! ${a.label}: ${rows.length}/${a.expected} — 건너뜀`); continue; }
 
   await prisma.$executeRawUnsafe(`DELETE FROM "MockExamQuestion" WHERE "exam_id"=$1`, examId);
   for (const r of rows) {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "MockExamQuestion" ("id","exam_id","number","image_url","answer","choice_count","title","stem_url","choice_urls","passage_urls")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      randomUUID(), examId, r.n, r.url, r.ans, r.choiceCount, r.title, r.stem, r.choices, r.passages);
+      `INSERT INTO "MockExamQuestion" ("id","exam_id","number","image_url","answer","choice_count","title","stem_url","choice_urls","passage_urls","stem_is_title")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      randomUUID(), examId, r.n, r.url, r.ans, r.choiceCount, r.title, r.stem, r.choices, r.passages, r.stemIsTitle);
   }
   const sc=rows.filter(r=>r.choices).length, pc=rows.filter(r=>r.passages).length, tc=rows.filter(r=>r.title).length;
   split+=sc; withPassage+=pc; withTitle+=tc; total+=rows.length;

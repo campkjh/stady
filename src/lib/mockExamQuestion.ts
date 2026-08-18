@@ -24,6 +24,8 @@ export interface MockExamQuestion {
   title: string | null;
   /** 발문만 잘라낸 이미지(선택지 제외). 선택지를 따로 탭해 고르는 문항에만 있다. */
   stemUrl: string | null;
+  /** 발문이 헤더 제목과 같은 한 문장뿐이면 true(앱이 stem 이미지를 생략). */
+  stemIsTitle: boolean;
   /**
    * 선택지 ①~⑤ 를 각각 잘라낸 이미지 5장. 있으면 앱은 이 이미지를 탭해 고르는 UI 를 쓴다.
    * "① ㄱ,ㄴ ② ㄱ,ㄷ…" 처럼 다섯 개가 한 줄에 몰린 문항은 쪼갤 수 없어 null —
@@ -68,6 +70,9 @@ export async function ensureMockExamQuestionTables(): Promise<void> {
     `ALTER TABLE "MockExamQuestion" ADD COLUMN IF NOT EXISTS "title" TEXT`
   );
   await prisma.$executeRawUnsafe(
+    `ALTER TABLE "MockExamQuestion" ADD COLUMN IF NOT EXISTS "stem_is_title" TEXT`
+  );
+  await prisma.$executeRawUnsafe(
     `CREATE UNIQUE INDEX IF NOT EXISTS "MockExamQuestion_exam_num_key" ON "MockExamQuestion" ("exam_id", "number")`
   );
   // 사용자 답안. 문항당 1행만 두고 다시 고르면 갱신한다(마지막 선택이 곧 현재 답안).
@@ -104,9 +109,9 @@ function parseJsonArray(raw: string | null): string[] {
 export async function listQuestions(examId: string): Promise<Omit<MockExamQuestion, "answer">[]> {
   await ensureMockExamQuestionTables();
   const rows = await prisma.$queryRawUnsafe<
-    { number: number; image_url: string; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null }[]
+    { number: number; image_url: string; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null; stem_is_title: string | null }[]
   >(
-    `SELECT "number", "image_url", "choice_count", "title", "passage_urls", "stem_url", "choice_urls"
+    `SELECT "number", "image_url", "choice_count", "title", "passage_urls", "stem_url", "choice_urls", "stem_is_title"
      FROM "MockExamQuestion" WHERE "exam_id" = $1 ORDER BY "number" ASC`,
     examId
   );
@@ -119,6 +124,7 @@ export async function listQuestions(examId: string): Promise<Omit<MockExamQuesti
       title: r.title,
       passageUrls: parseJsonArray(r.passage_urls),
       stemUrl: r.stem_url,
+      stemIsTitle: r.stem_is_title === "1",
       // 5장이 온전히 있을 때만 탭 UI 를 쓴다(일부만 있으면 통짜로 폴백).
       choiceUrls: choices.length === 5 && r.stem_url ? choices : null,
     };
@@ -183,9 +189,9 @@ export async function grade(userId: string, examId: string): Promise<{
 }> {
   await ensureMockExamQuestionTables();
   const rows = await prisma.$queryRawUnsafe<
-    { number: number; image_url: string; answer: number; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null; selected: number | null }[]
+    { number: number; image_url: string; answer: number; choice_count: number; title: string | null; passage_urls: string | null; stem_url: string | null; choice_urls: string | null; stem_is_title: string | null; selected: number | null }[]
   >(
-    `SELECT q."number", q."image_url", q."answer", q."choice_count", q."title", q."passage_urls", q."stem_url", q."choice_urls", a."selected"
+    `SELECT q."number", q."image_url", q."answer", q."choice_count", q."title", q."passage_urls", q."stem_url", q."choice_urls", q."stem_is_title", a."selected"
      FROM "MockExamQuestion" q
      LEFT JOIN "MockExamAnswer" a
        ON a."exam_id" = q."exam_id" AND a."number" = q."number" AND a."user_id" = $2
@@ -204,6 +210,7 @@ export async function grade(userId: string, examId: string): Promise<{
       title: r.title,
       passageUrls: parseJsonArray(r.passage_urls),
       stemUrl: r.stem_url,
+      stemIsTitle: r.stem_is_title === "1",
       choiceUrls: choices.length === 5 && r.stem_url ? choices : null,
       selected: r.selected,
       // answer 0 = 전항 정답 → 아무거나 고르기만 하면 정답.

@@ -71,10 +71,32 @@ for p in 1...doc.numberOfPages {
 // 쪽번호 도형은 읽힌 숫자보다 위로 더 올라와 있다(박스 위 사선). 넉넉히 0.02 위에서 자른다.
 // Vision 이 푸터를 못 읽는 페이지가 실제로 있어(도형 안 숫자), 검출 실패 시에도 문서 전체에서
 // 관측된 푸터 위치(최솟값)를 폴백으로 쓴다 — 쪽번호 위치는 시험지 전체에서 같다.
+// ⚠️ 하한을 너무 위로 올리면 마지막 줄 ⑤(y≈0.893)가 잘려 선택지 분리가 통째로 무너진다
+// (생윤 8·13·15·18 등에서 실제로 발생). 그래서 (1) 본문 마지막 줄 아래는 반드시 남기고,
+// (2) 그 아래에 있는 푸터만 잘라낸다. 폴백도 절대 본문을 침범하지 않게 0.945 로 둔다.
 var globalFootTop: Double = 1.0
-func colBottom(_ p: Int) -> Double {
+func lastBodyLineBottom(_ p: Int, _ c: Int) -> Double {
+    let two = pageTwoCol(p)
+    var maxY = 0.0
+    for l in (pageLines[p] ?? []) {
+        let lc = two ? (l.x < 0.45 ? 0 : 1) : 0
+        guard lc == c, l.yBot < 0.93, l.text.count > 3 else { continue }   // 푸터 후보 제외
+        maxY = max(maxY, l.yBot)
+    }
+    return maxY
+}
+func colBottom(_ p: Int, _ c: Int) -> Double {
     let ft = footTop[p] ?? globalFootTop
-    return min(0.94, ft - 0.02)
+    // 푸터 도형은 읽힌 숫자보다 위(사선)까지 차지하므로 0.02 위에서 자르되,
+    // 본문 마지막 줄 아래 여백(0.006)은 반드시 남긴다.
+    // 원칙: 본문 마지막 줄(⑤ 등)은 절대 자르지 않는다. 그 줄 바로 아래(+0.004)를 하한으로 두고,
+    // 쪽번호 도형이 그보다 아래에 있을 때만 그 도형 윗변까지로 좁힌다.
+    // 동아시아사처럼 ⑤(y 0.893~0.907)와 쪽번호(0.908)가 0.001 간격으로 붙은 조판이 있어,
+    // 도형 여유(0.012)를 먼저 빼면 ⑤ 허리를 자른다 — 그래서 floor 를 우선한다.
+    let floor = lastBodyLineBottom(p, c) + 0.004
+    let footerTop = ft - 0.006                       // 도형 윗변 근사(사선 포함)
+    if floor <= 0.5 { return min(0.945, footerTop) } // 본문을 못 찾은 페이지: 푸터 기준
+    return min(0.945, max(floor, min(floor + 0.03, footerTop)))
 }
 // 페이지 상단 제목 밴드("…학력평가 문제지 / 국어 영역 / 제N교시") 아래가 본문 시작이다.
 // 연속 단(다음 페이지로 이어지는 문항/지문)의 시작을 여기로 잡지 않으면 헤더가 크롭에 딸려 들어온다.
@@ -195,7 +217,7 @@ func segments(fromPage p0: Int, col c0: Int, y y0: Double, ownKey: Double) -> [S
     var segs: [Seg] = []
     var p = p0, c = c0, y = y0
     while true {
-        let bot = colBottom(p)
+        let bot = colBottom(p, c)
         if let nx = next {
             let nxPage = Int(nx.key / 100)
             let nxCol = Int((nx.key - Double(nxPage) * 100) / 10)
@@ -288,7 +310,7 @@ func vtrim(_ img: CGImage) -> CGImage? {
 
 // ── 4) u-공간(세그먼트 이어붙인 좌표)에서 선택지/제목 찾기 ──
 let CIRCLED: [Character] = ["①","②","③","④","⑤"]
-struct ULine { let text: String; let u: Double }
+struct ULine { let text: String; let u: Double; let uBot: Double }
 func uLines(_ segs: [Seg]) -> [ULine] {
     var base = 0.0
     var out: [ULine] = []
@@ -297,7 +319,7 @@ func uLines(_ segs: [Seg]) -> [ULine] {
             let two = pageTwoCol(s.page)
             let lc = two ? (l.x < 0.45 ? 0 : 1) : 0
             guard lc == s.col, l.yTop >= s.y0 - 0.003, l.yTop < s.y1 - 0.003 else { continue }
-            out.append(ULine(text: l.text, u: base + (l.yTop - s.y0)))
+            out.append(ULine(text: l.text, u: base + (l.yTop - s.y0), uBot: base + (l.yBot - s.y0)))
         }
         base += s.y1 - s.y0
     }
@@ -353,18 +375,41 @@ for q in seq {
     let us = CIRCLED.compactMap { markerU[$0] }
     let totalU = segs.reduce(0.0) { $0 + ($1.y1 - $1.y0) }
     if !inline && us.count == 5 && zip(us, us.dropFirst()).allSatisfy({ $0 < $1 }) {
+        // 선택지 k 의 하한 = 다음 마커(k+1) 위쪽 줄들 중 마지막 줄의 '하단' + 여유.
+        // 예전엔 다음 마커 상단(-0.004)에서 잘라 두 줄짜리 선택지의 둘째 줄 하단이
+        // 잘리고 그 조각이 다음 카드 위에 붙어 보였다(사용자 스크린샷의 ③④).
+        // 다음 마커 상단을 넘지는 않게 clamp 한다.
+        func bottomBefore(_ nextU: Double, after: Double) -> Double {
+            let below = lines.filter { $0.u > after + 0.001 && $0.u < nextU - 0.001 }
+            let lastBot = below.map { $0.uBot }.max() ?? after
+            return min(nextU - 0.0015, max(lastBot + 0.0035, after + 0.008))
+        }
         let stemName = String(format: "q%02d_s.jpg", q.num)
         let stemOK = stitchAndSave(slice(segs, 0, us[0] - 0.004), stemName)
+        // 인접 카드가 같은 경계를 공유해야 한다 — 하한만 내리고 다음 카드 상한을 그대로 두면
+        // 앞 선택지 꼬리가 다음 카드 위에 붙는다. 경계 배열을 한 번 만들어 양쪽이 같이 쓴다.
+        var bounds: [Double] = [us[0] - 0.004]
+        for k in 0..<4 {
+            let ownBot = lines.first { abs($0.u - us[k]) < 0.001 }?.uBot ?? us[k]
+            let bb = bottomBefore(us[k+1], after: us[k])
+            bounds.append(max(bb, min(us[k+1] - 0.0015, ownBot + 0.0035)))
+        }
+        bounds.append(totalU)
         var names: [String] = []
         for k in 0..<5 {
-            let uA = us[k] - 0.004
-            let uB = k == 4 ? totalU : us[k+1] - 0.004
             let nm = String(format: "q%02d_c%d.jpg", q.num, k+1)
-            if stitchAndSave(slice(segs, uA, uB), nm) { names.append(nm) }
+            if stitchAndSave(slice(segs, bounds[k], bounds[k+1]), nm) { names.append(nm) }
         }
         if stemOK && names.count == 5 {
             entry["stem"] = stemName
             entry["choices"] = names
+            // 발문(stem) 구간의 줄 수. 제목으로 뽑은 발문 문장(≤3줄)만 있고 <보기>·자료가 없으면
+            // 앱에서 stem 이미지를 생략한다(헤더 제목과 같은 문장이 두 번 보이는 것 방지).
+            let stemLines = lines.filter { $0.u < us[0] - 0.004 }
+            let titleLineCount = max(1, title.split(separator: " ").count > 0 ? min(3, stemLines.count) : 1)
+            let hasBox = stemLines.contains { $0.text.contains("보 기") || $0.text.contains("보기>") || $0.text.contains("<보") }
+            entry["stemIsTitle"] = (!title.isEmpty && !hasBox && stemLines.count <= 3)
+            _ = titleLineCount
             splitCount += 1
         }
     }

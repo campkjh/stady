@@ -17,6 +17,8 @@ interface Question {
   passageUrls: string[];
   /** 발문만 잘라낸 이미지. choiceUrls 와 함께 있을 때만 사용. */
   stemUrl: string | null;
+  /** 발문이 헤더 제목과 같은 한 문장뿐이면 true → stem 이미지를 생략한다. */
+  stemIsTitle?: boolean;
   /** 선택지 ①~⑤ 이미지. 있으면 이 이미지를 직접 탭해 고른다. */
   choiceUrls: string[] | null;
 }
@@ -252,15 +254,20 @@ export default function MockExamSolver({
         <PassageBlock key={`p-${current.passageUrls[0]}`} urls={current.passageUrls} />
       )}
 
-      <div className="solver-image">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          key={current.stemUrl ?? current.imageUrl}
-          src={current.choiceUrls ? current.stemUrl! : current.imageUrl}
-          alt={`${current.number}번 문항`}
-          decoding="async"
-        />
-      </div>
+      {/* 선택지가 분리된 문항은 발문 이미지(stem)를 보여준다. 단, 발문이 짧은 한 문장뿐이라
+          헤더 제목과 같은 내용이면(stemIsTitle) 두 번 보이니 생략한다 — <보기>·자료가 딸린
+          발문은 계속 보여준다. 판정은 추출 단계에서 줄 수로 해서 서버 데이터로 온다. */}
+      {!(current.choiceUrls && current.stemIsTitle) && (
+        <div className="solver-image">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={current.stemUrl ?? current.imageUrl}
+            src={current.choiceUrls ? current.stemUrl! : current.imageUrl}
+            alt={`${current.number}번 문항`}
+            decoding="async"
+          />
+        </div>
+      )}
 
       {/* 선택지가 분리된 문항: 실제 선택지 문장을 탭해서 고른다 */}
       {current.choiceUrls && (
