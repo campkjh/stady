@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import LoginRequired from "@/components/LoginRequired";
 import MyActivityCard from "@/components/MyActivityCard";
-import SubscribePopup from "@/components/SubscribePopup";
 
 interface Entitlement {
   active: boolean;
@@ -83,19 +82,8 @@ export default function MyPage() {
     if (isLoggedIn) loadSub();
   }, [isLoggedIn, loadSub]);
 
-  // 프리미엄 구독 팝업 — 마이페이지의 '구독하기'를 눌렀을 때만 노출(자동 노출 안 함).
-  const [showSub, setShowSub] = useState(false);
-
-  const subPopup = <SubscribePopup open={showSub} onClose={() => setShowSub(false)} />;
-
   if (isLoggedIn === null) return null;
-  if (isLoggedIn === false)
-    return (
-      <>
-        {subPopup}
-        <LoginRequired />
-      </>
-    );
+  if (isLoggedIn === false) return <LoginRequired />;
 
   async function handleLogout() {
     try {
@@ -109,7 +97,6 @@ export default function MyPage() {
 
   return (
     <div style={{ background: "#fff", minHeight: "100vh" }}>
-      {subPopup}
       {/* Profile settings */}
       <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
         <span style={iconBox}>
@@ -141,25 +128,23 @@ export default function MyPage() {
               }`
             : "1등급을 위한 학습자료를 놓치지 마세요!"}
         </p>
-        <button
-          type="button"
-          onClick={() => setShowSub(true)}
+        <Link
+          href="/subscribe"
           className="press"
           style={{
             display: "inline-block",
             marginTop: 16,
-            border: "none",
             borderRadius: 8,
             background: "rgba(7,25,76,0.05)",
             color: "#4E5968",
             padding: "9px 18px",
             fontSize: 14,
             fontWeight: 700,
-            cursor: "pointer",
+            textDecoration: "none",
           }}
         >
           {active ? "구독 관리" : "구독하기"}
-        </button>
+        </Link>
       </div>
 
       {/* Menu group 1 */}
