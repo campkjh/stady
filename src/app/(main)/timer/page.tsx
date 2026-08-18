@@ -59,11 +59,11 @@ const ACCENT_BG = "#D3E4FF";
 const TEXT_MUTED = "#9CA3AF";
 
 const TIMER_TABS = [
-  { key: "status" as const, label: "공부현황", icon: "/icons/공부현황.png" },
-  { key: "ranking" as const, label: "투데이랭킹", icon: "/icons/투데이랭킹.png" },
-  { key: "friends" as const, label: "친구", icon: "/icons/친구.png" },
-  { key: "badges" as const, label: "뱃지", icon: "/icons/뱃지.png" },
-  { key: "analysis" as const, label: "분석", icon: "/icons/분석.png" },
+  { key: "status" as const, label: "공부현황", icon: "/icons/timer-status.png" },
+  { key: "ranking" as const, label: "투데이랭킹", icon: "/icons/timer-ranking.png" },
+  { key: "friends" as const, label: "친구", icon: "/icons/timer-friends.png" },
+  { key: "badges" as const, label: "뱃지", icon: "/icons/timer-badge.png" },
+  { key: "analysis" as const, label: "분석", icon: "/icons/timer-analysis.png" },
 ];
 const OFFLINE_FILL = "#E5E7EB";
 const LOCKED_BADGE_IMAGE = "/badges/locked.png";
