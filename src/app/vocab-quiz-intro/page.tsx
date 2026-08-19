@@ -11,9 +11,19 @@ interface VocabQuizSet {
   totalQuestions: number;
 }
 
+interface QuizSummaryEntry {
+  answered: number;
+  total: number;
+  completed: boolean;
+  bestPct: number | null;
+}
+
+type QuizSummaryMap = Record<string, QuizSummaryEntry>;
+
 export default function VocabQuizListPage() {
   const router = useRouter();
   const [quizSets, setQuizSets] = useState<VocabQuizSet[]>([]);
+  const [summary, setSummary] = useState<QuizSummaryMap>({});
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const dailyMessage = getDailyQuizMessage("vocab");
@@ -32,9 +42,15 @@ export default function VocabQuizListPage() {
         .then((res) => res.json())
         .then((data) => data.vocabQuizSets ?? [])
         .catch(() => []),
-    ]).then(([loggedIn, sets]) => {
+      // 진행 상태 요약. 실패/비로그인이어도 목록은 그대로 뜨도록 항상 빈 객체로 폴백한다.
+      fetch("/api/quiz-summary", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => (data?.vocab ?? {}) as QuizSummaryMap)
+        .catch(() => ({} as QuizSummaryMap)),
+    ]).then(([loggedIn, sets, vocabSummary]) => {
       setIsLoggedIn(loggedIn);
       setQuizSets(sets);
+      setSummary(vocabSummary);
       setLoading(false);
     });
   }, []);
@@ -106,22 +122,65 @@ export default function VocabQuizListPage() {
 
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
         <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
-          {quizSets.map((qs, i) => (
-            <button
-              key={qs.id}
-              type="button"
-              onClick={() => openQuiz(qs.id)}
-              className="press"
-              style={{
-                width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "var(--c-bg)",
-                border: "1px solid var(--c-brand-line-7)", fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", textAlign: "center",
-                boxShadow: "0 4px 16px rgba(126,166,232,0.12)", flexShrink: 0,
-                animation: "quizItemFadeUp 0.5s",
-              }}
-            >
-              {qs.title}
-            </button>
-          ))}
+          {quizSets.map((qs) => {
+            const stat = summary[qs.id];
+            // 분모는 요약의 라이브 total 우선, 없으면 목록이 이미 가진 totalQuestions.
+            const denom = stat?.total ?? qs.totalQuestions ?? 0;
+            const answered = stat?.answered ?? 0;
+            const completed = stat?.completed === true;
+            const inProgress = !completed && answered > 0;
+            const progressPct = denom > 0 ? Math.min(100, Math.round((answered / denom) * 100)) : 0;
+            return (
+              <button
+                key={qs.id}
+                type="button"
+                onClick={() => openQuiz(qs.id)}
+                className="press"
+                style={{
+                  position: "relative", overflow: "hidden",
+                  width: "100%", padding: "16px 22px", borderRadius: 20,
+                  backgroundColor: completed ? "var(--c-brand-soft-2)" : "var(--c-bg)",
+                  border: `1px solid ${completed ? "var(--c-brand-line-9)" : "var(--c-brand-line-7)"}`,
+                  fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", textAlign: "center",
+                  boxShadow: "0 4px 16px rgba(126,166,232,0.12)", flexShrink: 0,
+                  animation: "quizItemFadeUp 0.5s",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <span>{qs.title}</span>
+                  {completed && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                      <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>완료</span>
+                    </span>
+                  )}
+                </span>
+                {inProgress ? (
+                  <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>
+                    {answered}/{denom} 진행 중
+                  </span>
+                ) : denom > 0 ? (
+                  <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)" }}>
+                    {denom}문항
+                    {completed && stat?.bestPct != null && (
+                      <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                    )}
+                  </span>
+                ) : null}
+                {inProgress && (
+                  <span style={{
+                    position: "absolute", left: 0, right: 0, bottom: 0, height: 4,
+                    display: "block", backgroundColor: "var(--c-bg-muted)",
+                  }}>
+                    <span style={{
+                      display: "block", height: "100%", width: `${progressPct}%`,
+                      background: "linear-gradient(90deg, var(--c-brand) 0%, var(--c-brand-deep-7) 100%)",
+                    }} />
+                  </span>
+                )}
+              </button>
+            );
+          })}
           {quizSets.length === 0 && (
             <p style={{ textAlign: "center", color: "var(--c-text-5f)", fontSize: 14 }}>등록된 단어 퀴즈가 없습니다.</p>
           )}

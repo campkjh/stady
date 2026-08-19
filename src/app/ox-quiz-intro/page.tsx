@@ -13,9 +13,19 @@ interface OxQuizSet {
   questions?: { section: string | null }[];
 }
 
+interface QuizSummaryEntry {
+  answered: number;
+  total: number;
+  completed: boolean;
+  bestPct: number | null;
+}
+
+type QuizSummaryMap = Record<string, QuizSummaryEntry>;
+
 export default function OxQuizListPage() {
   const router = useRouter();
   const [quizSets, setQuizSets] = useState<OxQuizSet[]>([]);
+  const [summary, setSummary] = useState<QuizSummaryMap>({});
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
@@ -35,9 +45,15 @@ export default function OxQuizListPage() {
         .then((res) => res.json())
         .then((data) => data.oxQuizSets ?? [])
         .catch(() => []),
-    ]).then(([loggedIn, sets]) => {
+      // 진행 상태 요약. 실패해도 목록은 그대로 뜨도록 항상 빈 객체로 폴백한다.
+      fetch("/api/quiz-summary", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => (data?.ox ?? {}) as QuizSummaryMap)
+        .catch(() => ({} as QuizSummaryMap)),
+    ]).then(([loggedIn, sets, oxSummary]) => {
       setIsLoggedIn(loggedIn);
       setQuizSets(sets);
+      setSummary(oxSummary);
       setLoading(false);
     });
   }, []);
@@ -115,6 +131,8 @@ export default function OxQuizListPage() {
         <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
           {!selectedGroup && groups.map((group, index) => {
             const totalQuestions = group.items.reduce((sum, item) => sum + item.totalQuestions, 0);
+            const doneCount = group.items.filter((item) => summary[item.id]?.completed).length;
+            const allDone = group.items.length > 0 && doneCount === group.items.length;
             return (
               <button
                 key={group.name}
@@ -122,15 +140,30 @@ export default function OxQuizListPage() {
                 onClick={() => requireLoginThen(() => setSelectedGroupName(group.name))}
                 className="press"
                 style={{
-                  width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "var(--c-bg)",
-                  border: "none", color: "var(--c-text-2)", textAlign: "center",
+                  width: "100%", padding: "20px 18px", borderRadius: 18,
+                  backgroundColor: allDone ? "var(--c-brand-soft-2)" : "var(--c-bg)",
+                  border: `1.5px solid ${allDone ? "var(--c-brand-line-10)" : "transparent"}`,
+                  color: "var(--c-text-2)", textAlign: "center",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                   animation: "quizItemFadeUp 0.5s",
                 }}
               >
-                <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>{group.name}</span>
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 900 }}>
+                  <span>{group.name}</span>
+                  {allDone && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                      <img src="/icons/quiz-allclear.svg" alt="" width={18} height={18} style={{ display: "block" }} />
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>전체 완료</span>
+                    </span>
+                  )}
+                </span>
                 <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--c-text-4)" }}>
                   {group.items.length}개 중분류 · {totalQuestions}문항
+                  {doneCount > 0 && (
+                    <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>
+                      {` · ${doneCount}/${group.items.length} 단원 완료`}
+                    </span>
+                  )}
                 </span>
               </button>
             );
@@ -150,6 +183,12 @@ export default function OxQuizListPage() {
                   const sections = (
                     Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[]
                   ).filter((s) => s.trim() !== qs.title.trim());
+                  const stat = summary[qs.id];
+                  const denom = stat && stat.total > 0 ? stat.total : qs.totalQuestions;
+                  const answered = stat?.answered ?? 0;
+                  const completed = stat?.completed ?? false;
+                  const inProgress = !completed && answered > 0;
+                  const progressPct = denom > 0 ? Math.min(100, Math.round((answered / denom) * 100)) : 0;
                   return (
                     <button
                       key={qs.id}
@@ -157,17 +196,32 @@ export default function OxQuizListPage() {
                       onClick={() => requireLoginThen(() => router.push(`/ox-quiz/${qs.id}`))}
                       className="press"
                       style={{
-                        width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "var(--c-bg)",
-                        border: "none", color: "var(--c-text-2)", textAlign: "left",
+                        position: "relative", overflow: "hidden",
+                        width: "100%", padding: "16px 18px", borderRadius: 18,
+                        backgroundColor: completed ? "var(--c-brand-soft-2)" : "var(--c-bg)",
+                        border: `1.5px solid ${completed ? "var(--c-brand-line-10)" : "transparent"}`,
+                        color: "var(--c-text-2)", textAlign: "left",
                         boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                         animation: "quizItemFadeUp 0.5s",
                       }}
                     >
-                      <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>
-                        {qs.title}
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800 }}>
+                        <span>{qs.title}</span>
+                        {completed && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                            <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
+                            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>완료</span>
+                          </span>
+                        )}
                       </span>
                       <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", textAlign: "center" }}>
                         {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{qs.totalQuestions}문항
+                        {completed && stat?.bestPct != null && (
+                          <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                        )}
+                        {inProgress && (
+                          <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
+                        )}
                       </span>
                       {sections.length > 0 && (
                         <span style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
@@ -177,7 +231,8 @@ export default function OxQuizListPage() {
                               style={{
                                 padding: "4px 8px",
                                 borderRadius: 999,
-                                backgroundColor: "var(--c-brand-soft-2)",
+                                // 완료 카드는 배경이 이미 brand-soft-2 라 칩이 묻힌다 → 카드 면색으로 뒤집는다.
+                                backgroundColor: completed ? "var(--c-bg)" : "var(--c-brand-soft-2)",
                                 color: "var(--c-brand)",
                                 fontSize: 11,
                                 fontWeight: 700,
@@ -191,6 +246,17 @@ export default function OxQuizListPage() {
                               +{sections.length - 4}
                             </span>
                           )}
+                        </span>
+                      )}
+                      {inProgress && (
+                        <span style={{
+                          position: "absolute", left: 0, right: 0, bottom: 0, height: 4,
+                          display: "block", backgroundColor: "var(--c-bg-muted)",
+                        }}>
+                          <span style={{
+                            display: "block", height: "100%", width: `${progressPct}%`,
+                            background: "linear-gradient(90deg, var(--c-brand) 0%, var(--c-brand-deep-7) 100%)",
+                          }} />
                         </span>
                       )}
                     </button>

@@ -56,6 +56,19 @@ interface VocabQuizSet {
   category: Category;
 }
 
+// GET /api/quiz-summary 응답. 기록이 있는 세트만 키로 들어온다(없으면 '미시작').
+interface QuizSummaryEntry {
+  answered: number;
+  total: number;
+  completed: boolean;
+  bestPct: number | null;
+}
+interface QuizSummary {
+  ox: Record<string, QuizSummaryEntry>;
+  vocab: Record<string, QuizSummaryEntry>;
+}
+const EMPTY_QUIZ_SUMMARY: QuizSummary = { ox: {}, vocab: {} };
+
 // 등록된 지 7일 이내면 새 퀴즈로 본다.
 const NEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 function isNewCreatedAt(createdAt: string | Date) {
@@ -70,14 +83,15 @@ function vocabEyebrow(title: string): string {
 }
 
 // 문제집(책) 표지 스타일 퀴즈 카드: 흰 표지 + 카테고리(연회색)·제목(네이비) +
-// 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기 뱃지와 진척도 바 포함.
+// 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기·완료 뱃지와 진척도 바 포함.
 function QuizBookCard({
-  eyebrow, title, isNew, isPopular, progressPct, answerRate, onClick,
+  eyebrow, title, isNew, isPopular, isDone, progressPct, answerRate, onClick,
 }: {
   eyebrow: string;
   title: string;
   isNew?: boolean;
   isPopular?: boolean;
+  isDone?: boolean;
   progressPct?: number | null;
   answerRate?: number | null;
   onClick: () => void;
@@ -156,24 +170,42 @@ function QuizBookCard({
           />
         </div>
 
-        {/* NEW 뱃지 (우측 상단) */}
-        {isNew && (
-          <span
+        {/* 완료 + NEW 뱃지 (우측 상단, 한 줄로 나란히 → 서로 겹치지 않음) */}
+        {(isNew || isDone) && (
+          <div
             style={{
               position: "absolute",
               top: "6%",
               right: "6%",
-              padding: "2px 7px",
-              borderRadius: 6,
-              background: "var(--c-danger-e)",
-              color: "#fff",
-              fontSize: "clamp(8px, 7cqw, 11px)",
-              fontWeight: 800,
-              letterSpacing: 0.3,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
             }}
           >
-            NEW
-          </span>
+            {/* 이미 다 푼 퀴즈 표시 */}
+            {isDone && (
+              <img
+                src="/icons/quiz-clear.svg"
+                alt="완료"
+                style={{ width: "clamp(15px, 16cqw, 22px)", height: "auto", display: "block" }}
+              />
+            )}
+            {isNew && (
+              <span
+                style={{
+                  padding: "2px 7px",
+                  borderRadius: 6,
+                  background: "var(--c-danger-e)",
+                  color: "#fff",
+                  fontSize: "clamp(8px, 7cqw, 11px)",
+                  fontWeight: 800,
+                  letterSpacing: 0.3,
+                }}
+              >
+                NEW
+              </span>
+            )}
+          </div>
         )}
 
         {/* 인기 뱃지 — 반짝이는 황금 도토리 + "인기" (우측 하단, NEW와 안 겹치게) */}
@@ -298,7 +330,7 @@ export default function HomeClient({
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
   const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
-  const [oxProgress, setOxProgress] = useState<Record<string, number>>(() => clientCache.get<Record<string, number>>("home-oxprogress") ?? {});
+  const [quizSummary, setQuizSummary] = useState<QuizSummary>(() => clientCache.get<QuizSummary>("home-quizsummary") ?? EMPTY_QUIZ_SUMMARY);
   // 홈에서 앱 사용 3분 뒤 별점 팝업을 기기당 1회만 띄운다.
   useEffect(() => {
     return scheduleHomeRatingOnce();
@@ -314,15 +346,18 @@ export default function HomeClient({
     router.push(linkUrl);
   }, [router]);
 
-  // OX 퀴즈별 진척도(내가 답한 문항 수). 카드에 얇은 막대로 표시.
+  // 퀴즈(OX·영단어) 세트별 진척/완료. 카드에 얇은 막대 + 완료 뱃지로 표시.
   useEffect(() => {
     if (!userName) return;
-    fetch("/api/ox-progress", { credentials: "include" })
+    fetch("/api/quiz-summary", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.progress && typeof data.progress === "object") {
-          if (clientCache.set("home-oxprogress", data.progress)) setOxProgress(data.progress);
-        }
+        if (!data || typeof data !== "object") return;
+        const next: QuizSummary = {
+          ox: data.ox && typeof data.ox === "object" ? data.ox : {},
+          vocab: data.vocab && typeof data.vocab === "object" ? data.vocab : {},
+        };
+        if (clientCache.set("home-quizsummary", next)) setQuizSummary(next);
       })
       .catch(() => {});
   }, [userName]);
@@ -385,12 +420,19 @@ export default function HomeClient({
     return name ? `${name}OX` : "OX";
   }
 
-  // OX 세트의 진척도(%) — 답한 문항 수 / 총 문항. 기록 없으면 null.
-  function oxProgressPct(id: string): number | null {
-    const answered = oxProgress[id];
-    if (answered == null) return null;
-    const total = oxQuizSets.find((o) => o.id === id)?.totalQuestions;
+  // 세트별 내 기록. 기록이 없는 세트는 키 자체가 없다(= 미시작).
+  function quizStat(type: "ox" | "vocab", id: string): QuizSummaryEntry | undefined {
+    return (type === "ox" ? quizSummary.ox : quizSummary.vocab)?.[id];
+  }
+
+  // 진척도(%) — 답한 문항 수 / 총 문항. 분모는 서버 실집계(total) 우선, 없으면 세트의 totalQuestions.
+  function quizProgressPct(type: "ox" | "vocab", id: string, fallbackTotal: number): number | null {
+    const stat = quizStat(type, id);
+    if (!stat) return null;
+    const total = stat.total || fallbackTotal;
     if (!total) return null;
+    const answered = stat.completed ? Math.max(stat.answered ?? 0, total) : stat.answered ?? 0;
+    if (!answered) return null;
     return Math.min(100, Math.round((answered / total) * 100));
   }
 
@@ -709,7 +751,8 @@ export default function HomeClient({
                   title={q.title}
                   isNew
                   isPopular={q.isPopular}
-                  progressPct={q.type === "ox" ? oxProgressPct(q.id) : null}
+                  isDone={quizStat(q.type, q.id)?.completed === true}
+                  progressPct={quizProgressPct(q.type, q.id, q.totalQuestions)}
                   onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
                 />
               ))}

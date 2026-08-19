@@ -90,8 +90,9 @@ function SwipeableVocabBookmarkItem({
       style={{
         position: "relative",
         overflow: "hidden",
-        borderBottom: isLast ? "none" : "1px solid var(--c-bg-muted)",
-        background: "var(--c-danger)",
+        // 구분선은 아래 '덮개' 버튼이 그린다. 여기(래퍼)에 border 를 주면 행 높이가 반픽셀일 때
+        // 뒤에 깔린 삭제 버튼의 빨강이 border 영역으로 새어나와 목록에 붉은 줄이 그어진 것처럼 보인다.
+        background: "var(--c-bg)",
       }}
     >
       <button
@@ -128,6 +129,7 @@ function SwipeableVocabBookmarkItem({
           padding: "14px 16px",
           background: "var(--c-bg)",
           border: "none",
+          borderBottom: isLast ? "none" : "1px solid var(--c-bg-muted)",
           cursor: "pointer",
           textAlign: "left",
           transform: `translateX(${offsetX}px)`,
