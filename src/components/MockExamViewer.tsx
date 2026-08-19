@@ -872,7 +872,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const widthPresets = tool === "highlight" ? [12, 18, 26] : [2, 4, 7];
 
   return (
-    <div style={{ height: "100dvh", background: "#EDEFF2", display: "flex", flexDirection: "column" }}>
+    <div className="mock-viewer-root" style={{ background: "#EDEFF2", display: "flex", flexDirection: "column" }}>
       {/* 상단 바 — 시험지 제목/문서 액션 */}
       <div
         style={{
@@ -1086,6 +1086,12 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       </div>
 
       <style>{`
+        /* 뷰어 높이. 반드시 vh 를 먼저 쓰고 dvh 로 덮어쓴다.
+           dvh 는 구형 Android WebView(Chromium 108 미만)에서 미지원이라, height:100dvh 만 두면
+           선언 자체가 무시되어 높이가 auto(=0)가 되고 그 안의 flex:1 스크롤 영역도 0px 로 접힌다
+           → 시험지가 로드돼도 흰 화면(갤럭시탭 앱 신고). 인라인 스타일은 폴백을 못 쓰므로 클래스로. */
+        .mock-viewer-root { height: 100vh; }
+        @supports (height: 100dvh) { .mock-viewer-root { height: 100dvh; } }
         .mock-section-menu {
           animation: mockSectionMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
         }
