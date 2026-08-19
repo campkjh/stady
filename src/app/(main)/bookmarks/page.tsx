@@ -369,7 +369,7 @@ export default function BookmarksPage() {
         <button
           type="button"
           onClick={() => router.push(`/retest?source=bookmark&type=${activeTab || "all"}`)}
-          className="press"
+          className="press bm-review-card"
           style={{
             position: "relative",
             width: "100%",
@@ -378,7 +378,8 @@ export default function BookmarksPage() {
             border: "none",
             marginBottom: 20,
             padding: "20px 18px",
-            background: "linear-gradient(115deg, #F2F6FC 0%, #F4F3FB 62%, #F3EFFA 100%)",
+            // 라이트: 연한 파랑→보라 그라디언트. 다크: 같은 색상 흐름을 어두운 톤으로(카드가 흰 판처럼 튀지 않게).
+            background: "var(--bm-card-bg, linear-gradient(115deg, #F2F6FC 0%, #F4F3FB 62%, #F3EFFA 100%))",
             textAlign: "left",
             overflow: "hidden",
             display: "block",
@@ -563,6 +564,9 @@ export default function BookmarksPage() {
         @media (prefers-reduced-motion: reduce) {
           .bm-ring-glow, .bm-ring-train { animation: none; }
         }
+        /* 다크: 카드가 흰 판처럼 튀지 않게 같은 파랑→보라 흐름을 어두운 톤으로. 링 선도 살짝 밝혀 보이게. */
+        [data-theme="dark"] .bm-review-card { --bm-card-bg: linear-gradient(115deg, #1C2130 0%, #201E2E 62%, #241F33 100%); }
+        [data-theme="dark"] .bm-ring::before { border-color: rgba(150, 160, 255, 0.22); }
       `}</style>
 
       {/* 모든 책갈피 취소 확인 모달 (WebView에서 window.confirm 미동작 → 인앱 모달) */}

@@ -1166,8 +1166,10 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
       </button>
       {/* Avatar bubble - 점등식 */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
+        {/* 원형 버블. 이미지는 absolute 로 띄운다 — flex 아이템으로 두면 업로드 사진의 고유 높이가
+            부모(aspectRatio 1/1)를 세로로 밀어 올려 타원이 된다(실사용자 아바타에서 발생). */}
         <div style={{
-          width: "100%", height: "100%", borderRadius: "50%",
+          position: "absolute", inset: 0, borderRadius: "50%",
           background: lit
             ? "linear-gradient(135deg, var(--c-brand-line-4) 0%, var(--c-brand-soft) 100%)"
             : "var(--c-bg-muted)",
@@ -1176,7 +1178,6 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
             : lit
               ? `2px solid ${PRIMARY}`
               : "2px solid var(--c-border)",
-          display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden",
           transition: "all 0.3s ease",
           animation: lit ? "litPulse 2.4s ease-in-out infinite" : "none",
@@ -1187,13 +1188,13 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
               src={user.avatar}
               alt=""
               style={{
-                width: "100%", height: "100%", objectFit: "cover",
+                position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
                 opacity: lit ? 1 : 0.45,
                 filter: lit ? "none" : "grayscale(1)",
               }}
             />
           ) : (
-            <img src={lit ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: lit ? 1 : 0.62 }} />
+            <img src={lit ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: lit ? 1 : 0.62 }} />
           )}
         </div>
         {/* Status dot */}

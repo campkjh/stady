@@ -1147,6 +1147,10 @@ body {
 /* 탭 레일 선택 아이콘: cg-*-on.svg 등 mono 아이콘이 진한 회색으로 고정돼 있어 다크 선택 박스 위에서
    비선택보다 어두워진다(강조 반전). 다크에서 밝게 뒤집는다. */
 [data-theme="dark"] .tabrail-item.is-on .tabrail-ico img { filter: brightness(0) invert(0.9); }
+/* 컬러 일러스트 레일의 비활성 아이콘: 라이트에선 grayscale 로 눌러도 흰 배경 위라 형태가 보이지만
+   다크에선 어두운 회색이 어두운 배경에 묻힌다 → 밝기를 올려 밝은 회색 실루엣으로. */
+[data-theme="dark"] .tabrail.is-illustrated .tabrail-ico img { filter: grayscale(1) brightness(2.4); opacity: 0.5; }
+[data-theme="dark"] .tabrail.is-illustrated .tabrail-item.is-on .tabrail-ico img { filter: none; opacity: 1; }
 /* 시트/모달 면: 페이지 배경과 같으면 다크에서 딤 위에서 구분이 안 된다 → 한 단계 띄운 면 */
 :root { --c-bg-elevated: #FFFFFF; }
 [data-theme="dark"] { --c-bg-elevated: #22222A; }
