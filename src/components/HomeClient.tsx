@@ -96,6 +96,14 @@ function QuizBookCard({
   answerRate?: number | null;
   onClick: () => void;
 }) {
+  // 우측 상단 배지 줄(완료 아이콘 + NEW)이 차지하는 폭. 카테고리 라벨이 그 아래로 깔려
+  // 가려지지 않도록, 같은 폭만큼 라벨 오른쪽 여백을 비워 둔다(넘치면 말줄임).
+  const badgeWidths: string[] = [];
+  if (isDone) badgeWidths.push("clamp(15px, 16cqw, 22px)");
+  if (isNew) badgeWidths.push("calc(clamp(8px, 7cqw, 11px) * 2 + 16px)");
+  const eyebrowPaddingRight = badgeWidths.length
+    ? `calc(${badgeWidths.join(" + ")} + ${3 * (badgeWidths.length - 1) + 4}px)`
+    : undefined;
   return (
     <button
       type="button"
@@ -120,6 +128,7 @@ function QuizBookCard({
           <p
             style={{
               margin: 0,
+              paddingRight: eyebrowPaddingRight,
               fontSize: "clamp(10px, 9.3cqw, 14px)",
               fontWeight: 500,
               color: "var(--c-text-4)",
@@ -235,13 +244,13 @@ function QuizBookCard({
         {progressPct != null && progressPct > 0 && (
           <div
             aria-hidden="true"
-            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 4, background: "rgba(43,49,61,0.07)" }}
+            style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 4, background: "var(--c-bg-muted-4)" }}
           >
             <div
               style={{
                 height: "100%",
                 width: `${Math.min(100, progressPct)}%`,
-                background: "linear-gradient(90deg, #7DC4FF, #3787FF)",
+                background: "linear-gradient(90deg, var(--c-brand) 0%, var(--c-brand-deep-7) 100%)",
                 borderTopRightRadius: 4,
                 borderBottomRightRadius: 4,
                 transition: "width 0.4s ease",
@@ -404,8 +413,8 @@ export default function HomeClient({
 
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
   const newQuizzes = [
-    ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt })),
-    ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt })),
+    ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: q.answerRate ?? null })),
+    ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: null })),
   ]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
@@ -426,12 +435,14 @@ export default function HomeClient({
   }
 
   // 진척도(%) — 답한 문항 수 / 총 문항. 분모는 서버 실집계(total) 우선, 없으면 세트의 totalQuestions.
+  // 완료 여부로 막대를 100%까지 채우지 않는다(세트에 문항이 추가되면 미완료분이 감춰진다).
+  // 완료는 배지(isDone)라는 별도 축으로 그린다.
   function quizProgressPct(type: "ox" | "vocab", id: string, fallbackTotal: number): number | null {
     const stat = quizStat(type, id);
     if (!stat) return null;
     const total = stat.total || fallbackTotal;
     if (!total) return null;
-    const answered = stat.completed ? Math.max(stat.answered ?? 0, total) : stat.answered ?? 0;
+    const answered = stat.answered ?? 0;
     if (!answered) return null;
     return Math.min(100, Math.round((answered / total) * 100));
   }
@@ -753,6 +764,7 @@ export default function HomeClient({
                   isPopular={q.isPopular}
                   isDone={quizStat(q.type, q.id)?.completed === true}
                   progressPct={quizProgressPct(q.type, q.id, q.totalQuestions)}
+                  answerRate={q.answerRate}
                   onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
                 />
               ))}

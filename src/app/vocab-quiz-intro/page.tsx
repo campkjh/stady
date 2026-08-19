@@ -42,17 +42,17 @@ export default function VocabQuizListPage() {
         .then((res) => res.json())
         .then((data) => data.vocabQuizSets ?? [])
         .catch(() => []),
-      // 진행 상태 요약. 실패/비로그인이어도 목록은 그대로 뜨도록 항상 빈 객체로 폴백한다.
-      fetch("/api/quiz-summary", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => (data?.vocab ?? {}) as QuizSummaryMap)
-        .catch(() => ({} as QuizSummaryMap)),
-    ]).then(([loggedIn, sets, vocabSummary]) => {
+    ]).then(([loggedIn, sets]) => {
       setIsLoggedIn(loggedIn);
       setQuizSets(sets);
-      setSummary(vocabSummary);
       setLoading(false);
     });
+
+    // 진행 상태 요약은 독립 체인. 목록 렌더(loading)를 절대 막지 않고 나중에 채워진다.
+    fetch("/api/quiz-summary", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setSummary((d?.vocab ?? {}) as QuizSummaryMap))
+      .catch(() => {});
   }, []);
 
   function openQuiz(quizId: string) {
@@ -65,14 +65,14 @@ export default function VocabQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(180deg, #E8F0FE 0%, #DEE9FB 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(180deg, var(--voca-intro-top) 0%, var(--voca-intro-bottom) 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#7EA6E8]/30 border-t-[#7EA6E8]" />
       </div>
     );
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", background: "linear-gradient(180deg, #E8F0FE 0%, #DEE9FB 100%)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", background: "linear-gradient(180deg, var(--voca-intro-top) 0%, var(--voca-intro-bottom) 100%)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => router.back()}
@@ -124,12 +124,14 @@ export default function VocabQuizListPage() {
         <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
           {quizSets.map((qs) => {
             const stat = summary[qs.id];
-            // 분모는 요약의 라이브 total 우선, 없으면 목록이 이미 가진 totalQuestions.
-            const denom = stat?.total ?? qs.totalQuestions ?? 0;
+            // 분모는 요약의 라이브 total 우선, 없거나 0이면 목록이 이미 가진 totalQuestions.
+            const denom = stat?.total && stat.total > 0 ? stat.total : (qs.totalQuestions ?? 0);
             const answered = stat?.answered ?? 0;
             const completed = stat?.completed === true;
             const inProgress = !completed && answered > 0;
             const progressPct = denom > 0 ? Math.min(100, Math.round((answered / denom) * 100)) : 0;
+            // 표시용 분자는 분모를 넘지 않게 클램프("30/25 진행 중" 방지).
+            const shown = Math.min(answered, denom);
             return (
               <button
                 key={qs.id}
@@ -157,7 +159,7 @@ export default function VocabQuizListPage() {
                 </span>
                 {inProgress ? (
                   <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>
-                    {answered}/{denom} 진행 중
+                    {shown}/{denom} 진행 중
                   </span>
                 ) : denom > 0 ? (
                   <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)" }}>
@@ -187,12 +189,15 @@ export default function VocabQuizListPage() {
         </div>
         <div style={{
           position: "absolute", bottom: 40, left: 20, right: 20, height: 48,
-          background: "linear-gradient(to top, #DEE9FB, transparent)",
+          background: "linear-gradient(to top, var(--voca-intro-bottom), transparent)",
           pointerEvents: "none",
         }} />
       </div>
 
       <style>{`
+        /* OX 인트로와 같은 이유: 배경만 어두운 톤으로 낮춰야 다크에서 카드와 부딪히지 않는다. */
+        :root { --voca-intro-top: #E8F0FE; --voca-intro-bottom: #DEE9FB; }
+        [data-theme="dark"] { --voca-intro-top: #171B26; --voca-intro-bottom: #1C2130; }
         @keyframes vocaCardFront {
           0%, 100% { transform: translateY(0) rotate(-2deg); }
           50% { transform: translateY(-6px) rotate(-1deg); }

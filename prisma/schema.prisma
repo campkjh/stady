@@ -279,6 +279,7 @@ model OxQuestion {
 
   oxQuizSet OxQuizSet  @relation(fields: [oxQuizSetId], references: [id], onDelete: Cascade)
   answers   OxAnswer[]
+  @@index([oxQuizSetId])
 }
 
 model OxAnswer {
@@ -290,6 +291,8 @@ model OxAnswer {
 
   attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question OxQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@index([attemptId])
+  @@index([questionId])
 }
 
 model VocabQuizSet {
@@ -321,6 +324,7 @@ model VocabQuestion {
 
   vocabQuizSet VocabQuizSet @relation(fields: [vocabQuizSetId], references: [id], onDelete: Cascade)
   answers      VocabAnswer[]
+  @@index([vocabQuizSetId])
 }
 
 model VocabAnswer {
@@ -332,6 +336,8 @@ model VocabAnswer {
 
   attempt  QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question VocabQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@index([attemptId])
+  @@index([questionId])
 }
 
 model QuizAttempt {
@@ -354,6 +360,9 @@ model QuizAttempt {
   problemAnswers ProblemAnswer[]
   oxAnswers      OxAnswer[]
   vocabAnswers   VocabAnswer[]
+  @@index([userId])
+  @@index([userId, oxQuizSetId])
+  @@index([userId, vocabQuizSetId])
 }
 
 model Inquiry {

@@ -102,7 +102,16 @@ export async function GET() {
     const bucketOf = (kind: string) => (kind === "vocab" ? vocabAcc : oxAcc);
 
     const [attemptRows, answeredRows, progressRows] = await Promise.all([
-      // 1) 제출(QuizAttempt) 집계: 세트별 제출 존재 여부 + 최고 정답률. ox/vocab 을 UNION ALL 로 한 번에.
+      // 1) 제출(QuizAttempt) 집계: 세트별 '완주' 제출 존재 여부 + 최고 정답률. ox/vocab 을 UNION ALL 로 한 번에.
+      //
+      //    ★ totalScore 게이트가 핵심이다.
+      //    책갈피 복습(/ox-quiz/{id}?bookmark=1)은 그 세트의 북마크된 문항만 로드해 풀고,
+      //    세트 전체를 푼 것과 **똑같은 submit 라우트**를 호출한다. 그래서 QuizAttempt 행이 있다는 사실만으로
+      //    '완료'를 판정하면, 1문항만 복습해도 30문항 세트가 Clear 로 뜬다.
+      //    (실제 데이터에서도 OX 제출 15,909건 중 1,801건이 이런 부분 회차였다.)
+      //    totalScore = 그 회차에 제출된 문항 수이므로, 세트의 라이브 문항 수 이상일 때만 완주로 인정한다.
+      //    bestPct 도 같은 WHERE 로 걸러야 한다 — 안 그러면 오답 9문항만 복습해 다 맞힌 회차가 100% 로 잡혀
+      //    실제 최고 정답률(예: 70%)을 덮어쓴다. 오답 자동 책갈피 때문에 이건 예외가 아니라 기본 동선이다.
       prisma.$queryRawUnsafe<{ kind: string; set_id: string; attempts: bigint; best_pct: number | null }[]>(
         `
           SELECT 'ox' AS kind,
@@ -112,7 +121,11 @@ export async function GET() {
                           THEN ROUND(t."score"::numeric * 100 / t."totalScore")::int
                      END) AS best_pct
           FROM "QuizAttempt" t
-          WHERE t."userId" = $1 AND t."oxQuizSetId" IS NOT NULL
+          WHERE t."userId" = $1
+            AND t."oxQuizSetId" IS NOT NULL
+            AND t."totalScore" >= (
+              SELECT COUNT(*) FROM "OxQuestion" oq WHERE oq."oxQuizSetId" = t."oxQuizSetId"
+            )
           GROUP BY t."oxQuizSetId"
           UNION ALL
           SELECT 'vocab' AS kind,
@@ -122,7 +135,11 @@ export async function GET() {
                           THEN ROUND(t."score"::numeric * 100 / t."totalScore")::int
                      END) AS best_pct
           FROM "QuizAttempt" t
-          WHERE t."userId" = $1 AND t."vocabQuizSetId" IS NOT NULL
+          WHERE t."userId" = $1
+            AND t."vocabQuizSetId" IS NOT NULL
+            AND t."totalScore" >= (
+              SELECT COUNT(*) FROM "VocabQuestion" vq WHERE vq."vocabQuizSetId" = t."vocabQuizSetId"
+            )
           GROUP BY t."vocabQuizSetId"
         `,
         user.id
@@ -196,11 +213,18 @@ export async function GET() {
     const build = (accMap: Map<string, Acc>, totals: Map<string, number>): SummaryMap => {
       const out: SummaryMap = {};
       for (const [setId, acc] of accMap) {
-        const answered = Math.max(acc.answeredSubmitted, acc.answeredProgress);
-        if (answered <= 0 && !acc.completed) continue;
+        const raw = Math.max(acc.answeredSubmitted, acc.answeredProgress);
+        if (raw <= 0 && !acc.completed) continue;
+        const total = totals.get(setId) ?? 0;
+        // 문항이 0인 세트(삭제됐거나 관리자가 비운 세트)는 아예 내려보내지 않는다.
+        // 화면에 표시할 대상이 없기도 하지만, 무엇보다 완주 게이트(totalScore >= 문항수)가
+        // 문항수 0 에서는 항상 참이 되어 아무 회차나 '완료'로 인정돼 버린다.
+        if (total <= 0) continue;
+        // 세트에서 문항이 삭제되면 예전에 답한 수가 현재 문항 수를 넘을 수 있다("30/25 진행 중").
+        // 분모가 있을 때만 클램프한다(total=0 은 세트가 비었다는 뜻이라 클램프가 의미 없다).
         out[setId] = {
-          answered,
-          total: totals.get(setId) ?? 0,
+          answered: total > 0 ? Math.min(raw, total) : raw,
+          total,
           completed: acc.completed,
           bestPct: acc.bestPct,
         };

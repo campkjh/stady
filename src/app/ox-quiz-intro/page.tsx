@@ -68,7 +68,7 @@ export default function OxQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ position: "fixed", inset: 0, backgroundColor: "#7BC5E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "fixed", inset: 0, backgroundColor: "var(--ox-intro-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
@@ -83,8 +83,17 @@ export default function OxQuizListPage() {
   }, []);
   const selectedGroup = groups.find((group) => group.name === selectedGroupName) ?? null;
 
+  // 세트의 문항 수. 요약의 라이브 COUNT 가 있으면 그것을, 없으면 비정규화 컬럼으로 폴백한다.
+  // (OxQuizSet.totalQuestions 는 어드민 입력값이라 실제 문항 수와 어긋날 수 있다.)
+  // 그룹 합계와 세트 카드가 반드시 같은 값을 쓰도록 한 곳에 모아둔다.
+  function denomOf(qs: OxQuizSet): number {
+    const stat = summary[qs.id];
+    return stat && stat.total > 0 ? stat.total : qs.totalQuestions;
+  }
+
+
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", backgroundColor: "#7BC5E8", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", backgroundColor: "var(--ox-intro-bg)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => selectedGroup ? setSelectedGroupName(null) : router.back()}
@@ -130,7 +139,10 @@ export default function OxQuizListPage() {
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
         <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
           {!selectedGroup && groups.map((group, index) => {
-            const totalQuestions = group.items.reduce((sum, item) => sum + item.totalQuestions, 0);
+            // 그룹 합계도 세트 카드와 **같은 분모 규칙**을 써야 한다.
+            // 여기만 비정규화 totalQuestions 를 쓰면, 실제 문항이 30개인데 컬럼이 25인 세트에서
+            // 그룹은 "25문항", 들어가서 보는 카드는 "30문항" 으로 같은 세트가 다르게 보인다.
+            const totalQuestions = group.items.reduce((sum, item) => sum + denomOf(item), 0);
             const doneCount = group.items.filter((item) => summary[item.id]?.completed).length;
             const allDone = group.items.length > 0 && doneCount === group.items.length;
             return (
@@ -184,7 +196,7 @@ export default function OxQuizListPage() {
                     Array.from(new Set((qs.questions ?? []).map((q) => q.section).filter(Boolean))) as string[]
                   ).filter((s) => s.trim() !== qs.title.trim());
                   const stat = summary[qs.id];
-                  const denom = stat && stat.total > 0 ? stat.total : qs.totalQuestions;
+                  const denom = denomOf(qs);
                   const answered = stat?.answered ?? 0;
                   const completed = stat?.completed ?? false;
                   const inProgress = !completed && answered > 0;
@@ -205,7 +217,7 @@ export default function OxQuizListPage() {
                         animation: "quizItemFadeUp 0.5s",
                       }}
                     >
-                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800 }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center" }}>
                         <span>{qs.title}</span>
                         {completed && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
@@ -215,7 +227,7 @@ export default function OxQuizListPage() {
                         )}
                       </span>
                       <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", textAlign: "center" }}>
-                        {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{qs.totalQuestions}문항
+                        {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{denom}문항
                         {completed && stat?.bestPct != null && (
                           <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
                         )}
@@ -242,7 +254,15 @@ export default function OxQuizListPage() {
                             </span>
                           ))}
                           {sections.length > 4 && (
-                            <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "var(--c-bg-muted)", color: "var(--c-text-4)", fontSize: 11, fontWeight: 700 }}>
+                            <span style={{
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              // 넘침 칩도 일반 칩과 같은 completed 분기 → 완료 카드에서 배경에 묻히지 않는다.
+                              backgroundColor: completed ? "var(--c-bg)" : "var(--c-bg-muted)",
+                              color: "var(--c-text-4)",
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}>
                               +{sections.length - 4}
                             </span>
                           )}
@@ -271,12 +291,16 @@ export default function OxQuizListPage() {
         </div>
         <div style={{
           position: "absolute", bottom: 40, left: 20, right: 20, height: 48,
-          background: "linear-gradient(to top, #7BC5E8, transparent)",
+          background: "linear-gradient(to top, var(--ox-intro-bg), transparent)",
           pointerEvents: "none",
         }} />
       </div>
 
       <style>{`
+        /* 인트로 배경은 브랜드 색이라 테마와 무관하게 두고 싶지만, 카드는 테마를 따르므로
+           다크에서 '밝은 하늘색 배경 + 검은 카드'가 되어 부딪힌다. 배경만 같은 색상의 어두운 톤으로 낮춘다. */
+        :root { --ox-intro-bg: #7BC5E8; }
+        [data-theme="dark"] { --ox-intro-bg: #14313F; }
         @keyframes oxBlockAppear {
           from { opacity: 0; transform: scale(0.7); }
           to { opacity: 1; transform: scale(1); }

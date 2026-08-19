@@ -3,7 +3,6 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
-import Script from "next/script";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
@@ -40,9 +39,10 @@ export default function RootLayout({
             안 보이던 문제)은 어느 테마에서도 걸리지 않는다. */}
         <meta name="color-scheme" content="light dark" />
         {/* 첫 페인트 전에 localStorage('stady-theme') 를 읽어 data-theme 을 세팅(깜빡임 방지).
-            raw <script> 를 <head> 에 두면 React 19 가 "Encountered a script tag" 경고를 낸다 —
-            next/script beforeInteractive 가 같은 타이밍(하이드레이션 전)에 돌면서 경고가 없다. */}
-        <Script id="stady-theme-boot" strategy="beforeInteractive">{THEME_BOOT_SCRIPT}</Script>
+            스크립트 본문은 반드시 dangerouslySetInnerHTML 로 넣는다 — children 문자열로 주면
+            React 가 클라이언트 렌더 중 script 태그를 만나 "Encountered a script tag" 경고와
+            하이드레이션 실패를 낸다(next/script beforeInteractive 로 감싸도 마찬가지였다). */}
+        <script id="stady-theme-boot" dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body
         className="min-h-full flex flex-col bg-white app-body"
