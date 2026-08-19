@@ -77,7 +77,7 @@ export default function KoreanHistoryStorePage() {
             <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#111827" }}>교재 구매</h1>
+        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--c-text)" }}>교재 구매</h1>
       </header>
 
       <div style={{ padding: "16px 18px 28px" }}>
@@ -87,12 +87,12 @@ export default function KoreanHistoryStorePage() {
           <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginTop: 10 }}>문제집 · PDF</span>
         </div>
 
-        <h2 style={{ margin: "20px 0 4px", fontSize: 22, fontWeight: 900, color: "#111827" }}>{PRODUCT_TITLE}</h2>
-        <p style={{ margin: 0, fontSize: 14, color: "#6B7280", fontWeight: 600 }}>{PRODUCT_SUBTITLE}</p>
+        <h2 style={{ margin: "20px 0 4px", fontSize: 22, fontWeight: 900, color: "var(--c-text)" }}>{PRODUCT_TITLE}</h2>
+        <p style={{ margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600 }}>{PRODUCT_SUBTITLE}</p>
 
         <div style={priceRowStyle}>
-          <span style={{ fontSize: 14, color: "#6B7280", fontWeight: 700 }}>판매가</span>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "#111827" }}>{PRICE.toLocaleString()}원</span>
+          <span style={{ fontSize: 14, color: "var(--c-text-3)", fontWeight: 700 }}>판매가</span>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "var(--c-text)" }}>{PRICE.toLocaleString()}원</span>
         </div>
 
         <ul style={infoListStyle}>
@@ -124,7 +124,7 @@ export default function KoreanHistoryStorePage() {
         </div>
 
         {authenticated && purchased && (
-          <p style={{ marginTop: 12, fontSize: 13, color: "#16A34A", fontWeight: 700, textAlign: "center" }}>
+          <p style={{ marginTop: 12, fontSize: 13, color: "var(--c-success-e)", fontWeight: 700, textAlign: "center" }}>
             이미 구매한 교재입니다. 위 버튼으로 다시 받을 수 있어요.
           </p>
         )}
@@ -137,7 +137,7 @@ const pageStyle = {
   // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
   width: "100%",
   minHeight: "100vh",
-  background: "#fff",
+  background: "var(--c-bg)",
   maxWidth: 720,
   margin: "0 auto",
 } as const;
@@ -150,8 +150,8 @@ const topbarStyle = {
   alignItems: "center",
   gap: 10,
   padding: "calc(12px + env(safe-area-inset-top, 0px)) 14px 12px",
-  background: "rgba(255,255,255,0.9)",
-  borderBottom: "1px solid #F1F3F5",
+  background: "var(--c-bg-a90)",
+  borderBottom: "1px solid var(--c-bg-muted-4)",
   backdropFilter: "blur(12px)",
   WebkitBackdropFilter: "blur(12px)",
 } as const;
@@ -159,10 +159,10 @@ const topbarStyle = {
 const backButtonStyle = {
   width: 38,
   height: 38,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 999,
-  background: "#fff",
-  color: "#111827",
+  background: "var(--c-bg)",
+  color: "var(--c-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -187,15 +187,15 @@ const priceRowStyle = {
   justifyContent: "space-between",
   marginTop: 18,
   paddingTop: 18,
-  borderTop: "1px solid #F1F3F5",
+  borderTop: "1px solid var(--c-bg-muted-4)",
 } as const;
 
 const infoListStyle = {
   margin: "18px 0 0",
   padding: "16px 18px",
-  background: "#F8FAFC",
+  background: "var(--c-bg-soft-6)",
   borderRadius: 12,
-  color: "#475569",
+  color: "var(--c-text-2g)",
   fontSize: 13,
   lineHeight: 1.9,
   fontWeight: 600,
@@ -203,9 +203,9 @@ const infoListStyle = {
 
 const errorBoxStyle = {
   marginTop: 16,
-  border: "1px solid #FECACA",
-  background: "#FEF2F2",
-  color: "#DC2626",
+  border: "1px solid var(--c-danger-line)",
+  background: "var(--c-danger-soft)",
+  color: "var(--c-danger-c)",
   borderRadius: 10,
   padding: 12,
   fontSize: 14,
@@ -216,7 +216,7 @@ const primaryButtonStyle = {
   width: "100%",
   border: "none",
   borderRadius: 14,
-  background: "#3787FF",
+  background: "var(--c-brand)",
   color: "#fff",
   padding: "16px 18px",
   fontSize: 16,

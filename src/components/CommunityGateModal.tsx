@@ -58,13 +58,13 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
           width: "100%",
           maxWidth: 360,
           borderRadius: 8,
-          background: "#fff",
+          background: "var(--c-bg)",
           boxShadow: "0 18px 50px rgba(15,23,42,0.24)",
           padding: 24,
           textAlign: "center",
         }}
       >
-        <p style={{ margin: 0, color: "#111827", fontSize: 23, fontWeight: 700, letterSpacing: 0 }}>
+        <p style={{ margin: 0, color: "var(--c-text)", fontSize: 23, fontWeight: 700, letterSpacing: 0 }}>
           준비
           <button
             type="button"
@@ -101,22 +101,22 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
               autoFocus
               style={{
                 width: "100%",
-                border: "1px solid #D1D5DB",
+                border: "1px solid var(--c-border-strong)",
                 borderRadius: 8,
                 padding: "12px 13px",
-                color: "#111827",
+                color: "var(--c-text)",
                 fontSize: 16,
                 boxSizing: "border-box",
                 textAlign: "center",
               }}
             />
-            {error && <span style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{error}</span>}
+            {error && <span style={{ color: "var(--c-danger-c)", fontSize: 13, fontWeight: 500 }}>{error}</span>}
             <button
               type="submit"
               style={{
                 border: "none",
                 borderRadius: 8,
-                background: "#3787FF",
+                background: "var(--c-brand)",
                 color: "#fff",
                 padding: "12px 14px",
                 fontSize: 15,
@@ -135,7 +135,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
             marginTop: 14,
             border: "none",
             background: "transparent",
-            color: "#6B7280",
+            color: "var(--c-text-3)",
             fontSize: 14,
             fontWeight: 500,
             cursor: "pointer",

@@ -202,10 +202,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <>
         <style>{`body { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F9FAFB" }}>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--c-bg-soft)" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 32, height: 32, border: "3px solid #E5E7EB", borderTopColor: "#3787FF", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-            <p style={{ color: "#8A909C", fontSize: 14 }}>로딩 중...</p>
+            <div style={{ width: 32, height: 32, border: "3px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+            <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>로딩 중...</p>
           </div>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -217,20 +217,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <>
         <style>{`body { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#F9FAFB", gap: 16 }}>
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--c-bg-soft)", gap: 16 }}>
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <circle cx="24" cy="24" r="22" stroke="#E5E7EB" strokeWidth="2"/>
-            <path d="M24 14V26M24 32V34" stroke="#8A909C" strokeWidth="2.5" strokeLinecap="round"/>
+            <circle cx="24" cy="24" r="22" stroke="var(--c-border)" strokeWidth="2"/>
+            <path d="M24 14V26M24 32V34" stroke="var(--c-text-4)" strokeWidth="2.5" strokeLinecap="round"/>
           </svg>
-          <p style={{ fontSize: 18, fontWeight: 600, color: "#2B313D" }}>접근 권한이 없습니다</p>
-          <p style={{ fontSize: 14, color: "#8A909C", marginTop: -8 }}>관리자 계정으로 로그인해주세요</p>
+          <p style={{ fontSize: 18, fontWeight: 600, color: "var(--c-text-2)" }}>접근 권한이 없습니다</p>
+          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: -8 }}>관리자 계정으로 로그인해주세요</p>
           <Link
             href="/admin-login"
             className="press"
             style={{
               marginTop: 8,
               padding: "10px 24px",
-              background: "#3787FF",
+              background: "var(--c-brand)",
               color: "#fff",
               borderRadius: 10,
               fontSize: 14,
@@ -249,7 +249,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <style>{`body { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
-      <div style={{ minHeight: "100vh", display: "flex", background: "#F9FAFB" }}>
+      <div style={{ minHeight: "100vh", display: "flex", background: "var(--c-bg-soft)" }}>
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
@@ -269,7 +269,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             width: 240,
             height: "100dvh",
             maxHeight: "100dvh",
-            background: "#1E1F23",
+            background: "var(--c-inverse-4)",
             flexShrink: 0,
             display: "flex",
             flexDirection: "column",
@@ -308,7 +308,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     fontSize: 14,
                     fontWeight: 500,
                     color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
-                    background: isActive ? "#3787FF" : "transparent",
+                    background: isActive ? "var(--c-brand)" : "transparent",
                     textDecoration: "none",
                     marginBottom: 2,
                     transition: "all 0.15s",
@@ -359,7 +359,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: "#3787FF", display: "flex", alignItems: "center", justifyContent: "center",
+                background: "var(--c-brand)", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 600, color: "#fff",
               }}>
                 {user.nickname.charAt(0)}
@@ -382,7 +382,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             left: 0,
             right: 0,
             height: 56,
-            background: "#1E1F23",
+            background: "var(--c-inverse-4)",
             zIndex: 30,
             alignItems: "center",
             padding: "0 16px",

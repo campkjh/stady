@@ -51,12 +51,12 @@ interface TimerAnalysis {
   };
 }
 
-const PRIMARY = "#3787FF";
-const PRIMARY_DARK = "#1F5EDC";
-const PRIMARY_SOFT = "#E8F0FE";
-const PRIMARY_SOFTER = "#F4F8FF";
-const ACCENT_BG = "#D3E4FF";
-const TEXT_MUTED = "#9CA3AF";
+const PRIMARY = "var(--c-brand)";
+const PRIMARY_DARK = "var(--c-brand-deep)";
+const PRIMARY_SOFT = "var(--c-brand-soft)";
+const PRIMARY_SOFTER = "var(--c-brand-soft-8)";
+const ACCENT_BG = "var(--c-brand-line-4)";
+const TEXT_MUTED = "var(--c-text-4c)";
 
 const TIMER_TABS = [
   { key: "status" as const, label: "공부현황", icon: "/icons/timer-status.png" },
@@ -65,7 +65,7 @@ const TIMER_TABS = [
   { key: "badges" as const, label: "뱃지", icon: "/icons/timer-badge.png" },
   { key: "analysis" as const, label: "분석", icon: "/icons/timer-analysis.png" },
 ];
-const OFFLINE_FILL = "#E5E7EB";
+const OFFLINE_FILL = "var(--c-border)";
 const LOCKED_BADGE_IMAGE = "/badges/locked.png";
 const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
 const DEFAULT_RESTING_AVATAR = "/timer/default-resting.png";
@@ -432,10 +432,10 @@ export default function TimerPage() {
   if (isLoggedIn === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
       {/* Title */}
       <header style={{ padding: "20px 20px 16px" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111" }}>타이머</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>타이머</h1>
       </header>
 
       {/* Main timer row: clock on left, bubble + play on right */}
@@ -450,7 +450,7 @@ export default function TimerPage() {
         <p style={{
           fontSize: 40,
           fontWeight: 700,
-          color: "#111",
+          color: "var(--c-text-c)",
           letterSpacing: -1,
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1,
@@ -467,9 +467,9 @@ export default function TimerPage() {
               top: -10,
               padding: "8px 14px",
               borderRadius: 999,
-              background: "#fff",
-              border: "1px solid #E5E7EB",
-              color: "#111",
+              background: "var(--c-bg)",
+              border: "1px solid var(--c-border)",
+              color: "var(--c-text-c)",
               fontSize: 13,
               fontWeight: 700,
               whiteSpace: "nowrap",
@@ -502,8 +502,8 @@ export default function TimerPage() {
                 flexShrink: 0,
                 padding: "7px 12px",
                 borderRadius: 999,
-                background: "#F3F4F6",
-                color: "#374151",
+                background: "var(--c-bg-muted)",
+                color: "var(--c-text-2c)",
                 fontSize: 13,
                 fontWeight: 700,
                 whiteSpace: "nowrap",
@@ -517,7 +517,7 @@ export default function TimerPage() {
         </div>
       )}
 
-      <div style={{ height: 1, background: "#F3F4F6" }} />
+      <div style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
       {/* Icon Tabs */}
       <div style={{
@@ -564,7 +564,7 @@ export default function TimerPage() {
                     height: 18,
                     padding: "0 5px",
                     borderRadius: 9,
-                    background: "#E85D5D",
+                    background: "var(--c-danger-b)",
                     color: "#fff",
                     fontSize: 11,
                     fontWeight: 700,
@@ -579,7 +579,7 @@ export default function TimerPage() {
               <span style={{
                 fontSize: 13,
                 fontWeight: isActive ? 800 : 600,
-                color: isActive ? "#111" : "#9CA3AF",
+                color: isActive ? "var(--c-text-c)" : "var(--c-text-4c)",
               }}>
                 {tab.label}
               </span>
@@ -588,13 +588,13 @@ export default function TimerPage() {
         })}
       </div>
 
-      <div style={{ height: 1, background: "#F3F4F6" }} />
+      <div style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
       {/* Tab content */}
       <div style={{ padding: "20px 20px 40px" }}>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-            <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
+            <div style={{ width: 24, height: 24, border: "2px solid var(--c-bg-muted)", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
             <style>{`@keyframes timerSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : activeTab === "status" ? (
@@ -605,10 +605,10 @@ export default function TimerPage() {
             {sortedUsers.length === 0 ? (
               <div style={{
                 padding: "32px 20px", borderRadius: 16,
-                background: "#F9FAFB", border: "1px solid #F3F4F6",
+                background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)",
                 textAlign: "center",
               }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280" }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-3)" }}>
                   아직 등록된 유저가 없습니다
                 </p>
               </div>
@@ -633,18 +633,18 @@ export default function TimerPage() {
             {todayRanking.length === 0 ? (
               <div style={{
                 padding: "32px 20px", borderRadius: 16,
-                background: "#F9FAFB", border: "1px solid #F3F4F6",
+                background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)",
                 textAlign: "center",
               }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#6B7280", marginBottom: 4 }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-3)", marginBottom: 4 }}>
                   아직 오늘 공부한 기록이 없어요
                 </p>
-                <p style={{ fontSize: 12, color: "#9CA3AF" }}>첫 번째 기록을 남겨보세요!</p>
+                <p style={{ fontSize: 12, color: "var(--c-text-4c)" }}>첫 번째 기록을 남겨보세요!</p>
               </div>
             ) : (
               <div style={{
-                borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden",
-                background: "#fff",
+                borderRadius: 16, border: "1px solid var(--c-bg-muted)", overflow: "hidden",
+                background: "var(--c-bg)",
               }}>
                 {todayRanking.map((u, i) => (
                   <RankingRow key={timerUserRenderKey(u)} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} onOpen={() => setSelectedUser(u)} />
@@ -668,7 +668,7 @@ export default function TimerPage() {
                   }}
                   placeholder="아이디, 이메일 또는 닉네임"
                   autoCapitalize="none"
-                  style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 12, border: "1px solid #D6E4FF", background: "#fff", padding: "0 12px", color: "#111827", fontSize: 14, fontWeight: 700, outline: "none" }}
+                  style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 12, border: "1px solid var(--c-brand-line-3)", background: "var(--c-bg)", padding: "0 12px", color: "var(--c-text)", fontSize: 14, fontWeight: 700, outline: "none" }}
                 />
                 <button
                   type="button"
@@ -680,7 +680,7 @@ export default function TimerPage() {
                 </button>
               </div>
               {friendAddMessage && (
-                <p style={{ marginTop: 8, fontSize: 12, color: friendAddMessage.includes("보냈") ? PRIMARY_DARK : "#EF4444", fontWeight: 700 }}>
+                <p style={{ marginTop: 8, fontSize: 12, color: friendAddMessage.includes("보냈") ? PRIMARY_DARK : "var(--c-danger)", fontWeight: 700 }}>
                   {friendAddMessage}
                 </p>
               )}
@@ -707,9 +707,9 @@ export default function TimerPage() {
                 <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>보낸 요청</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {outgoingRequests.map((request) => (
-                    <div key={request.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "#F9FAFB", border: "1px solid #F3F4F6" }}>
+                    <div key={request.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)" }}>
                       <Avatar user={request} size={36} />
-                      <b style={{ flex: 1, fontSize: 14, color: "#111" }}>{request.nickname}</b>
+                      <b style={{ flex: 1, fontSize: 14, color: "var(--c-text-c)" }}>{request.nickname}</b>
                       <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>대기중</span>
                     </div>
                   ))}
@@ -719,12 +719,12 @@ export default function TimerPage() {
 
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 10 }}>친구 타이머</p>
             {friends.length === 0 ? (
-              <div style={{ padding: "32px 20px", borderRadius: 16, background: "#F9FAFB", border: "1px solid #F3F4F6", textAlign: "center" }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#6B7280", marginBottom: 4 }}>아직 친구가 없어요</p>
+              <div style={{ padding: "32px 20px", borderRadius: 16, background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)", textAlign: "center" }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-3)", marginBottom: 4 }}>아직 친구가 없어요</p>
                 <p style={{ fontSize: 12, color: TEXT_MUTED }}>공부 현황에서 프로필을 눌러 친구 요청을 보내보세요.</p>
               </div>
             ) : (
-              <div style={{ borderRadius: 16, border: "1px solid #F3F4F6", overflow: "hidden", background: "#fff" }}>
+              <div style={{ borderRadius: 16, border: "1px solid var(--c-bg-muted)", overflow: "hidden", background: "var(--c-bg)" }}>
                 {friends
                   .sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds)
                   .map((friend, index) => (
@@ -749,11 +749,11 @@ export default function TimerPage() {
       {selectedUser && (
         <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={() => setSelectedUser(null)} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "#fff", borderRadius: 22, padding: 22, textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.18)" }}>
+          <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "var(--c-bg)", borderRadius: 22, padding: 22, textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.18)" }}>
             <div style={{ width: 86, height: 86, margin: "0 auto 12px" }}>
               <Avatar user={selectedUser} size={86} />
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 4 }}>{selectedUser.nickname}</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4 }}>{selectedUser.nickname}</h2>
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 18 }}>
               오늘 {formatTime(selectedUser.todayTotalSeconds)}
               {selectedUser.isActive ? ` · ${selectedUser.subject || "공부중"}` : ""}
@@ -806,7 +806,7 @@ function TimerControlButton({ isRunning, onClick, compact = false }: { isRunning
         width: size,
         height: size,
         borderRadius: "50%",
-        background: isRunning ? "#111827" : PRIMARY,
+        background: isRunning ? "var(--c-inverse)" : PRIMARY,
         border: "none",
         display: "inline-flex",
         alignItems: "center",
@@ -837,12 +837,12 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>내 뱃지</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-c)" }}>내 뱃지</h2>
           <p style={{ marginTop: 3, fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>
             {unlockedCount}/{BADGES.length} 해금
           </p>
         </div>
-        <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EEF5FF", color: PRIMARY, fontSize: 12, fontWeight: 700 }}>
+        <span style={{ padding: "7px 10px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: PRIMARY, fontSize: 12, fontWeight: 700 }}>
           연속 {stats?.streakDays || 0}일
         </span>
       </div>
@@ -856,8 +856,8 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
               style={{
                 minHeight: 154,
                 borderRadius: 16,
-                border: "1px solid #EEF2F7",
-                background: unlocked ? "#fff" : "#F9FAFB",
+                border: "1px solid var(--c-bg-muted-9)",
+                background: unlocked ? "var(--c-bg)" : "var(--c-bg-soft)",
                 padding: 9,
                 textAlign: "center",
                 overflow: "hidden",
@@ -882,7 +882,7 @@ function BadgeCollection({ stats, todaySeconds }: { stats: TimerStats | null; to
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "#111827" : "#6B7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "var(--c-text)" : "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {badge.title}
               </p>
               <p style={{ marginTop: 3, fontSize: 10.5, lineHeight: 1.25, color: TEXT_MUTED, fontWeight: 700 }}>
@@ -932,15 +932,15 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
   if (loading && !analysis) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-        <div style={{ width: 24, height: 24, border: "2px solid #F3F4F6", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
+        <div style={{ width: 24, height: 24, border: "2px solid var(--c-bg-muted)", borderTopColor: PRIMARY, borderRadius: "50%", animation: "timerSpin 0.8s linear infinite" }} />
       </div>
     );
   }
 
   if (!analysis) {
     return (
-      <div style={{ padding: 28, borderRadius: 18, background: "#F9FAFB", border: "1px solid #F3F4F6", textAlign: "center" }}>
-        <p style={{ fontSize: 14, color: "#6B7280", fontWeight: 700 }}>분석 정보를 불러오지 못했어요.</p>
+      <div style={{ padding: 28, borderRadius: 18, background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)", textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--c-text-3)", fontWeight: 700 }}>분석 정보를 불러오지 못했어요.</p>
         <button type="button" onClick={onRefresh} style={{ marginTop: 12, height: 38, padding: "0 14px", border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 700 }}>다시 불러오기</button>
       </div>
     );
@@ -960,9 +960,9 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
         <AnalysisStat label="평균" value={formatHours(analysis.summary.averageSeconds)} />
       </div>
 
-      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
+      <div style={{ borderRadius: 18, border: "1px solid var(--c-bg-muted-9)", background: "var(--c-bg)", padding: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>공부 달력</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-c)" }}>공부 달력</h2>
           <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>최근 5주</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
@@ -977,7 +977,7 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
           {analysis.days.map((day) => {
             const active = day.date === selectedDay?.date;
             const intensity = day.totalSeconds / maxSeconds;
-            const bg = day.totalSeconds > 0 ? `rgba(55,135,255,${0.16 + intensity * 0.72})` : "#F3F4F6";
+            const bg = day.totalSeconds > 0 ? `rgba(55,135,255,${0.16 + intensity * 0.72})` : "var(--c-bg-muted)";
             return (
               <button
                 key={day.date}
@@ -988,7 +988,7 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
                   borderRadius: 10,
                   border: active ? `2px solid ${PRIMARY}` : "1px solid transparent",
                   background: bg,
-                  color: day.totalSeconds > maxSeconds * 0.55 ? "#fff" : "#111827",
+                  color: day.totalSeconds > maxSeconds * 0.55 ? "#fff" : "var(--c-text)",
                   fontSize: 10,
                   fontWeight: 700,
                   padding: 0,
@@ -1002,11 +1002,11 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
       </div>
 
       {selectedDay && (
-        <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
+        <div style={{ borderRadius: 18, border: "1px solid var(--c-bg-muted-9)", background: "var(--c-bg)", padding: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
             <div>
               <p style={{ fontSize: 13, color: TEXT_MUTED, fontWeight: 700 }}>{selectedDay.date}</p>
-              <h3 style={{ marginTop: 2, fontSize: 18, color: "#111", fontWeight: 700 }}>{formatHours(selectedDay.totalSeconds)}</h3>
+              <h3 style={{ marginTop: 2, fontSize: 18, color: "var(--c-text-c)", fontWeight: 700 }}>{formatHours(selectedDay.totalSeconds)}</h3>
             </div>
             <span style={{ padding: "7px 10px", borderRadius: 999, background: PRIMARY_SOFTER, color: PRIMARY, fontSize: 12, fontWeight: 700 }}>
               {selectedDay.sessionCount}회
@@ -1017,7 +1017,7 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
             onChange={(e) => setMemo(e.target.value)}
             placeholder="오늘 공부 메모를 남겨보세요."
             maxLength={500}
-            style={{ width: "100%", minHeight: 92, resize: "vertical", borderRadius: 14, border: "1px solid #E5E7EB", background: "#F9FAFB", padding: 12, color: "#111", fontSize: 14, lineHeight: 1.5, outline: "none" }}
+            style={{ width: "100%", minHeight: 92, resize: "vertical", borderRadius: 14, border: "1px solid var(--c-border)", background: "var(--c-bg-soft)", padding: 12, color: "var(--c-text-c)", fontSize: 14, lineHeight: 1.5, outline: "none" }}
           />
           <button type="button" onClick={saveMemo} disabled={saving} style={{ marginTop: 8, width: "100%", height: 42, border: "none", borderRadius: 12, background: PRIMARY, color: "#fff", fontSize: 14, fontWeight: 700 }}>
             {saving ? "저장 중" : "메모 저장"}
@@ -1025,14 +1025,14 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
         </div>
       )}
 
-      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", padding: 14 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", marginBottom: 12 }}>최근 7일 그래프</h2>
+      <div style={{ borderRadius: 18, border: "1px solid var(--c-bg-muted-9)", background: "var(--c-bg)", padding: 14 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 12 }}>최근 7일 그래프</h2>
         <div style={{ height: 150, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", alignItems: "end", gap: 8 }}>
           {recent7.map((day) => {
             const height = Math.max(8, Math.round((day.totalSeconds / maxSeconds) * 132));
             return (
               <div key={day.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <div title={formatHours(day.totalSeconds)} style={{ width: "100%", height, borderRadius: "10px 10px 4px 4px", background: day.totalSeconds > 0 ? PRIMARY : "#E5E7EB" }} />
+                <div title={formatHours(day.totalSeconds)} style={{ width: "100%", height, borderRadius: "10px 10px 4px 4px", background: day.totalSeconds > 0 ? PRIMARY : "var(--c-border)" }} />
                 <span style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: 700 }}>{Number(day.date.slice(-2))}</span>
               </div>
             );
@@ -1040,9 +1040,9 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
         </div>
       </div>
 
-      <div style={{ borderRadius: 18, border: "1px solid #EEF2F7", background: "#fff", overflow: "hidden" }}>
-        <div style={{ padding: 14, borderBottom: "1px solid #F3F4F6" }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>공부 분석 표</h2>
+      <div style={{ borderRadius: 18, border: "1px solid var(--c-bg-muted-9)", background: "var(--c-bg)", overflow: "hidden" }}>
+        <div style={{ padding: 14, borderBottom: "1px solid var(--c-bg-muted)" }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-c)" }}>공부 분석 표</h2>
         </div>
         {[
           { label: "가장 많이 공부한 날", value: analysis.summary.bestDay ? `${analysis.summary.bestDay.date} · ${formatHours(analysis.summary.bestDay.totalSeconds)}` : "-" },
@@ -1050,9 +1050,9 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
           { label: "공부한 날 평균", value: formatHours(analysis.summary.averageSeconds) },
           { label: "상위 기록", value: topDays.filter((day) => day.totalSeconds > 0).map((day) => `${day.date.slice(5)} ${formatHours(day.totalSeconds)}`).join(" / ") || "-" },
         ].map((row, index) => (
-          <div key={row.label} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, padding: "12px 14px", borderBottom: index === 3 ? "none" : "1px solid #F3F4F6" }}>
+          <div key={row.label} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, padding: "12px 14px", borderBottom: index === 3 ? "none" : "1px solid var(--c-bg-muted)" }}>
             <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 700 }}>{row.label}</span>
-            <span style={{ fontSize: 13, color: "#111827", fontWeight: 700, lineHeight: 1.45 }}>{row.value}</span>
+            <span style={{ fontSize: 13, color: "var(--c-text)", fontWeight: 700, lineHeight: 1.45 }}>{row.value}</span>
           </div>
         ))}
       </div>
@@ -1063,8 +1063,8 @@ function StudyAnalysis({ analysis, loading, onRefresh }: { analysis: TimerAnalys
 function AnalysisStat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ minHeight: 72, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, padding: 12 }}>
-      <p style={{ fontSize: 11, color: "#4A6BB0", fontWeight: 700 }}>{label}</p>
-      <p style={{ marginTop: 7, fontSize: 15, color: "#111827", fontWeight: 700, lineHeight: 1.2 }}>{value}</p>
+      <p style={{ fontSize: 11, color: "var(--c-brand-deep-6)", fontWeight: 700 }}>{label}</p>
+      <p style={{ marginTop: 7, fontSize: 15, color: "var(--c-text)", fontWeight: 700, lineHeight: 1.2 }}>{value}</p>
     </div>
   );
 }
@@ -1086,7 +1086,7 @@ function Avatar({ user, size }: { user: { avatar: string | null; isActive?: bool
   const fallbackImage = user.isActive ? DEFAULT_STUDYING_AVATAR : DEFAULT_RESTING_AVATAR;
 
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: "var(--c-bg-muted)", display: "flex", alignItems: "center", justifyContent: "center" }}>
       {user.avatar ? (
         <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
@@ -1136,9 +1136,9 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
           maxWidth: "100%",
           padding: "0 9px",
           borderRadius: 999,
-          border: "1px solid #E5E7EB",
-          background: "#fff",
-          color: hasStatus ? "#111827" : "#C7CCD5",
+          border: "1px solid var(--c-border)",
+          background: "var(--c-bg)",
+          color: hasStatus ? "var(--c-text)" : "var(--c-text-4h)",
           fontSize: 11,
           fontWeight: 700,
           lineHeight: 1,
@@ -1157,9 +1157,9 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
             bottom: -5,
             width: 9,
             height: 9,
-            background: "#fff",
-            borderRight: "1px solid #E5E7EB",
-            borderBottom: "1px solid #E5E7EB",
+            background: "var(--c-bg)",
+            borderRight: "1px solid var(--c-border)",
+            borderBottom: "1px solid var(--c-border)",
             transform: "translateX(-50%) rotate(45deg)",
           }}
         />
@@ -1169,13 +1169,13 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
         <div style={{
           width: "100%", height: "100%", borderRadius: "50%",
           background: lit
-            ? "linear-gradient(135deg, #D3E4FF 0%, #E8F0FE 100%)"
-            : "#F3F4F6",
+            ? "linear-gradient(135deg, var(--c-brand-line-4) 0%, var(--c-brand-soft) 100%)"
+            : "var(--c-bg-muted)",
           border: user.isMe
             ? `2.5px solid ${PRIMARY}`
             : lit
               ? `2px solid ${PRIMARY}`
-              : "2px solid #E5E7EB",
+              : "2px solid var(--c-border)",
           display: "flex", alignItems: "center", justifyContent: "center",
           overflow: "hidden",
           transition: "all 0.3s ease",
@@ -1201,7 +1201,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
           position: "absolute", top: 2, right: 2,
           width: 14, height: 14, borderRadius: "50%",
           background: lit ? PRIMARY : OFFLINE_FILL,
-          border: "2.5px solid #fff",
+          border: "2.5px solid var(--c-bg)",
           animation: lit ? "dotPulse 1.8s ease-in-out infinite" : "none",
           boxShadow: lit ? `0 0 8px ${PRIMARY}` : "none",
         }} />
@@ -1209,7 +1209,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
 
       <p style={{
         fontSize: 13, fontWeight: 700,
-        color: lit ? "#111" : "#9CA3AF",
+        color: lit ? "var(--c-text-c)" : "var(--c-text-4c)",
         maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
       }}>
@@ -1231,7 +1231,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
 
       <p style={{
         fontSize: 12, fontWeight: 700,
-        color: lit ? PRIMARY : "#BDC2CB",
+        color: lit ? PRIMARY : "var(--c-text-4g)",
         fontVariantNumeric: "tabular-nums",
       }}>
         {lit || totalToday > 0 ? formatTime(totalToday) : "오프라인"}
@@ -1242,10 +1242,10 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
 
 function FriendRequestRow({ request, onAccept, onReject }: { request: FriendRequest; onAccept: () => void; onReject: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "#fff", border: "1px solid #E5E7EB" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 14, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
       <Avatar user={request} size={38} />
-      <b style={{ flex: 1, fontSize: 14, color: "#111" }}>{request.nickname}</b>
-      <button type="button" onClick={onReject} style={{ height: 32, padding: "0 10px", borderRadius: 10, border: "none", background: "#F3F4F6", color: "#6B7280", fontSize: 12, fontWeight: 700 }}>거절</button>
+      <b style={{ flex: 1, fontSize: 14, color: "var(--c-text-c)" }}>{request.nickname}</b>
+      <button type="button" onClick={onReject} style={{ height: 32, padding: "0 10px", borderRadius: 10, border: "none", background: "var(--c-bg-muted)", color: "var(--c-text-3)", fontSize: 12, fontWeight: 700 }}>거절</button>
       <button type="button" onClick={onAccept} style={{ height: 32, padding: "0 12px", borderRadius: 10, border: "none", background: PRIMARY, color: "#fff", fontSize: 12, fontWeight: 700 }}>수락</button>
     </div>
   );
@@ -1267,8 +1267,8 @@ const modalSecondaryButtonStyle = {
   height: 48,
   borderRadius: 14,
   border: "none",
-  background: "#F3F4F6",
-  color: "#6B7280",
+  background: "var(--c-bg-muted)",
+  color: "var(--c-text-3)",
   fontSize: 15,
   fontWeight: 700,
 };
@@ -1290,8 +1290,8 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
     <div onClick={onOpen} style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "12px 16px",
-      borderBottom: isLast ? "none" : "1px solid #F3F4F6",
-      background: user.isMe ? PRIMARY_SOFTER : "#fff",
+      borderBottom: isLast ? "none" : "1px solid var(--c-bg-muted)",
+      background: user.isMe ? PRIMARY_SOFTER : "var(--c-bg)",
       cursor: onOpen ? "pointer" : "default",
     }}>
       <span style={{
@@ -1303,7 +1303,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
       </span>
       <div style={{
         width: 32, height: 32, borderRadius: "50%",
-        background: user.isActive ? PRIMARY_SOFT : "#F3F4F6",
+        background: user.isActive ? PRIMARY_SOFT : "var(--c-bg-muted)",
         display: "flex", alignItems: "center", justifyContent: "center",
         overflow: "hidden",
         border: user.isActive ? `2px solid ${ACCENT_BG}` : "none",
@@ -1317,7 +1317,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
-          fontSize: 14, fontWeight: 700, color: "#111",
+          fontSize: 14, fontWeight: 700, color: "var(--c-text-c)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {user.nickname}
@@ -1330,7 +1330,7 @@ function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: num
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <p style={{
           fontSize: 14, fontWeight: 700,
-          color: user.isActive ? PRIMARY : "#111",
+          color: user.isActive ? PRIMARY : "var(--c-text-c)",
           fontVariantNumeric: "tabular-nums",
         }}>
           {formatTime(totalToday)}

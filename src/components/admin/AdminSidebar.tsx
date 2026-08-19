@@ -26,8 +26,8 @@ export default function AdminSidebar() {
             href={item.href}
             style={{
               borderRadius: 8,
-              color: active ? "#fff" : "#D1D5DB",
-              background: active ? "#3787FF" : "transparent",
+              color: active ? "#fff" : "var(--c-text-5d)",
+              background: active ? "var(--c-brand)" : "transparent",
               padding: "10px 12px",
               textDecoration: "none",
               fontSize: 14,

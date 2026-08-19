@@ -63,13 +63,13 @@ export default function VocabQuizListPage() {
         className="press"
         style={{ position: "absolute", top: 16, left: 16, background: "none", border: "none", zIndex: 10 }}
       >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7EA6E8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand-mid)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px 20px" }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: "#7EA6E8", textAlign: "center", marginBottom: 28 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--c-brand-mid)", textAlign: "center", marginBottom: 28 }}>
           영단어 퀴즈
         </h1>
 
@@ -77,21 +77,21 @@ export default function VocabQuizListPage() {
         <div style={{ position: "relative", width: 240, height: 140, marginBottom: 28 }}>
           <div style={{
             position: "absolute", right: -8, top: 8, width: 220, height: 130,
-            borderRadius: 18, backgroundColor: "rgba(255,255,255,0.6)",
+            borderRadius: 18, backgroundColor: "var(--c-bg-a60)",
             boxShadow: "0 6px 20px rgba(126,166,232,0.15)",
             animation: "vocaCardBack 3s ease-in-out infinite",
           }} />
           <div style={{
             position: "absolute", left: 0, top: 0, width: 220, height: 130,
-            borderRadius: 18, backgroundColor: "#fff",
+            borderRadius: 18, backgroundColor: "var(--c-bg)",
             boxShadow: "0 10px 28px rgba(126,166,232,0.2)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            border: "2px solid #BFD4F2",
+            border: "2px solid var(--c-brand-line-6)",
             animation: "vocaCardFront 3s ease-in-out infinite",
           }}>
             <span style={{
               fontSize: 56, fontWeight: 900, letterSpacing: -2,
-              color: "#C8D6EE",
+              color: "var(--c-text-5g)",
               textShadow: "0 3px 8px rgba(126,166,232,0.25)",
             }}>
               VOCA
@@ -99,7 +99,7 @@ export default function VocabQuizListPage() {
           </div>
         </div>
 
-        <p style={{ fontSize: 18, color: "#9BB4DC", textAlign: "center", fontWeight: 700 }}>
+        <p style={{ fontSize: 18, color: "var(--c-text-5f)", textAlign: "center", fontWeight: 700 }}>
           {isLoggedIn ? dailyMessage : "로그인하고 오늘의 단어 퀴즈를 열어보세요."}
         </p>
       </div>
@@ -113,8 +113,8 @@ export default function VocabQuizListPage() {
               onClick={() => openQuiz(qs.id)}
               className="press"
               style={{
-                width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "#fff",
-                border: "1px solid #D9E3F5", fontSize: 16, fontWeight: 700, color: "#2B313D", textAlign: "center",
+                width: "100%", padding: "20px 24px", borderRadius: 20, backgroundColor: "var(--c-bg)",
+                border: "1px solid var(--c-brand-line-7)", fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", textAlign: "center",
                 boxShadow: "0 4px 16px rgba(126,166,232,0.12)", flexShrink: 0,
                 animation: "quizItemFadeUp 0.5s",
               }}
@@ -123,7 +123,7 @@ export default function VocabQuizListPage() {
             </button>
           ))}
           {quizSets.length === 0 && (
-            <p style={{ textAlign: "center", color: "#9BB4DC", fontSize: 14 }}>등록된 단어 퀴즈가 없습니다.</p>
+            <p style={{ textAlign: "center", color: "var(--c-text-5f)", fontSize: 14 }}>등록된 단어 퀴즈가 없습니다.</p>
           )}
         </div>
         <div style={{

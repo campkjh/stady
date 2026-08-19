@@ -76,9 +76,9 @@ export default function AdminInquiriesPage() {
   }
 
   const statusColors: Record<string, { bg: string; text: string }> = {
-    "접수": { bg: "#DBEAFE", text: "#1D4ED8" },
-    "처리중": { bg: "#FFFBEB", text: "#D97706" },
-    "완료": { bg: "#ECFDF5", text: "#059669" },
+    "접수": { bg: "var(--c-brand-line-2)", text: "var(--c-brand-deep-2)" },
+    "처리중": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
+    "완료": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
   };
 
   function statusBadge(status: string) {
@@ -97,9 +97,9 @@ export default function AdminInquiriesPage() {
     width: "100%",
     padding: "9px 12px",
     borderRadius: 8,
-    border: "1px solid #E5E7EB",
+    border: "1px solid var(--c-border)",
     fontSize: 14,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -108,7 +108,7 @@ export default function AdminInquiriesPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
-        <div style={{ width: 28, height: 28, border: "3px solid #E5E7EB", borderTopColor: "#3787FF", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ width: 28, height: 28, border: "3px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -118,23 +118,23 @@ export default function AdminInquiriesPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2B313D" }}>문의 관리</h1>
-        <p style={{ fontSize: 14, color: "#8A909C", marginTop: 4 }}>총 {inquiries.length}개의 문의</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>문의 관리</h1>
+        <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {inquiries.length}개의 문의</p>
       </div>
 
       {inquiries.length === 0 ? (
         <div style={{
-          background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
           padding: 48, textAlign: "center",
         }}>
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ margin: "0 auto 12px", display: "block" }}>
-            <path d="M8 12C8 9.79 9.79 8 12 8H36C38.21 8 40 9.79 40 12V28C40 30.21 38.21 32 36 32H20L12 38V32H12C9.79 32 8 30.21 8 28V12Z" stroke="#E5E7EB" strokeWidth="2" strokeLinejoin="round"/>
+            <path d="M8 12C8 9.79 9.79 8 12 8H36C38.21 8 40 9.79 40 12V28C40 30.21 38.21 32 36 32H20L12 38V32H12C9.79 32 8 30.21 8 28V12Z" stroke="var(--c-border)" strokeWidth="2" strokeLinejoin="round"/>
           </svg>
-          <p style={{ color: "#8A909C", fontSize: 15 }}>접수된 문의가 없습니다.</p>
+          <p style={{ color: "var(--c-text-4)", fontSize: 15 }}>접수된 문의가 없습니다.</p>
         </div>
       ) : (
         <div style={{
-          background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
           overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}>
           {/* Table header */}
@@ -142,11 +142,11 @@ export default function AdminInquiriesPage() {
             display: "grid",
             gridTemplateColumns: "100px 70px 90px 1fr 80px",
             padding: "12px 20px",
-            background: "#F9FAFB",
-            borderBottom: "1px solid #E5E7EB",
+            background: "var(--c-bg-soft)",
+            borderBottom: "1px solid var(--c-border)",
             fontSize: 13,
             fontWeight: 600,
-            color: "#8A909C",
+            color: "var(--c-text-4)",
           }}>
             <span>날짜</span>
             <span>유형</span>
@@ -164,25 +164,25 @@ export default function AdminInquiriesPage() {
                   display: "grid",
                   gridTemplateColumns: "100px 70px 90px 1fr 80px",
                   padding: "14px 20px",
-                  borderBottom: "1px solid #F3F4F6",
+                  borderBottom: "1px solid var(--c-bg-muted)",
                   fontSize: 14,
                   cursor: "pointer",
                   transition: "background 0.15s",
-                  background: expandedId === inquiry.id ? "#F9FAFB" : idx % 2 === 1 ? "#FAFBFC" : "#fff",
+                  background: expandedId === inquiry.id ? "var(--c-bg-soft)" : idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)",
                   alignItems: "center",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "#F5F7FA"}
+                onMouseEnter={(e) => e.currentTarget.style.background = "var(--c-bg-soft-5)"}
                 onMouseLeave={(e) =>
                   e.currentTarget.style.background =
-                    expandedId === inquiry.id ? "#F9FAFB" : idx % 2 === 1 ? "#FAFBFC" : "#fff"
+                    expandedId === inquiry.id ? "var(--c-bg-soft)" : idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)"
                 }
               >
-                <span style={{ color: "#8A909C", fontSize: 13 }}>{formatDate(inquiry.createdAt)}</span>
-                <span style={{ color: "#2B313D", fontSize: 13 }}>{inquiry.category}</span>
-                <span style={{ color: "#2B313D", fontWeight: 500, fontSize: 13 }}>{inquiry.name}</span>
+                <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>{formatDate(inquiry.createdAt)}</span>
+                <span style={{ color: "var(--c-text-2)", fontSize: 13 }}>{inquiry.category}</span>
+                <span style={{ color: "var(--c-text-2)", fontWeight: 500, fontSize: 13 }}>{inquiry.name}</span>
                 <span style={{
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  color: "#2B313D", fontWeight: 500,
+                  color: "var(--c-text-2)", fontWeight: 500,
                 }}>
                   {inquiry.title}
                 </span>
@@ -193,30 +193,30 @@ export default function AdminInquiriesPage() {
               {expandedId === inquiry.id && (
                 <div style={{
                   padding: "20px 24px",
-                  background: "#F9FAFB",
-                  borderBottom: "1px solid #E5E7EB",
+                  background: "var(--c-bg-soft)",
+                  borderBottom: "1px solid var(--c-border)",
                 }}>
                   {/* Email */}
                   <div style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    fontSize: 13, color: "#8A909C", marginBottom: 12,
+                    fontSize: 13, color: "var(--c-text-4)", marginBottom: 12,
                   }}>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="#8A909C" strokeWidth="1.2"/>
-                      <path d="M1 4.5L7 8L13 4.5" stroke="#8A909C" strokeWidth="1.2"/>
+                      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="var(--c-text-4)" strokeWidth="1.2"/>
+                      <path d="M1 4.5L7 8L13 4.5" stroke="var(--c-text-4)" strokeWidth="1.2"/>
                     </svg>
                     {inquiry.email}
                   </div>
 
                   {/* Content */}
                   <div style={{
-                    background: "#fff",
+                    background: "var(--c-bg)",
                     borderRadius: 10,
-                    border: "1px solid #E5E7EB",
+                    border: "1px solid var(--c-border)",
                     padding: 16,
                     marginBottom: 16,
                     fontSize: 14,
-                    color: "#2B313D",
+                    color: "var(--c-text-2)",
                     whiteSpace: "pre-wrap",
                     lineHeight: 1.7,
                   }}>
@@ -226,32 +226,32 @@ export default function AdminInquiriesPage() {
                   {/* Existing reply */}
                   {inquiry.reply && (
                     <div style={{
-                      background: "#EBF3FF",
+                      background: "var(--c-brand-soft-2)",
                       borderRadius: 10,
                       padding: 16,
                       marginBottom: 16,
                       fontSize: 14,
-                      color: "#1D4ED8",
+                      color: "var(--c-brand-deep-2)",
                       whiteSpace: "pre-wrap",
                       lineHeight: 1.7,
-                      borderLeft: "3px solid #3787FF",
+                      borderLeft: "3px solid var(--c-brand)",
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#3787FF", marginBottom: 6 }}>관리자 답변</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-brand)", marginBottom: 6 }}>관리자 답변</div>
                       {inquiry.reply}
                     </div>
                   )}
 
                   {/* Reply form */}
                   <div style={{
-                    background: "#fff",
+                    background: "var(--c-bg)",
                     borderRadius: 10,
-                    border: "1px solid #E5E7EB",
+                    border: "1px solid var(--c-border)",
                     padding: 16,
                   }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#2B313D", marginBottom: 12 }}>답변 작성</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 12 }}>답변 작성</div>
                     <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                       <div>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#8A909C", marginBottom: 4 }}>상태 변경</label>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", marginBottom: 4 }}>상태 변경</label>
                         <select
                           value={replyStatus}
                           onChange={(e) => setReplyStatus(e.target.value)}
@@ -278,8 +278,8 @@ export default function AdminInquiriesPage() {
                         minHeight: 80,
                         marginBottom: 12,
                       }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                     />
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <button
@@ -290,7 +290,7 @@ export default function AdminInquiriesPage() {
                           padding: "9px 24px",
                           borderRadius: 8,
                           border: "none",
-                          background: "#3787FF",
+                          background: "var(--c-brand)",
                           color: "#fff",
                           fontSize: 14,
                           fontWeight: 600,

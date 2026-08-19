@@ -372,7 +372,7 @@ export default function VocabQuizSolvePage() {
           className="press"
           style={{ background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -386,7 +386,7 @@ export default function VocabQuizSolvePage() {
           className="press"
           style={{ background: "none", border: "none" }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
@@ -427,7 +427,7 @@ export default function VocabQuizSolvePage() {
                   minWidth: 18,
                   height: 18,
                   borderRadius: 9,
-                  backgroundColor: "#E85D5D",
+                  backgroundColor: "var(--c-danger-b)",
                   color: "#fff",
                   fontSize: 12,
                   fontWeight: 700,
@@ -440,7 +440,7 @@ export default function VocabQuizSolvePage() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{tab.label}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-text-2c)" }}>{tab.label}</span>
           </button>
         ))}
       </div>
@@ -459,15 +459,15 @@ export default function VocabQuizSolvePage() {
             bottom: 0,
             width: "80%",
             maxWidth: 320,
-            backgroundColor: "#fff",
+            backgroundColor: "var(--c-bg)",
             overflowY: "auto",
             animation: "slideInRight 0.25s ease",
             boxShadow: "-4px 0 24px rgba(0,0,0,0.1)",
           }}>
-            <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid var(--c-bg-muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontSize: 16, fontWeight: 700 }}>문제 목록</h3>
               <button type="button" onClick={() => setShowList(false)} style={{ background: "none", border: "none" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -491,7 +491,7 @@ export default function VocabQuizSolvePage() {
                       gap: 12,
                       width: "100%",
                       padding: "14px 12px",
-                      background: currentIndex === fIdx ? "#F0F5FF" : "none",
+                      background: currentIndex === fIdx ? "var(--c-brand-soft-5)" : "none",
                       border: "none",
                       borderRadius: 10,
                       textAlign: "left",
@@ -507,11 +507,11 @@ export default function VocabQuizSolvePage() {
                       fontSize: 13,
                       fontWeight: 700,
                       color: "#fff",
-                      backgroundColor: status === "correct" ? "#4A90D9" : status === "wrong" ? "#E85D5D" : "#D1D5DB",
+                      backgroundColor: status === "correct" ? "var(--c-correct)" : status === "wrong" ? "var(--c-danger-b)" : "var(--c-border-strong)",
                     }}>
                       {origIdx + 1}
                     </span>
-                    <span style={{ fontSize: 14, color: "#111", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 14, color: "var(--c-text-c)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {q.word}
                     </span>
                     {status === "correct" && <img src="/icons/quiz-o.svg" alt="O" style={{ width: 20, height: 20 }} />}
@@ -561,11 +561,11 @@ export default function VocabQuizSolvePage() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 28, height: 28, borderRadius: "50%",
-                  border: "1px solid #E5E7EB", background: "#fff",
+                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
                   opacity: currentIndex === 0 ? 0.3 : 1,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
@@ -580,11 +580,11 @@ export default function VocabQuizSolvePage() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 28, height: 28, borderRadius: "50%",
-                  border: "1px solid #E5E7EB", background: "#fff",
+                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
                   opacity: currentIndex >= filteredQuestions.length - 1 ? 0.3 : 1,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
@@ -597,9 +597,9 @@ export default function VocabQuizSolvePage() {
                   height: 32,
                   padding: "0 12px",
                   borderRadius: 999,
-                  border: `1px solid ${isBookmarked ? "#3787FF" : "#E5E7EB"}`,
-                  background: isBookmarked ? "#3787FF" : "#fff",
-                  color: isBookmarked ? "#fff" : "#6B7280",
+                  border: `1px solid ${isBookmarked ? "var(--c-brand)" : "var(--c-border)"}`,
+                  background: isBookmarked ? "var(--c-brand)" : "var(--c-bg)",
+                  color: isBookmarked ? "#fff" : "var(--c-text-3)",
                   fontSize: 13,
                   fontWeight: 700,
                   display: "inline-flex",
@@ -663,12 +663,12 @@ export default function VocabQuizSolvePage() {
             {/* Result indicator */}
             {answered && (
               <div style={{ marginTop: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "resultFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)", position: "relative", zIndex: 10 }}>
-                <p style={{ fontSize: 28, fontWeight: 900, color: answered.isCorrect ? "#3787FF" : "#E85D5D" }}>
+                <p style={{ fontSize: 28, fontWeight: 900, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
                   {answered.isCorrect ? "정답" : "오답"}
                 </p>
                 {currentQuestion.explanation && (
-                  <div style={{ width: "100%", padding: "14px 16px", borderRadius: 12, backgroundColor: "#F9FAFB", marginTop: 4 }}>
-                    <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>{currentQuestion.explanation}</p>
+                  <div style={{ width: "100%", padding: "14px 16px", borderRadius: 12, backgroundColor: "var(--c-bg-soft)", marginTop: 4 }}>
+                    <p style={{ fontSize: 13, color: "var(--c-text-3)", lineHeight: 1.6 }}>{currentQuestion.explanation}</p>
                   </div>
                 )}
               </div>
@@ -688,7 +688,7 @@ export default function VocabQuizSolvePage() {
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid #F3F4F6", position: "relative", zIndex: 20, background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: "1px solid var(--c-bg-muted)", position: "relative", zIndex: 20, background: "var(--c-bg)" }}>
         <div className="text-center text-xs text-gray-300">
           ← 좌우로 스와이프하여 이동 →
         </div>
@@ -723,13 +723,13 @@ export default function VocabQuizSolvePage() {
       {showExitConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowExitConfirm(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "#fff", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
+          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>정말로 나가시겠습니까?</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말로 나가시겠습니까?</h2>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
-              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#3787FF", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
+              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
+              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
             </div>
           </div>
           <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
@@ -742,7 +742,7 @@ export default function VocabQuizSolvePage() {
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.5)" }} />
           <div style={{
             position: "relative",
-            backgroundColor: "#fff",
+            backgroundColor: "var(--c-bg)",
             borderRadius: 24,
             padding: "32px 24px",
             width: "85%",
@@ -750,10 +750,10 @@ export default function VocabQuizSolvePage() {
             textAlign: "center",
             animation: "fadeInUp 0.3s ease",
           }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 8 }}>
               다 풀으셨나요?
             </h2>
-            <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 24 }}>
               {Array.from(answers.values()).filter(a => a.isCorrect).length}/{quiz.questions.length} 정답
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -769,7 +769,7 @@ export default function VocabQuizSolvePage() {
                 style={{
                   padding: "14px 0",
                   borderRadius: 14,
-                  backgroundColor: "#4A90D9",
+                  backgroundColor: "var(--c-correct)",
                   color: "#fff",
                   fontSize: 16,
                   fontWeight: 700,
@@ -786,8 +786,8 @@ export default function VocabQuizSolvePage() {
                 style={{
                   padding: "14px 0",
                   borderRadius: 14,
-                  backgroundColor: "#F3F4F6",
-                  color: "#374151",
+                  backgroundColor: "var(--c-bg-muted)",
+                  color: "var(--c-text-2c)",
                   fontSize: 16,
                   fontWeight: 600,
                   border: "none",
@@ -841,8 +841,8 @@ export default function VocabQuizSolvePage() {
             },
             {
               label: "처음부터 풀기",
-              bgColor: "#F2F3F5",
-              color: "#51535C",
+              bgColor: "var(--c-bg-muted-3)",
+              color: "var(--c-text-3c)",
               onClick: () => {
                 if (progressKey) {
                   fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});

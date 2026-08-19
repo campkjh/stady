@@ -85,7 +85,7 @@ export default function OxQuizListPage() {
         <div style={{ display: "flex", gap: 16, marginBottom: 48, animation: "oxBlockAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1)" }}>
           <div style={{
             width: 120, height: 120, borderRadius: 24,
-            backgroundColor: "#2E75E3",
+            backgroundColor: "var(--c-brand-deep-7)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 12px 28px rgba(46,117,227,0.35)",
             animation: "oxBounceL 2.2s ease-in-out infinite",
@@ -94,7 +94,7 @@ export default function OxQuizListPage() {
           </div>
           <div style={{
             width: 120, height: 120, borderRadius: 24,
-            backgroundColor: "#E8453C",
+            backgroundColor: "var(--c-danger-k)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 12px 28px rgba(232,69,60,0.35)",
             animation: "oxBounceR 2.2s ease-in-out 0.3s infinite",
@@ -122,14 +122,14 @@ export default function OxQuizListPage() {
                 onClick={() => requireLoginThen(() => setSelectedGroupName(group.name))}
                 className="press"
                 style={{
-                  width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "#fff",
-                  border: "none", color: "#2B313D", textAlign: "center",
+                  width: "100%", padding: "20px 18px", borderRadius: 18, backgroundColor: "var(--c-bg)",
+                  border: "none", color: "var(--c-text-2)", textAlign: "center",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                   animation: "quizItemFadeUp 0.5s",
                 }}
               >
                 <span style={{ display: "block", fontSize: 17, fontWeight: 900 }}>{group.name}</span>
-                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "#8A909C" }}>
+                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--c-text-4)" }}>
                   {group.items.length}개 중분류 · {totalQuestions}문항
                 </span>
               </button>
@@ -157,8 +157,8 @@ export default function OxQuizListPage() {
                       onClick={() => requireLoginThen(() => router.push(`/ox-quiz/${qs.id}`))}
                       className="press"
                       style={{
-                        width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "#fff",
-                        border: "none", color: "#2B313D", textAlign: "left",
+                        width: "100%", padding: "16px 18px", borderRadius: 18, backgroundColor: "var(--c-bg)",
+                        border: "none", color: "var(--c-text-2)", textAlign: "left",
                         boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
                         animation: "quizItemFadeUp 0.5s",
                       }}
@@ -166,7 +166,7 @@ export default function OxQuizListPage() {
                       <span style={{ display: "block", fontSize: 15, fontWeight: 800, textAlign: "center" }}>
                         {qs.title}
                       </span>
-                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "#8A909C", textAlign: "center" }}>
+                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", textAlign: "center" }}>
                         {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{qs.totalQuestions}문항
                       </span>
                       {sections.length > 0 && (
@@ -177,8 +177,8 @@ export default function OxQuizListPage() {
                               style={{
                                 padding: "4px 8px",
                                 borderRadius: 999,
-                                backgroundColor: "#EBF3FF",
-                                color: "#3787FF",
+                                backgroundColor: "var(--c-brand-soft-2)",
+                                color: "var(--c-brand)",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -187,7 +187,7 @@ export default function OxQuizListPage() {
                             </span>
                           ))}
                           {sections.length > 4 && (
-                            <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "#F3F4F6", color: "#8A909C", fontSize: 11, fontWeight: 700 }}>
+                            <span style={{ padding: "4px 8px", borderRadius: 999, backgroundColor: "var(--c-bg-muted)", color: "var(--c-text-4)", fontSize: 11, fontWeight: 700 }}>
                               +{sections.length - 4}
                             </span>
                           )}

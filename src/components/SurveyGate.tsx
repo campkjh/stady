@@ -76,22 +76,22 @@ export default function SurveyGate() {
         style={{
           width: "100%",
           maxWidth: 460,
-          background: "#fff",
+          background: "var(--c-bg)",
           borderRadius: 22,
           padding: "24px 20px 18px",
           boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
           marginBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
       >
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: "#191F28", margin: 0, lineHeight: 1.35 }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, color: "var(--c-text-b)", margin: 0, lineHeight: 1.35 }}>
           스타디, 어떻게 쓰고 계신가요?
         </h2>
-        <p style={{ fontSize: 13.5, color: "#8B95A1", margin: "8px 0 0", fontWeight: 500 }}>
+        <p style={{ fontSize: 13.5, color: "var(--c-text-4b)", margin: "8px 0 0", fontWeight: 500 }}>
           처음 한 번만 여쭤봐요. 더 나은 스타디를 만드는 데 큰 힘이 됩니다 🙏
         </p>
 
         {/* 만족도 */}
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#191F28", margin: "20px 0 10px" }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", margin: "20px 0 10px" }}>
           만족도를 선택해주세요
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
@@ -111,12 +111,12 @@ export default function SurveyGate() {
                   padding: "10px 2px",
                   borderRadius: 14,
                   border: "none",
-                  background: active ? "#E8F0FE" : "#F5F7FA",
-                  boxShadow: active ? "inset 0 0 0 2px #3787FF" : "none",
+                  background: active ? "var(--c-brand-soft)" : "var(--c-bg-soft-5)",
+                  boxShadow: active ? "inset 0 0 0 2px var(--c-brand)" : "none",
                 }}
               >
                 <span style={{ fontSize: 24, lineHeight: 1 }}>{f.emoji}</span>
-                <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600, color: active ? "#1D4ED8" : "#8B95A1" }}>
+                <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600, color: active ? "var(--c-brand-deep-2)" : "var(--c-text-4b)" }}>
                   {f.label}
                 </span>
               </button>
@@ -125,8 +125,8 @@ export default function SurveyGate() {
         </div>
 
         {/* 원하는 기능 */}
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#191F28", margin: "20px 0 10px" }}>
-          추가됐으면 하는 기능이 있나요? <span style={{ color: "#B0B8C1", fontWeight: 500, fontSize: 12 }}>(선택)</span>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", margin: "20px 0 10px" }}>
+          추가됐으면 하는 기능이 있나요? <span style={{ color: "var(--c-text-5)", fontWeight: 500, fontSize: 12 }}>(선택)</span>
         </p>
         <textarea
           value={feature}
@@ -137,11 +137,11 @@ export default function SurveyGate() {
             width: "100%",
             resize: "none",
             borderRadius: 14,
-            border: "1px solid #E5E8EB",
-            background: "#FBFCFD",
+            border: "1px solid var(--c-bg-muted-20)",
+            background: "var(--c-bg-soft-10)",
             padding: "12px 14px",
             fontSize: 14,
-            color: "#191F28",
+            color: "var(--c-text-b)",
             outline: "none",
             fontFamily: "inherit",
             boxSizing: "border-box",
@@ -160,7 +160,7 @@ export default function SurveyGate() {
             height: 52,
             borderRadius: 14,
             border: "none",
-            background: satisfaction == null ? "#C4D4F0" : "#3787FF",
+            background: satisfaction == null ? "var(--c-brand-line-5)" : "var(--c-brand)",
             color: "#fff",
             fontSize: 16,
             fontWeight: 800,
@@ -179,7 +179,7 @@ export default function SurveyGate() {
             height: 40,
             border: "none",
             background: "none",
-            color: "#8B95A1",
+            color: "var(--c-text-4b)",
             fontSize: 14,
             fontWeight: 600,
             cursor: "pointer",

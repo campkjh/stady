@@ -32,7 +32,7 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
         position: "relative",
         width: "calc(100% - 32px)",
         maxWidth: 375,
-        backgroundColor: "#fff",
+        backgroundColor: "var(--c-bg)",
         borderRadius: 20,
         padding: 12,
         animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -40,11 +40,11 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
       }}>
         {/* Text */}
         <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D", lineHeight: 1.5, whiteSpace: "pre-line" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)", lineHeight: 1.5, whiteSpace: "pre-line" }}>
             {title}
           </h2>
           {subtitle && (
-            <p style={{ fontSize: 15, color: "#8A909C", marginTop: 1 }}>
+            <p style={{ fontSize: 15, color: "var(--c-text-4)", marginTop: 1 }}>
               {subtitle}
             </p>
           )}
@@ -62,7 +62,7 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
                 width: "100%",
                 height: 48,
                 borderRadius: 12,
-                backgroundColor: btn.bgColor || (idx === 0 ? "#FFC84D" : "#292A2E"),
+                backgroundColor: btn.bgColor || (idx === 0 ? "var(--c-warn-i)" : "var(--c-inverse-5)"),
                 color: btn.color || (idx === 0 ? "#3E1918" : "#fff"),
                 fontSize: 18,
                 fontWeight: 700,

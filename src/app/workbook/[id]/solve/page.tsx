@@ -311,27 +311,27 @@ export default function SolvePage() {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      maxWidth: 720, margin: "0 auto", background: "#fff",
+      maxWidth: 720, margin: "0 auto", background: "var(--c-bg)",
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       {/* Top Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #F3F4F6", flexShrink: 0, position: "relative", zIndex: 20, background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--c-bg-muted)", flexShrink: 0, position: "relative", zIndex: 20, background: "var(--c-bg)" }}>
         <button onClick={() => router.back()} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#F3F4F6", padding: "6px 12px", borderRadius: 20 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", fontVariantNumeric: "tabular-nums" }}>{formatMMSS(elapsed)}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--c-bg-muted)", padding: "6px 12px", borderRadius: 20 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2c)", fontVariantNumeric: "tabular-nums" }}>{formatMMSS(elapsed)}</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#3787FF" }}>{score}점</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-brand)" }}>{score}점</span>
         </div>
 
         <button onClick={() => setShowDrawer(true)} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"/>
             <line x1="3" y1="12" x2="21" y2="12"/>
             <line x1="3" y1="18" x2="21" y2="18"/>
@@ -340,13 +340,13 @@ export default function SolvePage() {
       </div>
 
       {/* Progress */}
-      <div style={{ padding: "10px 16px 6px", flexShrink: 0, position: "relative", zIndex: 20, background: "#fff" }}>
+      <div style={{ padding: "10px 16px 6px", flexShrink: 0, position: "relative", zIndex: 20, background: "var(--c-bg)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: "#9CA3AF" }}>{currentIndex + 1} / {problems.length}</span>
-          <span style={{ fontSize: 12, color: "#9CA3AF" }}>답변 {answeredCount} · 정답 {score}</span>
+          <span style={{ fontSize: 12, color: "var(--c-text-4c)" }}>{currentIndex + 1} / {problems.length}</span>
+          <span style={{ fontSize: 12, color: "var(--c-text-4c)" }}>답변 {answeredCount} · 정답 {score}</span>
         </div>
-        <div style={{ height: 4, background: "#F3F4F6", borderRadius: 2, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${((currentIndex + 1) / problems.length) * 100}%`, background: "#3787FF", transition: "width 0.3s" }} />
+        <div style={{ height: 4, background: "var(--c-bg-muted)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${((currentIndex + 1) / problems.length) * 100}%`, background: "var(--c-brand)", transition: "width 0.3s" }} />
         </div>
       </div>
 
@@ -360,19 +360,19 @@ export default function SolvePage() {
       {/* Problem area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
         {currentProblem.passageImage && (
-          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6", position: "relative", zIndex: 10 }}>
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-bg-muted)", position: "relative", zIndex: 10 }}>
             <img src={currentProblem.passageImage} alt="지문" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
         {currentProblem.questionImage && (
-          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid #F3F4F6", position: "relative", zIndex: 10 }}>
+          <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-bg-muted)", position: "relative", zIndex: 10 }}>
             <img src={currentProblem.questionImage} alt="문제" style={{ width: "100%", display: "block" }} />
           </div>
         )}
 
         {currentProblem.questionText && (
-          <p style={{ fontSize: 15, fontWeight: 600, color: "#111", lineHeight: 1.6, marginBottom: 14, position: "relative", zIndex: 10 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "var(--c-text-c)", lineHeight: 1.6, marginBottom: 14, position: "relative", zIndex: 10 }}>
             {currentProblem.questionText}
           </p>
         )}
@@ -393,13 +393,13 @@ export default function SolvePage() {
                   className="press"
                   style={{
                     textAlign: "left", padding: "14px 16px", borderRadius: 14,
-                    border: `1.5px solid ${isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#E5E7EB"}`,
-                    background: isAns ? "#EAF2FF" : isWrongPick ? "#FEF2F2" : isSelected ? "#EAF2FF" : "#fff",
-                    fontSize: 14, color: "#111", display: "flex", gap: 10, cursor: isAnswered ? "default" : "pointer",
+                    border: `1.5px solid ${isAns ? "var(--c-brand)" : isWrongPick ? "var(--c-danger)" : isSelected ? "var(--c-brand)" : "var(--c-border)"}`,
+                    background: isAns ? "var(--c-brand-soft-6)" : isWrongPick ? "var(--c-danger-soft)" : isSelected ? "var(--c-brand-soft-6)" : "var(--c-bg)",
+                    fontSize: 14, color: "var(--c-text-c)", display: "flex", gap: 10, cursor: isAnswered ? "default" : "pointer",
                     transition: "all 0.15s ease",
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: isAns ? "#3787FF" : isWrongPick ? "#EF4444" : "#6B7280" }}>{choiceLabels[i]}</span>
+                  <span style={{ fontWeight: 700, color: isAns ? "var(--c-brand)" : isWrongPick ? "var(--c-danger)" : "var(--c-text-3)" }}>{choiceLabels[i]}</span>
                   <span>{choice}</span>
                 </button>
               );
@@ -412,13 +412,13 @@ export default function SolvePage() {
       {hasChoiceImage && (
         <div style={{
           position: "absolute", left: 12, right: 12, bottom: 88,
-          background: "#fff", borderRadius: 20,
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.12)", border: "1px solid #E5E7EB",
+          background: "var(--c-bg)", borderRadius: 20,
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.12)", border: "1px solid var(--c-border)",
           overflow: "hidden",
           maxHeight: "48vh", display: "flex", flexDirection: "column", zIndex: 10,
         }}>
           {/* Number buttons */}
-          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid #F3F4F6", background: "#FAFBFC" }}>
+          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderBottom: "1px solid var(--c-bg-muted)", background: "var(--c-bg-soft-2)" }}>
             {[1, 2, 3, 4, 5].map((n) => {
               const isSelected = selectedAnswer === n;
               const isAns = isAnswered && n === currentProblem.answer;
@@ -431,9 +431,9 @@ export default function SolvePage() {
                   className="press"
                   style={{
                     flex: 1, height: 40, borderRadius: 10,
-                    border: `1.5px solid ${isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#E5E7EB"}`,
-                    background: isAns ? "#3787FF" : isWrongPick ? "#EF4444" : isSelected ? "#3787FF" : "#fff",
-                    color: (isSelected || isAns || isWrongPick) ? "#fff" : "#374151",
+                    border: `1.5px solid ${isAns ? "var(--c-brand)" : isWrongPick ? "var(--c-danger)" : isSelected ? "var(--c-brand)" : "var(--c-border)"}`,
+                    background: isAns ? "var(--c-brand)" : isWrongPick ? "var(--c-danger)" : isSelected ? "var(--c-brand)" : "var(--c-bg)",
+                    color: (isSelected || isAns || isWrongPick) ? "#fff" : "var(--c-text-2c)",
                     fontSize: 15, fontWeight: 700, cursor: isAnswered ? "default" : "pointer",
                     transition: "all 0.15s ease",
                   }}
@@ -444,7 +444,7 @@ export default function SolvePage() {
             })}
           </div>
           {/* Choice image (aspect ratio preserved by img) */}
-          <div style={{ overflow: "auto", flex: 1, background: "#F9FAFB" }}>
+          <div style={{ overflow: "auto", flex: 1, background: "var(--c-bg-soft)" }}>
             <img src={currentProblem.choice1} alt="선택지" style={{ width: "100%", display: "block" }} />
           </div>
         </div>
@@ -454,7 +454,7 @@ export default function SolvePage() {
       <div style={{
         position: "absolute", left: 0, right: 0, bottom: 0,
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom, 0px))",
-        borderTop: "1px solid #F3F4F6", background: "#fff",
+        borderTop: "1px solid var(--c-bg-muted)", background: "var(--c-bg)",
         display: "flex", gap: 8, flexShrink: 0, zIndex: 20,
       }}>
         <button
@@ -463,7 +463,7 @@ export default function SolvePage() {
           className="press"
           style={{
             flex: "0 0 auto", height: 48, padding: "0 18px", borderRadius: 12,
-            background: "#F3F4F6", border: "none", fontSize: 14, fontWeight: 600, color: "#374151",
+            background: "var(--c-bg-muted)", border: "none", fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)",
             opacity: currentIndex === 0 ? 0.4 : 1,
           }}
         >
@@ -476,7 +476,7 @@ export default function SolvePage() {
             className="press"
             style={{
               flex: 1, height: 48, borderRadius: 12,
-              background: "#3787FF", border: "none", fontSize: 15, fontWeight: 700, color: "#fff",
+              background: "var(--c-brand)", border: "none", fontSize: 15, fontWeight: 700, color: "#fff",
               opacity: submitting ? 0.6 : 1,
             }}
           >
@@ -489,9 +489,9 @@ export default function SolvePage() {
             className="press"
             style={{
               flex: 1, height: 48, borderRadius: 12,
-              background: isAnswered ? "#3787FF" : "#E5E7EB",
+              background: isAnswered ? "var(--c-brand)" : "var(--c-border)",
               border: "none", fontSize: 15, fontWeight: 700,
-              color: isAnswered ? "#fff" : "#9CA3AF",
+              color: isAnswered ? "#fff" : "var(--c-text-4c)",
               opacity: currentIndex >= problems.length - 1 ? 0.4 : 1,
             }}
           >
@@ -510,7 +510,7 @@ export default function SolvePage() {
           <div style={{
             position: "absolute", left: 0, right: 0, bottom: 0,
             maxWidth: 720, margin: "0 auto",
-            background: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            background: "var(--c-bg)", borderTopLeftRadius: 24, borderTopRightRadius: 24,
             padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
             animation: "explanationSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
             maxHeight: "70vh", overflowY: "auto",
@@ -520,31 +520,31 @@ export default function SolvePage() {
                 <span style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   padding: "4px 12px", borderRadius: 20,
-                  background: isCorrect ? "#E8F0FE" : "#FEE2E2",
-                  color: isCorrect ? "#3787FF" : "#EF4444",
+                  background: isCorrect ? "var(--c-brand-soft)" : "var(--c-danger-soft-3)",
+                  color: isCorrect ? "var(--c-brand)" : "var(--c-danger)",
                   fontSize: 13, fontWeight: 700,
                 }}>
                   {isCorrect ? "정답!" : "오답"}
                 </span>
-                <span style={{ fontSize: 13, color: "#6B7280" }}>
-                  정답 <b style={{ color: "#111" }}>{currentProblem.answer}번</b>
+                <span style={{ fontSize: 13, color: "var(--c-text-3)" }}>
+                  정답 <b style={{ color: "var(--c-text-c)" }}>{currentProblem.answer}번</b>
                 </span>
               </div>
               <button
                 onClick={() => setShowExplanation(false)}
-                style={{ width: 32, height: 32, borderRadius: "50%", background: "#F3F4F6", border: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--c-bg-muted)", border: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 8 }}>해설</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>해설</h3>
             {currentProblem.explanation ? (
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#374151", whiteSpace: "pre-wrap" }}>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--c-text-2c)", whiteSpace: "pre-wrap" }}>
                 {currentProblem.explanation}
               </p>
             ) : (
-              <p style={{ fontSize: 13, color: "#9CA3AF" }}>해설이 아직 준비되지 않았습니다.</p>
+              <p style={{ fontSize: 13, color: "var(--c-text-4c)" }}>해설이 아직 준비되지 않았습니다.</p>
             )}
 
             {currentIndex < problems.length - 1 && (
@@ -553,7 +553,7 @@ export default function SolvePage() {
                 className="press"
                 style={{
                   width: "100%", marginTop: 18, height: 48, borderRadius: 12,
-                  background: "#3787FF", border: "none", color: "#fff",
+                  background: "var(--c-brand)", border: "none", color: "#fff",
                   fontSize: 15, fontWeight: 700,
                 }}
               >
@@ -579,23 +579,23 @@ export default function SolvePage() {
           />
           <div style={{
             position: "absolute", top: 0, right: 0, bottom: 0,
-            width: "82%", maxWidth: 360, background: "#fff",
+            width: "82%", maxWidth: 360, background: "var(--c-bg)",
             animation: "drawerSlide 0.25s ease",
             boxShadow: "-6px 0 24px rgba(0,0,0,0.12)",
             display: "flex", flexDirection: "column",
           }}>
-            <div style={{ padding: "18px 18px 12px", borderBottom: "1px solid #F3F4F6" }}>
+            <div style={{ padding: "18px 18px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>문제 목록</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)" }}>문제 목록</h3>
                 <button onClick={() => setShowDrawer(false)} style={{ background: "none", border: "none" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
               <div style={{ display: "flex", gap: 14, fontSize: 13 }}>
-                <span style={{ color: "#6B7280" }}>전체 <b style={{ color: "#111" }}>{problems.length}</b></span>
-                <span style={{ color: "#3787FF" }}>정답 <b>{score}</b></span>
-                <span style={{ color: "#EF4444" }}>오답 <b>{answers.size - score}</b></span>
-                <span style={{ color: "#9CA3AF" }}>미답 <b>{problems.length - answers.size}</b></span>
+                <span style={{ color: "var(--c-text-3)" }}>전체 <b style={{ color: "var(--c-text-c)" }}>{problems.length}</b></span>
+                <span style={{ color: "var(--c-brand)" }}>정답 <b>{score}</b></span>
+                <span style={{ color: "var(--c-danger)" }}>오답 <b>{answers.size - score}</b></span>
+                <span style={{ color: "var(--c-text-4c)" }}>미답 <b>{problems.length - answers.size}</b></span>
               </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
@@ -612,7 +612,7 @@ export default function SolvePage() {
                     style={{
                       display: "flex", alignItems: "center", gap: 12,
                       width: "100%", padding: "12px 14px", borderRadius: 12,
-                      background: isCurrent ? "#F0F5FF" : "transparent",
+                      background: isCurrent ? "var(--c-brand-soft-5)" : "transparent",
                       border: "none", textAlign: "left", cursor: "pointer",
                       marginBottom: 2,
                     }}
@@ -621,25 +621,25 @@ export default function SolvePage() {
                       width: 28, height: 28, borderRadius: "50%",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 12, fontWeight: 700, color: "#fff",
-                      background: !hasAnswered ? "#D1D5DB" : correct ? "#3787FF" : "#EF4444",
+                      background: !hasAnswered ? "var(--c-border-strong)" : correct ? "var(--c-brand)" : "var(--c-danger)",
                       flexShrink: 0,
                     }}>
                       {idx + 1}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         문제 {idx + 1}
                       </p>
-                      <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                      <p style={{ fontSize: 11, color: "var(--c-text-4c)", marginTop: 1 }}>
                         {hasAnswered ? `${sel}번 선택` : "아직 풀지 않음"}
                       </p>
                     </div>
                     {hasAnswered && (
                       <span style={{
                         fontSize: 11, fontWeight: 700,
-                        color: correct ? "#3787FF" : "#EF4444",
+                        color: correct ? "var(--c-brand)" : "var(--c-danger)",
                         padding: "2px 8px", borderRadius: 10,
-                        background: correct ? "#E8F0FE" : "#FEE2E2",
+                        background: correct ? "var(--c-brand-soft)" : "var(--c-danger-soft-3)",
                       }}>
                         {correct ? "정답" : "오답"}
                       </span>
@@ -679,8 +679,8 @@ export default function SolvePage() {
             },
             {
               label: "처음부터 풀기",
-              bgColor: "#F2F3F5",
-              color: "#51535C",
+              bgColor: "var(--c-bg-muted-3)",
+              color: "var(--c-text-3c)",
               onClick: () => {
                 if (progressKey) {
                   fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});

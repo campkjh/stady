@@ -49,9 +49,9 @@ export default function ReorderableList<T extends { id: string }>({
               gridTemplateColumns: "28px 1fr auto",
               alignItems: "center",
               gap: 8,
-              border: `1px solid ${active ? "#3787FF" : "#E5E7EB"}`,
+              border: `1px solid ${active ? "var(--c-brand)" : "var(--c-border)"}`,
               borderRadius: 8,
-              background: active ? "#EFF6FF" : "#fff",
+              background: active ? "var(--c-brand-soft-4)" : "var(--c-bg)",
               padding: 10,
               cursor: "pointer",
             }}
@@ -59,7 +59,7 @@ export default function ReorderableList<T extends { id: string }>({
             <span
               aria-label="드래그 정렬"
               title="드래그해서 순서 변경"
-              style={{ color: "#9CA3AF", fontSize: 18, lineHeight: 1, cursor: "grab", textAlign: "center" }}
+              style={{ color: "var(--c-text-4c)", fontSize: 18, lineHeight: 1, cursor: "grab", textAlign: "center" }}
             >
               =
             </span>
@@ -102,10 +102,10 @@ export default function ReorderableList<T extends { id: string }>({
 const smallButtonStyle = {
   width: 28,
   height: 28,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 6,
-  background: "#fff",
-  color: "#374151",
+  background: "var(--c-bg)",
+  color: "var(--c-text-2c)",
   fontWeight: 800,
   cursor: "pointer",
 } as const;

@@ -20,14 +20,14 @@ export default function CategoryGroupTable({ groups, selectedId, onSelect, onReo
       renderItem={(group) => (
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <strong style={{ color: "#111827", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {group.name}
             </strong>
-            <span style={{ color: group.isActive ? "#047857" : "#6B7280", fontSize: 11, fontWeight: 800 }}>
+            <span style={{ color: group.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 11, fontWeight: 800 }}>
               {group.isActive ? "노출" : "비노출"}
             </span>
           </div>
-          <span style={{ color: "#8A909C", fontSize: 12 }}>/{group.slug} · 태그 {group.tagCount || 0} · 게시글 {group.postCount || 0}</span>
+          <span style={{ color: "var(--c-text-4)", fontSize: 12 }}>/{group.slug} · 태그 {group.tagCount || 0} · 게시글 {group.postCount || 0}</span>
         </div>
       )}
     />

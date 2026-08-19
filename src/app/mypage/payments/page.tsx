@@ -36,7 +36,7 @@ export default function PaymentsLogPage() {
 
   return (
     // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
-    <div style={{ width: "100%", minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "var(--c-bg)", maxWidth: 720, margin: "0 auto" }}>
       <BackHeader title="결제로그" />
 
       {loading ? (
@@ -45,7 +45,7 @@ export default function PaymentsLogPage() {
         </div>
       ) : items.length === 0 ? (
         <div style={centerBox}>
-          <p style={{ color: "#8B95A1", fontSize: 15, fontWeight: 500 }}>결제 내역이 없어요</p>
+          <p style={{ color: "var(--c-text-4b)", fontSize: 15, fontWeight: 500 }}>결제 내역이 없어요</p>
         </div>
       ) : (
         <div style={{ padding: "8px 0" }}>
@@ -54,16 +54,16 @@ export default function PaymentsLogPage() {
             return (
               <div key={i} style={itemRow}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "#191F28", margin: 0 }}>{it.name}</p>
-                  <p style={{ fontSize: 12.5, color: "#8B95A1", margin: "4px 0 0", fontWeight: 500 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-b)", margin: 0 }}>{it.name}</p>
+                  <p style={{ fontSize: 12.5, color: "var(--c-text-4b)", margin: "4px 0 0", fontWeight: 500 }}>
                     {new Date(it.date).toLocaleDateString("ko-KR")} · {it.type === "subscription" ? "정기결제" : "단건결제"}
                   </p>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: "#191F28", margin: 0 }}>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text-b)", margin: 0 }}>
                     {it.amount.toLocaleString()}원
                   </p>
-                  <p style={{ fontSize: 12, fontWeight: 700, margin: "4px 0 0", color: failed ? "#E85D5D" : "#16A34A" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, margin: "4px 0 0", color: failed ? "var(--c-danger-b)" : "var(--c-success-e)" }}>
                     {failed ? "실패" : "완료"}
                   </p>
                 </div>
@@ -88,8 +88,8 @@ const spinner = {
   width: 36,
   height: 36,
   borderRadius: 999,
-  border: "4px solid #E5E7EB",
-  borderTopColor: "#3787FF",
+  border: "4px solid var(--c-border)",
+  borderTopColor: "var(--c-brand)",
   animation: "payspin 0.8s linear infinite",
 } as const;
 
@@ -98,5 +98,5 @@ const itemRow = {
   alignItems: "center",
   gap: 12,
   padding: "16px 20px",
-  borderBottom: "1px solid #F5F6F8",
+  borderBottom: "1px solid var(--c-bg-muted-10)",
 } as const;

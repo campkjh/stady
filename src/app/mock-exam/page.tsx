@@ -28,7 +28,7 @@ export default async function MockExamListPage() {
   }));
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "var(--c-bg)" }}>
       <BackHeader title="모의고사" />
       <MockExamBrowser exams={items} years={years} />
     </div>

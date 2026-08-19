@@ -63,14 +63,14 @@ function CategoryContent() {
   return (
     <div style={{ width: "100%", overflow: "hidden", minHeight: "100vh" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px" }}>
         <button
           type="button"
           onClick={() => router.back()}
           className="press"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, flexShrink: 0, background: "none", border: "none" }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -83,11 +83,11 @@ function CategoryContent() {
             style={{
               width: "100%",
               borderRadius: 10,
-              border: "1px solid #E5E7EB",
-              backgroundColor: "#F9FAFB",
+              border: "1px solid var(--c-border)",
+              backgroundColor: "var(--c-bg-soft)",
               padding: "10px 16px",
               fontSize: 14,
-              color: "#9CA3AF",
+              color: "var(--c-text-4c)",
               outline: "none",
               cursor: "pointer",
             }}
@@ -122,8 +122,8 @@ function CategoryContent() {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  backgroundColor: isSelected ? "#EBF0FF" : "#F2F2F6",
-                  border: isSelected ? "2px solid #4A90D9" : "1px solid #F3F4F6",
+                  backgroundColor: isSelected ? "var(--c-brand-soft-10)" : "var(--c-bg-muted-18)",
+                  border: isSelected ? "2px solid var(--c-correct)" : "1px solid var(--c-bg-muted)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -138,7 +138,7 @@ function CategoryContent() {
                 <span style={{
                   fontSize: 12,
                   fontWeight: isSelected ? 700 : 500,
-                  color: isSelected ? "#4A90D9" : "#374151",
+                  color: isSelected ? "var(--c-correct)" : "var(--c-text-2c)",
                   transition: "all 0.2s ease",
                 }}>
                   {cat.name}
@@ -155,7 +155,7 @@ function CategoryContent() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[#4A90D9]" />
         </div>
       ) : workbooks.length === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", color: "#9CA3AF" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", color: "var(--c-text-4c)" }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
@@ -176,7 +176,7 @@ function CategoryContent() {
                 aspectRatio: "3/4",
                 borderRadius: 8,
                 overflow: "hidden",
-                backgroundColor: "#3787FF",
+                backgroundColor: "var(--c-brand)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -188,10 +188,10 @@ function CategoryContent() {
                 )}
               </div>
               <div style={{ paddingTop: 8 }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {wb.title}
                 </p>
-                <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
+                <p style={{ fontSize: 10, color: "var(--c-text-4c)", marginTop: 2 }}>
                   {wb.totalQuestions}문항
                 </p>
               </div>

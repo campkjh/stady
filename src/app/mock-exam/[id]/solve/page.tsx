@@ -11,9 +11,9 @@ export default async function MockExamSolvePage({ params }: { params: Promise<{ 
 
   if (!exam || !exam.isActive) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, background: "#fff", padding: 24 }}>
-        <p style={{ color: "#8A909C", fontSize: 15 }}>모의고사를 찾을 수 없습니다.</p>
-        <Link href="/mock-exam" style={{ color: "#3787FF", fontWeight: 700, textDecoration: "none" }}>목록으로</Link>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, background: "var(--c-bg)", padding: 24 }}>
+        <p style={{ color: "var(--c-text-4)", fontSize: 15 }}>모의고사를 찾을 수 없습니다.</p>
+        <Link href="/mock-exam" style={{ color: "var(--c-brand)", fontWeight: 700, textDecoration: "none" }}>목록으로</Link>
       </div>
     );
   }

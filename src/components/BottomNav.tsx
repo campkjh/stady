@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const ACTIVE_COLOR = "#3787FF";
-const INACTIVE_COLOR = "#2B313D";
+const ACTIVE_COLOR = "var(--c-brand)";
+const INACTIVE_COLOR = "var(--c-text-2)";
 const COMMUNITY_VISITED_KEY = "stady_community_visited";
 const COMMUNITY_SEEN_KEY = "stady_community_seen_at";
 
@@ -176,8 +176,8 @@ export default function BottomNav() {
       left: 0,
       right: 0,
       zIndex: 50,
-      borderTop: "1px solid #E5E7EB",
-      backgroundColor: "#fff",
+      borderTop: "1px solid var(--c-border)",
+      backgroundColor: "var(--c-bg)",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
       <ul ref={listRef} className="main-nav-list" style={{
@@ -240,8 +240,8 @@ export default function BottomNav() {
                         width: 8,
                         height: 8,
                         borderRadius: 999,
-                        background: "#FF3B30",
-                        border: "1.5px solid #fff",
+                        background: "var(--c-danger-e)",
+                        border: "1.5px solid var(--c-bg)",
                         zIndex: 1,
                       }}
                     />
@@ -317,7 +317,7 @@ export default function BottomNav() {
           animation: communityTipFloat 2.6s ease-in-out infinite;
         }
         .community-tip-bubble {
-          background: #fff;
+          background: var(--c-bg);
           border-radius: 16px;
           padding: 7px 14px;
           box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);

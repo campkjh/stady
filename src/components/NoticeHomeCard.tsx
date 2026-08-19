@@ -73,8 +73,8 @@ export default function NoticeHomeCard() {
           gap: 10,
           padding: 10,
           borderRadius: 14,
-          background: "#F6F8FB",
-          border: "1px solid #EEF1F5",
+          background: "var(--c-bg-soft-11)",
+          border: "1px solid var(--c-bg-muted-7)",
           cursor: "pointer",
         }}
       >
@@ -88,12 +88,12 @@ export default function NoticeHomeCard() {
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "#3787FF", background: "#E9F1FF", borderRadius: 5, padding: "1px 5px", flexShrink: 0 }}>공지</span>
-            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#191F28", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 5, padding: "1px 5px", flexShrink: 0 }}>공지</span>
+            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {notice.title}
             </p>
           </div>
-          <p style={{ margin: 0, fontSize: 12, color: "#8A909C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--c-text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {notice.body}
           </p>
         </div>
@@ -101,7 +101,7 @@ export default function NoticeHomeCard() {
           type="button"
           onClick={dismiss}
           aria-label="닫기"
-          style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 999, border: "none", background: "none", color: "#B0B8C1", fontSize: 18, lineHeight: 1, cursor: "pointer" }}
+          style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 999, border: "none", background: "none", color: "var(--c-text-5)", fontSize: 18, lineHeight: 1, cursor: "pointer" }}
         >
           ×
         </button>

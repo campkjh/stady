@@ -137,8 +137,8 @@ export default function DailyQuizCard() {
       border: "none",
       fontSize: 16,
       fontWeight: 600,
-      color: "#2E333B",
-      background: "#EBEFF4",
+      color: "var(--c-text-2e)",
+      background: "var(--c-bg-muted-13)",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -148,23 +148,23 @@ export default function DailyQuizCard() {
     const isCorrectOpt = correctAnswer === optValue;
     const isMine = mySelected === optValue;
     if (isCorrectOpt) {
-      return { ...base, background: "#E8F0FE", boxShadow: "inset 0 0 0 2px #3787FF", color: "#1D4ED8" };
+      return { ...base, background: "var(--c-brand-soft)", boxShadow: "inset 0 0 0 2px var(--c-brand)", color: "var(--c-brand-deep-2)" };
     }
     if (isMine && !isCorrectOpt) {
-      return { ...base, background: "#FFE7E7", boxShadow: "inset 0 0 0 2px #E85D5D", color: "#C0392B" };
+      return { ...base, background: "var(--c-danger-soft-6)", boxShadow: "inset 0 0 0 2px var(--c-danger-b)", color: "var(--c-danger-j)" };
     }
-    return { ...base, background: "#F4F6F9", color: "#9CA3AF" };
+    return { ...base, background: "var(--c-bg-soft-12)", color: "var(--c-text-4c)" };
   }
 
   return (
     <section>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>데일리 퀴즈</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>데일리 퀴즈</h2>
       <div
         style={{
           position: "relative",
-          background: "#fff",
+          background: "var(--c-bg)",
           borderRadius: 18,
-          border: "1px solid #EEF0F3",
+          border: "1px solid var(--c-bg-muted-6)",
           boxShadow: "0 6px 20px rgba(15,23,42,0.06)",
           overflow: "hidden",
         }}
@@ -176,20 +176,20 @@ export default function DailyQuizCard() {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "14px 18px 0",
-            background: "linear-gradient(180deg, #F7F8FA 0%, rgba(247,248,250,0) 100%)",
+            background: "linear-gradient(180deg, var(--c-bg-soft-8) 0%, transparent 100%)",
           }}
         >
-          <span style={{ fontSize: 13, color: "#B6BCC6", fontWeight: 500, letterSpacing: 0.2 }}>
+          <span style={{ fontSize: 13, color: "var(--c-text-5e)", fontWeight: 500, letterSpacing: 0.2 }}>
             오늘의 퀴즈
           </span>
-          <span style={{ fontSize: 14, color: "#B6BCC6", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 14, color: "var(--c-text-5e)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
             {fmtTime(elapsed)}
           </span>
         </div>
 
         {/* 카테고리 타이틀 */}
-        <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: 20, fontWeight: 600, color: "#3A3F47" }}>
-          {q.categoryName} <span style={{ fontWeight: 800, color: "#1B1E24" }}>O/X</span>
+        <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: 20, fontWeight: 600, color: "var(--c-text-2f)" }}>
+          {q.categoryName} <span style={{ fontWeight: 800, color: "var(--c-text-d)" }}>O/X</span>
         </p>
 
         {/* 문제 */}
@@ -200,7 +200,7 @@ export default function DailyQuizCard() {
             fontSize: 22,
             fontWeight: 700,
             lineHeight: 1.5,
-            color: "#2E333B",
+            color: "var(--c-text-2e)",
             wordBreak: "keep-all",
           }}
         >
@@ -243,19 +243,19 @@ export default function DailyQuizCard() {
                 marginBottom: 8,
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 800, color: myCorrect ? "#2563EB" : "#E85D5D" }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: myCorrect ? "var(--c-brand-deep-3)" : "var(--c-danger-b)" }}>
                 {myCorrect ? "정답이에요!" : "아쉬워요"}
                 {myCorrect && xpGained > 0 && (
-                  <span style={{ marginLeft: 6, color: "#E59500", fontWeight: 800 }}>경험치 +{xpGained}</span>
+                  <span style={{ marginLeft: 6, color: "var(--c-warn-e)", fontWeight: 800 }}>경험치 +{xpGained}</span>
                 )}
               </span>
-              <span style={{ fontSize: 13, color: "#8A909C", fontWeight: 600 }}>
+              <span style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 600 }}>
                 정답률 {stats.correctRate}%
-                {stats.total > 0 && <span style={{ color: "#B6BCC6" }}> · {stats.total.toLocaleString()}명</span>}
+                {stats.total > 0 && <span style={{ color: "var(--c-text-5e)" }}> · {stats.total.toLocaleString()}명</span>}
               </span>
             </div>
             {/* 정답률 바 */}
-            <div style={{ height: 8, borderRadius: 999, background: "#EEF1F5", overflow: "hidden" }}>
+            <div style={{ height: 8, borderRadius: 999, background: "var(--c-bg-muted-7)", overflow: "hidden" }}>
               <div
                 style={{
                   height: "100%",
@@ -267,7 +267,7 @@ export default function DailyQuizCard() {
               />
             </div>
             {isGuest && (
-              <p style={{ margin: "10px 0 0", fontSize: 12, color: "#9CA3AF" }}>
+              <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--c-text-4c)" }}>
                 로그인하면 정답 시 경험치가 쌓여요.
               </p>
             )}

@@ -90,8 +90,8 @@ function SwipeableVocabBookmarkItem({
       style={{
         position: "relative",
         overflow: "hidden",
-        borderBottom: isLast ? "none" : "1px solid #F3F4F6",
-        background: "#EF4444",
+        borderBottom: isLast ? "none" : "1px solid var(--c-bg-muted)",
+        background: "var(--c-danger)",
       }}
     >
       <button
@@ -104,7 +104,7 @@ function SwipeableVocabBookmarkItem({
           bottom: 0,
           width: 88,
           border: "none",
-          background: "#EF4444",
+          background: "var(--c-danger)",
           color: "#fff",
           fontSize: 14,
           fontWeight: 800,
@@ -126,7 +126,7 @@ function SwipeableVocabBookmarkItem({
           alignItems: "center",
           width: "100%",
           padding: "14px 16px",
-          background: "#fff",
+          background: "var(--c-bg)",
           border: "none",
           cursor: "pointer",
           textAlign: "left",
@@ -136,13 +136,13 @@ function SwipeableVocabBookmarkItem({
         }}
       >
         <span style={{
-          flex: 1, fontSize: 15, fontWeight: 700, color: "#111",
+          flex: 1, fontSize: 15, fontWeight: 700, color: "var(--c-text-c)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {bookmark.word || bookmark.subtitle}
         </span>
         <span style={{
-          flex: 1, fontSize: 14, color: "#6B7280", textAlign: "right",
+          flex: 1, fontSize: 14, color: "var(--c-text-3)", textAlign: "right",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           paddingLeft: 12,
         }}>
@@ -283,7 +283,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="px-4 pt-6">
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", paddingBottom: 8 }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
           <h1 className="text-xl font-bold" style={{ margin: 0 }}>책갈피</h1>
           {!loading && bookmarks.length > 0 && (
@@ -293,10 +293,10 @@ export default function BookmarksPage() {
               disabled={deletingAll}
               className="press"
               style={{
-                border: "1px solid #FCA5A5",
+                border: "1px solid var(--c-danger-line-2)",
                 borderRadius: 999,
-                background: deletingAll ? "#FEE2E2" : "#fff",
-                color: "#DC2626",
+                background: deletingAll ? "var(--c-danger-soft-3)" : "var(--c-bg)",
+                color: "var(--c-danger-c)",
                 padding: "8px 12px",
                 fontSize: 13,
                 fontWeight: 800,
@@ -335,7 +335,7 @@ export default function BookmarksPage() {
 
       {/* OX 분류(카테고리) 필터 — 메인 탭(알약)과 구분되는 언더라인 탭 스타일 */}
       {activeTab === "ox" && oxCategories.length > 0 && (
-        <div className="flex gap-1 mb-6 overflow-x-auto" style={{ borderBottom: "1px solid #EFF1F4" }}>
+        <div className="flex gap-1 mb-6 overflow-x-auto" style={{ borderBottom: "1px solid var(--c-bg-muted-12)" }}>
           {[{ label: "전체", value: "" }, ...oxCategories.map((c) => ({ label: c, value: c }))].map((c) => {
             const active = oxCategory === c.value;
             return (
@@ -347,11 +347,11 @@ export default function BookmarksPage() {
                   padding: "8px 12px 11px",
                   background: "none",
                   border: "none",
-                  borderBottom: active ? "2.5px solid #3787FF" : "2.5px solid transparent",
+                  borderBottom: active ? "2.5px solid var(--c-brand)" : "2.5px solid transparent",
                   marginBottom: -1,
                   fontSize: 14,
                   fontWeight: active ? 800 : 600,
-                  color: active ? "#3787FF" : "#9CA3AF",
+                  color: active ? "var(--c-brand)" : "var(--c-text-4c)",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
                   transition: "color 0.15s ease",
@@ -401,18 +401,18 @@ export default function BookmarksPage() {
             <img src="/icons/bookmark-book3d.png" alt="" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 8px 16px rgba(101,111,255,0.25))" }} />
             <span style={{
               position: "absolute", top: -12, right: -6,
-              padding: "5px 10px", borderRadius: 999, background: "#fff",
-              color: "#4B5563", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
+              padding: "5px 10px", borderRadius: 999, background: "var(--c-bg)",
+              color: "var(--c-text-2d)", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
               boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
             }}>모아 풀기</span>
           </span>
 
           {/* 좌측 텍스트 */}
           <span style={{ position: "relative", display: "block", paddingRight: 118 }}>
-            <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#6B7CF7", marginBottom: 6 }}>
+            <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--c-brand-mid-2)", marginBottom: 6 }}>
               모아둔 문제 복습
             </span>
-            <span style={{ display: "block", fontSize: 17.5, fontWeight: 800, color: "#26282E", lineHeight: 1.38, letterSpacing: -0.2 }}>
+            <span style={{ display: "block", fontSize: 17.5, fontWeight: 800, color: "var(--c-text-e)", lineHeight: 1.38, letterSpacing: -0.2 }}>
               책갈피한 문제만<br />한번에 풀어보는 복습
             </span>
           </span>
@@ -421,11 +421,11 @@ export default function BookmarksPage() {
           <span aria-hidden style={{
             position: "absolute", right: 18, bottom: 16,
             width: 34, height: 34, borderRadius: "50%",
-            background: "rgba(255,255,255,0.92)",
+            background: "var(--c-bg-a92)",
             boxShadow: "0 4px 10px rgba(15,23,42,0.08)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4b)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
@@ -441,16 +441,16 @@ export default function BookmarksPage() {
       ) : bookmarks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <img src="/icons/notebook.svg" alt="" style={{ width: 52, height: 52, marginBottom: 12 }} />
-          <p style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>책갈피가 없어요</p>
-          <p style={{ fontSize: 13, color: "#9CA3AF" }}>책갈피에 다양한 문제집을 넣어보세요!</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4 }}>책갈피가 없어요</p>
+          <p style={{ fontSize: 13, color: "var(--c-text-4c)" }}>책갈피에 다양한 문제집을 넣어보세요!</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 16 }}>
           {/* Vocab section: en | ko list */}
           {vocabBookmarks.length > 0 && (
             <div style={{
-              borderRadius: 14, border: "1px solid #F3F4F6",
-              background: "#fff", overflow: "hidden",
+              borderRadius: 14, border: "1px solid var(--c-bg-muted)",
+              background: "var(--c-bg)", overflow: "hidden",
             }}>
               {vocabBookmarks.map((bm, i) => (
                 <SwipeableVocabBookmarkItem
@@ -468,8 +468,8 @@ export default function BookmarksPage() {
           {otherGroups.map((group) => (
             <div key={group.key}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "0 2px 10px" }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: "#374151" }}>{group.key}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF" }}>{group.items.length}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-2c)" }}>{group.key}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-4c)" }}>{group.items.length}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {group.items.map((bookmark) => (
@@ -488,9 +488,9 @@ export default function BookmarksPage() {
                     )}
                     {(bookmark.memo || bookmark.drawing) && (
                       // 퀴즈 노트: 노란 메모지 느낌으로 글/그림을 함께 보여준다.
-                      <div className="mt-2 w-full rounded-lg p-2" style={{ background: "#FFF8B8", border: "1px solid #EFE39A" }}>
+                      <div className="mt-2 w-full rounded-lg p-2" style={{ background: "var(--c-warn-soft-5)", border: "1px solid var(--c-warn-line-2)" }}>
                         {bookmark.memo && (
-                          <p className="whitespace-pre-wrap text-xs line-clamp-3" style={{ color: "#4A4224" }}>
+                          <p className="whitespace-pre-wrap text-xs line-clamp-3" style={{ color: "var(--c-warn-deep-2)" }}>
                             {bookmark.memo}
                           </p>
                         )}
@@ -500,7 +500,7 @@ export default function BookmarksPage() {
                             src={bookmark.drawing}
                             alt="노트 그림"
                             className={bookmark.memo ? "mt-1.5" : ""}
-                            style={{ width: "100%", borderRadius: 6, background: "rgba(255,255,255,0.5)" }}
+                            style={{ width: "100%", borderRadius: 6, background: "var(--c-bg-a50)" }}
                           />
                         )}
                       </div>
@@ -578,14 +578,14 @@ export default function BookmarksPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%", maxWidth: 320, background: "#fff", borderRadius: 18,
+              width: "100%", maxWidth: 320, background: "var(--c-bg)", borderRadius: 18,
               padding: "22px 20px 16px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
             }}
           >
-            <p style={{ fontSize: 16, fontWeight: 800, color: "#191F28", margin: "0 0 6px", textAlign: "center" }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>
               모든 책갈피 취소
             </p>
-            <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>
               찜한 모든 문제의 책갈피를 취소할까요?
             </p>
             <div style={{ display: "flex", gap: 8 }}>
@@ -593,8 +593,8 @@ export default function BookmarksPage() {
                 type="button"
                 onClick={() => setShowDeleteAllConfirm(false)}
                 style={{
-                  flex: 1, height: 48, borderRadius: 12, border: "1px solid #E5E7EB",
-                  background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                  flex: 1, height: 48, borderRadius: 12, border: "1px solid var(--c-border)",
+                  background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer",
                 }}
               >
                 취소
@@ -604,7 +604,7 @@ export default function BookmarksPage() {
                 onClick={handleDeleteAllBookmarks}
                 style={{
                   flex: 1, height: 48, borderRadius: 12, border: "none",
-                  background: "#EF4444", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+                  background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
                 }}
               >
                 확인

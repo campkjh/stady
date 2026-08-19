@@ -50,7 +50,7 @@ export default function NudgeBubble({
         {xp != null && <span className="nudge-bubble-xp">+{xp} XP</span>}
       </div>
       <svg className="nudge-bubble-tail" style={tailStyle} width="34" height="11" viewBox="0 0 39 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M30.922 2.63L20.459 11C19.729 11.584 18.69 11.584 17.96 11L7.496 2.63C5.368 0.928001 2.725 0 0 0H38.418C35.693 0 33.05 0.928001 30.922 2.63Z" fill="white" />
+        <path d="M30.922 2.63L20.459 11C19.729 11.584 18.69 11.584 17.96 11L7.496 2.63C5.368 0.928001 2.725 0 0 0H38.418C35.693 0 33.05 0.928001 30.922 2.63Z" fill="currentColor" />
       </svg>
     </div>
   );

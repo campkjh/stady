@@ -52,7 +52,7 @@ export default function MyPostsPage() {
 
   return (
     // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
-    <div style={{ width: "100%", minHeight: "100vh", background: "#fff", maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "var(--c-bg)", maxWidth: 720, margin: "0 auto" }}>
       <BackHeader title="내가 쓴 글" />
 
       {loading ? (
@@ -61,7 +61,7 @@ export default function MyPostsPage() {
         </div>
       ) : posts.length === 0 ? (
         <div style={centerBox}>
-          <p style={{ color: "#8B95A1", fontSize: 15, fontWeight: 500 }}>작성한 글이 없어요</p>
+          <p style={{ color: "var(--c-text-4b)", fontSize: 15, fontWeight: 500 }}>작성한 글이 없어요</p>
         </div>
       ) : (
         <div style={{ padding: "8px 0" }}>
@@ -74,15 +74,15 @@ export default function MyPostsPage() {
               style={itemRow}
             >
               {p.groupName && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#3182F6" }}>{p.groupName}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-brand-b)" }}>{p.groupName}</span>
               )}
-              <p style={{ fontSize: 15.5, fontWeight: 700, color: "#191F28", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 15.5, fontWeight: 700, color: "var(--c-text-b)", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {p.title}
               </p>
-              <p style={{ fontSize: 13.5, color: "#6B7280", margin: "5px 0 0", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              <p style={{ fontSize: 13.5, color: "var(--c-text-3)", margin: "5px 0 0", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {p.content}
               </p>
-              <p style={{ fontSize: 12.5, color: "#B0B8C1", margin: "8px 0 0", fontWeight: 500 }}>
+              <p style={{ fontSize: 12.5, color: "var(--c-text-5)", margin: "8px 0 0", fontWeight: 500 }}>
                 {new Date(p.createdAt).toLocaleDateString("ko-KR")} · 좋아요 {p.likeCount} · 댓글 {p.commentCount}
               </p>
             </button>
@@ -105,8 +105,8 @@ const spinner = {
   width: 36,
   height: 36,
   borderRadius: 999,
-  border: "4px solid #E5E7EB",
-  borderTopColor: "#3787FF",
+  border: "4px solid var(--c-border)",
+  borderTopColor: "var(--c-brand)",
   animation: "mpspin 0.8s linear infinite",
 } as const;
 
@@ -118,7 +118,7 @@ const itemRow = {
   padding: "16px 20px",
   background: "none",
   border: "none",
-  borderBottom: "1px solid #F5F6F8",
+  borderBottom: "1px solid var(--c-bg-muted-10)",
   textAlign: "left",
   cursor: "pointer",
 } as const;

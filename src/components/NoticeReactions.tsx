@@ -88,7 +88,7 @@ export default function NoticeReactions({ postId }: { postId: string }) {
   }
 
   return (
-    <div ref={rootRef} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, paddingTop: 12, borderTop: "1px solid #F3F4F6" }}>
+    <div ref={rootRef} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--c-bg-muted)" }}>
       <button
         type="button"
         onClick={toggleLike}
@@ -96,9 +96,9 @@ export default function NoticeReactions({ postId }: { postId: string }) {
         style={{
           display: "inline-flex", alignItems: "center", gap: 5,
           height: 34, padding: "0 13px", borderRadius: 999, cursor: "pointer",
-          border: `1px solid ${liked ? "#FFC9CF" : "#E5E7EB"}`,
-          background: liked ? "#FFF1F2" : "#fff",
-          color: liked ? "#E11D48" : "#6B7280",
+          border: `1px solid ${liked ? "var(--c-danger-line-4)" : "var(--c-border)"}`,
+          background: liked ? "var(--c-danger-soft-7)" : "var(--c-bg)",
+          color: liked ? "var(--c-danger-d)" : "var(--c-text-3)",
           fontSize: 13, fontWeight: 700,
         }}
       >
@@ -112,13 +112,13 @@ export default function NoticeReactions({ postId }: { postId: string }) {
         style={{
           display: "inline-flex", alignItems: "center", gap: 5,
           height: 34, padding: "0 13px", borderRadius: 999, cursor: "pointer",
-          border: "1px solid #E5E7EB", background: "#fff", color: "#6B7280",
+          border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-3)",
           fontSize: 13, fontWeight: 700,
         }}
       >
         💬 댓글 {commentCount}
       </button>
-      <span style={{ marginLeft: "auto", fontSize: 12, color: "#9CA3AF", fontWeight: 600 }}>
+      <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--c-text-4c)", fontWeight: 600 }}>
         {needLogin ? "로그인이 필요해요" : "커뮤니티에서 의견을 남겨보세요"}
       </span>
     </div>

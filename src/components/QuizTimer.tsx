@@ -34,8 +34,8 @@ export default function QuizTimer({ startAt, paused = false }: { startAt: number
         height: 30,
         padding: "0 11px 0 9px",
         borderRadius: 999,
-        background: "#F3F5F8",
-        color: "#2B313D",
+        background: "var(--c-bg-soft-13)",
+        color: "var(--c-text-2)",
         fontSize: 13.5,
         fontWeight: 800,
         fontVariantNumeric: "tabular-nums",
@@ -43,7 +43,7 @@ export default function QuizTimer({ startAt, paused = false }: { startAt: number
         flexShrink: 0,
       }}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4b)" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
         <circle cx="12" cy="13" r="8" />
         <path d="M12 9v4l2.5 1.5" />
         <path d="M9 2h6" />

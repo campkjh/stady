@@ -433,7 +433,7 @@ export default function CommunityClient() {
               </>
             ) : posts.length === 0 ? (
               <div style={emptyPanelStyle}>
-                <p style={{ margin: 0, color: "#6B7280", fontSize: 14, fontWeight: 500 }}>아직 게시글이 없습니다.</p>
+                <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14, fontWeight: 500 }}>아직 게시글이 없습니다.</p>
               </div>
             ) : (
               posts.map((post, postIndex) => (
@@ -474,8 +474,8 @@ export default function CommunityClient() {
                           marginRight: 6,
                           padding: "1px 7px",
                           borderRadius: 999,
-                          background: "#EFF6FF",
-                          color: "#1D4ED8",
+                          background: "var(--c-brand-soft-4)",
+                          color: "var(--c-brand-deep-2)",
                           fontSize: 12,
                           fontWeight: 600,
                           verticalAlign: "middle",
@@ -674,8 +674,8 @@ function CommunityStyles() {
     <style>{`
       .community-page {
         min-height: 100vh;
-        background: #fff;
-        color: #111827;
+        background: var(--c-bg);
+        color: var(--c-text);
         padding-top: var(--community-header-height, 0px);
         padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
       }
@@ -690,8 +690,8 @@ function CommunityStyles() {
         display: grid;
         gap: 12px;
         transform: translateX(-50%);
-        background: #fff;
-        border-bottom: 1px solid #EEF0F3;
+        background: var(--c-bg);
+        border-bottom: 1px solid var(--c-bg-muted-6);
         padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
         transition: gap 0.24s cubic-bezier(0.22, 1, 0.36, 1), padding 0.24s cubic-bezier(0.22, 1, 0.36, 1);
       }
@@ -776,15 +776,15 @@ function CommunityStyles() {
         height: 44px;
         padding: 0 14px;
         border-radius: 14px;
-        background: #f2f4f6;
+        background: var(--c-bg-muted-2);
         border: 1px solid transparent;
-        color: #8b95a1;
+        color: var(--c-text-4b);
         box-sizing: border-box;
         transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
       }
       .community-search-inline:focus-within {
-        background: #fff;
-        border-color: #3787ff;
+        background: var(--c-bg);
+        border-color: var(--c-brand);
         box-shadow: 0 0 0 3px rgba(55, 135, 255, 0.12);
       }
       .community-search-inline input {
@@ -795,11 +795,11 @@ function CommunityStyles() {
         outline: none;
         font-size: 15px;
         font-family: inherit;
-        color: #191f28;
+        color: var(--c-text-b);
         letter-spacing: -0.2px;
       }
       .community-search-inline input::placeholder {
-        color: #8b95a1;
+        color: var(--c-text-4b);
       }
       .community-search-clear {
         display: flex;
@@ -809,7 +809,7 @@ function CommunityStyles() {
         height: 22px;
         border: none;
         border-radius: 999px;
-        background: #dfe3e8;
+        background: var(--c-bg-muted-21);
         color: #fff;
         cursor: pointer;
         padding: 0;
@@ -817,13 +817,13 @@ function CommunityStyles() {
       }
       .community-eyebrow {
         margin: 0 0 2px;
-        color: #9ca3af;
+        color: var(--c-text-4c);
         font-size: 11px;
         font-weight: 700;
       }
       .community-title {
         margin: 0;
-        color: #111827;
+        color: var(--c-text);
         font-size: 24px;
         font-weight: 700;
       }
@@ -855,17 +855,17 @@ function CommunityStyles() {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        border-bottom: 1px solid #eef0f3;
+        border-bottom: 1px solid var(--c-bg-muted-6);
         padding: 6px 2px 14px;
       }
       .community-summary-label {
         margin: 0 0 3px;
-        color: #6b7280;
+        color: var(--c-text-3);
         font-size: 13px;
         font-weight: 600;
       }
       .community-summary-title {
-        color: #111827;
+        color: var(--c-text);
         font-size: 20px;
         font-weight: 700;
       }
@@ -880,16 +880,16 @@ function CommunityStyles() {
         display: inline-flex;
         gap: 4px;
         align-items: center;
-        border: 1px solid #edf0f3;
+        border: 1px solid var(--c-bg-muted-8);
         border-radius: 999px;
         background: transparent;
-        color: #6b7280;
+        color: var(--c-text-3);
         padding: 7px 9px;
         font-size: 12px;
         font-weight: 600;
       }
       .community-stat-pill strong {
-        color: #111827;
+        color: var(--c-text);
       }
       .weekly-popular {
         margin: 2px 0 16px;
@@ -898,7 +898,7 @@ function CommunityStyles() {
         margin: 0 0 10px;
         font-size: 15px;
         font-weight: 700;
-        color: #111827;
+        color: var(--c-text);
       }
       .weekly-popular-viewport {
         position: relative;
@@ -914,7 +914,7 @@ function CommunityStyles() {
       }
       .weekly-edge-right {
         right: 0;
-        background: linear-gradient(to left, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+        background: linear-gradient(to left, var(--c-bg) 0%, transparent 100%);
       }
       .weekly-popular-track {
         display: flex;
@@ -937,8 +937,8 @@ function CommunityStyles() {
         text-align: left;
         padding: 16px;
         border-radius: 24px;
-        border: 1px solid #eef0f3;
-        background: #ffffff;
+        border: 1px solid var(--c-bg-muted-6);
+        background: var(--c-bg);
         cursor: pointer;
         transform-origin: center center;
         transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -955,7 +955,7 @@ function CommunityStyles() {
         width: 22px;
         height: 22px;
         border-radius: 999px;
-        background: #3787ff;
+        background: var(--c-brand);
         color: #fff;
         font-size: 12px;
         font-weight: 700;
@@ -964,12 +964,12 @@ function CommunityStyles() {
       .weekly-popular-group {
         font-size: 12px;
         font-weight: 600;
-        color: #8a909c;
+        color: var(--c-text-4);
       }
       .weekly-popular-card-title {
         font-size: 15px;
         font-weight: 700;
-        color: #111827;
+        color: var(--c-text);
         line-height: 1.35;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -978,7 +978,7 @@ function CommunityStyles() {
       }
       .weekly-popular-card-content {
         font-size: 13px;
-        color: #6b7280;
+        color: var(--c-text-3);
         line-height: 1.5;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -991,7 +991,7 @@ function CommunityStyles() {
         margin-top: 2px;
         font-size: 12px;
         font-weight: 600;
-        color: #8a909c;
+        color: var(--c-text-4);
       }
       .weekly-popular-card-metrics span {
         display: inline-flex;
@@ -1009,17 +1009,17 @@ function CommunityStyles() {
         width: 6px;
         height: 6px;
         border-radius: 999px;
-        background: #d7dce3;
+        background: var(--c-bg-muted-22);
         transition: width 0.2s ease, background 0.2s ease;
       }
       .weekly-dot.active {
         width: 18px;
-        background: #3787ff;
+        background: var(--c-brand);
       }
       .community-message {
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
-        color: #1d4ed8;
+        border: 1px solid var(--c-brand-line-9);
+        background: var(--c-brand-soft-4);
+        color: var(--c-brand-deep-2);
         border-radius: 8px;
         padding: 12px;
         font-size: 14px;
@@ -1032,7 +1032,7 @@ function CommunityStyles() {
       .community-post-card {
         display: grid;
         gap: 10px;
-        border-bottom: 1px solid #eef0f3;
+        border-bottom: 1px solid var(--c-bg-muted-6);
         background: transparent;
         padding: 17px 2px 18px;
         cursor: pointer;
@@ -1041,14 +1041,14 @@ function CommunityStyles() {
       }
       .community-post-card:hover {
         transform: translateX(2px);
-        border-color: #d8dde5;
-        background: #fafafa;
+        border-color: var(--c-border-strong-4);
+        background: var(--c-bg-soft-3);
       }
       .community-post-card:focus-visible,
       .community-icon-button:focus-visible,
       .tabrail-item:focus-visible,
       .community-floating-write:focus-visible {
-        outline: 2px solid #111827;
+        outline: 2px solid var(--c-inverse);
         outline-offset: 3px;
       }
       .community-post-head {
@@ -1064,8 +1064,8 @@ function CommunityStyles() {
         width: 38px;
         height: 38px;
         border-radius: 999px;
-        background: #f3f4f6;
-        color: #111827;
+        background: var(--c-bg-muted);
+        color: var(--c-text);
         font-size: 15px;
         font-weight: 700;
         overflow: hidden;
@@ -1078,34 +1078,34 @@ function CommunityStyles() {
       }
       .community-post-author {
         margin: 0;
-        color: #111827;
+        color: var(--c-text);
         font-size: 14px;
         font-weight: 700;
       }
       .community-post-date {
         margin: 2px 0 0;
-        color: #9ca3af;
+        color: var(--c-text-4c);
         font-size: 12px;
         font-weight: 500;
       }
       .community-group-badge {
         border-radius: 999px;
-        background: #f3f4f6;
-        color: #374151;
+        background: var(--c-bg-muted);
+        color: var(--c-text-2c);
         padding: 7px 10px;
         font-size: 12px;
         font-weight: 700;
       }
       .community-post-title {
         margin: 0;
-        color: #111827;
+        color: var(--c-text);
         font-size: 18px;
         line-height: 1.35;
         font-weight: 700;
       }
       .community-post-content {
         margin: 0;
-        color: #4b5563;
+        color: var(--c-text-2d);
         font-size: 14px;
         line-height: 1.65;
         white-space: pre-wrap;
@@ -1135,8 +1135,8 @@ function CommunityStyles() {
         position: relative;
         overflow: hidden;
         border-radius: 8px;
-        border: 1px solid #eef0f3;
-        background: #f9fafb;
+        border: 1px solid var(--c-bg-muted-6);
+        background: var(--c-bg-soft);
         aspect-ratio: 4 / 3;
       }
       .community-post-image-single .community-post-image-thumb {
@@ -1162,8 +1162,8 @@ function CommunityStyles() {
       .community-tag-badge {
         border-radius: 999px;
         background: transparent;
-        border: 1px solid #eef0f3;
-        color: #6b7280;
+        border: 1px solid var(--c-bg-muted-6);
+        color: var(--c-text-3);
         padding: 6px 9px;
         font-size: 12px;
         font-weight: 600;
@@ -1171,7 +1171,7 @@ function CommunityStyles() {
       .community-post-metrics {
         display: flex;
         gap: 12px;
-        color: #6b7280;
+        color: var(--c-text-3);
         font-size: 13px;
         font-weight: 600;
       }
@@ -1188,8 +1188,8 @@ function CommunityStyles() {
         animation: communitySearchIn 0.18s ease;
       }
       .community-icon-button:hover {
-        background: #f9fafb !important;
-        border-color: #d1d5db !important;
+        background: var(--c-bg-soft) !important;
+        border-color: var(--c-border-strong) !important;
       }
       .community-floating-write {
         transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, background 0.18s ease;
@@ -1205,7 +1205,7 @@ function CommunityStyles() {
       .community-skeleton-line {
         height: 13px;
         border-radius: 999px;
-        background: linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6);
+        background: linear-gradient(90deg, var(--c-bg-muted), var(--c-bg-muted-20), var(--c-bg-muted));
         background-size: 200% 100%;
         animation: communitySkeleton 1.15s ease-in-out infinite;
       }
@@ -1246,7 +1246,7 @@ function CommunityStyles() {
         }
         .community-filter-title {
           margin: 0;
-          color: #9ca3af;
+          color: var(--c-text-4c);
           font-size: 12px;
           font-weight: 700;
         }
@@ -1295,10 +1295,10 @@ function CommunityStyles() {
 const iconButtonStyle = {
   width: 40,
   height: 40,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 999,
-  background: "#fff",
-  color: "#111827",
+  background: "var(--c-bg)",
+  color: "var(--c-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1307,10 +1307,10 @@ const iconButtonStyle = {
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "12px 13px",
-  color: "#111827",
+  color: "var(--c-text)",
   fontSize: 16,
   boxSizing: "border-box",
 } as const;
@@ -1319,14 +1319,14 @@ const searchStyle = {
   ...inputStyle,
   maxWidth: 1120,
   margin: "0 auto",
-  background: "#fff",
+  background: "var(--c-bg)",
 } as const;
 
 const emptyPanelStyle = {
   display: "grid",
   gap: 12,
-  borderTop: "1px solid #EEF0F3",
-  borderBottom: "1px solid #EEF0F3",
+  borderTop: "1px solid var(--c-bg-muted-6)",
+  borderBottom: "1px solid var(--c-bg-muted-6)",
   background: "transparent",
   padding: "22px 2px",
 } as const;
@@ -1349,7 +1349,7 @@ const floatingWriteButtonStyle = {
   pointerEvents: "auto",
   border: "none",
   borderRadius: 999,
-  background: "#111827",
+  background: "var(--c-inverse)",
   color: "#fff",
   padding: "13px 18px",
   fontSize: 16,

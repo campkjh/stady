@@ -166,7 +166,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
           height: PAD_H,
           borderRadius: "4px 4px 10px 10px",
           overflow: "hidden",
-          background: "#FFF8B8",
+          background: "var(--c-warn-soft-5)",
           backgroundImage:
             `repeating-linear-gradient(180deg, transparent 0 ${LINE_H - 1}px, rgba(190,170,90,0.35) ${LINE_H - 1}px ${LINE_H}px)`,
           backgroundPosition: `0 14px`,
@@ -178,7 +178,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
           aria-hidden
           style={{
             position: "absolute", top: -8, left: "50%", transform: "translateX(-50%) rotate(-1.5deg)",
-            width: 96, height: 22, background: "rgba(255,255,255,0.55)",
+            width: 96, height: 22, background: "var(--c-bg-a55)",
             boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 3, pointerEvents: "none",
           }}
         />
@@ -201,8 +201,8 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
                   onClick={() => { setColor(c); setEraser(false); }}
                   style={{
                     width: 18, height: 18, borderRadius: "50%", background: c, cursor: "pointer", padding: 0,
-                    border: !eraser && color === c ? "2.5px solid #fff" : "1.5px solid rgba(255,255,255,0.75)",
-                    boxShadow: !eraser && color === c ? "0 0 0 1.5px #8A6A00" : "0 1px 2px rgba(0,0,0,0.12)",
+                    border: !eraser && color === c ? "2.5px solid var(--c-bg)" : "1.5px solid var(--c-bg-a75)",
+                    boxShadow: !eraser && color === c ? "0 0 0 1.5px var(--c-warn-deep-4)" : "0 1px 2px rgba(0,0,0,0.12)",
                   }}
                 />
               ))}
@@ -218,8 +218,8 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
             style={{
               height: 26, padding: "0 10px", borderRadius: 999, cursor: "pointer",
               border: "1px solid rgba(138,106,0,0.25)",
-              background: mode === "draw" ? "#B26A00" : "rgba(255,255,255,0.7)",
-              color: mode === "draw" ? "#fff" : "#8A7A3C",
+              background: mode === "draw" ? "var(--c-warn-c)" : "var(--c-bg-a70)",
+              color: mode === "draw" ? "#fff" : "var(--c-warn-deep)",
               fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap",
             }}
           >
@@ -236,7 +236,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
             position: "absolute", top: 0, left: 0, right: 0, height: DRAW_H,
             boxSizing: "border-box", padding: `14px 16px`,
             background: "transparent", border: "none", outline: "none", resize: "none",
-            fontSize: 16, lineHeight: `${LINE_H}px`, color: "#3A3320",
+            fontSize: 16, lineHeight: `${LINE_H}px`, color: "var(--c-warn-deep-3)",
             fontFamily: "inherit", letterSpacing: "-0.1px",
             zIndex: 1,
           }}
@@ -264,8 +264,8 @@ function iconBtn(active: boolean): React.CSSProperties {
   return {
     width: 26, height: 26, borderRadius: 999, cursor: "pointer", padding: 0,
     border: "1px solid rgba(138,106,0,0.22)",
-    background: active ? "#B26A00" : "rgba(255,255,255,0.7)",
-    color: active ? "#fff" : "#8A7A3C",
+    background: active ? "var(--c-warn-c)" : "var(--c-bg-a70)",
+    color: active ? "#fff" : "var(--c-warn-deep)",
     fontSize: 13, fontWeight: 800, lineHeight: 1,
   };
 }

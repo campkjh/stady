@@ -216,9 +216,9 @@ export default function OxQuizManagement() {
 
   const difficultyBadge = (d: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
-      "쉬움": { bg: "#ECFDF5", text: "#059669" },
-      "보통": { bg: "#FFFBEB", text: "#D97706" },
-      "어려움": { bg: "#FEF2F2", text: "#DC2626" },
+      "쉬움": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
+      "보통": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
+      "어려움": { bg: "var(--c-danger-soft)", text: "var(--c-danger-c)" },
     };
     const c = colors[d] || colors["보통"];
     return (
@@ -235,9 +235,9 @@ export default function OxQuizManagement() {
     width: "100%",
     padding: "9px 12px",
     borderRadius: 8,
-    border: "1px solid #E5E7EB",
+    border: "1px solid var(--c-border)",
     fontSize: 14,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -247,7 +247,7 @@ export default function OxQuizManagement() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     marginBottom: 6,
   };
 
@@ -267,8 +267,8 @@ export default function OxQuizManagement() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2B313D" }}>OX 퀴즈 관리</h1>
-          <p style={{ fontSize: 14, color: "#8A909C", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>OX 퀴즈 관리</h1>
+          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -277,7 +277,7 @@ export default function OxQuizManagement() {
             disabled={syncingOx}
             style={{
               padding: "10px 16px",
-              background: "#111827",
+              background: "var(--c-inverse)",
               color: "#fff",
               border: "none",
               borderRadius: 10,
@@ -294,9 +294,9 @@ export default function OxQuizManagement() {
             onClick={() => setShowForm(!showForm)}
             style={{
               padding: "10px 20px",
-              background: showForm ? "#fff" : "#3787FF",
-              color: showForm ? "#2B313D" : "#fff",
-              border: showForm ? "1px solid #E5E7EB" : "none",
+              background: showForm ? "var(--c-bg)" : "var(--c-brand)",
+              color: showForm ? "var(--c-text-2)" : "#fff",
+              border: showForm ? "1px solid var(--c-border)" : "none",
               borderRadius: 10,
               fontSize: 14,
               fontWeight: 600,
@@ -311,10 +311,10 @@ export default function OxQuizManagement() {
       {/* Create Form */}
       {showForm && (
         <form onSubmit={handleCreateSet} style={{
-          background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
           padding: 24, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D", marginBottom: 20 }}>새 OX 퀴즈 세트</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 20 }}>새 OX 퀴즈 세트</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
@@ -323,8 +323,8 @@ export default function OxQuizManagement() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 required
               />
             </div>
@@ -334,8 +334,8 @@ export default function OxQuizManagement() {
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{ ...inputStyle, appearance: "auto" }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 required
               >
                 <option value="">선택하세요</option>
@@ -363,8 +363,8 @@ export default function OxQuizManagement() {
                 value={formData.totalQuestions}
                 onChange={(e) => setFormData({ ...formData, totalQuestions: Number(e.target.value) })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 min={0}
               />
             </div>
@@ -374,7 +374,7 @@ export default function OxQuizManagement() {
             disabled={submitting}
             className="press"
             style={{
-              marginTop: 20, padding: "10px 24px", background: "#3787FF", color: "#fff",
+              marginTop: 20, padding: "10px 24px", background: "var(--c-brand)", color: "#fff",
               border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
               cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
             }}
@@ -385,30 +385,30 @@ export default function OxQuizManagement() {
       )}
 
       {/* 정렬 안내 */}
-      <div style={{ marginBottom: 10, fontSize: 12, color: "#8A909C" }}>
+      <div style={{ marginBottom: 10, fontSize: 12, color: "var(--c-text-4)" }}>
         카테고리별로 화살표(▲▼)를 눌러 리스트 노출 순서를 바꿀 수 있어요. 변경 즉시 저장됩니다.
       </div>
 
       {/* Table */}
       <div style={{
-        background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+        background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
         overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB" }}>
-              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "#8A909C", fontSize: 13, width: 84 }}>정렬</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>난이도</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>관리</th>
+            <tr style={{ background: "var(--c-bg-soft)", borderBottom: "1px solid var(--c-border)" }}>
+              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13, width: 84 }}>정렬</th>
+              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>제목</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>난이도</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>문제 수</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>인기</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "var(--c-text-4)" }}>
                   등록된 OX 퀴즈 세트가 없습니다.
                 </td>
               </tr>
@@ -416,12 +416,12 @@ export default function OxQuizManagement() {
               groupByCategory(quizSets).map((group) => (
                 <Fragment key={group.catId}>
                   <tr>
-                    <td colSpan={6} style={{ padding: "11px 16px", background: "#EEF4FC", fontWeight: 800, color: "#2B313D", fontSize: 13, borderBottom: "1px solid #E5E7EB" }}>
-                      {group.catIcon} {group.catName} <span style={{ color: "#8A909C", fontWeight: 600 }}>· {group.sets.length}개</span>
+                    <td colSpan={6} style={{ padding: "11px 16px", background: "var(--c-brand-soft-15)", fontWeight: 800, color: "var(--c-text-2)", fontSize: 13, borderBottom: "1px solid var(--c-border)" }}>
+                      {group.catIcon} {group.catName} <span style={{ color: "var(--c-text-4)", fontWeight: 600 }}>· {group.sets.length}개</span>
                     </td>
                   </tr>
                   {group.sets.map((set, index) => (
-                    <tr key={set.id} style={{ borderBottom: "1px solid #F3F4F6", background: "#fff" }}>
+                    <tr key={set.id} style={{ borderBottom: "1px solid var(--c-bg-muted)", background: "var(--c-bg)" }}>
                       <td style={{ padding: "10px 10px", textAlign: "center" }}>
                         <div style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
                           <button
@@ -429,20 +429,20 @@ export default function OxQuizManagement() {
                             aria-label="위로"
                             disabled={index === 0 || reordering}
                             onClick={() => moveSet(group.catId, index, "up")}
-                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid #E5E7EB", background: index === 0 ? "#F8F9FA" : "#fff", color: index === 0 ? "#D1D5DB" : "#4E5968", cursor: index === 0 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid var(--c-border)", background: index === 0 ? "var(--c-bg-soft-7)" : "var(--c-bg)", color: index === 0 ? "var(--c-text-5d)" : "var(--c-text-3b)", cursor: index === 0 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
                           >▲</button>
                           <button
                             type="button"
                             aria-label="아래로"
                             disabled={index === group.sets.length - 1 || reordering}
                             onClick={() => moveSet(group.catId, index, "down")}
-                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid #E5E7EB", background: index === group.sets.length - 1 ? "#F8F9FA" : "#fff", color: index === group.sets.length - 1 ? "#D1D5DB" : "#4E5968", cursor: index === group.sets.length - 1 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid var(--c-border)", background: index === group.sets.length - 1 ? "var(--c-bg-soft-7)" : "var(--c-bg)", color: index === group.sets.length - 1 ? "var(--c-text-5d)" : "var(--c-text-3b)", cursor: index === group.sets.length - 1 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
                           >▼</button>
                         </div>
                       </td>
-                      <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{set.title}</td>
+                      <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--c-text-2)" }}>{set.title}</td>
                       <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
-                      <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{set.totalQuestions}</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", color: "var(--c-text-2)" }}>{set.totalQuestions}</td>
                       <td style={{ padding: "14px 16px", textAlign: "center" }}>
                         <button
                           onClick={async () => {
@@ -456,8 +456,8 @@ export default function OxQuizManagement() {
                           }}
                           style={{
                             padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                            backgroundColor: set.isPopular ? "#FF3B5C" : "#F3F4F6",
-                            color: set.isPopular ? "#fff" : "#9CA3AF",
+                            backgroundColor: set.isPopular ? "var(--c-danger-f)" : "var(--c-bg-muted)",
+                            color: set.isPopular ? "#fff" : "var(--c-text-4c)",
                           }}
                         >
                           {set.isPopular ? "인기" : "OFF"}
@@ -467,7 +467,7 @@ export default function OxQuizManagement() {
                         <div style={{ display: "inline-flex", gap: 8 }}>
                           <button
                             onClick={() => openQuestions(set)}
-                            style={{ background: "none", border: "none", color: "#3787FF", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                            style={{ background: "none", border: "none", color: "var(--c-brand)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
                           >
                             문제 관리
                           </button>
@@ -478,7 +478,7 @@ export default function OxQuizManagement() {
                               if (res.ok) fetchQuizSets();
                               else alert("삭제 실패");
                             }}
-                            style={{ background: "none", border: "none", color: "#EF4444", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                            style={{ background: "none", border: "none", color: "var(--c-danger)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
                           >
                             삭제
                           </button>
@@ -500,27 +500,27 @@ export default function OxQuizManagement() {
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
           <div style={{
-            background: "#fff", borderRadius: 16, width: "100%", maxWidth: 720,
+            background: "var(--c-bg)", borderRadius: 16, width: "100%", maxWidth: 720,
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
             boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
             {/* Modal Header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 24px", borderBottom: "1px solid #E5E7EB",
+              padding: "20px 24px", borderBottom: "1px solid var(--c-border)",
             }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>{selectedSet.title}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>{selectedSet.title}</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 13, color: "#8A909C" }}>문제 관리</span>
+                  <span style={{ fontSize: 13, color: "var(--c-text-4)" }}>문제 관리</span>
                   {difficultyBadge(selectedSet.difficulty)}
                 </div>
               </div>
               <button
                 onClick={() => { setSelectedSet(null); setShowQuestionForm(false); }}
                 style={{
-                  background: "#F3F4F6", border: "none", width: 32, height: 32,
-                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "#8A909C",
+                  background: "var(--c-bg-muted)", border: "none", width: 32, height: 32,
+                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "var(--c-text-4)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -531,7 +531,7 @@ export default function OxQuizManagement() {
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <p style={{ fontSize: 14, color: "#8A909C" }}>총 {questions.length}개 문제</p>
+                <p style={{ fontSize: 14, color: "var(--c-text-4)" }}>총 {questions.length}개 문제</p>
                 <button
                   className="press"
                   onClick={() => {
@@ -549,9 +549,9 @@ export default function OxQuizManagement() {
                   }}
                   style={{
                     padding: "8px 16px",
-                    background: showQuestionForm ? "#fff" : "#3787FF",
-                    color: showQuestionForm ? "#2B313D" : "#fff",
-                    border: showQuestionForm ? "1px solid #E5E7EB" : "none",
+                    background: showQuestionForm ? "var(--c-bg)" : "var(--c-brand)",
+                    color: showQuestionForm ? "var(--c-text-2)" : "#fff",
+                    border: showQuestionForm ? "1px solid var(--c-border)" : "none",
                     borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                   }}
                 >
@@ -562,8 +562,8 @@ export default function OxQuizManagement() {
               {/* Add Question Form */}
               {showQuestionForm && (
                 <form onSubmit={handleAddQuestion} style={{
-                  background: "#F9FAFB", borderRadius: 12, padding: 20, marginBottom: 20,
-                  border: "1px solid #E5E7EB",
+                  background: "var(--c-bg-soft)", borderRadius: 12, padding: 20, marginBottom: 20,
+                  border: "1px solid var(--c-border)",
                 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
                     <div>
@@ -580,7 +580,7 @@ export default function OxQuizManagement() {
                           <button
                             type="button"
                             onClick={() => { setUseCustomSection(false); setQuestionData({ ...questionData, section: existingSections[0] || "" }); }}
-                            style={{ flexShrink: 0, padding: "0 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#fff", color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                            style={{ flexShrink: 0, padding: "0 12px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                           >
                             취소
                           </button>
@@ -613,7 +613,7 @@ export default function OxQuizManagement() {
                       />
                     </div>
                   </div>
-                  <p style={{ fontSize: 12, color: "#8A909C", margin: "0 0 14px" }}>
+                  <p style={{ fontSize: 12, color: "var(--c-text-4)", margin: "0 0 14px" }}>
                     기존 소분류를 고르면 새 소분류가 생기지 않습니다. 번호는 <b>그 소분류 안에서의 위치</b>이며, 지정한 자리에 삽입되고 그 소분류 뒤 문제들이 한 칸씩 밀립니다(비우면 그 소분류 맨 끝).
                   </p>
                   <div style={{ marginBottom: 14 }}>
@@ -622,8 +622,8 @@ export default function OxQuizManagement() {
                       value={questionData.question}
                       onChange={(e) => setQuestionData({ ...questionData, question: e.target.value })}
                       style={{ ...inputStyle, resize: "vertical", minHeight: 60 }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                       rows={2}
                       required
                     />
@@ -647,8 +647,8 @@ export default function OxQuizManagement() {
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                       />
                     </div>
                   </div>
@@ -661,7 +661,7 @@ export default function OxQuizManagement() {
                       style={inputStyle}
                       placeholder="예: 26학년도 6월"
                     />
-                    <p style={{ fontSize: 12, color: "#8A909C", margin: "6px 0 0" }}>
+                    <p style={{ fontSize: 12, color: "var(--c-text-4)", margin: "6px 0 0" }}>
                       정답률은 사용자 응답으로 자동 집계되어 표시됩니다(입력 불필요).
                     </p>
                   </div>
@@ -670,7 +670,7 @@ export default function OxQuizManagement() {
                     disabled={submitting}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "#3787FF", color: "#fff",
+                      padding: "9px 20px", background: "var(--c-brand)", color: "#fff",
                       border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
                       cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
                     }}
@@ -696,22 +696,22 @@ export default function OxQuizManagement() {
                       display: "flex", alignItems: "center", gap: 8,
                     }}>
                       <span style={{
-                        fontSize: 13, fontWeight: 700, color: "#3787FF",
-                        background: "#EBF3FF", borderRadius: 6, padding: "4px 10px",
+                        fontSize: 13, fontWeight: 700, color: "var(--c-brand)",
+                        background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "4px 10px",
                       }}>
                         {q.section}
                       </span>
-                      <span style={{ fontSize: 12, color: "#8A909C" }}>{sectionCount}문항</span>
+                      <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>{sectionCount}문항</span>
                     </div>
                   )}
                   <div style={{
-                    background: "#F9FAFB", borderRadius: 10, padding: "14px 16px",
-                    border: "1px solid #F3F4F6",
+                    background: "var(--c-bg-soft)", borderRadius: 10, padding: "14px 16px",
+                    border: "1px solid var(--c-bg-muted)",
                   }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 700, color: "#8A909C",
-                        background: "#E5E7EB", borderRadius: 4, padding: "2px 6px", marginTop: 2,
+                        fontSize: 11, fontWeight: 700, color: "var(--c-text-4)",
+                        background: "var(--c-border)", borderRadius: 4, padding: "2px 6px", marginTop: 2,
                       }}>
                         {q.order}
                       </span>
@@ -740,9 +740,9 @@ export default function OxQuizManagement() {
                                 onClick={() => setEditQAnswer(true)}
                                 style={{
                                   padding: "8px 20px", borderRadius: 8,
-                                  border: `2px solid ${editQAnswer ? "#3787FF" : "#E5E7EB"}`,
-                                  background: editQAnswer ? "#3787FF" : "#fff",
-                                  color: editQAnswer ? "#fff" : "#2B313D",
+                                  border: `2px solid ${editQAnswer ? "var(--c-brand)" : "var(--c-border)"}`,
+                                  background: editQAnswer ? "var(--c-brand)" : "var(--c-bg)",
+                                  color: editQAnswer ? "#fff" : "var(--c-text-2)",
                                   fontSize: 14, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
@@ -753,9 +753,9 @@ export default function OxQuizManagement() {
                                 onClick={() => setEditQAnswer(false)}
                                 style={{
                                   padding: "8px 20px", borderRadius: 8,
-                                  border: `2px solid ${!editQAnswer ? "#EF4444" : "#E5E7EB"}`,
-                                  background: !editQAnswer ? "#EF4444" : "#fff",
-                                  color: !editQAnswer ? "#fff" : "#2B313D",
+                                  border: `2px solid ${!editQAnswer ? "var(--c-danger)" : "var(--c-border)"}`,
+                                  background: !editQAnswer ? "var(--c-danger)" : "var(--c-bg)",
+                                  color: !editQAnswer ? "#fff" : "var(--c-text-2)",
                                   fontSize: 14, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
@@ -801,7 +801,7 @@ export default function OxQuizManagement() {
                                 }}
                                 style={{
                                   padding: "7px 14px", borderRadius: 6, border: "none",
-                                  background: "#3787FF", color: "#fff",
+                                  background: "var(--c-brand)", color: "#fff",
                                   fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
@@ -812,8 +812,8 @@ export default function OxQuizManagement() {
                                 onClick={() => setEditingQuestionId(null)}
                                 style={{
                                   padding: "7px 14px", borderRadius: 6,
-                                  border: "1px solid #E5E7EB", background: "#fff",
-                                  color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
+                                  color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
                                 취소
@@ -822,27 +822,27 @@ export default function OxQuizManagement() {
                           </div>
                         ) : (
                           <>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: "#2B313D", marginBottom: 8 }}>{q.question}</p>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 8 }}>{q.question}</p>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               {q.section && (
                                 <span style={{
                                   fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "#F3F4F6", color: "#6B7280",
+                                  background: "var(--c-bg-muted)", color: "var(--c-text-3)",
                                 }}>
                                   {q.section}
                                 </span>
                               )}
                               <span style={{
                                 fontSize: 12, padding: "3px 10px", borderRadius: 6, fontWeight: 600,
-                                background: q.answer ? "#EBF3FF" : "#FEF2F2",
-                                color: q.answer ? "#3787FF" : "#DC2626",
+                                background: q.answer ? "var(--c-brand-soft-2)" : "var(--c-danger-soft)",
+                                color: q.answer ? "var(--c-brand)" : "var(--c-danger-c)",
                               }}>
                                 {q.answer ? "O (참)" : "X (거짓)"}
                               </span>
                               {q.examYearMonth && (
                                 <span style={{
                                   fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "#fff", border: "1px solid #D1D5DB", color: "#374151",
+                                  background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", color: "var(--c-text-2c)",
                                 }}>
                                   {q.examYearMonth}
                                 </span>
@@ -850,13 +850,13 @@ export default function OxQuizManagement() {
                               {q.answerRate != null && (
                                 <span style={{
                                   fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "#fff", border: "1px solid #D1D5DB", color: "#374151",
+                                  background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", color: "var(--c-text-2c)",
                                 }}>
                                   정답률 {q.answerRate}%
                                 </span>
                               )}
                               {q.explanation && (
-                                <span style={{ fontSize: 12, color: "#8A909C" }}>해설: {q.explanation}</span>
+                                <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>해설: {q.explanation}</span>
                               )}
                             </div>
                           </>
@@ -875,7 +875,7 @@ export default function OxQuizManagement() {
                             }}
                             style={{
                               background: "none", border: "none",
-                              color: "#3787FF", fontSize: 12, fontWeight: 600,
+                              color: "var(--c-brand)", fontSize: 12, fontWeight: 600,
                               cursor: "pointer", padding: "2px 8px",
                             }}
                           >
@@ -893,7 +893,7 @@ export default function OxQuizManagement() {
                             }}
                             style={{
                               background: "none", border: "none",
-                              color: "#EF4444", fontSize: 12, fontWeight: 600,
+                              color: "var(--c-danger)", fontSize: 12, fontWeight: 600,
                               cursor: "pointer", padding: "2px 8px",
                             }}
                           >
@@ -907,7 +907,7 @@ export default function OxQuizManagement() {
                   );
                 })}
                 {questions.length === 0 && (
-                  <p style={{ textAlign: "center", color: "#8A909C", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
+                  <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}
               </div>
             </div>

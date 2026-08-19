@@ -32,7 +32,7 @@ export default function LoginRequired() {
   // 네이티브 로그인 팝업이 그 위에 올라옴
   if (isNativeApp) {
     return (
-      <div style={{ background: "#fff", minHeight: "100vh", padding: "28px 16px 20px" }}>
+      <div style={{ background: "var(--c-bg)", minHeight: "100vh", padding: "28px 16px 20px" }}>
         {/* 프로필 스켈레톤 */}
         <div style={{
           display: "flex",
@@ -44,11 +44,11 @@ export default function LoginRequired() {
             width: 56,
             height: 56,
             borderRadius: "50%",
-            background: "#F3F4F6",
+            background: "var(--c-bg-muted)",
           }} />
           <div style={{ flex: 1 }}>
-            <div style={{ width: 120, height: 18, background: "#F3F4F6", borderRadius: 4, marginBottom: 6 }} />
-            <div style={{ width: 160, height: 14, background: "#F3F4F6", borderRadius: 4 }} />
+            <div style={{ width: 120, height: 18, background: "var(--c-bg-muted)", borderRadius: 4, marginBottom: 6 }} />
+            <div style={{ width: 160, height: 14, background: "var(--c-bg-muted)", borderRadius: 4 }} />
           </div>
         </div>
 
@@ -64,9 +64,9 @@ export default function LoginRequired() {
               width: 32,
               height: 32,
               borderRadius: "50%",
-              background: "#F3F4F6",
+              background: "var(--c-bg-muted)",
             }} />
-            <div style={{ width: 100, height: 16, background: "#F3F4F6", borderRadius: 4 }} />
+            <div style={{ width: 100, height: 16, background: "var(--c-bg-muted)", borderRadius: 4 }} />
           </div>
         ))}
       </div>
@@ -89,10 +89,10 @@ export default function LoginRequired() {
       </div>
 
       {/* Text */}
-      <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111", marginBottom: 4, textAlign: "center" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
         로그인이 필요한 페이지에요!
       </h2>
-      <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 32, textAlign: "center" }}>
+      <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 32, textAlign: "center" }}>
         로그인하시면 더 많은 정보를 얻어가실 수 있답니다!
       </p>
 
@@ -123,7 +123,7 @@ export default function LoginRequired() {
             height: 48,
             padding: "0",
             borderRadius: 14,
-            backgroundColor: "#FFC84D",
+            backgroundColor: "var(--c-warn-i)",
             color: "#3E1918",
             fontSize: 16,
             fontWeight: 700,
@@ -161,7 +161,7 @@ export default function LoginRequired() {
             height: 48,
             padding: "0",
             borderRadius: 14,
-            backgroundColor: "#292A2E",
+            backgroundColor: "var(--c-inverse-5)",
             color: "#fff",
             fontSize: 16,
             fontWeight: 700,

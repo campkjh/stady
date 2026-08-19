@@ -50,7 +50,7 @@ export default function CategoryGroupForm({ group, saving = false, onChange, onS
         />
       </label>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span style={{ color: "#374151", fontSize: 13, fontWeight: 700 }}>노출 여부</span>
+        <span style={{ color: "var(--c-text-2c)", fontSize: 13, fontWeight: 700 }}>노출 여부</span>
         <StatusToggle checked={group.isActive} onChange={(checked) => onChange({ ...group, isActive: checked })} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", paddingTop: 8 }}>
@@ -67,14 +67,14 @@ export default function CategoryGroupForm({ group, saving = false, onChange, onS
 
 const emptyStyle = {
   minHeight: 280,
-  border: "1px dashed #D1D5DB",
+  border: "1px dashed var(--c-border-strong)",
   borderRadius: 8,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   gap: 8,
-  color: "#6B7280",
+  color: "var(--c-text-3)",
   fontSize: 14,
   textAlign: "center",
   padding: 24,
@@ -83,18 +83,18 @@ const emptyStyle = {
 const labelStyle = {
   display: "grid",
   gap: 8,
-  color: "#374151",
+  color: "var(--c-text-2c)",
   fontSize: 13,
   fontWeight: 700,
 } as const;
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "11px 12px",
   fontSize: 14,
-  color: "#111827",
+  color: "var(--c-text)",
   outline: "none",
   boxSizing: "border-box",
 } as const;
@@ -102,7 +102,7 @@ const inputStyle = {
 const primaryButtonStyle = {
   border: "none",
   borderRadius: 8,
-  background: "#3787FF",
+  background: "var(--c-brand)",
   color: "#fff",
   padding: "11px 18px",
   fontSize: 14,
@@ -111,10 +111,10 @@ const primaryButtonStyle = {
 } as const;
 
 const dangerButtonStyle = {
-  border: "1px solid #FCA5A5",
+  border: "1px solid var(--c-danger-line-2)",
   borderRadius: 8,
-  background: "#FEF2F2",
-  color: "#B91C1C",
+  background: "var(--c-danger-soft)",
+  color: "var(--c-danger-deep)",
   padding: "11px 14px",
   fontSize: 14,
   fontWeight: 800,

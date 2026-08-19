@@ -207,9 +207,9 @@ export default function VocabQuizManagement() {
 
   const difficultyBadge = (d: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
-      "쉬움": { bg: "#ECFDF5", text: "#059669" },
-      "보통": { bg: "#FFFBEB", text: "#D97706" },
-      "어려움": { bg: "#FEF2F2", text: "#DC2626" },
+      "쉬움": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
+      "보통": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
+      "어려움": { bg: "var(--c-danger-soft)", text: "var(--c-danger-c)" },
     };
     const c = colors[d] || colors["보통"];
     return (
@@ -226,9 +226,9 @@ export default function VocabQuizManagement() {
     width: "100%",
     padding: "9px 12px",
     borderRadius: 8,
-    border: "1px solid #E5E7EB",
+    border: "1px solid var(--c-border)",
     fontSize: 14,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -238,7 +238,7 @@ export default function VocabQuizManagement() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     marginBottom: 6,
   };
 
@@ -247,17 +247,17 @@ export default function VocabQuizManagement() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2B313D" }}>영단어 퀴즈 관리</h1>
-          <p style={{ fontSize: 14, color: "#8A909C", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>영단어 퀴즈 관리</h1>
+          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
         </div>
         <button
           className="press"
           onClick={() => setShowForm(!showForm)}
           style={{
             padding: "10px 20px",
-            background: showForm ? "#fff" : "#3787FF",
-            color: showForm ? "#2B313D" : "#fff",
-            border: showForm ? "1px solid #E5E7EB" : "none",
+            background: showForm ? "var(--c-bg)" : "var(--c-brand)",
+            color: showForm ? "var(--c-text-2)" : "#fff",
+            border: showForm ? "1px solid var(--c-border)" : "none",
             borderRadius: 10,
             fontSize: 14,
             fontWeight: 600,
@@ -271,10 +271,10 @@ export default function VocabQuizManagement() {
       {/* Create Form */}
       {showForm && (
         <form onSubmit={handleCreateSet} style={{
-          background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
           padding: 24, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D", marginBottom: 20 }}>새 영단어 퀴즈 세트</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 20 }}>새 영단어 퀴즈 세트</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
@@ -283,8 +283,8 @@ export default function VocabQuizManagement() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 required
               />
             </div>
@@ -294,8 +294,8 @@ export default function VocabQuizManagement() {
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{ ...inputStyle, appearance: "auto" }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 required
               >
                 <option value="">선택하세요</option>
@@ -323,8 +323,8 @@ export default function VocabQuizManagement() {
                 value={formData.totalQuestions}
                 onChange={(e) => setFormData({ ...formData, totalQuestions: Number(e.target.value) })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                 min={0}
               />
             </div>
@@ -334,7 +334,7 @@ export default function VocabQuizManagement() {
             disabled={submitting}
             className="press"
             style={{
-              marginTop: 20, padding: "10px 24px", background: "#3787FF", color: "#fff",
+              marginTop: 20, padding: "10px 24px", background: "var(--c-brand)", color: "#fff",
               border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
               cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
             }}
@@ -346,24 +346,24 @@ export default function VocabQuizManagement() {
 
       {/* Table */}
       <div style={{
-        background: "#fff", borderRadius: 14, border: "1px solid #E5E7EB",
+        background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
         overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
       }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB" }}>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>카테고리</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>난이도</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>인기</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "#8A909C", fontSize: 13 }}>관리</th>
+            <tr style={{ background: "var(--c-bg-soft)", borderBottom: "1px solid var(--c-border)" }}>
+              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>제목</th>
+              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>카테고리</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>난이도</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>문제 수</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>인기</th>
+              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "#8A909C" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "var(--c-text-4)" }}>
                   등록된 영단어 퀴즈 세트가 없습니다.
                 </td>
               </tr>
@@ -372,19 +372,19 @@ export default function VocabQuizManagement() {
                 <tr
                   key={set.id}
                   style={{
-                    borderBottom: "1px solid #F3F4F6",
-                    background: idx % 2 === 1 ? "#FAFBFC" : "#fff",
+                    borderBottom: "1px solid var(--c-bg-muted)",
+                    background: idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)",
                     transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#F5F7FA"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "#FAFBFC" : "#fff"}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--c-bg-soft-5)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)"}
                 >
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "#2B313D" }}>{set.title}</td>
-                  <td style={{ padding: "14px 16px", color: "#8A909C" }}>
+                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--c-text-2)" }}>{set.title}</td>
+                  <td style={{ padding: "14px 16px", color: "var(--c-text-4)" }}>
                     {set.category.icon} {set.category.name}
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "#2B313D" }}>{set.totalQuestions}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center", color: "var(--c-text-2)" }}>{set.totalQuestions}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={async () => {
@@ -398,8 +398,8 @@ export default function VocabQuizManagement() {
                       }}
                       style={{
                         padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        backgroundColor: set.isPopular ? "#FF3B5C" : "#F3F4F6",
-                        color: set.isPopular ? "#fff" : "#9CA3AF",
+                        backgroundColor: set.isPopular ? "var(--c-danger-f)" : "var(--c-bg-muted)",
+                        color: set.isPopular ? "#fff" : "var(--c-text-4c)",
                         transition: "all 0.15s",
                       }}
                     >
@@ -411,7 +411,7 @@ export default function VocabQuizManagement() {
                       <button
                         onClick={() => openQuestions(set)}
                         style={{
-                          background: "none", border: "none", color: "#3787FF",
+                          background: "none", border: "none", color: "var(--c-brand)",
                           fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
                         }}
                       >
@@ -425,7 +425,7 @@ export default function VocabQuizManagement() {
                           else alert("삭제 실패");
                         }}
                         style={{
-                          background: "none", border: "none", color: "#EF4444",
+                          background: "none", border: "none", color: "var(--c-danger)",
                           fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
                         }}
                       >
@@ -447,27 +447,27 @@ export default function VocabQuizManagement() {
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
           <div style={{
-            background: "#fff", borderRadius: 16, width: "100%", maxWidth: 720,
+            background: "var(--c-bg)", borderRadius: 16, width: "100%", maxWidth: 720,
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
             boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
             {/* Modal Header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 24px", borderBottom: "1px solid #E5E7EB",
+              padding: "20px 24px", borderBottom: "1px solid var(--c-border)",
             }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>{selectedSet.title}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>{selectedSet.title}</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 13, color: "#8A909C" }}>문제 관리</span>
+                  <span style={{ fontSize: 13, color: "var(--c-text-4)" }}>문제 관리</span>
                   {difficultyBadge(selectedSet.difficulty)}
                 </div>
               </div>
               <button
                 onClick={() => { setSelectedSet(null); setShowQuestionForm(false); }}
                 style={{
-                  background: "#F3F4F6", border: "none", width: 32, height: 32,
-                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "#8A909C",
+                  background: "var(--c-bg-muted)", border: "none", width: 32, height: 32,
+                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "var(--c-text-4)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -478,13 +478,13 @@ export default function VocabQuizManagement() {
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-                <p style={{ fontSize: 14, color: "#8A909C" }}>총 {questions.length}개 문제</p>
+                <p style={{ fontSize: 14, color: "var(--c-text-4)" }}>총 {questions.length}개 문제</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {/* Excel 일괄 가져오기 */}
                   <label
                     style={{
                       padding: "8px 16px",
-                      background: "#10B981",
+                      background: "var(--c-success)",
                       color: "#fff",
                       border: "none",
                       borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
@@ -505,9 +505,9 @@ export default function VocabQuizManagement() {
                     onClick={() => setShowQuestionForm(!showQuestionForm)}
                     style={{
                       padding: "8px 16px",
-                      background: showQuestionForm ? "#fff" : "#3787FF",
-                      color: showQuestionForm ? "#2B313D" : "#fff",
-                      border: showQuestionForm ? "1px solid #E5E7EB" : "none",
+                      background: showQuestionForm ? "var(--c-bg)" : "var(--c-brand)",
+                      color: showQuestionForm ? "var(--c-text-2)" : "#fff",
+                      border: showQuestionForm ? "1px solid var(--c-border)" : "none",
                       borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                     }}
                   >
@@ -519,16 +519,16 @@ export default function VocabQuizManagement() {
               {/* Excel 미리보기 */}
               {importPreview && (
                 <div style={{
-                  background: "#F0FDF4", border: "1px solid #A7F3D0", borderRadius: 12,
+                  background: "var(--c-success-soft-2)", border: "1px solid var(--c-success-line-2)", borderRadius: 12,
                   padding: 16, marginBottom: 16,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#065F46" }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-success-d)" }}>
                       📊 {importPreview.length}개 단어 감지됨 — 가져오기 전 확인하세요
                     </p>
                     <button
                       onClick={() => { setImportPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      style={{ background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 18 }}
+                      style={{ background: "none", border: "none", color: "var(--c-text-3)", cursor: "pointer", fontSize: 18 }}
                     >
                       &times;
                     </button>
@@ -536,14 +536,14 @@ export default function VocabQuizManagement() {
                   {/* 미리보기 최대 5개 */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
                     {importPreview.slice(0, 5).map((w, i) => (
-                      <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 13, border: "1px solid #D1FAE5" }}>
-                        <span style={{ fontWeight: 700, color: "#2B313D" }}>{w.word}</span>
-                        <span style={{ color: "#10B981", marginLeft: 8 }}>{w.correct}</span>
-                        <span style={{ color: "#9CA3AF", marginLeft: 8 }}>/ {w.wrong1} / {w.wrong2} / {w.wrong3}</span>
+                      <div key={i} style={{ background: "var(--c-bg)", borderRadius: 8, padding: "8px 12px", fontSize: 13, border: "1px solid var(--c-success-line)" }}>
+                        <span style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{w.word}</span>
+                        <span style={{ color: "var(--c-success)", marginLeft: 8 }}>{w.correct}</span>
+                        <span style={{ color: "var(--c-text-4c)", marginLeft: 8 }}>/ {w.wrong1} / {w.wrong2} / {w.wrong3}</span>
                       </div>
                     ))}
                     {importPreview.length > 5 && (
-                      <p style={{ fontSize: 12, color: "#6B7280", textAlign: "center" }}>... 외 {importPreview.length - 5}개</p>
+                      <p style={{ fontSize: 12, color: "var(--c-text-3)", textAlign: "center" }}>... 외 {importPreview.length - 5}개</p>
                     )}
                   </div>
                   <button
@@ -551,7 +551,7 @@ export default function VocabQuizManagement() {
                     disabled={importing}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "#10B981", color: "#fff",
+                      padding: "9px 20px", background: "var(--c-success)", color: "#fff",
                       border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
                       cursor: importing ? "not-allowed" : "pointer", opacity: importing ? 0.6 : 1,
                     }}
@@ -564,8 +564,8 @@ export default function VocabQuizManagement() {
               {/* Add Question Form */}
               {showQuestionForm && (
                 <form onSubmit={handleAddQuestion} style={{
-                  background: "#F9FAFB", borderRadius: 12, padding: 20, marginBottom: 20,
-                  border: "1px solid #E5E7EB",
+                  background: "var(--c-bg-soft)", borderRadius: 12, padding: 20, marginBottom: 20,
+                  border: "1px solid var(--c-border)",
                 }}>
                   <div style={{ marginBottom: 14 }}>
                     <label style={labelStyle}>단어</label>
@@ -574,8 +574,8 @@ export default function VocabQuizManagement() {
                       value={questionData.word}
                       onChange={(e) => setQuestionData({ ...questionData, word: e.target.value })}
                       style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                       required
                     />
                   </div>
@@ -588,8 +588,8 @@ export default function VocabQuizManagement() {
                           value={questionData[`choice${n}` as keyof typeof questionData] as string}
                           onChange={(e) => setQuestionData({ ...questionData, [`choice${n}`]: e.target.value })}
                           style={inputStyle}
-                          onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                          onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                          onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                          onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                           required
                         />
                       </div>
@@ -615,8 +615,8 @@ export default function VocabQuizManagement() {
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "#3787FF"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "#E5E7EB"}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
                       />
                     </div>
                   </div>
@@ -625,7 +625,7 @@ export default function VocabQuizManagement() {
                     disabled={submitting}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "#3787FF", color: "#fff",
+                      padding: "9px 20px", background: "var(--c-brand)", color: "#fff",
                       border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
                       cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
                     }}
@@ -639,13 +639,13 @@ export default function VocabQuizManagement() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {questions.map((q) => (
                   <div key={q.id} style={{
-                    background: "#F9FAFB", borderRadius: 10, padding: "14px 16px",
-                    border: "1px solid #F3F4F6",
+                    background: "var(--c-bg-soft)", borderRadius: 10, padding: "14px 16px",
+                    border: "1px solid var(--c-bg-muted)",
                   }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 700, color: "#8A909C",
-                        background: "#E5E7EB", borderRadius: 4, padding: "2px 6px", marginTop: 2,
+                        fontSize: 11, fontWeight: 700, color: "var(--c-text-4)",
+                        background: "var(--c-border)", borderRadius: 4, padding: "2px 6px", marginTop: 2,
                       }}>
                         {q.order}
                       </span>
@@ -667,9 +667,9 @@ export default function VocabQuizManagement() {
                                   onClick={() => setEditQData({ ...editQData, answer: n })}
                                   style={{
                                     width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                    border: `2px solid ${editQData.answer === n ? "#3787FF" : "#E5E7EB"}`,
-                                    background: editQData.answer === n ? "#3787FF" : "#fff",
-                                    color: editQData.answer === n ? "#fff" : "#2B313D",
+                                    border: `2px solid ${editQData.answer === n ? "var(--c-brand)" : "var(--c-border)"}`,
+                                    background: editQData.answer === n ? "var(--c-brand)" : "var(--c-bg)",
+                                    color: editQData.answer === n ? "#fff" : "var(--c-text-2)",
                                     fontSize: 12, fontWeight: 700, cursor: "pointer",
                                   }}
                                 >
@@ -716,7 +716,7 @@ export default function VocabQuizManagement() {
                                 }}
                                 style={{
                                   padding: "7px 14px", borderRadius: 6, border: "none",
-                                  background: "#3787FF", color: "#fff",
+                                  background: "var(--c-brand)", color: "#fff",
                                   fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
@@ -727,8 +727,8 @@ export default function VocabQuizManagement() {
                                 onClick={() => setEditingQuestionId(null)}
                                 style={{
                                   padding: "7px 14px", borderRadius: 6,
-                                  border: "1px solid #E5E7EB", background: "#fff",
-                                  color: "#6B7280", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
+                                  color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
                                 취소
@@ -737,7 +737,7 @@ export default function VocabQuizManagement() {
                           </div>
                         ) : (
                           <>
-                            <p style={{ fontSize: 15, fontWeight: 700, color: "#2B313D", marginBottom: 8 }}>{q.word}</p>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 8 }}>{q.word}</p>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
                               {[q.choice1, q.choice2, q.choice3, q.choice4].map((c, i) => (
                                 <span
@@ -746,9 +746,9 @@ export default function VocabQuizManagement() {
                                     fontSize: 12,
                                     padding: "4px 8px",
                                     borderRadius: 6,
-                                    background: i + 1 === q.answer ? "#3787FF" : "#fff",
-                                    color: i + 1 === q.answer ? "#fff" : "#8A909C",
-                                    border: i + 1 === q.answer ? "none" : "1px solid #E5E7EB",
+                                    background: i + 1 === q.answer ? "var(--c-brand)" : "var(--c-bg)",
+                                    color: i + 1 === q.answer ? "#fff" : "var(--c-text-4)",
+                                    border: i + 1 === q.answer ? "none" : "1px solid var(--c-border)",
                                   }}
                                 >
                                   {i + 1}. {c}
@@ -756,7 +756,7 @@ export default function VocabQuizManagement() {
                               ))}
                             </div>
                             {q.explanation && (
-                              <p style={{ fontSize: 12, color: "#8A909C", marginTop: 8 }}>해설: {q.explanation}</p>
+                              <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 8 }}>해설: {q.explanation}</p>
                             )}
                           </>
                         )}
@@ -778,7 +778,7 @@ export default function VocabQuizManagement() {
                             }}
                             style={{
                               background: "none", border: "none",
-                              color: "#3787FF", fontSize: 12, fontWeight: 600,
+                              color: "var(--c-brand)", fontSize: 12, fontWeight: 600,
                               cursor: "pointer", padding: "2px 8px",
                             }}
                           >
@@ -796,7 +796,7 @@ export default function VocabQuizManagement() {
                             }}
                             style={{
                               background: "none", border: "none",
-                              color: "#EF4444", fontSize: 12, fontWeight: 600,
+                              color: "var(--c-danger)", fontSize: 12, fontWeight: 600,
                               cursor: "pointer", padding: "2px 8px",
                             }}
                           >
@@ -808,7 +808,7 @@ export default function VocabQuizManagement() {
                   </div>
                 ))}
                 {questions.length === 0 && (
-                  <p style={{ textAlign: "center", color: "#8A909C", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
+                  <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}
               </div>
             </div>

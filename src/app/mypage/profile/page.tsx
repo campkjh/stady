@@ -87,16 +87,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#fff" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--c-bg)" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", padding: "12px 10px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "12px 10px" }}>
         <button
           type="button"
           onClick={() => router.back()}
           className="press"
           style={{ background: "none", border: "none", padding: 4 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -110,7 +110,7 @@ export default function ProfilePage() {
             height: 100,
             borderRadius: "50%",
             overflow: "hidden",
-            background: "#F3F4F6",
+            background: "var(--c-bg-muted)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -118,7 +118,7 @@ export default function ProfilePage() {
             {avatar ? (
               <img src={avatar} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4c)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -135,8 +135,8 @@ export default function ProfilePage() {
               width: 32,
               height: 32,
               borderRadius: "50%",
-              background: "#fff",
-              border: "1px solid #E5E7EB",
+              background: "var(--c-bg)",
+              border: "1px solid var(--c-border)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -145,7 +145,7 @@ export default function ProfilePage() {
               overflow: "hidden",
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
 
         {/* Nickname */}
         <div style={{ width: "100%" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)", marginBottom: 8 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/ui-user.svg" alt="" width={18} height={18} />
             닉네임
@@ -177,7 +177,7 @@ export default function ProfilePage() {
               padding: "0 16px",
               borderRadius: 12,
               border: "none",
-              background: "#F3F4F6",
+              background: "var(--c-bg-muted)",
               fontSize: 15,
               outline: "none",
               boxSizing: "border-box",
@@ -188,12 +188,12 @@ export default function ProfilePage() {
         {/* Status Message */}
         <div style={{ width: "100%", marginTop: 18 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#374151" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/ui-chat.svg" alt="" width={18} height={18} />
               상태메세지
             </label>
-            <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 700 }}>
+            <span style={{ fontSize: 12, color: "var(--c-text-4c)", fontWeight: 700 }}>
               {statusMessage.length}/5
             </span>
           </div>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
               padding: "0 16px",
               borderRadius: 12,
               border: "none",
-              background: "#F3F4F6",
+              background: "var(--c-bg-muted)",
               fontSize: 15,
               outline: "none",
               boxSizing: "border-box",
@@ -222,7 +222,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={() => setShowWithdraw(true)}
-            style={{ background: "none", border: "none", fontSize: 13, color: "#3787FF", cursor: "pointer" }}
+            style={{ background: "none", border: "none", fontSize: 13, color: "var(--c-brand)", cursor: "pointer" }}
           >
             회원탈퇴
           </button>
@@ -233,10 +233,10 @@ export default function ProfilePage() {
       {showWithdraw && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowWithdraw(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "#fff", borderRadius: 20, padding: 12, boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
+          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>정말 탈퇴하시겠습니까?</h2>
-              <p style={{ fontSize: 14, color: "#8A909C", marginTop: 6, lineHeight: 1.5 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말 탈퇴하시겠습니까?</h2>
+              <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 6, lineHeight: 1.5 }}>
                 탈퇴 시 모든 데이터가 삭제되며<br/>복구할 수 없습니다.
               </p>
             </div>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => setShowWithdraw(false)}
                 className="press"
-                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 16, fontWeight: 700, border: "none" }}
+                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 16, fontWeight: 700, border: "none" }}
               >
                 취소
               </button>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                   }
                 }}
                 className="press"
-                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#EF4444", color: "#fff", fontSize: 16, fontWeight: 700, border: "none", opacity: withdrawing ? 0.6 : 1 }}
+                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-danger)", color: "#fff", fontSize: 16, fontWeight: 700, border: "none", opacity: withdrawing ? 0.6 : 1 }}
               >
                 {withdrawing ? "처리 중..." : "탈퇴하기"}
               </button>
@@ -284,7 +284,7 @@ export default function ProfilePage() {
             width: "100%",
             height: 52,
             borderRadius: 14,
-            background: "#292A2E",
+            background: "var(--c-inverse-5)",
             color: "#fff",
             fontSize: 16,
             fontWeight: 700,

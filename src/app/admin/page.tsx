@@ -66,13 +66,13 @@ function formatDate(dateStr: string) {
 function getStatusStyle(status: string): React.CSSProperties {
   switch (status) {
     case "접수":
-      return { background: "#FEF3C7", color: "#D97706" };
+      return { background: "var(--c-warn-soft-2)", color: "var(--c-warn-b)" };
     case "처리중":
-      return { background: "#DBEAFE", color: "#2563EB" };
+      return { background: "var(--c-brand-line-2)", color: "var(--c-brand-deep-3)" };
     case "완료":
-      return { background: "#D1FAE5", color: "#059669" };
+      return { background: "var(--c-success-line)", color: "var(--c-success-b)" };
     default:
-      return { background: "#F3F4F6", color: "#6B7280" };
+      return { background: "var(--c-bg-muted)", color: "var(--c-text-3)" };
   }
 }
 
@@ -109,12 +109,12 @@ export default function AdminDashboard() {
       label: "회원 수",
       count: counts.users,
       href: "/admin/users",
-      color: "#F59E0B",
-      bgColor: "#FFFBEB",
+      color: "var(--c-warn)",
+      bgColor: "var(--c-warn-soft)",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="8" r="4" stroke="#F59E0B" strokeWidth="1.5"/>
-          <path d="M5 20C5 16.6863 8.13401 14 12 14C15.866 14 19 16.6863 19 20" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="12" cy="8" r="4" stroke="var(--c-warn)" strokeWidth="1.5"/>
+          <path d="M5 20C5 16.6863 8.13401 14 12 14C15.866 14 19 16.6863 19 20" stroke="var(--c-warn)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -122,12 +122,12 @@ export default function AdminDashboard() {
       label: "문제집 수",
       count: counts.workbooks,
       href: "/admin/workbooks",
-      color: "#3787FF",
-      bgColor: "#EBF3FF",
+      color: "var(--c-brand)",
+      bgColor: "var(--c-brand-soft-2)",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 5C4 3.89543 4.89543 3 6 3H18C19.1046 3 20 3.89543 20 5V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V5Z" stroke="#3787FF" strokeWidth="1.5"/>
-          <path d="M8 7H16M8 11H16M8 15H12" stroke="#3787FF" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M4 5C4 3.89543 4.89543 3 6 3H18C19.1046 3 20 3.89543 20 5V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V5Z" stroke="var(--c-brand)" strokeWidth="1.5"/>
+          <path d="M8 7H16M8 11H16M8 15H12" stroke="var(--c-brand)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -135,12 +135,12 @@ export default function AdminDashboard() {
       label: "OX퀴즈 수",
       count: counts.oxQuizSets,
       href: "/admin/ox-quiz",
-      color: "#10B981",
-      bgColor: "#ECFDF5",
+      color: "var(--c-success)",
+      bgColor: "var(--c-success-soft)",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="8" cy="12" r="4.5" stroke="#10B981" strokeWidth="1.5"/>
-          <path d="M16 7.5L20 16.5M20 7.5L16 16.5" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="8" cy="12" r="4.5" stroke="var(--c-success)" strokeWidth="1.5"/>
+          <path d="M16 7.5L20 16.5M20 7.5L16 16.5" stroke="var(--c-success)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -148,12 +148,12 @@ export default function AdminDashboard() {
       label: "영단어퀴즈 수",
       count: counts.vocabQuizSets,
       href: "/admin/vocab-quiz",
-      color: "#8B5CF6",
-      bgColor: "#F5F3FF",
+      color: "var(--c-purple)",
+      bgColor: "var(--c-purple-soft)",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V6Z" stroke="#8B5CF6" strokeWidth="1.5"/>
-          <path d="M8 8H9.5L12 16L14.5 8H16" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V6Z" stroke="var(--c-purple)" strokeWidth="1.5"/>
+          <path d="M8 8H9.5L12 16L14.5 8H16" stroke="var(--c-purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
     },
@@ -161,12 +161,12 @@ export default function AdminDashboard() {
       label: "문의 수",
       count: counts.inquiries,
       href: "/admin/inquiries",
-      color: "#EF4444",
-      bgColor: "#FEF2F2",
+      color: "var(--c-danger)",
+      bgColor: "var(--c-danger-soft)",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V14C20 15.1046 19.1046 16 18 16H10L5 20V16H6C4.89543 16 4 15.1046 4 14V6Z" stroke="#EF4444" strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M8 9H16M8 12H12" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V14C20 15.1046 19.1046 16 18 16H10L5 20V16H6C4.89543 16 4 15.1046 4 14V6Z" stroke="var(--c-danger)" strokeWidth="1.5" strokeLinejoin="round"/>
+          <path d="M8 9H16M8 12H12" stroke="var(--c-danger)" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -176,13 +176,13 @@ export default function AdminDashboard() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2B313D" }}>관리자 대시보드</h1>
-        <p style={{ fontSize: 14, color: "#8A909C", marginTop: 4 }}>Stady 서비스 현황을 한눈에 확인하세요</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>관리자 대시보드</h1>
+        <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>Stady 서비스 현황을 한눈에 확인하세요</p>
       </div>
 
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
-          <div style={{ width: 28, height: 28, border: "3px solid #E5E7EB", borderTopColor: "#3787FF", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ width: 28, height: 28, border: "3px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : (
@@ -195,9 +195,9 @@ export default function AdminDashboard() {
                 href={card.href}
                 className="press"
                 style={{
-                  background: "#fff",
+                  background: "var(--c-bg)",
                   borderRadius: 14,
-                  border: "1px solid #E5E7EB",
+                  border: "1px solid var(--c-border)",
                   padding: "20px 18px",
                   textDecoration: "none",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
@@ -219,8 +219,8 @@ export default function AdminDashboard() {
                     {card.icon}
                   </div>
                 </div>
-                <p style={{ fontSize: 28, fontWeight: 700, color: "#2B313D", lineHeight: 1 }}>{card.count}</p>
-                <p style={{ fontSize: 13, color: "#8A909C", marginTop: 6, fontWeight: 500 }}>{card.label}</p>
+                <p style={{ fontSize: 28, fontWeight: 700, color: "var(--c-text-2)", lineHeight: 1 }}>{card.count}</p>
+                <p style={{ fontSize: 13, color: "var(--c-text-4)", marginTop: 6, fontWeight: 500 }}>{card.label}</p>
               </Link>
             ))}
           </div>
@@ -229,58 +229,58 @@ export default function AdminDashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 24 }} className="admin-dashboard-grid">
             {/* Recent Users */}
             <div style={{
-              background: "#fff",
+              background: "var(--c-bg)",
               borderRadius: 14,
-              border: "1px solid #E5E7EB",
+              border: "1px solid var(--c-border)",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
             }} className="admin-table-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
+                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
               }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D" }}>최근 가입 회원</h2>
-                <span style={{ fontSize: 12, color: "#8A909C" }}>최근 5명</span>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>최근 가입 회원</h2>
+                <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>최근 5명</span>
               </div>
               {recentUsers.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "#8A909C", fontSize: 14 }}>
+                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
                   가입한 회원이 없습니다.
                 </div>
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: "#F9FAFB" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>닉네임</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>이메일</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>경로</th>
-                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>가입일</th>
+                    <tr style={{ background: "var(--c-bg-soft)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>닉네임</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>이메일</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>경로</th>
+                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>가입일</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentUsers.map((user) => (
-                      <tr key={user.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                      <tr key={user.id} style={{ borderBottom: "1px solid var(--c-bg-muted)" }}>
                         <td style={{ padding: "10px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <div style={{
-                              width: 28, height: 28, borderRadius: "50%", background: "#EBF3FF",
+                              width: 28, height: 28, borderRadius: "50%", background: "var(--c-brand-soft-2)",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 12, fontWeight: 600, color: "#3787FF", flexShrink: 0,
+                              fontSize: 12, fontWeight: 600, color: "var(--c-brand)", flexShrink: 0,
                             }}>
                               {user.nickname.charAt(0)}
                             </div>
-                            <span style={{ fontWeight: 600, color: "#2B313D" }}>{user.nickname}</span>
+                            <span style={{ fontWeight: 600, color: "var(--c-text-2)" }}>{user.nickname}</span>
                           </div>
                         </td>
-                        <td style={{ padding: "10px 16px", color: "#8A909C" }}>{user.email}</td>
+                        <td style={{ padding: "10px 16px", color: "var(--c-text-4)" }}>{user.email}</td>
                         <td style={{ padding: "10px 16px" }}>
                           <span style={{
                             fontSize: 11, padding: "2px 8px", borderRadius: 4,
-                            background: "#F3F4F6", color: "#6B7280", fontWeight: 500,
+                            background: "var(--c-bg-muted)", color: "var(--c-text-3)", fontWeight: 500,
                           }}>
                             {user.signupSource || "미응답"}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", color: "#8A909C", fontSize: 12 }}>
+                        <td style={{ padding: "10px 16px", textAlign: "right", color: "var(--c-text-4)", fontSize: 12 }}>
                           {formatDate(user.createdAt)}
                         </td>
                       </tr>
@@ -292,42 +292,42 @@ export default function AdminDashboard() {
 
             {/* Recent Inquiries */}
             <div style={{
-              background: "#fff",
+              background: "var(--c-bg)",
               borderRadius: 14,
-              border: "1px solid #E5E7EB",
+              border: "1px solid var(--c-border)",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
             }} className="admin-table-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
+                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
               }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D" }}>최근 문의</h2>
-                <Link href="/admin/inquiries" style={{ fontSize: 12, color: "#3787FF", textDecoration: "none", fontWeight: 500 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>최근 문의</h2>
+                <Link href="/admin/inquiries" style={{ fontSize: 12, color: "var(--c-brand)", textDecoration: "none", fontWeight: 500 }}>
                   전체보기
                 </Link>
               </div>
               {recentInquiries.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "#8A909C", fontSize: 14 }}>
+                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
                   접수된 문의가 없습니다.
                 </div>
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: "#F9FAFB" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>제목</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>카테고리</th>
-                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>상태</th>
-                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>접수일</th>
+                    <tr style={{ background: "var(--c-bg-soft)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>제목</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>카테고리</th>
+                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>상태</th>
+                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>접수일</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentInquiries.map((inq) => (
-                      <tr key={inq.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                        <td style={{ padding: "10px 16px", fontWeight: 500, color: "#2B313D", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <tr key={inq.id} style={{ borderBottom: "1px solid var(--c-bg-muted)" }}>
+                        <td style={{ padding: "10px 16px", fontWeight: 500, color: "var(--c-text-2)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {inq.title}
                         </td>
-                        <td style={{ padding: "10px 16px", color: "#8A909C" }}>{inq.category}</td>
+                        <td style={{ padding: "10px 16px", color: "var(--c-text-4)" }}>{inq.category}</td>
                         <td style={{ padding: "10px 16px", textAlign: "center" }}>
                           <span style={{
                             fontSize: 11, padding: "3px 10px", borderRadius: 10,
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
                             {inq.status}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", color: "#8A909C", fontSize: 12 }}>
+                        <td style={{ padding: "10px 16px", textAlign: "right", color: "var(--c-text-4)", fontSize: 12 }}>
                           {formatDate(inq.createdAt)}
                         </td>
                       </tr>
@@ -351,63 +351,63 @@ export default function AdminDashboard() {
           {/* Referral Event Stats */}
           <div style={{ marginTop: 24 }}>
             <div style={{
-              background: "#fff",
+              background: "var(--c-bg)",
               borderRadius: 14,
-              border: "1px solid #E5E7EB",
+              border: "1px solid var(--c-border)",
               boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
               overflow: "hidden",
             }} className="admin-table-card admin-referral-card">
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
+                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
               }}>
                 <div>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D" }}>친구초대 이벤트 현황</h2>
-                  <p style={{ fontSize: 12, color: "#8A909C", marginTop: 3 }}>누가 몇 명을 초대했는지 확인합니다</p>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>친구초대 이벤트 현황</h2>
+                  <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 3 }}>누가 몇 명을 초대했는지 확인합니다</p>
                 </div>
-                <span style={{ padding: "7px 10px", borderRadius: 999, background: "#EBF3FF", color: "#3787FF", fontSize: 12, fontWeight: 800 }}>
+                <span style={{ padding: "7px 10px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 12, fontWeight: 800 }}>
                   총 {referralStats.totalInvites}명
                 </span>
               </div>
               {referralStats.inviters.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "#8A909C", fontSize: 14 }}>
+                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
                   아직 친구초대 기록이 없습니다.
                 </div>
               ) : (
                 <table className="admin-referral-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: "#F9FAFB" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대한 회원</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대코드</th>
-                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>초대 수</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "#8A909C", fontSize: 12 }}>가입한 친구</th>
+                    <tr style={{ background: "var(--c-bg-soft)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대한 회원</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대코드</th>
+                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대 수</th>
+                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>가입한 친구</th>
                     </tr>
                   </thead>
                   <tbody>
                     {referralStats.inviters.map((inviter) => (
-                      <tr key={inviter.inviterId} style={{ borderBottom: "1px solid #F3F4F6", verticalAlign: "top" }}>
+                      <tr key={inviter.inviterId} style={{ borderBottom: "1px solid var(--c-bg-muted)", verticalAlign: "top" }}>
                         <td style={{ padding: "12px 16px" }}>
-                          <p style={{ fontWeight: 700, color: "#2B313D" }}>{inviter.nickname}</p>
-                          <p style={{ marginTop: 3, color: "#8A909C", fontSize: 12 }}>{inviter.email}</p>
+                          <p style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{inviter.nickname}</p>
+                          <p style={{ marginTop: 3, color: "var(--c-text-4)", fontSize: 12 }}>{inviter.email}</p>
                         </td>
                         <td style={{ padding: "12px 16px" }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: "#3787FF", background: "#EBF3FF", borderRadius: 8, padding: "5px 8px" }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)", background: "var(--c-brand-soft-2)", borderRadius: 8, padding: "5px 8px" }}>
                             {inviter.inviteCode}
                           </span>
                         </td>
                         <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: "#111827" }}>{inviter.invitedCount}</span>
-                          <span style={{ marginLeft: 2, color: "#8A909C", fontSize: 12 }}>명</span>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text)" }}>{inviter.invitedCount}</span>
+                          <span style={{ marginLeft: 2, color: "var(--c-text-4)", fontSize: 12 }}>명</span>
                         </td>
                         <td style={{ padding: "12px 16px" }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {inviter.invitees.map((invitee) => (
                               <div key={invitee.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                                 <div style={{ minWidth: 0 }}>
-                                  <span style={{ fontWeight: 700, color: "#2B313D" }}>{invitee.nickname}</span>
-                                  <span style={{ marginLeft: 6, color: "#8A909C", fontSize: 12 }}>{invitee.email}</span>
+                                  <span style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{invitee.nickname}</span>
+                                  <span style={{ marginLeft: 6, color: "var(--c-text-4)", fontSize: 12 }}>{invitee.email}</span>
                                 </div>
-                                <span style={{ color: "#8A909C", fontSize: 12, flexShrink: 0 }}>{formatDate(invitee.invitedAt)}</span>
+                                <span style={{ color: "var(--c-text-4)", fontSize: 12, flexShrink: 0 }}>{formatDate(invitee.invitedAt)}</span>
                               </div>
                             ))}
                           </div>
@@ -424,16 +424,16 @@ export default function AdminDashboard() {
           {sourceStats.length > 0 && (
             <div style={{ marginTop: 24 }}>
               <div style={{
-                background: "#fff",
+                background: "var(--c-bg)",
                 borderRadius: 14,
-                border: "1px solid #E5E7EB",
+                border: "1px solid var(--c-border)",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                 overflow: "hidden",
               }}>
                 <div style={{
-                  padding: "16px 20px", borderBottom: "1px solid #F3F4F6",
+                  padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
                 }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "#2B313D" }}>가입 경로 통계</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>가입 경로 통계</h2>
                 </div>
                 <div style={{ padding: 20 }}>
                   {(() => {
@@ -444,10 +444,10 @@ export default function AdminDashboard() {
                       .map((stat, i) => (
                         <div key={stat.source} style={{ marginBottom: i < sourceStats.length - 1 ? 14 : 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#2B313D" }}>{stat.source}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2)" }}>{stat.source}</span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: colors[i % colors.length] }}>{stat.count}명</span>
                           </div>
-                          <div style={{ height: 8, backgroundColor: "#F3F4F6", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ height: 8, backgroundColor: "var(--c-bg-muted)", borderRadius: 4, overflow: "hidden" }}>
                             <div
                               style={{
                                 height: "100%",

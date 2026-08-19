@@ -70,7 +70,7 @@ export default function CustomerCenterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
       {/* Header - Fixed */}
       <div style={{
         position: "sticky",
@@ -80,14 +80,14 @@ export default function CustomerCenterPage() {
         alignItems: "center",
         gap: 12,
         padding: "16px 10px",
-        background: "#fff",
+        background: "var(--c-bg)",
       }}>
         <button
           className="press"
           onClick={() => router.back()}
           style={{ background: "none", border: "none", padding: 4 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -107,13 +107,13 @@ export default function CustomerCenterPage() {
               alignItems: "center",
               gap: 8,
               padding: "20px 0",
-              background: "#F0F5FF",
+              background: "var(--c-brand-soft-5)",
               borderRadius: 16,
               border: "none",
             }}
           >
             <img src="/icons/faq.svg" alt="" style={{ width: 44, height: 44 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#3787FF" }}>자주묻는 질문</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--c-brand)" }}>자주묻는 질문</span>
           </button>
           <button
             className="press"
@@ -125,20 +125,20 @@ export default function CustomerCenterPage() {
               alignItems: "center",
               gap: 8,
               padding: "20px 0",
-              background: "#F9FAFB",
+              background: "var(--c-bg-soft)",
               borderRadius: 16,
               border: "none",
             }}
           >
             <img src="/icons/customer-center.svg" alt="" style={{ width: 44, height: 44 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>1:1 문의하기</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)" }}>1:1 문의하기</span>
           </button>
         </div>
 
         {/* Form */}
         {showForm && (
           <div style={{ animation: "fadeInUp 0.3s ease" }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 20 }}>1:1 문의하기</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 20 }}>1:1 문의하기</h2>
 
             {/* Category Chips */}
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
@@ -157,8 +157,8 @@ export default function CustomerCenterPage() {
                     border: "none",
                     fontSize: 13,
                     fontWeight: 600,
-                    background: category === c.value ? "#3787FF" : "#F3F4F6",
-                    color: category === c.value ? "#fff" : "#6B7280",
+                    background: category === c.value ? "var(--c-brand)" : "var(--c-bg-muted)",
+                    color: category === c.value ? "#fff" : "var(--c-text-3)",
                     transition: "all 0.2s ease",
                   }}
                 >
@@ -180,7 +180,7 @@ export default function CustomerCenterPage() {
                   padding: "0 16px",
                   borderRadius: 12,
                   border: "none",
-                  background: "#F3F4F6",
+                  background: "var(--c-bg-muted)",
                   fontSize: 15,
                   outline: "none",
                   boxSizing: "border-box",
@@ -197,7 +197,7 @@ export default function CustomerCenterPage() {
                   padding: "0 16px",
                   borderRadius: 12,
                   border: "none",
-                  background: "#F3F4F6",
+                  background: "var(--c-bg-muted)",
                   fontSize: 15,
                   outline: "none",
                   boxSizing: "border-box",
@@ -214,7 +214,7 @@ export default function CustomerCenterPage() {
                   padding: "0 16px",
                   borderRadius: 12,
                   border: "none",
-                  background: "#F3F4F6",
+                  background: "var(--c-bg-muted)",
                   fontSize: 15,
                   outline: "none",
                   boxSizing: "border-box",
@@ -222,7 +222,7 @@ export default function CustomerCenterPage() {
               />
 
               {/* Toast UI Editor */}
-              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #E5E7EB" }}>
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-border)" }}>
                 <div ref={editorRef} />
               </div>
 
@@ -236,7 +236,7 @@ export default function CustomerCenterPage() {
                   height: 52,
                   borderRadius: 14,
                   border: "none",
-                  background: "#3787FF",
+                  background: "var(--c-brand)",
                   color: "#fff",
                   fontSize: 16,
                   fontWeight: 700,
@@ -252,7 +252,7 @@ export default function CustomerCenterPage() {
 
         {/* Default state when form is hidden */}
         {!showForm && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF" }}>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--c-text-4c)" }}>
             <p style={{ fontSize: 14, lineHeight: 1.6 }}>
               궁금하신 점이 있으시면<br />
               자주묻는 질문을 확인하시거나<br />

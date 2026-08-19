@@ -41,9 +41,9 @@ export default function AdminLoginPage() {
     width: "100%",
     padding: "12px 14px",
     borderRadius: 10,
-    border: "1px solid #E5E7EB",
+    border: "1px solid var(--c-border)",
     fontSize: 15,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "#2B313D",
+    color: "var(--c-text-2)",
     marginBottom: 6,
   };
 
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#F9FAFB",
+        background: "var(--c-bg-soft)",
         padding: 16,
       }}
     >
@@ -72,9 +72,9 @@ export default function AdminLoginPage() {
         style={{
           width: "100%",
           maxWidth: 400,
-          background: "#fff",
+          background: "var(--c-bg)",
           borderRadius: 16,
-          border: "1px solid #E5E7EB",
+          border: "1px solid var(--c-border)",
           padding: "40px 32px",
           boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
         }}
@@ -87,10 +87,10 @@ export default function AdminLoginPage() {
             height={36}
             style={{ margin: "0 auto 16px", display: "block" }}
           />
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#2B313D" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-2)" }}>
             관리자 로그인
           </h1>
-          <p style={{ fontSize: 14, color: "#8A909C", marginTop: 6 }}>
+          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 6 }}>
             관리자 계정으로 로그인해주세요
           </p>
         </div>
@@ -104,8 +104,8 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@example.com"
               style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#3787FF")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#E5E7EB")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--c-brand)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--c-border)")}
               required
             />
           </div>
@@ -118,8 +118,8 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력하세요"
               style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#3787FF")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#E5E7EB")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--c-brand)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--c-border)")}
               required
             />
           </div>
@@ -127,8 +127,8 @@ export default function AdminLoginPage() {
           {error && (
             <div
               style={{
-                background: "#FEF2F2",
-                color: "#DC2626",
+                background: "var(--c-danger-soft)",
+                color: "var(--c-danger-c)",
                 fontSize: 13,
                 fontWeight: 500,
                 padding: "10px 14px",
@@ -147,7 +147,7 @@ export default function AdminLoginPage() {
             style={{
               width: "100%",
               padding: "12px 0",
-              background: "#3787FF",
+              background: "var(--c-brand)",
               color: "#fff",
               border: "none",
               borderRadius: 10,

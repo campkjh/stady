@@ -7,7 +7,7 @@ const tdClass = "px-3 py-2.5 border-t border-gray-100";
 export default function RefundPolicyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <div className="flex items-center px-2 pt-2" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff" }}>
+      <div className="flex items-center px-2 pt-2" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)" }}>
         <BackButton />
       </div>
 

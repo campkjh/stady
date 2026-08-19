@@ -119,7 +119,7 @@ function RetestContent() {
   if (error) {
     return (
       <Centered>
-        <p style={{ color: "#9CA3AF", fontSize: 14, marginBottom: 16 }}>{error}</p>
+        <p style={{ color: "var(--c-text-4c)", fontSize: 14, marginBottom: 16 }}>{error}</p>
         <button type="button" onClick={() => router.back()} style={primaryBtn}>
           돌아가기
         </button>
@@ -130,10 +130,10 @@ function RetestContent() {
   if (items.length === 0) {
     return (
       <Centered>
-        <p style={{ fontSize: 17, fontWeight: 800, color: "#111827", marginBottom: 6 }}>
+        <p style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 6 }}>
           {source === "bookmark" ? "찜한 문제가 없어요" : "틀린 문제가 없어요"}
         </p>
-        <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>
+        <p style={{ fontSize: 13, color: "var(--c-text-4c)", marginBottom: 20 }}>
           문제를 풀면 이곳에서 모아 다시 풀 수 있어요.
         </p>
         <button type="button" onClick={() => router.back()} style={primaryBtn}>
@@ -158,15 +158,15 @@ function RetestContent() {
           className="press"
           style={{ background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
         <div className="flex-1" style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 900, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <h1 style={{ fontSize: 15, fontWeight: 900, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {headerTitle}
           </h1>
-          <p style={{ fontSize: 12, color: "#8A909C", marginTop: 1 }}>
+          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 1 }}>
             {answers.size}/{items.length} 풀이 · {correctCount}개 정답
           </p>
         </div>
@@ -174,15 +174,15 @@ function RetestContent() {
           type="button"
           onClick={() => setShowResult(true)}
           className="press"
-          style={{ height: 32, padding: "0 12px", borderRadius: 999, border: "1px solid #E5E7EB", background: "#fff", color: "#374151", fontSize: 13, fontWeight: 800 }}
+          style={{ height: 32, padding: "0 12px", borderRadius: 999, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2c)", fontSize: 13, fontWeight: 800 }}
         >
           결과
         </button>
       </header>
 
       {/* Progress bar */}
-      <div style={{ height: 4, background: "#F1F5F9", margin: "2px 16px 0", borderRadius: 999, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${((index + 1) / items.length) * 100}%`, background: "#3787FF", transition: "width 0.25s ease" }} />
+      <div style={{ height: 4, background: "var(--c-bg-muted-11)", margin: "2px 16px 0", borderRadius: 999, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${((index + 1) / items.length) * 100}%`, background: "var(--c-brand)", transition: "width 0.25s ease" }} />
       </div>
 
       {/* Question area */}
@@ -201,12 +201,12 @@ function RetestContent() {
         {current && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ display: "inline-flex", padding: "3px 9px", borderRadius: 999, background: "#EBF3FF", color: "#3787FF", fontSize: 11, fontWeight: 800 }}>
+              <span style={{ display: "inline-flex", padding: "3px 9px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 11, fontWeight: 800 }}>
                 {TYPE_LABEL[current.type]}
               </span>
-              <span style={{ fontSize: 13, color: "#9CA3AF" }}>{index + 1} / {items.length}</span>
+              <span style={{ fontSize: 13, color: "var(--c-text-4c)" }}>{index + 1} / {items.length}</span>
               {current.section && (
-                <span style={{ fontSize: 11, color: "#8A909C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 11, color: "var(--c-text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {current.section}
                 </span>
               )}
@@ -215,7 +215,7 @@ function RetestContent() {
             {current.passageImage && <img src={current.passageImage} alt="지문" style={imgStyle} />}
             {current.questionImage && <img src={current.questionImage} alt="문제" style={imgStyle} />}
 
-            <h2 style={{ fontSize: current.type === "ox" ? 20 : 18, fontWeight: 800, color: "#111827", lineHeight: 1.5, marginBottom: 20 }}>
+            <h2 style={{ fontSize: current.type === "ox" ? 20 : 18, fontWeight: 800, color: "var(--c-text)", lineHeight: 1.5, marginBottom: 20 }}>
               {current.type === "ox" ? "Q. " : ""}{current.prompt}
             </h2>
 
@@ -236,14 +236,14 @@ function RetestContent() {
                       style={{
                         flex: 1, aspectRatio: "1/1", display: "flex", flexDirection: "column",
                         alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 20, border: "none",
-                        backgroundColor: answered ? (isSelected ? (answered.isCorrect ? "#E8F0FE" : "#FFE0E0") : "#F9FAFB") : base,
+                        backgroundColor: answered ? (isSelected ? (answered.isCorrect ? "var(--c-brand-soft)" : "var(--c-danger-soft-2)") : "var(--c-bg-soft)") : base,
                         opacity: dim ? 0.5 : 1,
-                        boxShadow: isSelected ? (answered?.isCorrect ? "inset 0 0 0 2px #3787FF" : "inset 0 0 0 2px #E85D5D") : "none",
+                        boxShadow: isSelected ? (answered?.isCorrect ? "inset 0 0 0 2px var(--c-brand)" : "inset 0 0 0 2px var(--c-danger-b)") : "none",
                         transition: "opacity 0.2s ease",
                       }}
                     >
                       <img src={icon} alt={label} style={{ width: 60, height: 60 }} />
-                      <span style={{ fontSize: 16, fontWeight: 700, color: "#374151" }}>{label}</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2c)" }}>{label}</span>
                     </button>
                   );
                 })}
@@ -254,14 +254,14 @@ function RetestContent() {
                   const num = i + 1;
                   const isAnswer = num === current.answer;
                   const isSelected = answered?.selected === num;
-                  let bg = "#F9FAFB";
-                  let border = "1px solid #E5E7EB";
-                  let color = "#374151";
+                  let bg = "var(--c-bg-soft)";
+                  let border = "1px solid var(--c-border)";
+                  let color = "var(--c-text-2c)";
                   if (answered) {
                     if (isAnswer) {
-                      bg = "#E8F0FE"; border = "1px solid #3787FF"; color = "#2563EB";
+                      bg = "var(--c-brand-soft)"; border = "1px solid var(--c-brand)"; color = "var(--c-brand-deep-3)";
                     } else if (isSelected) {
-                      bg = "#FFE0E0"; border = "1px solid #E85D5D"; color = "#DC2626";
+                      bg = "var(--c-danger-soft-2)"; border = "1px solid var(--c-danger-b)"; color = "var(--c-danger-c)";
                     }
                   }
                   return (
@@ -279,8 +279,8 @@ function RetestContent() {
                       <span style={{
                         flexShrink: 0, width: 24, height: 24, borderRadius: "50%",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        background: answered && isAnswer ? "#3787FF" : answered && isSelected ? "#E85D5D" : "#E5E7EB",
-                        color: answered && (isAnswer || isSelected) ? "#fff" : "#6B7280",
+                        background: answered && isAnswer ? "var(--c-brand)" : answered && isSelected ? "var(--c-danger-b)" : "var(--c-border)",
+                        color: answered && (isAnswer || isSelected) ? "#fff" : "var(--c-text-3)",
                         fontSize: 12, fontWeight: 800,
                       }}>
                         {num}
@@ -295,12 +295,12 @@ function RetestContent() {
             {/* Result + explanation */}
             {answered && (
               <div style={{ marginTop: 22, animation: "retestFadeUp 0.35s cubic-bezier(0.16,1,0.3,1)" }}>
-                <p style={{ textAlign: "center", fontSize: 24, fontWeight: 900, color: answered.isCorrect ? "#3787FF" : "#E85D5D" }}>
+                <p style={{ textAlign: "center", fontSize: 24, fontWeight: 900, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
                   {answered.isCorrect ? "정답" : "오답"}
                 </p>
                 {current.explanation && (
-                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 12, background: "#F9FAFB" }}>
-                    <p style={{ fontSize: 15.5, color: "#4B5563", lineHeight: 1.65 }}>{current.explanation}</p>
+                  <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 12, background: "var(--c-bg-soft)" }}>
+                    <p style={{ fontSize: 15.5, color: "var(--c-text-2d)", lineHeight: 1.65 }}>{current.explanation}</p>
                   </div>
                 )}
               </div>
@@ -310,7 +310,7 @@ function RetestContent() {
       </div>
 
       {/* Footer nav */}
-      <div style={{ display: "flex", gap: 10, padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", borderTop: "1px solid #F1F5F9" }}>
+      <div style={{ display: "flex", gap: 10, padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", borderTop: "1px solid var(--c-bg-muted-11)" }}>
         <button
           type="button"
           onClick={goPrev}
@@ -321,11 +321,11 @@ function RetestContent() {
           이전
         </button>
         {index >= items.length - 1 ? (
-          <button type="button" onClick={() => setShowResult(true)} className="press" style={{ ...navBtn, flex: 2, background: "#3787FF", color: "#fff", border: "none" }}>
+          <button type="button" onClick={() => setShowResult(true)} className="press" style={{ ...navBtn, flex: 2, background: "var(--c-brand)", color: "#fff", border: "none" }}>
             결과 보기
           </button>
         ) : (
-          <button type="button" onClick={goNext} className="press" style={{ ...navBtn, flex: 2, background: "#111827", color: "#fff", border: "none" }}>
+          <button type="button" onClick={goNext} className="press" style={{ ...navBtn, flex: 2, background: "var(--c-inverse)", color: "#fff", border: "none" }}>
             다음
           </button>
         )}
@@ -367,24 +367,24 @@ function ResultOverlay({
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={onReview} />
-      <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "#fff", borderRadius: 22, padding: 24, animation: "retestPop 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: "0 12px 48px rgba(0,0,0,0.2)" }}>
-        <p style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#8A909C" }}>모아풀기 결과</p>
-        <p style={{ textAlign: "center", fontSize: 44, fontWeight: 900, color: "#3787FF", lineHeight: 1.2, marginTop: 4 }}>
-          {correct}<span style={{ fontSize: 20, color: "#9CA3AF", fontWeight: 800 }}> / {total}</span>
+      <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "var(--c-bg)", borderRadius: 22, padding: 24, animation: "retestPop 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: "0 12px 48px rgba(0,0,0,0.2)" }}>
+        <p style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--c-text-4)" }}>모아풀기 결과</p>
+        <p style={{ textAlign: "center", fontSize: 44, fontWeight: 900, color: "var(--c-brand)", lineHeight: 1.2, marginTop: 4 }}>
+          {correct}<span style={{ fontSize: 20, color: "var(--c-text-4c)", fontWeight: 800 }}> / {total}</span>
         </p>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 8, marginBottom: 20 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#3787FF" }}>정답 {correct}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#E85D5D" }}>오답 {wrong}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#6B7280" }}>정답률 {rate}%</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand)" }}>정답 {correct}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-danger-b)" }}>오답 {wrong}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-3)" }}>정답률 {rate}%</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button type="button" onClick={onRetry} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "#3787FF", color: "#fff", border: "none", fontSize: 16, fontWeight: 800 }}>
+          <button type="button" onClick={onRetry} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 16, fontWeight: 800 }}>
             처음부터 다시 풀기
           </button>
-          <button type="button" onClick={onReview} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "#F2F3F5", color: "#51535C", border: "none", fontSize: 16, fontWeight: 800 }}>
+          <button type="button" onClick={onReview} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", border: "none", fontSize: 16, fontWeight: 800 }}>
             틀린 문제 다시 보기
           </button>
-          <button type="button" onClick={onClose} className="press" style={{ width: "100%", height: 44, background: "none", color: "#9CA3AF", border: "none", fontSize: 14, fontWeight: 700 }}>
+          <button type="button" onClick={onClose} className="press" style={{ width: "100%", height: 44, background: "none", color: "var(--c-text-4c)", border: "none", fontSize: 14, fontWeight: 700 }}>
             닫기
           </button>
         </div>
@@ -396,15 +396,15 @@ function ResultOverlay({
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", background: "#fff" }}>
+    <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", background: "var(--c-bg)" }}>
       {children}
     </div>
   );
 }
 
-const imgStyle: CSSProperties = { width: "100%", display: "block", borderRadius: 12, border: "1px solid #EEF2F7", marginBottom: 12 };
-const primaryBtn: CSSProperties = { padding: "10px 18px", borderRadius: 12, background: "#3787FF", color: "#fff", border: "none", fontSize: 14, fontWeight: 800 };
-const navBtn: CSSProperties = { flex: 1, height: 48, borderRadius: 14, background: "#fff", border: "1px solid #E5E7EB", color: "#374151", fontSize: 15, fontWeight: 800 };
+const imgStyle: CSSProperties = { width: "100%", display: "block", borderRadius: 12, border: "1px solid var(--c-bg-muted-9)", marginBottom: 12 };
+const primaryBtn: CSSProperties = { padding: "10px 18px", borderRadius: 12, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 14, fontWeight: 800 };
+const navBtn: CSSProperties = { flex: 1, height: 48, borderRadius: 14, background: "var(--c-bg)", border: "1px solid var(--c-border)", color: "var(--c-text-2c)", fontSize: 15, fontWeight: 800 };
 
 export default function RetestPage() {
   return (

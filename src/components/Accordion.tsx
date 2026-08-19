@@ -68,7 +68,7 @@ function AccordionRow({
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#9CA3AF"
+          stroke="var(--c-text-4c)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -91,7 +91,7 @@ function AccordionRow({
       >
         <div ref={innerRef}>{item.content}</div>
       </div>
-      <div style={{ height: 1, backgroundColor: "#F3F4F6" }} />
+      <div style={{ height: 1, backgroundColor: "var(--c-bg-muted)" }} />
     </div>
   );
 }

@@ -148,7 +148,7 @@ export default function LoginPage() {
         justifyContent: "center",
         minHeight: "100vh",
         padding: "40px 20px",
-        backgroundColor: "#fff",
+        backgroundColor: "var(--c-bg)",
       }}>
         {/* Student Icon */}
         <div style={{ marginBottom: 24 }}>
@@ -156,10 +156,10 @@ export default function LoginPage() {
         </div>
 
         {/* Title */}
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", marginBottom: 4, textAlign: "center" }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
           스타디
         </h1>
-        <p style={{ fontSize: 14, color: "#9CA3AF", textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--c-text-4c)", textAlign: "center" }}>
           학습의 시작, 스타디와 함께!
         </p>
       </div>
@@ -175,7 +175,7 @@ export default function LoginPage() {
       justifyContent: "center",
       minHeight: "100vh",
       padding: "40px 20px",
-      backgroundColor: "#fff",
+      backgroundColor: "var(--c-bg)",
     }}>
       {/* Student Icon */}
       <div style={{ marginBottom: 24 }}>
@@ -183,10 +183,10 @@ export default function LoginPage() {
       </div>
 
       {/* Title */}
-      <h1 style={{ fontSize: 28, fontWeight: 800, color: "#111", marginBottom: 4, textAlign: "center" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
         스타디
       </h1>
-      <p style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 48, textAlign: "center" }}>
+      <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 48, textAlign: "center" }}>
         학습의 시작, 스타디와 함께!
       </p>
 
@@ -204,7 +204,7 @@ export default function LoginPage() {
             width: "100%",
             height: 48,
             borderRadius: 14,
-            backgroundColor: "#FFC84D",
+            backgroundColor: "var(--c-warn-i)",
             color: "#3E1918",
             fontSize: 16,
             fontWeight: 700,
@@ -229,7 +229,7 @@ export default function LoginPage() {
             width: "100%",
             height: 48,
             borderRadius: 14,
-            backgroundColor: "#292A2E",
+            backgroundColor: "var(--c-inverse-5)",
             color: "#fff",
             fontSize: 16,
             fontWeight: 700,
@@ -259,7 +259,7 @@ export default function LoginPage() {
           background: "none",
           border: "none",
           fontSize: 13,
-          color: "#9CA3AF",
+          color: "var(--c-text-4c)",
           textDecoration: "underline",
         }}
       >

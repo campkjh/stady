@@ -206,18 +206,18 @@ export default function TagManager() {
   return (
     <section style={{ display: "grid", gap: 20 }}>
       <div>
-        <h1 style={{ margin: 0, color: "#111827", fontSize: 26, fontWeight: 900 }}>태그 관리</h1>
-        <p style={{ margin: "8px 0 0", color: "#6B7280", fontSize: 14 }}>카테고리 안의 세부 태그를 동적으로 관리합니다.</p>
+        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>태그 관리</h1>
+        <p style={{ margin: "8px 0 0", color: "var(--c-text-3)", fontSize: 14 }}>카테고리 안의 세부 태그를 동적으로 관리합니다.</p>
       </div>
       {message && (
-        <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+        <div style={{ border: "1px solid var(--c-brand-line-9)", background: "var(--c-brand-soft-4)", color: "var(--c-brand-deep-2)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
           {message}
         </div>
       )}
       <div className="tag-manager-grid" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 420px) minmax(0, 1fr)", gap: 20 }}>
         <div style={panelStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-            <strong style={{ color: "#111827", fontSize: 16 }}>태그 목록</strong>
+            <strong style={{ color: "var(--c-text)", fontSize: 16 }}>태그 목록</strong>
             <button type="button" onClick={addTag} disabled={!selectedGroupId} style={secondaryButtonStyle}>태그 추가</button>
           </div>
           <select value={selectedGroupId} onChange={(event) => changeGroup(event.target.value)} style={inputStyle}>
@@ -234,7 +234,7 @@ export default function TagManager() {
             <option value="inactive">비노출</option>
           </select>
           {loading ? (
-            <p style={{ color: "#6B7280", fontSize: 14 }}>불러오는 중...</p>
+            <p style={{ color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중...</p>
           ) : (
             <TagTable tags={filteredTags} selectedId={selectedId} onSelect={selectTag} onReorder={reorderVisible} />
           )}
@@ -243,7 +243,7 @@ export default function TagManager() {
           </button>
         </div>
         <div style={panelStyle}>
-          <strong style={{ color: "#111827", fontSize: 16 }}>상세 설정</strong>
+          <strong style={{ color: "var(--c-text)", fontSize: 16 }}>상세 설정</strong>
           <TagForm
             tag={draft}
             groups={groups}
@@ -278,28 +278,28 @@ const panelStyle = {
   display: "grid",
   alignContent: "start",
   gap: 14,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 8,
-  background: "#fff",
+  background: "var(--c-bg)",
   padding: 18,
   minWidth: 0,
 } as const;
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "11px 12px",
-  color: "#111827",
+  color: "var(--c-text)",
   fontSize: 14,
   boxSizing: "border-box",
 } as const;
 
 const secondaryButtonStyle = {
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
-  background: "#fff",
-  color: "#374151",
+  background: "var(--c-bg)",
+  color: "var(--c-text-2c)",
   padding: "9px 12px",
   fontSize: 13,
   fontWeight: 800,
@@ -307,10 +307,10 @@ const secondaryButtonStyle = {
 } as const;
 
 const primaryOutlineStyle = {
-  border: "1px solid #3787FF",
+  border: "1px solid var(--c-brand)",
   borderRadius: 8,
-  background: "#EFF6FF",
-  color: "#1D4ED8",
+  background: "var(--c-brand-soft-4)",
+  color: "var(--c-brand-deep-2)",
   padding: "11px 14px",
   fontSize: 14,
   fontWeight: 800,

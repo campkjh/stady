@@ -102,15 +102,15 @@ export default function ResultPage() {
   const sortedResults = [...results].sort((a, b) => a.problem.order - b.problem.order);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F9FAFB", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg-soft)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 16px", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 16px", background: "var(--c-bg)" }}>
         <button
           onClick={() => router.push("/")}
           className="press"
           style={{ width: 36, height: 36, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -118,29 +118,29 @@ export default function ResultPage() {
       </div>
 
       {/* Score Hero */}
-      <div style={{ background: "#fff", padding: "16px 20px 32px", textAlign: "center", borderBottom: "1px solid #F3F4F6" }}>
-        <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 6 }}>
+      <div style={{ background: "var(--c-bg)", padding: "16px 20px 32px", textAlign: "center", borderBottom: "1px solid var(--c-bg-muted)" }}>
+        <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 6 }}>
           {correctRate >= 80 ? "잘했어요!" : correctRate >= 50 ? "조금 더 연습해봐요" : "기초부터 다시 해볼까요?"}
         </p>
         <div style={{ display: "inline-flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-          <span style={{ fontSize: 56, fontWeight: 800, color: "#111", letterSpacing: -2 }}>
+          <span style={{ fontSize: 56, fontWeight: 800, color: "var(--c-text-c)", letterSpacing: -2 }}>
             {totalPoints}
           </span>
-          <span style={{ fontSize: 22, color: "#9CA3AF", fontWeight: 600 }}>
+          <span style={{ fontSize: 22, color: "var(--c-text-4c)", fontWeight: 600 }}>
             / {total * scorePerProblem}점
           </span>
         </div>
-        <p style={{ fontSize: 13, color: "#9CA3AF" }}>소요 시간 {formatTime(timeTaken)} · 정답률 {correctRate}%</p>
+        <p style={{ fontSize: 13, color: "var(--c-text-4c)" }}>소요 시간 {formatTime(timeTaken)} · 정답률 {correctRate}%</p>
 
         <div style={{ marginTop: 20, maxWidth: 300, marginLeft: "auto", marginRight: "auto" }}>
-          <div style={{ height: 8, background: "#F3F4F6", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ height: 8, background: "var(--c-bg-muted)", borderRadius: 4, overflow: "hidden" }}>
             <div style={{
               height: "100%", width: `${correctRate}%`,
               background: "linear-gradient(90deg, #3787FF 0%, #5CA3FF 100%)",
               borderRadius: 4, transition: "width 0.6s ease",
             }} />
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "#9CA3AF" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--c-text-4c)" }}>
             <span>정답 {score}문제</span>
             <span>오답 {total - score}문제</span>
           </div>
@@ -156,38 +156,38 @@ export default function ResultPage() {
             background: "linear-gradient(135deg, #3787FF, #7B5BFF)",
             color: "#fff", fontSize: 11, fontWeight: 800,
           }}>AI</span>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>스타디 AI 분석</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)" }}>스타디 AI 분석</h2>
         </div>
         {analysisLoading || !analysis ? (
           <div style={{
-            background: "#fff", borderRadius: 14, padding: 20, textAlign: "center",
-            border: "1px solid #F3F4F6",
+            background: "var(--c-bg)", borderRadius: 14, padding: 20, textAlign: "center",
+            border: "1px solid var(--c-bg-muted)",
           }}>
-            <div style={{ display: "inline-block", width: 20, height: 20, border: "2px solid #E5E7EB", borderTopColor: "#3787FF", borderRadius: "50%", animation: "resSpin 0.8s linear infinite" }} />
-            <p style={{ fontSize: 13, color: "#9CA3AF", marginTop: 8 }}>풀이 데이터를 분석하고 있어요...</p>
+            <div style={{ display: "inline-block", width: 20, height: 20, border: "2px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "resSpin 0.8s linear infinite" }} />
+            <p style={{ fontSize: 13, color: "var(--c-text-4c)", marginTop: 8 }}>풀이 데이터를 분석하고 있어요...</p>
             <style>{`@keyframes resSpin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {/* Stats summary */}
             <div style={{
-              background: "#fff", borderRadius: 14, padding: "14px 16px",
-              border: "1px solid #F3F4F6",
+              background: "var(--c-bg)", borderRadius: 14, padding: "14px 16px",
+              border: "1px solid var(--c-bg-muted)",
               display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10,
             }}>
-              <StatBox label="정답률" value={`${analysis.stats.correctRate}%`} color="#3787FF" />
-              <StatBox label="평균 풀이시간" value={formatDwell(analysis.stats.avgDwellSeconds)} color="#111" />
-              <StatBox label="총 풀이시간" value={formatDwell(analysis.stats.totalDwellSeconds)} color="#111" />
+              <StatBox label="정답률" value={`${analysis.stats.correctRate}%`} color="var(--c-brand)" />
+              <StatBox label="평균 풀이시간" value={formatDwell(analysis.stats.avgDwellSeconds)} color="var(--c-text-c)" />
+              <StatBox label="총 풀이시간" value={formatDwell(analysis.stats.totalDwellSeconds)} color="var(--c-text-c)" />
             </div>
 
             {/* Analysis sections */}
             {analysis.sections.map((s, i) => {
-              const color = s.tone === "good" ? "#3787FF" : s.tone === "warn" ? "#EF4444" : "#6B7280";
-              const bg = s.tone === "good" ? "#EAF2FF" : s.tone === "warn" ? "#FEF2F2" : "#F9FAFB";
+              const color = s.tone === "good" ? "var(--c-brand)" : s.tone === "warn" ? "var(--c-danger)" : "var(--c-text-3)";
+              const bg = s.tone === "good" ? "var(--c-brand-soft-6)" : s.tone === "warn" ? "var(--c-danger-soft)" : "var(--c-bg-soft)";
               return (
                 <div key={i} style={{
-                  background: "#fff", borderRadius: 14, padding: "14px 16px",
-                  border: "1px solid #F3F4F6",
+                  background: "var(--c-bg)", borderRadius: 14, padding: "14px 16px",
+                  border: "1px solid var(--c-bg-muted)",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <span style={{
@@ -199,9 +199,9 @@ export default function ResultPage() {
                     }}>
                       {s.tone === "good" ? "긍정" : s.tone === "warn" ? "주의" : "정보"}
                     </span>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{s.title}</h3>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-c)" }}>{s.title}</h3>
                   </div>
-                  <p style={{ fontSize: 13, lineHeight: 1.6, color: "#374151" }}>{s.body}</p>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--c-text-2c)" }}>{s.body}</p>
                 </div>
               );
             })}
@@ -211,41 +211,41 @@ export default function ResultPage() {
 
       {/* Problem-by-problem results */}
       <div style={{ padding: "20px 16px 24px" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111", marginBottom: 10 }}>문제별 결과</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 10 }}>문제별 결과</h2>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 30 }}>
-            <div style={{ width: 22, height: 22, border: "2px solid #E5E7EB", borderTopColor: "#3787FF", borderRadius: "50%", animation: "resSpin 0.8s linear infinite" }} />
+            <div style={{ width: 22, height: 22, border: "2px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "resSpin 0.8s linear infinite" }} />
           </div>
         ) : sortedResults.length > 0 ? (
-          <div style={{ background: "#fff", borderRadius: 14, overflow: "hidden", border: "1px solid #F3F4F6" }}>
+          <div style={{ background: "var(--c-bg)", borderRadius: 14, overflow: "hidden", border: "1px solid var(--c-bg-muted)" }}>
             {sortedResults.map((r, i) => (
               <div key={r.id} style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "12px 14px",
-                borderBottom: i === sortedResults.length - 1 ? "none" : "1px solid #F3F4F6",
+                borderBottom: i === sortedResults.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
               }}>
                 <span style={{
                   width: 28, height: 28, borderRadius: "50%",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
-                  background: r.isCorrect ? "#3787FF" : "#EF4444",
+                  background: r.isCorrect ? "var(--c-brand)" : "var(--c-danger)",
                 }}>
                   {r.problem.order}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     문제 {r.problem.order}
-                    {r.selected !== null && <span style={{ color: "#9CA3AF", fontWeight: 500, marginLeft: 6 }}>· {r.selected}번 선택</span>}
+                    {r.selected !== null && <span style={{ color: "var(--c-text-4c)", fontWeight: 500, marginLeft: 6 }}>· {r.selected}번 선택</span>}
                   </p>
-                  <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                  <p style={{ fontSize: 11, color: "var(--c-text-4c)", marginTop: 1 }}>
                     정답 {r.problem.answer}번 · 풀이 {formatDwell(r.dwellSeconds)}
                   </p>
                 </div>
                 <span style={{
                   fontSize: 11, fontWeight: 700,
-                  color: r.isCorrect ? "#3787FF" : "#EF4444",
+                  color: r.isCorrect ? "var(--c-brand)" : "var(--c-danger)",
                   padding: "3px 10px", borderRadius: 10,
-                  background: r.isCorrect ? "#E8F0FE" : "#FEE2E2",
+                  background: r.isCorrect ? "var(--c-brand-soft)" : "var(--c-danger-soft-3)",
                 }}>
                   {r.isCorrect ? "정답" : "오답"}
                 </span>
@@ -253,20 +253,20 @@ export default function ResultPage() {
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 13, color: "#9CA3AF", textAlign: "center", padding: 20 }}>
+          <p style={{ fontSize: 13, color: "var(--c-text-4c)", textAlign: "center", padding: 20 }}>
             상세 결과가 없습니다.
           </p>
         )}
       </div>
 
       {/* Bottom button */}
-      <div style={{ position: "sticky", bottom: 0, background: "#F9FAFB", padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))", borderTop: "1px solid #F3F4F6", display: "flex", gap: 8 }}>
+      <div style={{ position: "sticky", bottom: 0, background: "var(--c-bg-soft)", padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))", borderTop: "1px solid var(--c-bg-muted)", display: "flex", gap: 8 }}>
         <button
           onClick={() => router.push(`/workbook/${id}`)}
           className="press"
           style={{
             flex: 1, height: 52, borderRadius: 14,
-            background: "#F3F4F6", color: "#374151", border: "none",
+            background: "var(--c-bg-muted)", color: "var(--c-text-2c)", border: "none",
             fontSize: 15, fontWeight: 700,
           }}
         >
@@ -277,7 +277,7 @@ export default function ResultPage() {
           className="press"
           style={{
             flex: 1, height: 52, borderRadius: 14,
-            background: "#3787FF", color: "#fff", border: "none",
+            background: "var(--c-brand)", color: "#fff", border: "none",
             fontSize: 15, fontWeight: 700,
           }}
         >
@@ -291,7 +291,7 @@ export default function ResultPage() {
 function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <p style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 11, color: "var(--c-text-4c)", marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 15, fontWeight: 800, color, letterSpacing: -0.3 }}>{value}</p>
     </div>
   );

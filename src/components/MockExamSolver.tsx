@@ -232,7 +232,7 @@ export default function MockExamSolver({
     <div className="solver-wrap">
       <div className="solver-top">
         <button type="button" className="solver-back" onClick={() => router.back()} aria-label="뒤로">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-b)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -392,7 +392,7 @@ function PassageBlock({ urls }: { urls: string[] }) {
     <div className="solver-passage">
       <button type="button" className="solver-passage-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         지문 {open ? "접기" : "보기"}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.6"
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4b)" strokeWidth="2.6"
           strokeLinecap="round" strokeLinejoin="round"
           style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>
           <polyline points="6 9 12 15 18 9" />
@@ -415,104 +415,107 @@ function fmtAnswer(v: number | null, choiceCount: number): string | null {
 function Styles() {
   return (
     <style>{`
-      .solver-wrap { min-height: 100vh; background: #fff; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-      .solver-skel { height: 60vh; margin: 16px; border-radius: 16px; background: #F3F4F6; }
-      .solver-empty { padding: 60px 24px; text-align: center; color: #9CA3AF; font-size: 14px; }
+      .solver-wrap { min-height: 100vh; background: var(--c-bg); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+      .solver-skel { height: 60vh; margin: 16px; border-radius: 16px; background: var(--c-bg-muted); }
+      .solver-empty { padding: 60px 24px; text-align: center; color: var(--c-text-4c); font-size: 14px; }
 
       .solver-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-        padding: 10px 12px; background: #fff; border-bottom: 1px solid #F2F4F6; }
+        padding: 10px 12px; background: var(--c-bg); border-bottom: 1px solid var(--c-bg-muted-2); }
       .solver-back { width: 34px; height: 34px; border: none; background: none; cursor: pointer; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center; }
-      .solver-progress { flex: 1; height: 6px; border-radius: 999px; background: #EEF1F5; overflow: hidden; }
+      .solver-progress { flex: 1; height: 6px; border-radius: 999px; background: var(--c-bg-muted-7); overflow: hidden; }
       .solver-progress-bar { height: 100%; background: linear-gradient(90deg, #7DC4FF, #3787FF); border-radius: 999px;
         transition: width .25s ease; }
-      .solver-sheet-btn { flex-shrink: 0; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid #E5E7EB;
-        background: #fff; color: #4E5968; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+      .solver-sheet-btn { flex-shrink: 0; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--c-border);
+        background: var(--c-bg); color: var(--c-text-3b); font-size: 12.5px; font-weight: 800; cursor: pointer; }
 
       .solver-qhead { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px 8px; }
-      .solver-qnum { font-size: 20px; font-weight: 900; color: #191F28; }
-      .solver-qtitle { font-size: 13px; color: #8B95A1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .solver-qtitle-main { font-size: 16.5px; font-weight: 800; color: #191F28; line-height: 1.4; }
+      .solver-qnum { font-size: 20px; font-weight: 900; color: var(--c-text-b); }
+      .solver-qtitle { font-size: 13px; color: var(--c-text-4b); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .solver-qtitle-main { font-size: 16.5px; font-weight: 800; color: var(--c-text-b); line-height: 1.4; }
 
       /* 문항 이미지는 가로 폭을 꽉 채운다. 세로가 길면 스크롤해서 본다. */
       .solver-image { padding: 0 12px; }
-      .solver-image img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid #EEF0F3; }
+      .solver-image img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--c-bg-muted-6); }
 
       /* 공유 지문 */
-      .solver-passage { margin: 0 12px 10px; border: 1px solid #EEF0F3; border-radius: 12px; overflow: hidden; background: #FBFCFE; }
+      .solver-passage { margin: 0 12px 10px; border: 1px solid var(--c-bg-muted-6); border-radius: 12px; overflow: hidden; background: var(--c-bg-soft-9); }
       .solver-passage-toggle { display: flex; align-items: center; gap: 5px; width: 100%; padding: 10px 14px;
-        border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 800; color: #4E5968; font-family: inherit; }
-      .solver-passage img { width: 100%; height: auto; display: block; border-top: 1px solid #F2F4F6; background: #fff; }
+        border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--c-text-3b); font-family: inherit; }
+      .solver-passage img { width: 100%; height: auto; display: block; border-top: 1px solid var(--c-bg-muted-2); background: var(--c-bg); }
 
       /* 분리된 선택지 — 실제 문장을 탭해서 고른다 */
       .solver-choice-list { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; }
       .solver-choice-row { display: block; width: 100%; padding: 6px 10px; border-radius: 12px;
-        border: 1.5px solid #E5E7EB; background: #fff; cursor: pointer; text-align: left;
+        border: 1.5px solid var(--c-border); background: var(--c-bg); cursor: pointer; text-align: left;
         transition: transform .1s ease, border-color .12s ease, background .12s ease; }
       .solver-choice-row:active { transform: scale(0.985); }
-      .solver-choice-row.is-on { border-color: #3787FF; background: #F2F7FF; box-shadow: 0 0 0 1px #3787FF inset; }
+      .solver-choice-row.is-on { border-color: var(--c-brand); background: var(--c-brand-soft-7); box-shadow: 0 0 0 1px var(--c-brand) inset; }
       .solver-choice-row img { width: 100%; height: auto; display: block; mix-blend-mode: multiply; }
+      /* 다크: multiply 는 흰 종이 선택지 이미지를 어두운 카드색으로 눌러 검은 글자가 안 보인다.
+         블렌드를 끄고 흰 종이 띠로 띄워 본문/지문 이미지(흰 종이)와 같은 처리로 맞춘다. */
+      [data-theme="dark"] .solver-choice-row img { mix-blend-mode: normal; background: #fff; border-radius: 8px; }
 
-      .solver-answer { position: sticky; bottom: 0; background: #fff; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-        border-top: 1px solid #F2F4F6; margin-top: 14px; }
+      .solver-answer { position: sticky; bottom: 0; background: var(--c-bg); padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--c-bg-muted-2); margin-top: 14px; }
       .solver-choices-inline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 12px 12px 0; }
       .solver-choices { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-      .solver-choice { height: 52px; border-radius: 14px; border: 1.5px solid #E5E7EB; background: #fff;
-        font-size: 21px; color: #4E5968; cursor: pointer; transition: transform .12s ease, background .12s ease, border-color .12s ease; }
+      .solver-choice { height: 52px; border-radius: 14px; border: 1.5px solid var(--c-border); background: var(--c-bg);
+        font-size: 21px; color: var(--c-text-3b); cursor: pointer; transition: transform .12s ease, background .12s ease, border-color .12s ease; }
       .solver-choice:active { transform: scale(0.94); }
-      .solver-choice.is-on { background: #3787FF; border-color: #3787FF; color: #fff; }
+      .solver-choice.is-on { background: var(--c-brand); border-color: var(--c-brand); color: #fff; }
 
       .solver-short { display: flex; gap: 8px; }
-      .solver-short input { flex: 1; height: 52px; border-radius: 14px; border: 1.5px solid #E5E7EB; padding: 0 14px;
-        font-size: 16px; font-weight: 700; color: #191F28; }
+      .solver-short input { flex: 1; height: 52px; border-radius: 14px; border: 1.5px solid var(--c-border); padding: 0 14px;
+        font-size: 16px; font-weight: 700; color: var(--c-text-b); background: var(--c-bg); }
       .solver-short button { flex-shrink: 0; padding: 0 20px; height: 52px; border-radius: 14px; border: none;
-        background: #3787FF; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
-      .solver-short button:disabled { background: #C9D3DF; }
+        background: var(--c-brand); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
+      .solver-short button:disabled { background: var(--c-border-strong-5); }
 
       .solver-nav { display: flex; gap: 8px; margin-top: 10px; }
-      .solver-nav button { flex: 1; height: 46px; border-radius: 12px; border: 1px solid #E5E7EB; background: #fff;
-        color: #4E5968; font-size: 15px; font-weight: 800; cursor: pointer; }
-      .solver-nav button:disabled { color: #C9D3DF; }
-      .solver-submit { background: #191F28 !important; border-color: #191F28 !important; color: #fff !important; }
+      .solver-nav button { flex: 1; height: 46px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);
+        color: var(--c-text-3b); font-size: 15px; font-weight: 800; cursor: pointer; }
+      .solver-nav button:disabled { color: var(--c-text-5h); }
+      .solver-submit { background: var(--c-inverse-2) !important; border-color: var(--c-inverse-2) !important; color: #fff !important; }
       .solver-submit.wide { width: 100%; height: 50px; margin-top: 12px; border-radius: 14px; border: none; font-size: 15.5px; font-weight: 900; cursor: pointer; }
-      .solver-msg { margin: 8px 2px 0; font-size: 13px; color: #E11D48; font-weight: 600; }
+      .solver-msg { margin: 8px 2px 0; font-size: 13px; color: var(--c-danger-d); font-weight: 600; }
 
       .solver-sheet-dim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60;
         background: rgba(15,23,42,0.5); display: flex; align-items: flex-end; }
-      .solver-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); max-height: 76vh; overflow-y: auto; }
-      .solver-sheet-title { margin: 0 0 12px; font-size: 15px; font-weight: 800; color: #191F28; }
+      .solver-sheet { width: 100%; background: var(--c-bg); border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); max-height: 76vh; overflow-y: auto; }
+      .solver-sheet-title { margin: 0 0 12px; font-size: 15px; font-weight: 800; color: var(--c-text-b); }
 
       .solver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; padding: 0 16px; }
-      .solver-cell { height: 44px; border-radius: 12px; border: 1.5px solid #E5E7EB; background: #fff;
-        font-size: 14px; font-weight: 800; color: #8B95A1; cursor: pointer; }
-      .solver-cell.is-done { background: #EEF5FF; border-color: #BFDBFE; color: #1F5EDC; }
-      .solver-cell.is-cur { outline: 2px solid #3787FF; outline-offset: 1px; }
-      .solver-cell.is-ok { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
-      .solver-cell.is-bad { background: #FEF2F2; border-color: #FECACA; color: #E11D48; }
-      .solver-cell.is-skip { background: #F9FAFB; }
+      .solver-cell { height: 44px; border-radius: 12px; border: 1.5px solid var(--c-border); background: var(--c-bg);
+        font-size: 14px; font-weight: 800; color: var(--c-text-4b); cursor: pointer; }
+      .solver-cell.is-done { background: var(--c-brand-soft-3); border-color: var(--c-brand-line-9); color: var(--c-brand-deep); }
+      .solver-cell.is-cur { outline: 2px solid var(--c-brand); outline-offset: 1px; }
+      .solver-cell.is-ok { background: var(--c-success-soft); border-color: var(--c-success-line-2); color: var(--c-success-b); }
+      .solver-cell.is-bad { background: var(--c-danger-soft); border-color: var(--c-danger-line); color: var(--c-danger-d); }
+      .solver-cell.is-skip { background: var(--c-bg-soft); }
 
       .solver-score { padding: 30px 20px 22px; text-align: center; }
-      .solver-score-label { margin: 0; font-size: 13.5px; color: #8B95A1; font-weight: 700; }
-      .solver-score-main { margin: 8px 0 0; font-size: 40px; font-weight: 900; color: #191F28; }
-      .solver-score-main b { color: #3787FF; }
-      .solver-score-sub { margin: 6px 0 0; font-size: 13.5px; color: #8B95A1; font-weight: 600; }
-      .solver-retry { margin-top: 16px; height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid #E5E7EB;
-        background: #fff; color: #4E5968; font-size: 14px; font-weight: 800; cursor: pointer; }
+      .solver-score-label { margin: 0; font-size: 13.5px; color: var(--c-text-4b); font-weight: 700; }
+      .solver-score-main { margin: 8px 0 0; font-size: 40px; font-weight: 900; color: var(--c-text-b); }
+      .solver-score-main b { color: var(--c-brand); }
+      .solver-score-sub { margin: 6px 0 0; font-size: 13.5px; color: var(--c-text-4b); font-weight: 600; }
+      .solver-retry { margin-top: 16px; height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--c-border);
+        background: var(--c-bg); color: var(--c-text-3b); font-size: 14px; font-weight: 800; cursor: pointer; }
 
       .solver-review { padding: 26px 16px 0; }
-      .solver-review-title { font-size: 15px; font-weight: 800; color: #191F28; margin: 0 0 12px; }
+      .solver-review-title { font-size: 15px; font-weight: 800; color: var(--c-text-b); margin: 0 0 12px; }
       .solver-review-item { margin-bottom: 18px; }
       .solver-review-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
-      .solver-review-num { font-size: 15px; font-weight: 900; color: #191F28; }
-      .solver-review-ans { font-size: 12.5px; color: #8B95A1; font-weight: 600; }
-      .solver-review-ans b { color: #059669; }
-      .solver-review-item img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid #EEF0F3; }
-      .solver-solution { margin-top: 8px; border-radius: 12px; background: #F7F9FC; }
-      .solver-solution summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 800; color: #1F5EDC; }
+      .solver-review-num { font-size: 15px; font-weight: 900; color: var(--c-text-b); }
+      .solver-review-ans { font-size: 12.5px; color: var(--c-text-4b); font-weight: 600; }
+      .solver-review-ans b { color: var(--c-success-b); }
+      .solver-review-item img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--c-bg-muted-6); }
+      .solver-solution { margin-top: 8px; border-radius: 12px; background: var(--c-bg-soft-4); }
+      .solver-solution summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 800; color: var(--c-brand-deep); }
       .solver-solution summary::-webkit-details-marker { display: none; }
       .solver-solution summary::before { content: "▸ "; }
       .solver-solution[open] summary::before { content: "▾ "; }
-      .solver-solution img { margin: 0 10px 10px; width: calc(100% - 20px); border: none; background: #fff; }
+      .solver-solution img { margin: 0 10px 10px; width: calc(100% - 20px); border: none; background: var(--c-bg); }
 
       /* 태블릿: 문항 이미지가 너무 커지지 않게 가운데 정렬로 폭을 제한 */
       @media (min-width: 744px) {

@@ -62,11 +62,11 @@ export default function SubscriptionSuccessPage() {
     <main style={pageStyle}>
       <header style={headerStyle}>
         <button type="button" onClick={goBack} aria-label="뒤로가기" style={backButtonStyle} className="press">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>정기결제</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)" }}>정기결제</span>
       </header>
 
       <div style={contentStyle}>
@@ -80,7 +80,7 @@ export default function SubscriptionSuccessPage() {
 
         {status === "done" && (
           <>
-            <div style={{ ...badgeStyle, background: "#E8F5E9", color: "#16A34A" }}>✓</div>
+            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}>✓</div>
             <h1 style={titleStyle}>월정액 패키지 구독 완료!</h1>
             <p style={descStyle}>
               이제 월정액 혜택을 이용할 수 있어요.
@@ -94,7 +94,7 @@ export default function SubscriptionSuccessPage() {
 
         {status === "error" && (
           <>
-            <div style={{ ...badgeStyle, background: "#FEF2F2", color: "#DC2626" }}>!</div>
+            <div style={{ ...badgeStyle, background: "var(--c-danger-soft)", color: "var(--c-danger-c)" }}>!</div>
             <h1 style={titleStyle}>구독에 실패했어요</h1>
             <p style={descStyle}>{error}</p>
             <button type="button" style={primaryButtonStyle} onClick={() => router.replace("/mypage")}>
@@ -112,7 +112,7 @@ const pageStyle = {
   // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
   width: "100%",
   minHeight: "100vh",
-  background: "#fff",
+  background: "var(--c-bg)",
   maxWidth: 720,
   margin: "0 auto",
   display: "flex",
@@ -149,8 +149,8 @@ const contentStyle = {
   padding: 24,
 } as const;
 
-const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "#111827" } as const;
-const descStyle = { margin: 0, fontSize: 14, color: "#6B7280", fontWeight: 600, lineHeight: 1.6 } as const;
+const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "var(--c-text)" } as const;
+const descStyle = { margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600, lineHeight: 1.6 } as const;
 
 const badgeStyle = {
   width: 64,
@@ -167,8 +167,8 @@ const spinnerStyle = {
   width: 44,
   height: 44,
   borderRadius: 999,
-  border: "4px solid #E5E7EB",
-  borderTopColor: "#3787FF",
+  border: "4px solid var(--c-border)",
+  borderTopColor: "var(--c-brand)",
   animation: "subSpin 0.8s linear infinite",
 } as const;
 
@@ -178,7 +178,7 @@ const primaryButtonStyle = {
   marginTop: 12,
   border: "none",
   borderRadius: 14,
-  background: "#3787FF",
+  background: "var(--c-brand)",
   color: "#fff",
   padding: "15px 18px",
   fontSize: 16,

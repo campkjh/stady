@@ -76,30 +76,30 @@ export default function AdminCommentsPage() {
 
   return (
     <section style={{ display: "grid", gap: 16 }}>
-      <h1 style={{ margin: 0, color: "#111827", fontSize: 26, fontWeight: 900 }}>댓글 관리</h1>
+      <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>댓글 관리</h1>
       {message && (
-        <div style={{ border: "1px solid #FECACA", background: "#FEF2F2", color: "#B91C1C", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+        <div style={{ border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", color: "var(--c-danger-deep)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
           {message}
         </div>
       )}
-      <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, background: "#fff", overflow: "hidden" }}>
+      <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", overflow: "hidden" }}>
         {loading ? (
-          <p style={{ margin: 0, padding: 20, color: "#6B7280", fontSize: 14 }}>불러오는 중...</p>
+          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중...</p>
         ) : comments.length === 0 ? (
-          <p style={{ margin: 0, padding: 20, color: "#6B7280", fontSize: 14 }}>등록된 댓글이 없습니다.</p>
+          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>등록된 댓글이 없습니다.</p>
         ) : (
           comments.map((c) => (
-            <article key={c.id} style={{ padding: 16, borderBottom: "1px solid #F3F4F6", opacity: c.isActive ? 1 : 0.6 }}>
+            <article key={c.id} style={{ padding: 16, borderBottom: "1px solid var(--c-bg-muted)", opacity: c.isActive ? 1 : 0.6 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <span style={{ color: "#6B7280", fontSize: 12 }}>
+                <span style={{ color: "var(--c-text-3)", fontSize: 12 }}>
                   {c.parentId ? "↳ 대댓글 · " : ""}{c.nickname} · {new Date(c.createdAt).toLocaleString("ko-KR")}
                 </span>
-                <span style={{ color: c.isActive ? "#047857" : "#6B7280", fontSize: 12, fontWeight: 800 }}>
+                <span style={{ color: c.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 12, fontWeight: 800 }}>
                   {c.isActive ? "노출" : "비노출"}
                 </span>
               </div>
-              <p style={{ margin: "8px 0 6px", color: "#374151", fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{c.content}</p>
-              <p style={{ margin: "0 0 10px", color: "#9CA3AF", fontSize: 12 }}>게시글: {c.postTitle}</p>
+              <p style={{ margin: "8px 0 6px", color: "var(--c-text-2c)", fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{c.content}</p>
+              <p style={{ margin: "0 0 10px", color: "var(--c-text-4c)", fontSize: 12 }}>게시글: {c.postTitle}</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => toggleActive(c)} disabled={busyId === c.id} style={btnGhost}>
                   {c.isActive ? "비노출" : "노출"}
@@ -123,5 +123,5 @@ const btnBase = {
   cursor: "pointer",
 };
 
-const btnGhost = { ...btnBase, background: "#F3F4F6", color: "#374151" };
-const btnDanger = { ...btnBase, background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+const btnGhost = { ...btnBase, background: "var(--c-bg-muted)", color: "var(--c-text-2c)" };
+const btnDanger = { ...btnBase, background: "var(--c-danger-soft)", color: "var(--c-danger-c)", border: "1px solid var(--c-danger-line)" };

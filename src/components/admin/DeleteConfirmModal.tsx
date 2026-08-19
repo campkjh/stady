@@ -41,23 +41,23 @@ export default function DeleteConfirmModal({
           width: "100%",
           maxWidth: 420,
           borderRadius: 8,
-          background: "#fff",
+          background: "var(--c-bg)",
           boxShadow: "0 18px 50px rgba(15,23,42,0.24)",
           padding: 24,
         }}
       >
-        <h2 style={{ margin: 0, color: "#111827", fontSize: 18, fontWeight: 800 }}>{title}</h2>
-        <p style={{ margin: "10px 0 22px", color: "#6B7280", fontSize: 14, lineHeight: 1.55 }}>{description}</p>
+        <h2 style={{ margin: 0, color: "var(--c-text)", fontSize: 18, fontWeight: 800 }}>{title}</h2>
+        <p style={{ margin: "10px 0 22px", color: "var(--c-text-3)", fontSize: 14, lineHeight: 1.55 }}>{description}</p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
             style={{
-              border: "1px solid #D1D5DB",
+              border: "1px solid var(--c-border-strong)",
               borderRadius: 8,
-              background: "#fff",
-              color: "#374151",
+              background: "var(--c-bg)",
+              color: "var(--c-text-2c)",
               padding: "10px 14px",
               fontSize: 14,
               fontWeight: 700,
@@ -73,7 +73,7 @@ export default function DeleteConfirmModal({
             style={{
               border: "none",
               borderRadius: 8,
-              background: "#DC2626",
+              background: "var(--c-danger-c)",
               color: "#fff",
               padding: "10px 14px",
               fontSize: 14,

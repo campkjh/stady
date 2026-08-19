@@ -480,26 +480,26 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           </button>
           <div>
             <p className="community-detail-eyebrow">STADY</p>
-            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 700 }}>커뮤니티</h1>
+            <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 24, fontWeight: 700 }}>커뮤니티</h1>
           </div>
         </header>
 
         {message && (
-          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
+          <div style={{ border: "1px solid var(--c-brand-line-9)", background: "var(--c-brand-soft-4)", color: "var(--c-brand-deep-2)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
             {message}
           </div>
         )}
 
         {loading && !post ? (
           <div style={panelStyle}>
-            <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>게시글을 불러오는 중...</p>
+            <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>게시글을 불러오는 중...</p>
           </div>
         ) : post ? (
           <>
             <article className="community-detail-panel community-post-detail-card" style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ borderRadius: 999, border: "1px solid #EEF0F3", background: "transparent", color: "#374151", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
-                <span style={{ color: "#8A909C", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
+                <span style={{ borderRadius: 999, border: "1px solid var(--c-bg-muted-6)", background: "transparent", color: "var(--c-text-2c)", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
+                <span style={{ color: "var(--c-text-4)", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
               </div>
               {editing ? (
                 <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>
@@ -518,7 +518,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   />
                   <div style={{ display: "grid", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>이미지</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2c)" }}>이미지</span>
                       <label style={{ ...ownerBtnStyle(false), position: "relative", overflow: "hidden", display: "inline-flex", alignItems: "center" }}>
                         {uploadingEdit ? "업로드 중..." : "이미지 추가"}
                         <input
@@ -534,7 +534,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     {editImages.length > 0 && (
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                         {editImages.map((url) => (
-                          <div key={url} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", border: "1px solid #EEF0F3", background: "#F9FAFB" }}>
+                          <div key={url} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden", border: "1px solid var(--c-bg-muted-6)", background: "var(--c-bg-soft)" }}>
                             <img
                               src={editPreviews[url] ?? url}
                               alt=""
@@ -566,12 +566,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               ) : (
                 <>
-                  <h2 style={{ margin: "10px 0 0", color: "#111827", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>
+                  <h2 style={{ margin: "10px 0 0", color: "var(--c-text)", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
-                  <p style={{ margin: "8px 0 0", color: "#8A909C", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
-                  <p style={{ margin: "16px 0", color: "#374151", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
+                  <p style={{ margin: "8px 0 0", color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                  <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
                     if (!isOwner && !isAdmin) return null;
@@ -580,7 +580,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     return (
                       <div style={{ display: "flex", gap: 8, margin: "0 0 4px", alignItems: "center" }}>
                         {moderating && (
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "#B91C1C", background: "#FEE2E2", borderRadius: 999, padding: "4px 10px" }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-danger-deep)", background: "var(--c-danger-soft-3)", borderRadius: 999, padding: "4px 10px" }}>
                             관리자
                           </span>
                         )}
@@ -642,22 +642,22 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                             left: 0,
                             bottom: 0,
                             width: `${pct}%`,
-                            background: mine ? "#DBEAFE" : "#F3F4F6",
+                            background: mine ? "var(--c-brand-line-2)" : "var(--c-bg-muted)",
                             borderRadius: 10,
                             transition: "width 0.3s ease",
                           }}
                         />
-                        <span style={{ position: "relative", fontWeight: 600, color: "#111827" }}>
+                        <span style={{ position: "relative", fontWeight: 600, color: "var(--c-text)" }}>
                           {mine ? "✓ " : ""}
                           {opt.text}
                         </span>
-                        <span style={{ position: "relative", fontWeight: 600, color: "#6B7280", fontSize: 13 }}>
+                        <span style={{ position: "relative", fontWeight: 600, color: "var(--c-text-3)", fontSize: 13 }}>
                           {pct}% · {opt.votes}표
                         </span>
                       </button>
                     );
                   })}
-                  <span style={{ color: "#8A909C", fontSize: 13 }}>
+                  <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>
                     총 {post.poll.totalVotes}표
                     {post.poll.myOptionId ? " · 투표 완료 (다시 누르면 변경)" : " · 항목을 눌러 투표하세요"}
                   </span>
@@ -693,12 +693,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🤍"}</span>
                     {post.myReaction ? reactionLabel(post.myReaction) : "좋아요"} {post.likeCount}
                   </button>
-                  <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
+                  <span style={{ color: "var(--c-text-3)", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
                 </div>
                 {post.likeCount > 0 && (
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {REACTIONS.filter((r) => (post.reactionCounts[r.key] || 0) > 0).map((r) => (
-                      <span key={r.key} style={{ fontSize: 13, color: "#6B7280", fontWeight: 500 }}>
+                      <span key={r.key} style={{ fontSize: 13, color: "var(--c-text-3)", fontWeight: 500 }}>
                         {r.emoji} {post.reactionCounts[r.key]}
                       </span>
                     ))}
@@ -708,7 +708,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             </article>
 
             <section className="community-detail-panel" style={panelStyle}>
-              <h2 style={{ margin: 0, color: "#111827", fontSize: 18, fontWeight: 700 }}>댓글</h2>
+              <h2 style={{ margin: 0, color: "var(--c-text)", fontSize: 18, fontWeight: 700 }}>댓글</h2>
               <NudgeBubble
                 icon="xp-comment"
                 text="댓글 남기고 경험치 쌓기"
@@ -732,7 +732,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
               <div style={{ display: "grid", gap: 10 }}>
                 {comments.length === 0 ? (
-                  <p style={{ margin: 0, color: "#8A909C", fontSize: 14 }}>첫 댓글을 남겨보세요.</p>
+                  <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 14 }}>첫 댓글을 남겨보세요.</p>
                 ) : (
                   comments.map((item) => (
                     <CommentItem
@@ -775,15 +775,15 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           </>
         ) : (
           <div style={panelStyle}>
-            <p style={{ margin: 0, color: "#6B7280", fontSize: 14 }}>게시글을 찾을 수 없습니다.</p>
+            <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>게시글을 찾을 수 없습니다.</p>
           </div>
         )}
       </div>
       <style>{`
         .community-detail-page {
           min-height: 100vh;
-          background: #fff;
-          color: #111827;
+          background: var(--c-bg);
+          color: var(--c-text);
           padding: 0 16px calc(120px + env(safe-area-inset-bottom, 0px));
         }
         .community-detail-shell {
@@ -807,14 +807,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           margin: 0;
           transform: translateX(-50%);
           padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
-          background: rgba(255, 255, 255, 0.88);
+          background: var(--c-bg-a88);
           border-bottom: 1px solid rgba(229, 231, 235, 0.8);
           backdrop-filter: blur(18px);
           -webkit-backdrop-filter: blur(18px);
         }
         .community-detail-eyebrow {
           margin: 0 0 2px;
-          color: #9ca3af;
+          color: var(--c-text-4c);
           font-size: 11px;
           font-weight: 700;
         }
@@ -833,13 +833,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           width: 100%;
           max-height: 620px;
           object-fit: contain;
-          border: 1px solid #eef0f3;
+          border: 1px solid var(--c-bg-muted-6);
           border-radius: 8px;
-          background: #f9fafb;
+          background: var(--c-bg-soft);
         }
         .community-detail-icon-button:hover {
-          background: #F9FAFB !important;
-          border-color: #D1D5DB !important;
+          background: var(--c-bg-soft) !important;
+          border-color: var(--c-border-strong) !important;
           transform: translateX(-1px);
         }
         .community-action-button,
@@ -850,7 +850,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         }
         .community-action-button:hover,
         .community-reply-button:hover {
-          border-color: #D1D5DB !important;
+          border-color: var(--c-border-strong) !important;
           box-shadow: 0 5px 13px rgba(15, 23, 42, 0.06);
         }
         .community-primary-button:hover:not(:disabled) {
@@ -888,8 +888,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           subtitle={"삭제하면 되돌릴 수 없어요."}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
-            { label: "삭제", bgColor: "#E85D5D", color: "#fff", onClick: doDelete },
-            { label: "취소", bgColor: "#F2F4F6", color: "#4B5563", onClick: () => setShowDeleteConfirm(false) },
+            { label: "삭제", bgColor: "var(--c-danger-b)", color: "#fff", onClick: doDelete },
+            { label: "취소", bgColor: "var(--c-bg-muted-2)", color: "var(--c-text-2d)", onClick: () => setShowDeleteConfirm(false) },
           ]}
         />
       )}
@@ -900,8 +900,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           subtitle={"대댓글도 함께 삭제되며 되돌릴 수 없어요."}
           onClose={() => setDeleteCommentId("")}
           buttons={[
-            { label: "삭제", bgColor: "#E85D5D", color: "#fff", onClick: doDeleteComment },
-            { label: "취소", bgColor: "#F2F4F6", color: "#4B5563", onClick: () => setDeleteCommentId("") },
+            { label: "삭제", bgColor: "var(--c-danger-b)", color: "#fff", onClick: doDeleteComment },
+            { label: "취소", bgColor: "var(--c-bg-muted-2)", color: "var(--c-text-2d)", onClick: () => setDeleteCommentId("") },
           ]}
         />
       )}
@@ -959,17 +959,17 @@ function CommentItem({
 }: CommentItemProps) {
   const isEditing = editingCommentId === comment.id;
   return (
-    <div style={isPinned ? { ...commentBoxStyle, background: "#FFFBEB", border: "1px solid #FFE9A8", borderRadius: 14, padding: 14 } : commentBoxStyle}>
+    <div style={isPinned ? { ...commentBoxStyle, background: "var(--c-warn-soft)", border: "1px solid var(--c-warn-line)", borderRadius: 14, padding: 14 } : commentBoxStyle}>
       {isPinned && (
         <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/pin-star.svg" alt="" width={15} height={15} style={{ display: "block" }} />
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: "#B7791F" }}>고정</span>
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--c-warn-d)" }}>고정</span>
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-        <strong style={{ color: "#111827", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
-        <span style={{ color: "#9CA3AF", fontSize: 12 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
+        <strong style={{ color: "var(--c-text)", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
+        <span style={{ color: "var(--c-text-4c)", fontSize: 12 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
       </div>
       {isEditing ? (
         <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
@@ -992,7 +992,7 @@ function CommentItem({
           </div>
         </div>
       ) : (
-        <p style={{ margin: "8px 0 0", color: "#374151", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
+        <p style={{ margin: "8px 0 0", color: "var(--c-text-2c)", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
       )}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <button type="button" className="community-action-button" onClick={() => onToggleLike(comment.id)} style={smallActionButtonStyle(comment.likedByMe)}>
@@ -1019,11 +1019,11 @@ function CommentItem({
         )}
         {isAdmin && !isEditing && (
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, alignItems: "center" }}>
-            <span style={{ padding: "2px 7px", borderRadius: 999, background: "#EEF5FF", color: "#1F5EDC", fontSize: 10.5, fontWeight: 800 }}>관리자</span>
-            <button type="button" onClick={() => onStartEdit(comment)} style={{ border: "none", background: "none", color: "#3787FF", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
+            <span style={{ padding: "2px 7px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: "var(--c-brand-deep)", fontSize: 10.5, fontWeight: 800 }}>관리자</span>
+            <button type="button" onClick={() => onStartEdit(comment)} style={{ border: "none", background: "none", color: "var(--c-brand)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
               수정
             </button>
-            <button type="button" onClick={() => onDelete(comment.id)} style={{ border: "none", background: "none", color: "#E85D5D", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
+            <button type="button" onClick={() => onDelete(comment.id)} style={{ border: "none", background: "none", color: "var(--c-danger-b)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
               삭제
             </button>
           </span>
@@ -1055,7 +1055,7 @@ function CommentItem({
       )}
 
       {comment.replies.length > 0 && (
-        <div style={{ display: "grid", gap: 8, marginTop: 10, paddingLeft: 12, borderLeft: "2px solid #E5E7EB" }}>
+        <div style={{ display: "grid", gap: 8, marginTop: 10, paddingLeft: 12, borderLeft: "2px solid var(--c-border)" }}>
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}
@@ -1098,10 +1098,10 @@ function updateComment(
 const iconButtonStyle = {
   width: 38,
   height: 38,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 999,
-  background: "#fff",
-  color: "#111827",
+  background: "var(--c-bg)",
+  color: "var(--c-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1111,8 +1111,8 @@ const iconButtonStyle = {
 const panelStyle = {
   display: "grid",
   gap: 14,
-  borderTop: "1px solid #EEF0F3",
-  borderBottom: "1px solid #EEF0F3",
+  borderTop: "1px solid var(--c-bg-muted-6)",
+  borderBottom: "1px solid var(--c-bg-muted-6)",
   borderRadius: 0,
   background: "transparent",
   padding: "18px 0",
@@ -1120,11 +1120,11 @@ const panelStyle = {
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "12px 13px",
-  color: "#111827",
-  background: "#fff",
+  color: "var(--c-text)",
+  background: "var(--c-bg)",
   fontSize: 16,
   boxSizing: "border-box",
 } as const;
@@ -1132,7 +1132,7 @@ const inputStyle = {
 const primaryButtonStyle = {
   border: "none",
   borderRadius: 999,
-  background: "#111827",
+  background: "var(--c-inverse)",
   color: "#fff",
   padding: "12px 14px",
   fontSize: 16,
@@ -1143,8 +1143,8 @@ const primaryButtonStyle = {
 const tagBadgeStyle = {
   borderRadius: 999,
   background: "transparent",
-  border: "1px solid #EEF0F3",
-  color: "#4B5563",
+  border: "1px solid var(--c-bg-muted-6)",
+  color: "var(--c-text-2d)",
   padding: "5px 9px",
   fontSize: 12,
   fontWeight: 600,
@@ -1152,10 +1152,10 @@ const tagBadgeStyle = {
 
 function actionButtonStyle(active: boolean) {
   return {
-    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "var(--c-inverse)" : "var(--c-border)"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#374151",
+    background: active ? "var(--c-inverse)" : "var(--c-bg)",
+    color: active ? "#fff" : "var(--c-text-2c)",
     padding: "9px 12px",
     fontSize: 14,
     fontWeight: 700,
@@ -1168,10 +1168,10 @@ function actionButtonStyle(active: boolean) {
 
 function ownerBtnStyle(primary: boolean) {
   return {
-    border: primary ? "none" : "1px solid #E5E7EB",
+    border: primary ? "none" : "1px solid var(--c-border)",
     borderRadius: 999,
-    background: primary ? "#111827" : "#fff",
-    color: primary ? "#fff" : "#4B5563",
+    background: primary ? "var(--c-inverse)" : "var(--c-bg)",
+    color: primary ? "#fff" : "var(--c-text-2d)",
     padding: "8px 16px",
     fontSize: 13,
     fontWeight: 600,
@@ -1180,10 +1180,10 @@ function ownerBtnStyle(primary: boolean) {
 }
 
 const ownerDangerStyle = {
-  border: "1px solid #FECACA",
+  border: "1px solid var(--c-danger-line)",
   borderRadius: 999,
-  background: "#FEF2F2",
-  color: "#DC2626",
+  background: "var(--c-danger-soft)",
+  color: "var(--c-danger-c)",
   padding: "8px 16px",
   fontSize: 13,
   fontWeight: 600,
@@ -1225,9 +1225,9 @@ function pollOptionStyle(mine: boolean) {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 10,
-    border: `1px solid ${mine ? "#3787FF" : "#E5E7EB"}`,
+    border: `1px solid ${mine ? "var(--c-brand)" : "var(--c-border)"}`,
     borderRadius: 10,
-    background: "#fff",
+    background: "var(--c-bg)",
     padding: "12px 14px",
     cursor: "pointer",
     textAlign: "left",
@@ -1237,10 +1237,10 @@ function pollOptionStyle(mine: boolean) {
 
 function smallActionButtonStyle(active: boolean) {
   return {
-    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "var(--c-inverse)" : "var(--c-border)"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#4B5563",
+    background: active ? "var(--c-inverse)" : "var(--c-bg)",
+    color: active ? "#fff" : "var(--c-text-2d)",
     padding: "7px 10px",
     fontSize: 13,
     fontWeight: 600,
@@ -1249,7 +1249,7 @@ function smallActionButtonStyle(active: boolean) {
 }
 
 const commentBoxStyle = {
-  borderTop: "1px solid #EEF0F3",
+  borderTop: "1px solid var(--c-bg-muted-6)",
   borderRadius: 0,
   background: "transparent",
   padding: "12px 0",

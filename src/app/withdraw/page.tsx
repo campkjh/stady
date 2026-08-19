@@ -76,19 +76,19 @@ export default function WithdrawPage() {
   if (isLoggedIn === null) return null;
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "var(--c-bg)" }}>
       {alertMsg && (
         <AlertModal
           title={alertMsg}
           subtitle=""
-          buttons={[{ label: "확인", bgColor: "#3787FF", color: "#fff", onClick: () => setAlertMsg(null) }]}
+          buttons={[{ label: "확인", bgColor: "var(--c-brand)", color: "#fff", onClick: () => setAlertMsg(null) }]}
           onClose={() => setAlertMsg(null)}
         />
       )}
 
       {/* Header */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff",
+        position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)",
         display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
       }}>
         <button
@@ -100,26 +100,26 @@ export default function WithdrawPage() {
           className="press"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, background: "none", border: "none" }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>회원탈퇴</h1>
+        <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)" }}>회원탈퇴</h1>
       </div>
 
       {/* Step: Done */}
       {step === "done" && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px", textAlign: "center" }}>
           <div style={{
-            width: 64, height: 64, borderRadius: "50%", backgroundColor: "#F3F4F6",
+            width: 64, height: 64, borderRadius: "50%", backgroundColor: "var(--c-bg-muted)",
             display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>탈퇴가 완료되었습니다</h2>
-          <p style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6, marginBottom: 32 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>탈퇴가 완료되었습니다</h2>
+          <p style={{ fontSize: 14, color: "var(--c-text-4c)", lineHeight: 1.6, marginBottom: 32 }}>
             그동안 스타디를 이용해 주셔서 감사합니다.<br />
             더 나은 서비스로 다시 만나뵙겠습니다.
           </p>
@@ -128,7 +128,7 @@ export default function WithdrawPage() {
             onClick={() => router.replace("/")}
             style={{
               width: "100%", maxWidth: 300, height: 48, borderRadius: 12,
-              backgroundColor: "#3787FF", color: "#fff", fontSize: 15,
+              backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 15,
               fontWeight: 600, border: "none", cursor: "pointer",
             }}
           >
@@ -141,10 +141,10 @@ export default function WithdrawPage() {
       {step === "reason" && (
         <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>
               {isLoggedIn ? `${nickname}님,\n` : ""}정말 떠나시는 건가요?
             </h2>
-            <p style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: "var(--c-text-4c)", lineHeight: 1.6 }}>
               탈퇴 사유를 알려주시면 더 나은 서비스를 만드는 데<br />소중히 참고하겠습니다.
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function WithdrawPage() {
           {/* Email input for non-logged-in users */}
           {!isLoggedIn && (
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--c-text-2c)", marginBottom: 6 }}>
                 가입한 이메일 주소
               </label>
               <input
@@ -162,11 +162,11 @@ export default function WithdrawPage() {
                 placeholder="example@email.com"
                 style={{
                   width: "100%", height: 48, padding: "0 14px",
-                  borderRadius: 12, border: "1.5px solid #E5E7EB",
+                  borderRadius: 12, border: "1.5px solid var(--c-border)",
                   fontSize: 14, outline: "none", boxSizing: "border-box",
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "#3787FF"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--c-brand)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "var(--c-border)"; }}
               />
             </div>
           )}
@@ -183,19 +183,19 @@ export default function WithdrawPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "14px 16px", borderRadius: 12,
-                    border: isSelected ? "1.5px solid #3787FF" : "1.5px solid #E5E7EB",
-                    backgroundColor: isSelected ? "#F0F6FF" : "#fff",
+                    border: isSelected ? "1.5px solid var(--c-brand)" : "1.5px solid var(--c-border)",
+                    backgroundColor: isSelected ? "var(--c-brand-soft-13)" : "var(--c-bg)",
                     textAlign: "left", cursor: "pointer",
                     transition: "all 0.15s ease",
                   }}
                 >
                   <div style={{
                     width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                    border: isSelected ? "6px solid #3787FF" : "2px solid #D1D5DB",
-                    backgroundColor: "#fff",
+                    border: isSelected ? "6px solid var(--c-brand)" : "2px solid var(--c-border-strong)",
+                    backgroundColor: "var(--c-bg)",
                     transition: "all 0.15s ease",
                   }} />
-                  <span style={{ fontSize: 14, fontWeight: 500, color: isSelected ? "#3787FF" : "#374151" }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: isSelected ? "var(--c-brand)" : "var(--c-text-2c)" }}>
                     {reason.label}
                   </span>
                 </button>
@@ -210,12 +210,12 @@ export default function WithdrawPage() {
               placeholder="탈퇴 사유를 자유롭게 작성해 주세요"
               style={{
                 width: "100%", marginTop: 12, padding: "12px 14px",
-                borderRadius: 12, border: "1.5px solid #E5E7EB",
+                borderRadius: 12, border: "1.5px solid var(--c-border)",
                 fontSize: 14, lineHeight: 1.6, resize: "none", height: 100,
                 outline: "none", boxSizing: "border-box",
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#3787FF"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--c-brand)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--c-border)"; }}
             />
           )}
 
@@ -225,8 +225,8 @@ export default function WithdrawPage() {
             onClick={() => setStep("confirm")}
             style={{
               width: "100%", height: 52, marginTop: 28, borderRadius: 12,
-              backgroundColor: canProceed ? "#111" : "#E5E7EB",
-              color: canProceed ? "#fff" : "#9CA3AF",
+              backgroundColor: canProceed ? "var(--c-inverse-3)" : "var(--c-border)",
+              color: canProceed ? "#fff" : "var(--c-text-4c)",
               fontSize: 16, fontWeight: 600, border: "none",
               cursor: canProceed ? "pointer" : "default",
               transition: "all 0.2s ease",
@@ -241,16 +241,16 @@ export default function WithdrawPage() {
       {step === "confirm" && (
         <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ marginBottom: 24 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>
               탈퇴 전 확인해 주세요
             </h2>
-            <p style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.6 }}>
+            <p style={{ fontSize: 14, color: "var(--c-text-4c)", lineHeight: 1.6 }}>
               회원 탈퇴 시 아래의 데이터가 모두 영구 삭제되며,<br />복구할 수 없습니다.
             </p>
           </div>
 
           <div style={{
-            borderRadius: 16, border: "1px solid #FEE2E2", backgroundColor: "#FFF5F5",
+            borderRadius: 16, border: "1px solid var(--c-danger-soft-3)", backgroundColor: "var(--c-danger-soft-4)",
             padding: "20px", marginBottom: 24,
           }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -262,17 +262,17 @@ export default function WithdrawPage() {
               ].map((item) => (
                 <div key={item.label} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 10, backgroundColor: "#FEE2E2",
+                    width: 36, height: 36, borderRadius: 10, backgroundColor: "var(--c-danger-soft-3)",
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </div>
                   <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{item.label}</p>
-                    <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>{item.desc}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-c)" }}>{item.label}</p>
+                    <p style={{ fontSize: 12, color: "var(--c-text-4c)", marginTop: 2 }}>{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -285,7 +285,7 @@ export default function WithdrawPage() {
               onClick={() => router.back()}
               style={{
                 flex: 1, height: 52, borderRadius: 12,
-                backgroundColor: "#F3F4F6", color: "#374151",
+                backgroundColor: "var(--c-bg-muted)", color: "var(--c-text-2c)",
                 fontSize: 15, fontWeight: 600, border: "none", cursor: "pointer",
               }}
             >
@@ -297,7 +297,7 @@ export default function WithdrawPage() {
               disabled={loading}
               style={{
                 flex: 1, height: 52, borderRadius: 12,
-                backgroundColor: "#EF4444", color: "#fff",
+                backgroundColor: "var(--c-danger)", color: "#fff",
                 fontSize: 15, fontWeight: 600, border: "none",
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.6 : 1,

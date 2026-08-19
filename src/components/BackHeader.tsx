@@ -11,7 +11,7 @@ export default function BackHeader({ title }: { title: string }) {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        backgroundColor: "#fff",
+        backgroundColor: "var(--c-bg)",
         display: "flex",
         alignItems: "center",
         gap: 8,
@@ -38,7 +38,7 @@ export default function BackHeader({ title }: { title: string }) {
           height="24"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#111"
+          stroke="var(--c-text-c)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -46,7 +46,7 @@ export default function BackHeader({ title }: { title: string }) {
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
-      <h1 style={{ fontSize: 18, fontWeight: 700, color: "#111" }}>
+      <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)" }}>
         {title}
       </h1>
     </div>

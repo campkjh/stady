@@ -113,22 +113,22 @@ export default function AdminCommunityPostsPage() {
   return (
     <section style={{ display: "grid", gap: 20 }}>
       <div>
-        <h1 style={{ margin: 0, color: "#111827", fontSize: 26, fontWeight: 900 }}>게시글 관리</h1>
-        <p style={{ margin: "8px 0 0", color: "#6B7280", fontSize: 14 }}>커뮤니티 게시글을 편집·노출 조정·삭제할 수 있습니다.</p>
+        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>게시글 관리</h1>
+        <p style={{ margin: "8px 0 0", color: "var(--c-text-3)", fontSize: 14 }}>커뮤니티 게시글을 편집·노출 조정·삭제할 수 있습니다.</p>
       </div>
       {message && (
-        <div style={{ border: "1px solid #FECACA", background: "#FEF2F2", color: "#B91C1C", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+        <div style={{ border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", color: "var(--c-danger-deep)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
           {message}
         </div>
       )}
-      <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, background: "#fff", overflow: "hidden" }}>
+      <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", overflow: "hidden" }}>
         {loading ? (
-          <p style={{ margin: 0, padding: 20, color: "#6B7280", fontSize: 14 }}>불러오는 중...</p>
+          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중...</p>
         ) : posts.length === 0 ? (
-          <p style={{ margin: 0, padding: 20, color: "#6B7280", fontSize: 14 }}>등록된 게시글이 없습니다.</p>
+          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>등록된 게시글이 없습니다.</p>
         ) : (
           posts.map((post) => (
-            <article key={post.id} style={{ padding: 18, borderBottom: "1px solid #F3F4F6", opacity: post.isActive ? 1 : 0.6 }}>
+            <article key={post.id} style={{ padding: 18, borderBottom: "1px solid var(--c-bg-muted)", opacity: post.isActive ? 1 : 0.6 }}>
               {editId === post.id ? (
                 <div style={{ display: "grid", gap: 8 }}>
                   <input
@@ -152,18 +152,18 @@ export default function AdminCommunityPostsPage() {
               ) : (
                 <>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                    <strong style={{ color: "#111827", fontSize: 16 }}>{post.title}</strong>
-                    <span style={{ color: post.isActive ? "#047857" : "#6B7280", fontSize: 12, fontWeight: 800 }}>
+                    <strong style={{ color: "var(--c-text)", fontSize: 16 }}>{post.title}</strong>
+                    <span style={{ color: post.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 12, fontWeight: 800 }}>
                       {post.isActive ? "노출" : "비노출"}
                     </span>
                   </div>
-                  <p style={{ margin: "8px 0", color: "#6B7280", fontSize: 13 }}>
+                  <p style={{ margin: "8px 0", color: "var(--c-text-3)", fontSize: 13 }}>
                     {post.groupName} · {post.nickname} · {new Date(post.createdAt).toLocaleString("ko-KR")}
                   </p>
-                  <p style={{ margin: "0 0 10px", color: "#374151", fontSize: 14, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</p>
+                  <p style={{ margin: "0 0 10px", color: "var(--c-text-2c)", fontSize: 14, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                     {post.tags.map((tag) => (
-                      <span key={tag.id} style={{ borderRadius: 999, background: "#F3F4F6", color: "#4B5563", padding: "5px 9px", fontSize: 12, fontWeight: 700 }}>
+                      <span key={tag.id} style={{ borderRadius: 999, background: "var(--c-bg-muted)", color: "var(--c-text-2d)", padding: "5px 9px", fontSize: 12, fontWeight: 700 }}>
                         #{tag.name}
                       </span>
                     ))}
@@ -187,11 +187,11 @@ export default function AdminCommunityPostsPage() {
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "10px 12px",
   fontSize: 14,
-  color: "#111827",
+  color: "var(--c-text)",
   boxSizing: "border-box" as const,
 };
 
@@ -204,6 +204,6 @@ const btnBase = {
   cursor: "pointer",
 };
 
-const btnPrimary = { ...btnBase, background: "#3787FF", color: "#fff" };
-const btnGhost = { ...btnBase, background: "#F3F4F6", color: "#374151" };
-const btnDanger = { ...btnBase, background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" };
+const btnPrimary = { ...btnBase, background: "var(--c-brand)", color: "#fff" };
+const btnGhost = { ...btnBase, background: "var(--c-bg-muted)", color: "var(--c-text-2c)" };
+const btnDanger = { ...btnBase, background: "var(--c-danger-soft)", color: "var(--c-danger-c)", border: "1px solid var(--c-danger-line)" };

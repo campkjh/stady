@@ -59,7 +59,7 @@ export default function PaymentSuccessPage() {
 
         {status === "done" && (
           <>
-            <div style={{ ...badgeStyle, background: "#E8F5E9", color: "#16A34A" }}>✓</div>
+            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}>✓</div>
             <h1 style={titleStyle}>결제가 완료되었어요!</h1>
             <p style={descStyle}>이제 2026 한국사 문제집을 다운로드할 수 있어요.</p>
             <a href={DOWNLOAD_PATH} style={{ ...primaryButtonStyle, textDecoration: "none", display: "block", textAlign: "center" }}>
@@ -73,7 +73,7 @@ export default function PaymentSuccessPage() {
 
         {status === "error" && (
           <>
-            <div style={{ ...badgeStyle, background: "#FEF2F2", color: "#DC2626" }}>!</div>
+            <div style={{ ...badgeStyle, background: "var(--c-danger-soft)", color: "var(--c-danger-c)" }}>!</div>
             <h1 style={titleStyle}>결제 승인에 실패했어요</h1>
             <p style={descStyle}>{error}</p>
             <button type="button" style={primaryButtonStyle} onClick={() => router.push("/store/korean-history")}>
@@ -94,7 +94,7 @@ const pageStyle = {
   // body가 flex-col이라 가로 auto 마진만 있으면 fit-content로 쪼그라듦 → width 100% 필수
   width: "100%",
   minHeight: "100vh",
-  background: "#fff",
+  background: "var(--c-bg)",
   maxWidth: 720,
   margin: "0 auto",
   display: "flex",
@@ -111,8 +111,8 @@ const cardStyle = {
   textAlign: "center",
 } as const;
 
-const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "#111827" } as const;
-const descStyle = { margin: 0, fontSize: 14, color: "#6B7280", fontWeight: 600, lineHeight: 1.6 } as const;
+const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "var(--c-text)" } as const;
+const descStyle = { margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600, lineHeight: 1.6 } as const;
 
 const badgeStyle = {
   width: 64,
@@ -129,8 +129,8 @@ const spinnerStyle = {
   width: 44,
   height: 44,
   borderRadius: 999,
-  border: "4px solid #E5E7EB",
-  borderTopColor: "#3787FF",
+  border: "4px solid var(--c-border)",
+  borderTopColor: "var(--c-brand)",
   animation: "storeSpin 0.8s linear infinite",
 } as const;
 
@@ -139,7 +139,7 @@ const primaryButtonStyle = {
   marginTop: 12,
   border: "none",
   borderRadius: 14,
-  background: "#3787FF",
+  background: "var(--c-brand)",
   color: "#fff",
   padding: "15px 18px",
   fontSize: 16,
@@ -151,7 +151,7 @@ const ghostButtonStyle = {
   width: "100%",
   border: "none",
   background: "transparent",
-  color: "#6B7280",
+  color: "var(--c-text-3)",
   padding: "10px",
   fontSize: 14,
   fontWeight: 800,

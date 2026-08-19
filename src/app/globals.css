@@ -4,6 +4,10 @@
   --background: #ffffff;
   --foreground: #171717;
 }
+[data-theme="dark"] {
+  --background: #17171C;
+  --foreground: #ECEDF0;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -24,12 +28,451 @@
   --color-gray-700: #374151;
   --color-gray-900: #111827;
 }
+/* ==== theme vars: scratchpad/apply-theme-vars.mjs 가 생성 — 손으로 고치지 말 것 ==== */
+/* 라이트 값 = 치환 전 원색 그대로(라이트 렌더링 불변). 다크 값은 scratchpad/dark-palette.mjs 에서 관리. */
+:root {
+  /* 면·경계 */
+  --c-bg: #FFFFFF;
+  --c-bg-soft: #F9FAFB;
+  --c-bg-soft-2: #FAFBFC;
+  --c-bg-soft-3: #FAFAFA;
+  --c-bg-soft-4: #F7F9FC;
+  --c-bg-soft-5: #F5F7FA;
+  --c-bg-soft-6: #F8FAFC;
+  --c-bg-soft-7: #F8F9FA;
+  --c-bg-soft-8: #F7F8FA;
+  --c-bg-soft-9: #FBFCFE;
+  --c-bg-soft-10: #FBFCFD;
+  --c-bg-soft-11: #F6F8FB;
+  --c-bg-soft-12: #F4F6F9;
+  --c-bg-soft-13: #F3F5F8;
+  --c-bg-soft-14: #F9FBFF;
+  --c-bg-muted: #F3F4F6;
+  --c-bg-muted-2: #F2F4F6;
+  --c-bg-muted-3: #F2F3F5;
+  --c-bg-muted-4: #F1F3F5;
+  --c-bg-muted-5: #F1F4F8;
+  --c-bg-muted-6: #EEF0F3;
+  --c-bg-muted-7: #EEF1F5;
+  --c-bg-muted-8: #EDF0F3;
+  --c-bg-muted-9: #EEF2F7;
+  --c-bg-muted-10: #F5F6F8;
+  --c-bg-muted-11: #F1F5F9;
+  --c-bg-muted-12: #EFF1F4;
+  --c-bg-muted-13: #EBEFF4;
+  --c-bg-muted-14: #EDEFF2;
+  --c-bg-muted-15: #E9ECF1;
+  --c-bg-muted-16: #E9EDF3;
+  --c-bg-muted-17: #E9ECEF;
+  --c-bg-muted-18: #F2F2F6;
+  --c-bg-muted-20: #E5E8EB;
+  --c-bg-muted-21: #DFE3E8;
+  --c-bg-muted-22: #D7DCE3;
+  --c-bg-muted-23: #CBD2DA;
+  --c-border: #E5E7EB;
+  --c-border-strong: #D1D5DB;
+  --c-border-strong-2: #C4CDD8;
+  --c-border-strong-3: #AEB6C0;
+  --c-border-strong-4: #D8DDE5;
+  --c-border-strong-5: #C9D3DF;
+  --c-border-strong-6: #9CA3AF;
+  --c-border-strong-7: #6B7280;
+  --c-inverse: #111827;
+  --c-inverse-2: #191F28;
+  --c-inverse-3: #111111;
+  --c-inverse-4: #1E1F23;
+  --c-inverse-5: #292A2E;
+  --c-inverse-6: #41444B;
+  --c-brand-soft: #E8F0FE;
+  --c-brand-soft-2: #EBF3FF;
+  --c-brand-soft-3: #EEF5FF;
+  --c-brand-soft-4: #EFF6FF;
+  --c-brand-soft-5: #F0F5FF;
+  --c-brand-soft-6: #EAF2FF;
+  --c-brand-soft-7: #F2F7FF;
+  --c-brand-soft-8: #F4F8FF;
+  --c-brand-soft-9: #E9F1FF;
+  --c-brand-soft-10: #EBF0FF;
+  --c-brand-soft-11: #E4EEFF;
+  --c-brand-soft-12: #EAF3FF;
+  --c-brand-soft-13: #F0F6FF;
+  --c-brand-soft-14: #F3F7FF;
+  --c-brand-soft-15: #EEF4FC;
+  --c-brand-line-2: #DBEAFE;
+  --c-brand-line-3: #D6E4FF;
+  --c-brand-line-4: #D3E4FF;
+  --c-brand-line-5: #C4D4F0;
+  --c-brand-line-6: #BFD4F2;
+  --c-brand-line-7: #D9E3F5;
+  --c-brand-line-9: #BFDBFE;
+  --c-brand-line-10: #93C5FD;
+  --c-danger-soft: #FEF2F2;
+  --c-danger-soft-2: #FFE0E0;
+  --c-danger-soft-3: #FEE2E2;
+  --c-danger-soft-4: #FFF5F5;
+  --c-danger-soft-5: #FFEFF1;
+  --c-danger-soft-6: #FFE7E7;
+  --c-danger-soft-7: #FFF1F2;
+  --c-danger-line: #FECACA;
+  --c-danger-line-2: #FCA5A5;
+  --c-danger-line-3: #FBD5D5;
+  --c-danger-line-4: #FFC9CF;
+  --c-success-soft: #ECFDF5;
+  --c-success-soft-2: #F0FDF4;
+  --c-success-soft-3: #E8F5E9;
+  --c-success-line: #D1FAE5;
+  --c-success-line-2: #A7F3D0;
+  --c-warn-soft: #FFFBEB;
+  --c-warn-soft-2: #FEF3C7;
+  --c-warn-soft-3: #FFF7E8;
+  --c-warn-soft-4: #FFF4E5;
+  --c-warn-soft-5: #FFF8B8;
+  --c-warn-line: #FFE9A8;
+  --c-warn-line-2: #EFE39A;
+  --c-purple-soft: #F5F3FF;
+  /* 글자·아이콘 */
+  --c-text: #111827;
+  --c-text-b: #191F28;
+  --c-text-c: #111111;
+  --c-text-d: #1B1E24;
+  --c-text-e: #26282E;
+  --c-text-2: #2B313D;
+  --c-text-2b: #333D4B;
+  --c-text-2c: #374151;
+  --c-text-2d: #4B5563;
+  --c-text-2e: #2E333B;
+  --c-text-2f: #3A3F47;
+  --c-text-2g: #475569;
+  --c-text-2h: #333333;
+  --c-text-3: #6B7280;
+  --c-text-3b: #4E5968;
+  --c-text-3c: #51535C;
+  --c-text-4: #8A909C;
+  --c-text-4b: #8B95A1;
+  --c-text-4c: #9CA3AF;
+  --c-text-4e: #B0B5BD;
+  --c-text-4f: #B8BCC4;
+  --c-text-4g: #BDC2CB;
+  --c-text-4h: #C7CCD5;
+  --c-text-4i: #C9CDD4;
+  --c-text-5: #B0B8C1;
+  --c-text-5b: #C0C0C0;
+  --c-text-5c: #CCCCCC;
+  --c-text-5d: #D1D5DB;
+  --c-text-5e: #B6BCC6;
+  --c-text-5f: #9BB4DC;
+  --c-text-5g: #C8D6EE;
+  --c-text-5h: #C9D3DF;
+  /* 브랜드·상태 */
+  --c-brand: #3787FF;
+  --c-brand-b: #3182F6;
+  --c-brand-deep: #1F5EDC;
+  --c-brand-deep-2: #1D4ED8;
+  --c-brand-deep-3: #2563EB;
+  --c-brand-deep-4: #1B64DA;
+  --c-brand-deep-5: #2F6BE0;
+  --c-brand-deep-6: #4A6BB0;
+  --c-brand-deep-7: #2E75E3;
+  --c-correct: #4A90D9;
+  --c-brand-mid: #7EA6E8;
+  --c-brand-mid-2: #6B7CF7;
+  --c-danger: #EF4444;
+  --c-danger-b: #E85D5D;
+  --c-danger-c: #DC2626;
+  --c-danger-d: #E11D48;
+  --c-danger-e: #FF3B30;
+  --c-danger-f: #FF3B5C;
+  --c-danger-g: #F93052;
+  --c-danger-h: #E5484D;
+  --c-danger-i: #E03131;
+  --c-danger-j: #C0392B;
+  --c-danger-k: #E8453C;
+  --c-danger-l: #D93A4E;
+  --c-danger-deep: #B91C1C;
+  --c-success: #10B981;
+  --c-success-b: #059669;
+  --c-success-c: #047857;
+  --c-success-d: #065F46;
+  --c-success-e: #16A34A;
+  --c-success-f: #4ADE80;
+  --c-warn: #F59E0B;
+  --c-warn-b: #D97706;
+  --c-warn-c: #B26A00;
+  --c-warn-d: #B7791F;
+  --c-warn-e: #E59500;
+  --c-warn-f: #EAB308;
+  --c-warn-g: #F97316;
+  --c-warn-h: #FBBF24;
+  --c-warn-i: #FFC84D;
+  --c-warn-deep: #8A7A3C;
+  --c-warn-deep-2: #4A4224;
+  --c-warn-deep-3: #3A3320;
+  --c-warn-deep-4: #8A6A00;
+  --c-purple: #8B5CF6;
+  /* 반투명 면 */
+  --c-bg-a50: rgba(255,255,255,0.5);
+  --c-bg-a55: rgba(255,255,255,0.55);
+  --c-bg-a60: rgba(255,255,255,0.6);
+  --c-bg-a70: rgba(255,255,255,0.7);
+  --c-bg-a75: rgba(255,255,255,0.75);
+  --c-bg-a88: rgba(255,255,255,0.88);
+  --c-bg-a90: rgba(255,255,255,0.9);
+  --c-bg-a92: rgba(255,255,255,0.92);
+  --c-bg-a95: rgba(255,255,255,0.95);
+  --c-tint-a5: rgba(7,25,76,0.05);
+}
+[data-theme="dark"] {
+  /* 면·경계 */
+  --c-bg: #17171C;
+  --c-bg-soft: #1E1E25;
+  --c-bg-soft-2: #1E1E25;
+  --c-bg-soft-3: #1E1E25;
+  --c-bg-soft-4: #1E1E25;
+  --c-bg-soft-5: #1E1E25;
+  --c-bg-soft-6: #1E1E25;
+  --c-bg-soft-7: #1E1E25;
+  --c-bg-soft-8: #1E1E25;
+  --c-bg-soft-9: #1C1C22;
+  --c-bg-soft-10: #1C1C22;
+  --c-bg-soft-11: #1E1E25;
+  --c-bg-soft-12: #1E1E25;
+  --c-bg-soft-13: #1E1E25;
+  --c-bg-soft-14: #1E1E25;
+  --c-bg-muted: #26262E;
+  --c-bg-muted-2: #26262E;
+  --c-bg-muted-3: #26262E;
+  --c-bg-muted-4: #26262E;
+  --c-bg-muted-5: #26262E;
+  --c-bg-muted-6: #26262E;
+  --c-bg-muted-7: #26262E;
+  --c-bg-muted-8: #26262E;
+  --c-bg-muted-9: #26262E;
+  --c-bg-muted-10: #26262E;
+  --c-bg-muted-11: #26262E;
+  --c-bg-muted-12: #26262E;
+  --c-bg-muted-13: #26262E;
+  --c-bg-muted-14: #26262E;
+  --c-bg-muted-15: #2A2A33;
+  --c-bg-muted-16: #2A2A33;
+  --c-bg-muted-17: #2A2A33;
+  --c-bg-muted-18: #26262E;
+  --c-bg-muted-20: #2E2E37;
+  --c-bg-muted-21: #33333D;
+  --c-bg-muted-22: #33333D;
+  --c-bg-muted-23: #33333D;
+  --c-border: #2C2C35;
+  --c-border-strong: #3D3D48;
+  --c-border-strong-2: #3D3D48;
+  --c-border-strong-3: #3D3D48;
+  --c-border-strong-4: #3D3D48;
+  --c-border-strong-5: #3D3D48;
+  --c-border-strong-6: #4A4F5A;
+  --c-border-strong-7: #5A5F6A;
+  --c-inverse: #3A3B45;
+  --c-inverse-2: #3A3B45;
+  --c-inverse-3: #3A3B45;
+  --c-inverse-4: #3A3B45;
+  --c-inverse-5: #34353C;
+  --c-inverse-6: #2A2B31;
+  --c-brand-soft: #1B2A44;
+  --c-brand-soft-2: #1B2A44;
+  --c-brand-soft-3: #192538;
+  --c-brand-soft-4: #192538;
+  --c-brand-soft-5: #192538;
+  --c-brand-soft-6: #1B2A44;
+  --c-brand-soft-7: #192538;
+  --c-brand-soft-8: #192538;
+  --c-brand-soft-9: #1B2A44;
+  --c-brand-soft-10: #1B2A44;
+  --c-brand-soft-11: #1B2A44;
+  --c-brand-soft-12: #1B2A44;
+  --c-brand-soft-13: #192538;
+  --c-brand-soft-14: #192538;
+  --c-brand-soft-15: #192538;
+  --c-brand-line-2: #22345A;
+  --c-brand-line-3: #22345A;
+  --c-brand-line-4: #22345A;
+  --c-brand-line-5: #22345A;
+  --c-brand-line-6: #22345A;
+  --c-brand-line-7: #22345A;
+  --c-brand-line-9: #2A4370;
+  --c-brand-line-10: #2A4370;
+  --c-danger-soft: #33201F;
+  --c-danger-soft-2: #3A2224;
+  --c-danger-soft-3: #3A2224;
+  --c-danger-soft-4: #33201F;
+  --c-danger-soft-5: #33201F;
+  --c-danger-soft-6: #3A2224;
+  --c-danger-soft-7: #33201F;
+  --c-danger-line: #5A2C2E;
+  --c-danger-line-2: #5A2C2E;
+  --c-danger-line-3: #5A2C2E;
+  --c-danger-line-4: #5A2C2E;
+  --c-success-soft: #12332A;
+  --c-success-soft-2: #12332A;
+  --c-success-soft-3: #12332A;
+  --c-success-line: #1A4536;
+  --c-success-line-2: #1A4536;
+  --c-warn-soft: #3A2F12;
+  --c-warn-soft-2: #46381A;
+  --c-warn-soft-3: #3A2F12;
+  --c-warn-soft-4: #3A2F12;
+  --c-warn-soft-5: #46381A;
+  --c-warn-line: #5A4A1E;
+  --c-warn-line-2: #5A4A1E;
+  --c-purple-soft: #2A2440;
+  /* 글자·아이콘 */
+  --c-text: #ECEDF0;
+  --c-text-b: #ECEDF0;
+  --c-text-c: #ECEDF0;
+  --c-text-d: #ECEDF0;
+  --c-text-e: #ECEDF0;
+  --c-text-2: #CDD0D6;
+  --c-text-2b: #CDD0D6;
+  --c-text-2c: #CDD0D6;
+  --c-text-2d: #C0C4CB;
+  --c-text-2e: #CDD0D6;
+  --c-text-2f: #CDD0D6;
+  --c-text-2g: #C0C4CB;
+  --c-text-2h: #CDD0D6;
+  --c-text-3: #A2A7B0;
+  --c-text-3b: #A2A7B0;
+  --c-text-3c: #A2A7B0;
+  --c-text-4: #7E848F;
+  --c-text-4b: #7E848F;
+  --c-text-4c: #7E848F;
+  --c-text-4e: #7E848F;
+  --c-text-4f: #7E848F;
+  --c-text-4g: #7E848F;
+  --c-text-4h: #6E747E;
+  --c-text-4i: #6E747E;
+  --c-text-5: #5F646E;
+  --c-text-5b: #5F646E;
+  --c-text-5c: #5F646E;
+  --c-text-5d: #6B7280;
+  --c-text-5e: #5F646E;
+  --c-text-5f: #5F7699;
+  --c-text-5g: #5F7699;
+  --c-text-5h: #5F646E;
+  /* 브랜드·상태 */
+  --c-brand: #4A93FF;
+  --c-brand-b: #4A93FF;
+  --c-brand-deep: #7FB0FF;
+  --c-brand-deep-2: #7FB0FF;
+  --c-brand-deep-3: #7FB0FF;
+  --c-brand-deep-4: #7FB0FF;
+  --c-brand-deep-5: #7FB0FF;
+  --c-brand-deep-6: #8FB4F0;
+  --c-brand-deep-7: #4A93FF;
+  --c-correct: #5DA3F0;
+  --c-brand-mid: #7EA6E8;
+  --c-brand-mid-2: #8B9CFF;
+  --c-danger: #E5484D;
+  --c-danger-b: #F26B6B;
+  --c-danger-c: #F87171;
+  --c-danger-d: #FB5C7F;
+  --c-danger-e: #FF5F55;
+  --c-danger-f: #FF4D6D;
+  --c-danger-g: #FF5F7A;
+  --c-danger-h: #F26B6B;
+  --c-danger-i: #F26B6B;
+  --c-danger-j: #F26B6B;
+  --c-danger-k: #F26B6B;
+  --c-danger-l: #F26B6B;
+  --c-danger-deep: #FCA5A5;
+  --c-success: #34D399;
+  --c-success-b: #34D399;
+  --c-success-c: #34D399;
+  --c-success-d: #6EE7B7;
+  --c-success-e: #4ADE80;
+  --c-success-f: #4ADE80;
+  --c-warn: #FBBF24;
+  --c-warn-b: #FBBF24;
+  --c-warn-c: #FBBF24;
+  --c-warn-d: #FBBF24;
+  --c-warn-e: #FBBF24;
+  --c-warn-f: #FACC15;
+  --c-warn-g: #FB923C;
+  --c-warn-h: #FBBF24;
+  --c-warn-i: #FFC84D;
+  --c-warn-deep: #F5D77A;
+  --c-warn-deep-2: #F5D77A;
+  --c-warn-deep-3: #F5D77A;
+  --c-warn-deep-4: #F5D77A;
+  --c-purple: #A78BFA;
+  /* 반투명 면 */
+  --c-bg-a50: rgba(23,23,28,0.5);
+  --c-bg-a55: rgba(23,23,28,0.55);
+  --c-bg-a60: rgba(23,23,28,0.6);
+  --c-bg-a70: rgba(23,23,28,0.7);
+  --c-bg-a75: rgba(23,23,28,0.75);
+  --c-bg-a88: rgba(23,23,28,0.88);
+  --c-bg-a90: rgba(23,23,28,0.9);
+  --c-bg-a92: rgba(23,23,28,0.92);
+  --c-bg-a95: rgba(23,23,28,0.95);
+  --c-tint-a5: rgba(255,255,255,0.08);
+}
+/* ==== /theme vars ==== */
 
-/* 라이트 테마 전용 앱임을 명시 — 안드로이드 WebView/브라우저의 강제 다크 변환을 끈다.
-   (선언이 없으면 다크 테마 기기에서 흰 카드·텍스트가 자동 반전돼 UI가 깨진다) */
+/* 테마: 기본(라이트)은 color-scheme: light, html[data-theme="dark"] 이면 dark.
+   color-scheme 을 우리가 명시하므로 안드로이드 WebView/브라우저의 강제 다크 변환(force-dark)은
+   어느 테마에서도 걸리지 않는다(선언이 없으면 다크 기기에서 흰 카드가 자동 반전돼 UI가 깨진다).
+   data-theme 은 layout.tsx 의 첫 페인트 전 인라인 스크립트 + src/lib/theme.ts 가 세팅한다. */
 :root {
   color-scheme: light;
 }
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+html[data-theme="dark"],
+[data-theme="dark"] body {
+  background-color: var(--c-bg);
+  color: var(--c-text);
+}
+
+/* ── 다크 오버라이드: Tailwind 색 유틸(클래스명은 그대로 두고 값만 덮어쓴다) ──
+   Tailwind 는 @layer utilities 안이라 레이어 밖의 이 규칙이 항상 이긴다. */
+[data-theme="dark"] .bg-white { background-color: var(--c-bg); }
+[data-theme="dark"] .bg-gray-50 { background-color: var(--c-bg-soft); }
+[data-theme="dark"] .bg-gray-100 { background-color: var(--c-bg-muted); }
+[data-theme="dark"] .bg-blue-50 { background-color: var(--c-brand-soft-4); }
+[data-theme="dark"] .bg-blue-100 { background-color: var(--c-brand-line-2); }
+[data-theme="dark"] .bg-blue-500 { background-color: var(--c-brand); }
+[data-theme="dark"] .bg-red-50 { background-color: var(--c-danger-soft); }
+[data-theme="dark"] .bg-green-50 { background-color: var(--c-success-soft); }
+[data-theme="dark"] .bg-\[\#E8F0FE\] { background-color: var(--c-brand-soft); }
+[data-theme="dark"] .bg-\[\#FFE0E0\] { background-color: var(--c-danger-soft-2); }
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800 { color: var(--c-text); }
+[data-theme="dark"] .text-gray-700 { color: var(--c-text-2c); }
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-500 { color: var(--c-text-3); }
+[data-theme="dark"] .text-gray-400 { color: var(--c-text-4c); }
+[data-theme="dark"] .text-gray-300 { color: var(--c-text-5d); }
+[data-theme="dark"] .text-blue-900,
+[data-theme="dark"] .text-blue-800,
+[data-theme="dark"] .text-blue-700 { color: var(--c-brand-deep-2); }
+[data-theme="dark"] .text-blue-500,
+[data-theme="dark"] .text-primary,
+[data-theme="dark"] .text-\[\#3787FF\] { color: var(--c-brand); }
+[data-theme="dark"] .text-\[\#4A90D9\] { color: var(--c-correct); }
+[data-theme="dark"] .text-red-700,
+[data-theme="dark"] .text-red-500 { color: var(--c-danger); }
+[data-theme="dark"] .text-green-800 { color: var(--c-success-b); }
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-\[\#E5E7EB\] { border-color: var(--c-border); }
+[data-theme="dark"] .border-gray-100 { border-color: var(--c-bg-muted); }
+[data-theme="dark"] .border-gray-300 { border-color: var(--c-border-strong); }
+[data-theme="dark"] .divide-gray-100 > :not(:last-child) { border-color: var(--c-bg-muted); }
+[data-theme="dark"] .border-blue-500,
+[data-theme="dark"] .border-primary,
+[data-theme="dark"] .border-\[\#3787FF\] { border-color: var(--c-brand); }
+[data-theme="dark"] .border-blue-100 { border-color: var(--c-brand-line-2); }
+[data-theme="dark"] .border-red-400 { border-color: var(--c-danger); }
+[data-theme="dark"] .border-green-100 { border-color: var(--c-success-line); }
+[data-theme="dark"] .border-t-\[\#3787FF\] { border-top-color: var(--c-brand); }
+[data-theme="dark"] .border-t-\[\#4A90D9\] { border-top-color: var(--c-correct); }
+[data-theme="dark"] .border-t-gray-900 { border-top-color: var(--c-text); }
 
 *::-webkit-scrollbar {
   display: none;
@@ -94,6 +537,15 @@ body {
     rgba(255, 255, 255, 0.72) 42%,
     rgba(255, 255, 255, 0.96) 72%,
     #fff 100%
+  );
+}
+[data-theme="dark"] .main-nav-fade {
+  background: linear-gradient(
+    to bottom,
+    rgba(23, 23, 28, 0) 0%,
+    rgba(23, 23, 28, 0.72) 42%,
+    rgba(23, 23, 28, 0.96) 72%,
+    var(--c-bg) 100%
   );
 }
 
@@ -169,23 +621,23 @@ body {
 .home-exam-item { text-decoration: none; display: block; }
 .home-exam-thumb {
   position: relative; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden;
-  border: 1px solid #EEF0F3; background: #F3F4F6; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--c-bg-muted-6); background: var(--c-bg-muted); box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 .home-exam-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .home-exam-thumb-empty {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-  color: #b0b8c1; font-size: 30px;
+  color: var(--c-text-5); font-size: 30px;
 }
 .home-exam-badge {
   position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
   background: rgba(17, 24, 39, 0.72); color: #fff; font-size: 10.5px; font-weight: 800;
 }
 .home-exam-title {
-  margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: #191f28;
+  margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: var(--c-text-b);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .home-exam-sub {
-  margin: 3px 2px 0; font-size: 12px; color: #8a909c; display: flex; align-items: center; gap: 4px;
+  margin: 3px 2px 0; font-size: 12px; color: var(--c-text-4); display: flex; align-items: center; gap: 4px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -267,7 +719,7 @@ body {
     max-width: none !important;
     padding: 0 8px !important;
     gap: 2px;
-    background: #F2F4F6;
+    background: var(--c-bg-muted-2);
     border-radius: 26px;
     box-shadow: 0 14px 38px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
   }
@@ -289,7 +741,7 @@ body {
     top: 0;
     z-index: 0;
     border-radius: 18px;
-    background: #fff;
+    background: var(--c-bg);
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
     pointer-events: none;
     will-change: transform, width;
@@ -316,7 +768,12 @@ body {
   pointer-events: none;
   will-change: transform;
   animation: nudgeBubbleFloat 2.6s ease-in-out infinite;
+  /* 말풍선 면과 꼬리(SVG currentColor)를 같은 색으로 묶는다. 다크에선 페이지 배경보다
+     한 단계 띄운 면을 써야 윤곽이 산다(페이지 배경과 같으면 그림자가 안 보여 텍스트만 떠 보임). */
+  --bubble-bg: var(--c-bg);
+  color: var(--bubble-bg);
 }
+[data-theme="dark"] .nudge-bubble-wrap { --bubble-bg: #2A2A33; }
 .nudge-bubble-wrap.is-tail-up {
   flex-direction: column-reverse;
 }
@@ -324,12 +781,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
+  background: var(--bubble-bg);
   border-radius: 16px;
   padding: 7px 13px;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
   white-space: nowrap;
 }
+[data-theme="dark"] .nudge-bubble {
+  border: 1px solid var(--c-border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+[data-theme="dark"] .nudge-bubble-tail { filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.4)); }
 .is-compact .nudge-bubble {
   padding: 6px 11px;
   border-radius: 14px;
@@ -347,14 +809,17 @@ body {
   color: transparent;
   animation: nudgeBubbleText 2.8s ease-in-out infinite;
 }
+[data-theme="dark"] .nudge-bubble-text {
+  background-image: linear-gradient(110deg, #7E848F 0%, #7E848F 26%, #4A93FF 42%, #CDD0D6 58%, #CDD0D6 100%);
+}
 .is-compact .nudge-bubble-text {
   font-size: 12.5px;
 }
 .nudge-bubble-xp {
   font-size: 11.5px;
   font-weight: 800;
-  color: #3182F6;
-  background: #EEF5FF;
+  color: var(--c-brand-b);
+  background: var(--c-brand-soft-3);
   border-radius: 999px;
   padding: 2px 6px;
   font-variant-numeric: tabular-nums;
@@ -421,7 +886,7 @@ body {
   transition: background 0.16s ease, transform 0.16s ease;
 }
 .tabrail-item.is-on .tabrail-ico {
-  background: #F2F4F6;
+  background: var(--c-bg-muted-2);
 }
 .tabrail-item:active .tabrail-ico {
   transform: scale(0.94);
@@ -451,13 +916,13 @@ body {
 .tabrail-label {
   font-size: 11px;
   font-weight: 700;
-  color: #B0B8C1;
+  color: var(--c-text-5);
   letter-spacing: -0.3px;
   white-space: nowrap;
   transition: color 0.16s ease;
 }
 .tabrail-item.is-on .tabrail-label {
-  color: #333D4B;
+  color: var(--c-text-2b);
 }
 /* 넓은 화면 좌측용 세로 레일(흰 카드) */
 .tabrail.is-stacked {
@@ -465,8 +930,8 @@ body {
   align-items: stretch;
   overflow: visible;
   padding: 10px 6px;
-  background: #fff;
-  border: 1px solid #F1F4F8;
+  background: var(--c-bg);
+  border: 1px solid var(--c-bg-muted-5);
   border-radius: 20px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
 }
@@ -556,7 +1021,7 @@ body {
   transform: scale(0.9);
 }
 .cat-btn:hover .cat-circle {
-  background-color: #EEF0F3;
+  background-color: var(--c-bg-muted-6);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -678,3 +1143,11 @@ body {
   }
 }
 
+/* ── 다크 공용 보정 ── */
+/* 탭 레일 선택 아이콘: cg-*-on.svg 등 mono 아이콘이 진한 회색으로 고정돼 있어 다크 선택 박스 위에서
+   비선택보다 어두워진다(강조 반전). 다크에서 밝게 뒤집는다. */
+[data-theme="dark"] .tabrail-item.is-on .tabrail-ico img { filter: brightness(0) invert(0.9); }
+/* 시트/모달 면: 페이지 배경과 같으면 다크에서 딤 위에서 구분이 안 된다 → 한 단계 띄운 면 */
+:root { --c-bg-elevated: #FFFFFF; }
+[data-theme="dark"] { --c-bg-elevated: #22222A; }
+[data-theme="dark"] .solver-sheet { background: var(--c-bg-elevated); }

@@ -104,8 +104,8 @@ function WrongNoteContent() {
   }, [data, focusId]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#fff", borderBottom: "1px solid #EEF2F7" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg-soft-6)" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-bg-muted-9)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px" }}>
           <button
             type="button"
@@ -113,13 +113,13 @@ function WrongNoteContent() {
             className="press"
             style={{ width: 36, height: 36, border: "none", background: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 900, color: "#111827" }}>오답노트</h1>
-            <p style={{ fontSize: 12, color: "#8A909C", marginTop: 1 }}>틀린 문제만 모아 다시 보는 공간</p>
+            <h1 style={{ fontSize: 18, fontWeight: 900, color: "var(--c-text)" }}>오답노트</h1>
+            <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 1 }}>틀린 문제만 모아 다시 보는 공간</p>
           </div>
         </div>
 
@@ -133,9 +133,9 @@ function WrongNoteContent() {
                 flexShrink: 0,
                 padding: "8px 14px",
                 borderRadius: 999,
-                border: activeType === tab.value ? "none" : "1px solid #E5E7EB",
-                background: activeType === tab.value ? "#111827" : "#fff",
-                color: activeType === tab.value ? "#fff" : "#6B7280",
+                border: activeType === tab.value ? "none" : "1px solid var(--c-border)",
+                background: activeType === tab.value ? "var(--c-inverse)" : "var(--c-bg)",
+                color: activeType === tab.value ? "#fff" : "var(--c-text-3)",
                 fontSize: 13,
                 fontWeight: 800,
               }}
@@ -151,7 +151,7 @@ function WrongNoteContent() {
           <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-[#3787FF]" />
         </div>
       ) : error ? (
-        <p style={{ padding: 24, textAlign: "center", color: "#9CA3AF", fontSize: 14 }}>{error}</p>
+        <p style={{ padding: 24, textAlign: "center", color: "var(--c-text-4c)", fontSize: 14 }}>{error}</p>
       ) : (
         <div style={{ padding: "14px", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -167,7 +167,7 @@ function WrongNoteContent() {
               className="press"
               style={{
                 width: "100%", height: 52, borderRadius: 14, border: "none",
-                background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800,
+                background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 boxShadow: "0 6px 18px rgba(55,135,255,0.28)",
               }}
@@ -181,8 +181,8 @@ function WrongNoteContent() {
           )}
 
           {items.length === 0 ? (
-            <div style={{ padding: "70px 20px", textAlign: "center", color: "#9CA3AF" }}>
-              <p style={{ fontSize: 16, fontWeight: 800, color: "#111827", marginBottom: 4 }}>오답이 없습니다</p>
+            <div style={{ padding: "70px 20px", textAlign: "center", color: "var(--c-text-4c)" }}>
+              <p style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text)", marginBottom: 4 }}>오답이 없습니다</p>
               <p style={{ fontSize: 13 }}>문제를 풀면 틀린 항목이 이곳에 자동으로 모입니다.</p>
             </div>
           ) : (
@@ -190,35 +190,35 @@ function WrongNoteContent() {
               <article
                 key={`${item.type}-${item.id}`}
                 style={{
-                  border: focusId === item.id ? "2px solid #3787FF" : "1px solid #E5E7EB",
+                  border: focusId === item.id ? "2px solid var(--c-brand)" : "1px solid var(--c-border)",
                   borderRadius: 14,
-                  background: "#fff",
+                  background: "var(--c-bg)",
                   padding: 14,
                   boxShadow: "0 2px 12px rgba(15,23,42,0.04)",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
                   <div style={{ minWidth: 0 }}>
-                    <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 999, background: "#EBF3FF", color: "#3787FF", fontSize: 11, fontWeight: 800 }}>
+                    <span style={{ display: "inline-flex", padding: "3px 8px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 11, fontWeight: 800 }}>
                       {typeLabel(item.type)}
                     </span>
-                    <h2 style={{ marginTop: 7, fontSize: 15, fontWeight: 900, color: "#111827", lineHeight: 1.35 }}>
+                    <h2 style={{ marginTop: 7, fontSize: 15, fontWeight: 900, color: "var(--c-text)", lineHeight: 1.35 }}>
                       {item.subtitle}
                     </h2>
-                    <p style={{ marginTop: 2, fontSize: 12, color: "#8A909C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ marginTop: 2, fontSize: 12, color: "var(--c-text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {item.title}
                     </p>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <b style={{ display: "block", color: "#EF4444", fontSize: 18 }}>{item.stats?.wrongRate ?? 0}%</b>
-                    <span style={{ fontSize: 11, color: "#9CA3AF" }}>오답률</span>
+                    <b style={{ display: "block", color: "var(--c-danger)", fontSize: 18 }}>{item.stats?.wrongRate ?? 0}%</b>
+                    <span style={{ fontSize: 11, color: "var(--c-text-4c)" }}>오답률</span>
                   </div>
                 </div>
 
                 {item.passageImage && <img src={item.passageImage} alt="지문" style={imageStyle} />}
                 {item.questionImage && <img src={item.questionImage} alt="문제" style={imageStyle} />}
 
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#111827", lineHeight: 1.55, marginBottom: 10 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text)", lineHeight: 1.55, marginBottom: 10 }}>
                   {item.prompt}
                 </p>
 
@@ -230,8 +230,8 @@ function WrongNoteContent() {
                         style={{
                           padding: "9px 10px",
                           borderRadius: 10,
-                          background: index + 1 === item.answer ? "#E8F0FE" : "#F9FAFB",
-                          color: index + 1 === item.answer ? "#2563EB" : "#4B5563",
+                          background: index + 1 === item.answer ? "var(--c-brand-soft)" : "var(--c-bg-soft)",
+                          color: index + 1 === item.answer ? "var(--c-brand-deep-3)" : "var(--c-text-2d)",
                           fontSize: 13,
                           fontWeight: index + 1 === item.answer ? 800 : 600,
                         }}
@@ -253,7 +253,7 @@ function WrongNoteContent() {
                 </div>
 
                 {item.explanation && (
-                  <p style={{ background: "#F9FAFB", borderRadius: 12, padding: 12, color: "#4B5563", fontSize: 13, lineHeight: 1.6 }}>
+                  <p style={{ background: "var(--c-bg-soft)", borderRadius: 12, padding: 12, color: "var(--c-text-2d)", fontSize: 13, lineHeight: 1.6 }}>
                     {item.explanation}
                   </p>
                 )}
@@ -267,30 +267,30 @@ function WrongNoteContent() {
 }
 
 const statBoxStyle: CSSProperties = {
-  background: "#fff",
-  border: "1px solid #E5E7EB",
+  background: "var(--c-bg)",
+  border: "1px solid var(--c-border)",
   borderRadius: 12,
   padding: "12px 8px",
   textAlign: "center" as const,
 };
 
 const answerBoxStyle: CSSProperties = {
-  background: "#F9FAFB",
+  background: "var(--c-bg-soft)",
   borderRadius: 12,
   padding: "10px 12px",
   display: "flex",
   flexDirection: "column" as const,
   gap: 3,
   fontSize: 12,
-  color: "#8A909C",
+  color: "var(--c-text-4)",
 };
 
 const metricPillStyle: CSSProperties = {
   display: "inline-flex",
   padding: "5px 9px",
   borderRadius: 999,
-  background: "#F3F4F6",
-  color: "#6B7280",
+  background: "var(--c-bg-muted)",
+  color: "var(--c-text-3)",
   fontSize: 11,
   fontWeight: 800,
 };
@@ -299,7 +299,7 @@ const imageStyle: CSSProperties = {
   width: "100%",
   display: "block",
   borderRadius: 12,
-  border: "1px solid #EEF2F7",
+  border: "1px solid var(--c-bg-muted-9)",
   marginBottom: 10,
 };
 

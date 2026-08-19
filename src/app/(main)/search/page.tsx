@@ -106,19 +106,19 @@ export default function SearchPage() {
   return (
     <div style={{ width: "100%", overflow: "hidden" }}>
       {/* Search Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: "1px solid #F3F4F6" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: "1px solid var(--c-bg-muted)" }}>
         <button
           type="button"
           onClick={() => router.back()}
           className="press"
           style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, flexShrink: 0, background: "none", border: "none" }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
         <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
-          <svg style={{ position: "absolute", left: 12, color: "#9CA3AF" }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg style={{ position: "absolute", left: 12, color: "var(--c-text-4c)" }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -131,11 +131,11 @@ export default function SearchPage() {
             style={{
               width: "100%",
               borderRadius: 10,
-              border: "1px solid #E5E7EB",
-              backgroundColor: "#F9FAFB",
+              border: "1px solid var(--c-border)",
+              backgroundColor: "var(--c-bg-soft)",
               padding: "10px 40px 10px 40px",
               fontSize: 14,
-              color: "#111",
+              color: "var(--c-text-c)",
               outline: "none",
             }}
           />
@@ -150,7 +150,7 @@ export default function SearchPage() {
                 width: 20,
                 height: 20,
                 borderRadius: "50%",
-                backgroundColor: "#D1D5DB",
+                backgroundColor: "var(--c-border-strong)",
                 border: "none",
                 display: "flex",
                 alignItems: "center",
@@ -172,20 +172,20 @@ export default function SearchPage() {
           {/* 최근 검색어 */}
           <div style={{ paddingTop: 24, paddingBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>최근 검색어</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)" }}>최근 검색어</h3>
               {recentSearches.length > 0 && (
                 <button
                   type="button"
                   onClick={clearAllRecent}
                   className="press"
-                  style={{ fontSize: 13, color: "#9CA3AF", background: "none", border: "none" }}
+                  style={{ fontSize: 13, color: "var(--c-text-4c)", background: "none", border: "none" }}
                 >
                   전체 삭제
                 </button>
               )}
             </div>
             {recentSearches.length === 0 ? (
-              <p style={{ fontSize: 14, color: "#9CA3AF", padding: "20px 0", textAlign: "center" }}>
+              <p style={{ fontSize: 14, color: "var(--c-text-4c)", padding: "20px 0", textAlign: "center" }}>
                 최근 검색어가 없습니다.
               </p>
             ) : (
@@ -199,16 +199,16 @@ export default function SearchPage() {
                       gap: 6,
                       padding: "8px 12px",
                       borderRadius: 20,
-                      backgroundColor: "#F3F4F6",
+                      backgroundColor: "var(--c-bg-muted)",
                       fontSize: 13,
-                      color: "#374151",
+                      color: "var(--c-text-2c)",
                     }}
                   >
                     <button
                       type="button"
                       onClick={() => doSearch(keyword)}
                       className="press"
-                      style={{ background: "none", border: "none", color: "#374151", fontSize: 13 }}
+                      style={{ background: "none", border: "none", color: "var(--c-text-2c)", fontSize: 13 }}
                     >
                       {keyword}
                     </button>
@@ -217,7 +217,7 @@ export default function SearchPage() {
                       onClick={() => removeRecentSearch(keyword)}
                       style={{ background: "none", border: "none", display: "flex", alignItems: "center", padding: 0 }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
@@ -229,11 +229,11 @@ export default function SearchPage() {
           </div>
 
           {/* 구분선 */}
-          <div style={{ height: 1, backgroundColor: "#F3F4F6", margin: "4px 0" }} />
+          <div style={{ height: 1, backgroundColor: "var(--c-bg-muted)", margin: "4px 0" }} />
 
           {/* 인기 검색어 */}
           <div style={{ paddingTop: 20, paddingBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 16 }}>인기 검색어</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>인기 검색어</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
               {POPULAR_KEYWORDS.map((keyword, idx) => (
                 <button
@@ -248,20 +248,20 @@ export default function SearchPage() {
                     padding: "12px 4px",
                     background: "none",
                     border: "none",
-                    borderBottom: "1px solid #F9FAFB",
+                    borderBottom: "1px solid var(--c-bg-soft)",
                     textAlign: "left",
                   }}
                 >
                   <span style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: idx < 3 ? "#4A90D9" : "#9CA3AF",
+                    color: idx < 3 ? "var(--c-correct)" : "var(--c-text-4c)",
                     width: 20,
                     textAlign: "center",
                   }}>
                     {idx + 1}
                   </span>
-                  <span style={{ fontSize: 14, color: "#111", fontWeight: 400 }}>
+                  <span style={{ fontSize: 14, color: "var(--c-text-c)", fontWeight: 400 }}>
                     {keyword}
                   </span>
                 </button>
@@ -279,7 +279,7 @@ export default function SearchPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[#4A90D9]" />
             </div>
           ) : searched && results.length === 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", color: "#9CA3AF" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", color: "var(--c-text-4c)" }}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -305,10 +305,10 @@ export default function SearchPage() {
                     </span>
                   </div>
                   <div style={{ paddingTop: 8 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {wb.title}
                     </p>
-                    <p style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>
+                    <p style={{ fontSize: 10, color: "var(--c-text-4c)", marginTop: 2 }}>
                       {wb.totalQuestions}문항/{wb.questionPerPage}문항
                     </p>
                   </div>

@@ -627,7 +627,7 @@ const PageCanvas = forwardRef<
   return (
     <div
       ref={wrapRef}
-      style={{ position: "relative", width: "100%", marginBottom: 12, background: "#fff", lineHeight: 0 }}
+      style={{ position: "relative", width: "100%", marginBottom: 12, background: "var(--c-bg)", lineHeight: 0 }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -660,12 +660,12 @@ const PageCanvas = forwardRef<
         style={{
           position: "absolute", display: "none", pointerEvents: "none",
           transform: "translate(-50%, -50%)", borderRadius: "50%",
-          border: "1.5px solid #6B7280", background: "rgba(148,163,184,0.25)", zIndex: 5,
+          border: "1.5px solid var(--c-border-strong-7)", background: "rgba(148,163,184,0.25)", zIndex: 5,
         }}
       />
       <div
         ref={selRef}
-        style={{ position: "absolute", display: "none", border: "2px dashed #3787FF", background: "rgba(55,135,255,0.12)", pointerEvents: "none" }}
+        style={{ position: "absolute", display: "none", border: "2px dashed var(--c-brand)", background: "rgba(55,135,255,0.12)", pointerEvents: "none" }}
       />
     </div>
   );
@@ -853,8 +853,8 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         style={{
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           width: 40, height: 36, borderRadius: 9, border: "none", flexShrink: 0,
-          background: on ? "#E9ECF1" : "transparent",
-          color: on ? "#191F28" : "#8B95A1",
+          background: on ? "var(--c-bg-muted-15)" : "transparent",
+          color: on ? "var(--c-text-b)" : "var(--c-text-4b)",
           cursor: "pointer", padding: 0,
           transition: "background 0.15s ease, color 0.15s ease",
         }}
@@ -865,19 +865,19 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   };
 
   const divider = (
-    <span aria-hidden style={{ width: 1, height: 22, background: "#E5E8EB", flexShrink: 0, margin: "0 2px" }} />
+    <span aria-hidden style={{ width: 1, height: 22, background: "var(--c-bg-muted-20)", flexShrink: 0, margin: "0 2px" }} />
   );
 
   // 펜/형광펜 굵기 프리셋(굿노트처럼 얇게·보통·굵게).
   const widthPresets = tool === "highlight" ? [12, 18, 26] : [2, 4, 7];
 
   return (
-    <div className="mock-viewer-root" style={{ background: "#EDEFF2", display: "flex", flexDirection: "column" }}>
+    <div className="mock-viewer-root" style={{ background: "var(--c-bg-muted-14)", display: "flex", flexDirection: "column" }}>
       {/* 상단 바 — 시험지 제목/문서 액션 */}
       <div
         style={{
           position: "relative",
-          flexShrink: 0, zIndex: 21, background: "#41444B",
+          flexShrink: 0, zIndex: 21, background: "var(--c-inverse-6)",
           padding: "calc(env(safe-area-inset-top, 0px) + 7px) 10px 7px",
           display: "flex", alignItems: "center", gap: 4,
         }}
@@ -909,11 +909,12 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
             <span style={{ fontSize: 14.5, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {exam.title}
             </span>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: "#C9CDD4", flexShrink: 0 }}>
+            {/* 상단바는 양 테마 모두 어두운 면이라 다크용 --c-text-4i(#6E747E)는 3:1 → 흰색 알파로 고정(라이트 #41444B 위 ≈ #CACBCD, 원색 #C9CDD4와 동일). */}
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.72)", flexShrink: 0 }}>
               {section === "solution" ? "해설" : "문제"}
             </span>
             <svg
-              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.4"
+              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.72)" strokeWidth="2.4"
               strokeLinecap="round" strokeLinejoin="round"
               style={{ flexShrink: 0, transform: sectionMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.22s cubic-bezier(0.22,1,0.36,1)" }}
             >
@@ -927,8 +928,9 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               style={{
                 position: "absolute", top: "calc(100% + 6px)", left: "50%",
                 transformOrigin: "top center",
-                minWidth: 176, background: "#fff", borderRadius: 14, padding: 6,
-                boxShadow: "0 16px 40px rgba(15,23,42,0.28)", zIndex: 40,
+                minWidth: 176, background: "var(--c-bg)", borderRadius: 14, padding: 6,
+                border: "1px solid var(--mv-pop-border)",
+                boxShadow: "var(--mv-pop-shadow)", zIndex: 40,
               }}
             >
               {([["problem", "문제"], ["solution", "해설보기"]] as const).map(([s2, lbl]) => {
@@ -942,14 +944,14 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                     style={{
                       display: "flex", alignItems: "center", gap: 8, width: "100%",
                       padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: on ? "#F1F3F5" : "transparent",
-                      color: disabled ? "#B0B8C1" : "#191F28",
+                      background: on ? "var(--c-bg-muted-4)" : "transparent",
+                      color: disabled ? "var(--c-text-5)" : "var(--c-text-b)",
                       fontSize: 14, fontWeight: on ? 800 : 600, textAlign: "left",
                     }}
                   >
-                    <span style={{ width: 16, flexShrink: 0, color: "#3787FF", fontWeight: 900 }}>{on ? "✓" : ""}</span>
+                    <span style={{ width: 16, flexShrink: 0, color: "var(--c-brand)", fontWeight: 900 }}>{on ? "✓" : ""}</span>
                     {lbl}
-                    {disabled && <span style={{ marginLeft: "auto", fontSize: 11, color: "#B0B8C1", fontWeight: 700 }}>없음</span>}
+                    {disabled && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--c-text-5)", fontWeight: 700 }}>없음</span>}
                   </button>
                 );
               })}
@@ -990,7 +992,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       {/* 도구 바 — 펜/형광펜/지우개/OCR · 색상 · 굵기 */}
       <div
         style={{
-          flexShrink: 0, zIndex: 20, background: "#fff", borderBottom: "1px solid #E5E8EB",
+          flexShrink: 0, zIndex: 20, background: "var(--c-bg)", borderBottom: "1px solid var(--c-bg-muted-20)",
           padding: "6px 10px",
           display: "flex", alignItems: "center", gap: 3,
           overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
@@ -1024,8 +1026,9 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                   style={{
                     width: 30, height: 30, borderRadius: 999, flexShrink: 0, padding: 0, cursor: "pointer",
                     background: c,
-                    border: on ? "2.5px solid #fff" : "1px solid rgba(15,23,42,0.10)",
-                    boxShadow: on ? `0 0 0 2px ${c}` : "none",
+                    /* 다크에선 검정 펜(#111827)이 도구 바(#17171C)와 붙어 사라짐 → 테마별 링(--mv-swatch-ring)으로 윤곽 확보. */
+                    border: on ? "2.5px solid var(--c-bg)" : "1px solid var(--mv-swatch-ring)",
+                    boxShadow: on ? `0 0 0 2px ${c}, 0 0 0 3px var(--mv-swatch-ring)` : "none",
                     transition: "box-shadow 0.15s ease",
                   }}
                 />
@@ -1042,10 +1045,10 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     width: 36, height: 34, borderRadius: 9, border: "none", flexShrink: 0, cursor: "pointer",
-                    background: on ? "#E9ECF1" : "transparent", padding: 0,
+                    background: on ? "var(--c-bg-muted-15)" : "transparent", padding: 0,
                   }}
                 >
-                  <span style={{ display: "block", width: 20, height: Math.max(2, Math.round(w * 0.9)), borderRadius: 999, background: on ? "#191F28" : "#8B95A1" }} />
+                  <span style={{ display: "block", width: 20, height: Math.max(2, Math.round(w * 0.9)), borderRadius: 999, background: on ? "var(--c-text-b)" : "var(--c-text-4b)" }} />
                 </button>
               );
             })}
@@ -1056,7 +1059,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
           <>
             {divider}
             <span aria-hidden style={{ display: "inline-flex", width: 30, height: 30, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ display: "inline-block", width: eraserPreview, height: eraserPreview, borderRadius: "50%", background: "#CBD2DA", border: "1px solid #AEB6C0" }} />
+              <span style={{ display: "inline-block", width: eraserPreview, height: eraserPreview, borderRadius: "50%", background: "var(--c-bg-muted-23)", border: "1px solid var(--mv-eraser-ring)" }} />
             </span>
             <input type="range" min={8} max={60} value={eraserWidth} onChange={(e) => setEraserWidth(Number(e.target.value))} style={{ width: 104, flexShrink: 0 }} aria-label="지우개 크기" />
             {divider}
@@ -1066,7 +1069,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               style={{
                 display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
                 height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
-                border: "1px solid #FBD5D5", background: "#FFF5F5", color: "#E03131",
+                border: "1px solid var(--c-danger-line-3)", background: "var(--c-danger-soft-4)", color: "var(--c-danger-i)",
                 fontSize: 12.5, fontWeight: 800, whiteSpace: "nowrap",
               }}
             >
@@ -1079,7 +1082,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         )}
 
         {tool === "ocr" && (
-          <span style={{ marginLeft: 6, fontSize: 12, color: "#8B95A1", fontWeight: 600, whiteSpace: "nowrap" }}>
+          <span style={{ marginLeft: 6, fontSize: 12, color: "var(--c-text-4b)", fontWeight: 600, whiteSpace: "nowrap" }}>
             글자 영역을 드래그하세요
           </span>
         )}
@@ -1092,6 +1095,22 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
            → 시험지가 로드돼도 흰 화면(갤럭시탭 앱 신고). 인라인 스타일은 폴백을 못 쓰므로 클래스로. */
         .mock-viewer-root { height: 100vh; }
         @supports (height: 100dvh) { .mock-viewer-root { height: 100dvh; } }
+        /* 뷰어 전용 테마 변수(라이트 = 원래 값 그대로). 다크는 어두운 팝오버/카드가 배경과 붙지 않게 테두리·진한 그림자,
+           색상 스와치는 흰색 알파 링. */
+        .mock-viewer-root {
+          --mv-pop-border: transparent;
+          --mv-pop-shadow: 0 16px 40px rgba(15,23,42,0.28);
+          --mv-card-shadow: 0 20px 50px rgba(0,0,0,0.25);
+          --mv-swatch-ring: rgba(15,23,42,0.10);
+          --mv-eraser-ring: var(--c-border-strong-3);
+        }
+        [data-theme="dark"] .mock-viewer-root {
+          --mv-pop-border: var(--c-border-strong);
+          --mv-pop-shadow: 0 16px 40px rgba(0,0,0,0.6);
+          --mv-card-shadow: 0 20px 50px rgba(0,0,0,0.6);
+          --mv-swatch-ring: rgba(255,255,255,0.28);
+          --mv-eraser-ring: rgba(255,255,255,0.45);
+        }
         .mock-section-menu {
           animation: mockSectionMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
         }
@@ -1116,7 +1135,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
           >
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
               {pages.length === 0 ? (
-                <p style={{ textAlign: "center", color: "#8A909C", padding: 40 }}>
+                <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 40 }}>
                   {section === "solution" ? "이 시험지는 아직 해설이 등록되지 않았어요." : "등록된 시험지 이미지가 없습니다."}
                 </p>
               ) : (
@@ -1150,12 +1169,12 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
           onClick={() => setShowClearConfirm(false)}
           style={{ position: "fixed", inset: 0, zIndex: 110, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "#fff", borderRadius: 18, padding: "22px 20px 16px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
-            <p style={{ fontSize: 16, fontWeight: 800, color: "#191F28", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
-            <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>이 페이지의 필기를 모두 지울까요?</p>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "var(--c-bg)", borderRadius: 18, padding: "22px 20px 16px", border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
+            <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>이 페이지의 필기를 모두 지울까요?</p>
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => setShowClearConfirm(false)} style={{ flex: 1, height: 48, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
-              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "#EF4444", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>확인</button>
+              <button type="button" onClick={() => setShowClearConfirm(false)} style={{ flex: 1, height: 48, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
+              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>확인</button>
             </div>
           </div>
         </div>
@@ -1164,18 +1183,18 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       {/* OCR 결과 모달 */}
       {ocrText !== null && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => !ocrBusy && setOcrText(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#fff", borderRadius: 18, padding: 20, boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 800, color: "#191F28" }}>OCR 결과</h3>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "var(--c-bg)", borderRadius: 18, padding: 20, border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 800, color: "var(--c-text-b)" }}>OCR 결과</h3>
             {ocrBusy ? (
-              <p style={{ color: "#8A909C", fontSize: 14 }}>글자를 인식하는 중이에요… (처음엔 엔진을 받느라 조금 걸려요)</p>
+              <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>글자를 인식하는 중이에요… (처음엔 엔진을 받느라 조금 걸려요)</p>
             ) : (
-              <textarea readOnly value={ocrText} style={{ width: "100%", minHeight: 160, borderRadius: 12, border: "1px solid #E5E7EB", padding: 12, fontSize: 14, lineHeight: 1.6, color: "#191F28", resize: "vertical", boxSizing: "border-box" }} />
+              <textarea readOnly value={ocrText} style={{ width: "100%", minHeight: 160, borderRadius: 12, border: "1px solid var(--c-border)", padding: 12, fontSize: 14, lineHeight: 1.6, color: "var(--c-text-b)", resize: "vertical", boxSizing: "border-box" }} />
             )}
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               {!ocrBusy && (
-                <button type="button" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#3787FF", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>복사</button>
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-brand)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>복사</button>
               )}
-              <button type="button" disabled={ocrBusy} onClick={() => setOcrText(null)} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800, cursor: ocrBusy ? "default" : "pointer", opacity: ocrBusy ? 0.6 : 1 }}>닫기</button>
+              <button type="button" disabled={ocrBusy} onClick={() => setOcrText(null)} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: ocrBusy ? "default" : "pointer", opacity: ocrBusy ? 0.6 : 1 }}>닫기</button>
             </div>
           </div>
         </div>

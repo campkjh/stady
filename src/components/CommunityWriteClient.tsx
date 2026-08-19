@@ -230,19 +230,19 @@ export default function CommunityWriteClient() {
           </button>
           <div>
             <p className="community-write-eyebrow">STADY</p>
-            <h1 style={{ margin: 0, color: "#111827", fontSize: 24, fontWeight: 700 }}>게시글 작성</h1>
+            <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 24, fontWeight: 700 }}>게시글 작성</h1>
           </div>
         </header>
 
         {message && (
-          <div style={{ border: "1px solid #BFDBFE", background: "#EFF6FF", color: "#1D4ED8", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
+          <div style={{ border: "1px solid var(--c-brand-line-9)", background: "var(--c-brand-soft-4)", color: "var(--c-brand-deep-2)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
             {message}
           </div>
         )}
 
         <form onSubmit={submitPost} className="community-write-panel" style={panelStyle}>
           <div style={{ display: "grid", gap: 8 }}>
-            <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>유형</span>
+            <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>유형</span>
             <div style={{ display: "flex", gap: 8 }}>
               {([
                 { key: "normal", label: "일반 글" },
@@ -272,10 +272,10 @@ export default function CommunityWriteClient() {
           </label>
 
           <div style={{ display: "grid", gap: 8 }}>
-            <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>태그</span>
+            <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>태그</span>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {tags.length === 0 ? (
-                <span style={{ color: "#8A909C", fontSize: 14 }}>선택 가능한 활성 태그가 없습니다.</span>
+                <span style={{ color: "var(--c-text-4)", fontSize: 14 }}>선택 가능한 활성 태그가 없습니다.</span>
               ) : (
                 tags.map((tag) => (
                   <button key={tag.id} type="button" className="community-chip" onClick={() => toggleTag(tag.id)} style={tagChipStyle(tagIds.includes(tag.id))}>
@@ -284,7 +284,7 @@ export default function CommunityWriteClient() {
                 ))
               )}
             </div>
-            <span style={{ color: "#8A909C", fontSize: 13 }}>태그는 여러 개 선택할 수 있으며, 1개 이상 선택을 권장합니다.</span>
+            <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>태그는 여러 개 선택할 수 있으며, 1개 이상 선택을 권장합니다.</span>
           </div>
 
           <label style={labelStyle}>
@@ -305,7 +305,7 @@ export default function CommunityWriteClient() {
 
           {postType === "poll" && (
             <div style={{ display: "grid", gap: 8 }}>
-              <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>투표 항목 (최대 4개)</span>
+              <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>투표 항목 (최대 4개)</span>
               {pollOptions.map((opt, index) => (
                 <div key={index} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
@@ -331,13 +331,13 @@ export default function CommunityWriteClient() {
                   + 항목 추가
                 </button>
               )}
-              <span style={{ color: "#8A909C", fontSize: 13 }}>2~4개 항목을 입력하세요. 1인 1표로 투표됩니다.</span>
+              <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>2~4개 항목을 입력하세요. 1인 1표로 투표됩니다.</span>
             </div>
           )}
 
           <div style={{ display: "grid", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <span style={{ color: "#374151", fontSize: 14, fontWeight: 600 }}>이미지</span>
+              <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>이미지</span>
               <label className="community-image-upload-button" style={{ ...imageUploadButtonStyle, position: "relative", overflow: "hidden" }}>
                 {uploadingImages ? "업로드 중..." : "이미지 추가"}
                 {/* WKWebView(iOS 앱)에서는 display:none 파일 input의 파일 선택창이
@@ -373,7 +373,7 @@ export default function CommunityWriteClient() {
               </div>
             )}
             {uploadedImages.length > 0 && (
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#374151", fontSize: 14, fontWeight: 500 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--c-text-2c)", fontSize: 14, fontWeight: 500 }}>
                 <input type="checkbox" checked={isBlinded} onChange={(event) => setIsBlinded(event.target.checked)} style={{ width: 18, height: 18 }} />
                 사진 블라인드 (터치해야 보이게)
               </label>
@@ -388,8 +388,8 @@ export default function CommunityWriteClient() {
       <style>{`
         .community-write-page {
           min-height: 100vh;
-          background: #fff;
-          color: #111827;
+          background: var(--c-bg);
+          color: var(--c-text);
           padding: 0 16px 28px;
         }
         .community-write-shell {
@@ -413,20 +413,20 @@ export default function CommunityWriteClient() {
           margin: 0;
           transform: translateX(-50%);
           padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
-          background: rgba(255, 255, 255, 0.88);
+          background: var(--c-bg-a88);
           border-bottom: 1px solid rgba(229, 231, 235, 0.8);
           backdrop-filter: blur(18px);
           -webkit-backdrop-filter: blur(18px);
         }
         .community-write-eyebrow {
           margin: 0 0 2px;
-          color: #9ca3af;
+          color: var(--c-text-4c);
           font-size: 11px;
           font-weight: 700;
         }
         .community-back-button:hover {
-          background: #F9FAFB !important;
-          border-color: #D1D5DB !important;
+          background: var(--c-bg-soft) !important;
+          border-color: var(--c-border-strong) !important;
           transform: translateX(-1px);
         }
         .community-back-button:active,
@@ -464,9 +464,9 @@ export default function CommunityWriteClient() {
           position: relative;
           overflow: hidden;
           border-radius: 8px;
-          border: 1px solid #EEF0F3;
+          border: 1px solid var(--c-bg-muted-6);
           aspect-ratio: 1;
-          background: #F9FAFB;
+          background: var(--c-bg-soft);
         }
         .community-image-preview img {
           width: 100%;
@@ -512,10 +512,10 @@ export default function CommunityWriteClient() {
 
 function typeChipStyle(active: boolean) {
   return {
-    border: `1px solid ${active ? "#111827" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "var(--c-inverse)" : "var(--c-border)"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#4B5563",
+    background: active ? "var(--c-inverse)" : "var(--c-bg)",
+    color: active ? "#fff" : "var(--c-text-2d)",
     padding: "9px 16px",
     fontSize: 14,
     fontWeight: 600,
@@ -526,10 +526,10 @@ function typeChipStyle(active: boolean) {
 function tagChipStyle(active: boolean) {
   return {
     flex: "0 0 auto",
-    border: `1px solid ${active ? "#9CA3AF" : "#E5E7EB"}`,
+    border: `1px solid ${active ? "var(--c-border-strong-6)" : "var(--c-border)"}`,
     borderRadius: 999,
-    background: active ? "#111827" : "#fff",
-    color: active ? "#fff" : "#4B5563",
+    background: active ? "var(--c-inverse)" : "var(--c-bg)",
+    color: active ? "#fff" : "var(--c-text-2d)",
     padding: "8px 11px",
     fontSize: 13,
     fontWeight: 600,
@@ -541,10 +541,10 @@ function tagChipStyle(active: boolean) {
 const backButtonStyle = {
   width: 38,
   height: 38,
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 999,
-  background: "#fff",
-  color: "#111827",
+  background: "var(--c-bg)",
+  color: "var(--c-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -555,8 +555,8 @@ const backButtonStyle = {
 const panelStyle = {
   display: "grid",
   gap: 16,
-  borderTop: "1px solid #EEF0F3",
-  borderBottom: "1px solid #EEF0F3",
+  borderTop: "1px solid var(--c-bg-muted-6)",
+  borderBottom: "1px solid var(--c-bg-muted-6)",
   borderRadius: 0,
   background: "transparent",
   padding: "18px 0",
@@ -565,18 +565,18 @@ const panelStyle = {
 const labelStyle = {
   display: "grid",
   gap: 8,
-  color: "#374151",
+  color: "var(--c-text-2c)",
   fontSize: 14,
   fontWeight: 600,
 } as const;
 
 const inputStyle = {
   width: "100%",
-  border: "1px solid #D1D5DB",
+  border: "1px solid var(--c-border-strong)",
   borderRadius: 8,
   padding: "12px 13px",
-  color: "#111827",
-  background: "#fff",
+  color: "var(--c-text)",
+  background: "var(--c-bg)",
   fontSize: 16,
   boxSizing: "border-box",
 } as const;
@@ -585,10 +585,10 @@ const imageUploadButtonStyle = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--c-border)",
   borderRadius: 999,
-  background: "#fff",
-  color: "#111827",
+  background: "var(--c-bg)",
+  color: "var(--c-text)",
   padding: "9px 12px",
   fontSize: 14,
   fontWeight: 700,
@@ -598,7 +598,7 @@ const imageUploadButtonStyle = {
 const submitStyle = {
   border: "none",
   borderRadius: 999,
-  background: "#111827",
+  background: "var(--c-inverse)",
   color: "#fff",
   padding: "13px 14px",
   fontSize: 16,

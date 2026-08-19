@@ -94,8 +94,8 @@ function QuizBookCard({
           position: "relative",
           aspectRatio: "114 / 161",
           borderRadius: 14,
-          background: "#fff",
-          border: "1px solid #F1F3F5",
+          background: "var(--c-bg)",
+          border: "1px solid var(--c-bg-muted-4)",
           boxShadow: "0 4px 14px rgba(15,23,42,0.06)",
           overflow: "hidden",
           containerType: "inline-size",
@@ -108,7 +108,7 @@ function QuizBookCard({
               margin: 0,
               fontSize: "clamp(10px, 9.3cqw, 14px)",
               fontWeight: 500,
-              color: "#8A909C",
+              color: "var(--c-text-4)",
               letterSpacing: "-0.2px",
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -122,7 +122,7 @@ function QuizBookCard({
               margin: "3% 0 0",
               fontSize: "clamp(14px, 13cqw, 21px)",
               fontWeight: 700,
-              color: "#2B313D",
+              color: "var(--c-text-2)",
               lineHeight: 1.18,
               letterSpacing: "-0.4px",
               display: "-webkit-box",
@@ -146,7 +146,7 @@ function QuizBookCard({
             height: "26.7%",
             background: isPopular
               ? "linear-gradient(256deg, #F7EAC6 0%, #FFFDF6 50%, #EAD7A0 100%)"
-              : "linear-gradient(256deg, #EEF1F3 0%, #ffffff 50%, #DBDFE1 100%)",
+              : "linear-gradient(256deg, var(--c-bg-muted-6) 0%, var(--c-bg) 50%, var(--c-bg-muted-21) 100%)",
           }}
         >
           <img
@@ -165,7 +165,7 @@ function QuizBookCard({
               right: "6%",
               padding: "2px 7px",
               borderRadius: 6,
-              background: "#FF3B30",
+              background: "var(--c-danger-e)",
               color: "#fff",
               fontSize: "clamp(8px, 7cqw, 11px)",
               fontWeight: 800,
@@ -193,7 +193,7 @@ function QuizBookCard({
               alt=""
               style={{ width: "clamp(13px, 15cqw, 22px)", height: "auto", display: "block" }}
             />
-            <span style={{ fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, color: "#E59500", letterSpacing: "-0.2px" }}>
+            <span style={{ fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, color: "var(--c-warn-e)", letterSpacing: "-0.2px" }}>
               인기
             </span>
           </div>
@@ -220,8 +220,8 @@ function QuizBookCard({
       </div>
       {/* 카드 아래 정답률 (사용자 응답 집계) */}
       {answerRate != null && (
-        <p style={{ margin: "6px 2px 0", fontSize: 12, fontWeight: 600, color: "#8A909C", letterSpacing: "-0.2px" }}>
-          정답률 <span style={{ color: "#3787FF", fontWeight: 700 }}>{answerRate}%</span>
+        <p style={{ margin: "6px 2px 0", fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", letterSpacing: "-0.2px" }}>
+          정답률 <span style={{ color: "var(--c-brand)", fontWeight: 700 }}>{answerRate}%</span>
         </p>
       )}
     </button>
@@ -254,7 +254,7 @@ const BANNER_ITEMS: BannerItem[] = [
   {
     title: "매일매일\nOX 퀴즈",
     icon: "/icons/banner-ox.svg",
-    bg: "#3787FF",
+    bg: "var(--c-brand)",
     href: "/ox-quiz-intro",
   },
   {
@@ -395,14 +395,14 @@ export default function HomeClient({
   }
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "#fff", overflowX: "clip" }}>
+    <div style={{ width: "100%", minHeight: "100vh", backgroundColor: "var(--c-bg)", overflowX: "clip" }}>
       {/* 첫 진입 평생 1회 온보딩 설문 */}
       <SurveyGate />
       {/* 진입 시 첫 공지 팝업(7일동안 안보기 / 닫기) */}
       <NoticePopup />
       {/* Header */}
-      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {userName ? `${userName}님 안녕하세요!` : "로그인이 필요합니다."}
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -416,9 +416,9 @@ export default function HomeClient({
                 height: 36,
                 padding: "0 11px",
                 borderRadius: 18,
-                border: "1px solid #D6E4FF",
-                background: "#EEF5FF",
-                color: "#1F5EDC",
+                border: "1px solid var(--c-brand-line-3)",
+                background: "var(--c-brand-soft-3)",
+                color: "var(--c-brand-deep)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 5,
@@ -434,7 +434,7 @@ export default function HomeClient({
             </button>
           )}
           <button type="button" onClick={() => router.push("/search")} className="search-btn" aria-label="검색">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -517,7 +517,7 @@ export default function HomeClient({
                     <span style={{
                       position: "absolute", top: -5, right: -8, zIndex: 1,
                       padding: "1px 6px", borderRadius: 20,
-                      backgroundColor: "#FF3B5C", color: "#fff",
+                      backgroundColor: "var(--c-danger-f)", color: "#fff",
                       fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
                       lineHeight: "16px",
                     }}>인기</span>
@@ -526,8 +526,11 @@ export default function HomeClient({
                     width: 60,
                     height: 60,
                     borderRadius: "50%",
+                    /* 카테고리 PNG 아이콘(생윤·사문·윤사)은 #F2F2F6 원판이 박혀 있어
+                       다크에서 원을 어둡게 칠하면 안쪽에 흰 원판이 따로 떠 보인다 →
+                       테마와 무관하게 아이콘 원판색으로 고정(아이콘을 투명 배경으로 재출력하면 var 로 되돌릴 것) */
                     backgroundColor: "#F2F2F6",
-                    border: "1px solid #F3F4F6",
+                    border: "1px solid #F2F2F6",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -539,7 +542,7 @@ export default function HomeClient({
                     )}
                   </div>
                 </div>
-                <span style={{ fontSize: 12, color: "#374151", fontWeight: 500 }}>
+                <span style={{ fontSize: 12, color: "var(--c-text-2c)", fontWeight: 500 }}>
                   {cat.name}
                 </span>
               </button>
@@ -583,7 +586,7 @@ export default function HomeClient({
                   overflow: "hidden",
                   flexShrink: 0,
                   textAlign: "left",
-                  background: banner.bgColor || "#3787FF",
+                  background: banner.bgColor || "var(--c-brand)",
                   scrollSnapAlign: "center",
                   cursor: banner.linkUrl ? "pointer" : "default",
                 }}
@@ -591,7 +594,7 @@ export default function HomeClient({
                 {banner.imageUrl && (
                   <img src={banner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                 )}
-                {!banner.imageUrl && <div style={{ position: "absolute", inset: 0, background: banner.bgColor || "#3787FF" }} />}
+                {!banner.imageUrl && <div style={{ position: "absolute", inset: 0, background: banner.bgColor || "var(--c-brand)" }} />}
               </button>
             ))}
           </div>
@@ -599,7 +602,7 @@ export default function HomeClient({
       )}
 
       {/* Divider */}
-      <div style={{ height: 8, backgroundColor: "#F9FAFB" }} />
+      <div style={{ height: 8, backgroundColor: "var(--c-bg-soft)" }} />
 
       {popupBanner && (
         <div
@@ -626,7 +629,7 @@ export default function HomeClient({
               maxHeight: "calc(100dvh - 28px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))",
               borderRadius: 18,
               overflow: "hidden",
-              background: "#fff",
+              background: "var(--c-bg)",
               boxShadow: "0 20px 60px rgba(15,23,42,0.24)",
               display: "flex",
               flexDirection: "column",
@@ -649,7 +652,7 @@ export default function HomeClient({
                 flex: "1 1 auto",
                 minHeight: 0,
                 border: "none",
-                background: popupBanner.bgColor || "#3787FF",
+                background: popupBanner.bgColor || "var(--c-brand)",
                 textAlign: "left",
                 overflow: "hidden",
                 padding: 0,
@@ -664,7 +667,7 @@ export default function HomeClient({
                     width: "100%",
                     maxHeight: "calc(100dvh - 96px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))",
                     objectFit: "contain",
-                    background: popupBanner.bgColor || "#fff",
+                    background: popupBanner.bgColor || "var(--c-bg)",
                   }}
                 />
               ) : (
@@ -679,11 +682,11 @@ export default function HomeClient({
                 </div>
               )}
             </button>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid #EEF2F7", flex: "0 0 auto" }}>
-              <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "#F9FAFB", color: "#6B7280", fontSize: 14, fontWeight: 800 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--c-bg-muted-9)", flex: "0 0 auto" }}>
+              <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14, fontWeight: 800 }}>
                 3일동안 안보기
               </button>
-              <button type="button" onClick={closePopup} style={{ height: 48, border: "none", background: "#fff", color: "#111827", fontSize: 14, fontWeight: 900 }}>
+              <button type="button" onClick={closePopup} style={{ height: 48, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14, fontWeight: 900 }}>
                 닫기
               </button>
             </div>
@@ -695,7 +698,7 @@ export default function HomeClient({
       <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
         {newQuizzes.length > 0 && (
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>
               새로운 퀴즈
             </h2>
             <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
@@ -715,7 +718,7 @@ export default function HomeClient({
         )}
         {SHOW_STORE_SECTION && (
         <section>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>
             스타디 교재
           </h2>
           <button
@@ -729,8 +732,8 @@ export default function HomeClient({
               width: "100%",
               padding: 12,
               borderRadius: 16,
-              border: "1px solid #EEF0F3",
-              background: "#fff",
+              border: "1px solid var(--c-bg-muted-6)",
+              background: "var(--c-bg)",
               textAlign: "left",
               boxShadow: "0 6px 18px rgba(15,23,42,0.05)",
             }}
@@ -751,15 +754,15 @@ export default function HomeClient({
               <span style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.1, textAlign: "center" }}>2026<br />한국사</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 15, fontWeight: 800, color: "#111", margin: 0 }}>2026 한국사</p>
-              <p style={{ fontSize: 12, color: "#9CA3AF", margin: "3px 0 0", fontWeight: 600 }}>한국사 문제집 · PDF 다운로드</p>
-              <p style={{ fontSize: 16, fontWeight: 900, color: "#3787FF", margin: "8px 0 0" }}>3,900원</p>
+              <p style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text-c)", margin: 0 }}>2026 한국사</p>
+              <p style={{ fontSize: 12, color: "var(--c-text-4c)", margin: "3px 0 0", fontWeight: 600 }}>한국사 문제집 · PDF 다운로드</p>
+              <p style={{ fontSize: 16, fontWeight: 900, color: "var(--c-brand)", margin: "8px 0 0" }}>3,900원</p>
             </div>
             <span style={{
               flexShrink: 0,
               padding: "8px 14px",
               borderRadius: 999,
-              background: "#3787FF",
+              background: "var(--c-brand)",
               color: "#fff",
               fontSize: 13,
               fontWeight: 800,
@@ -773,8 +776,8 @@ export default function HomeClient({
         {mockExams.length > 0 && (
           <section>
             <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", margin: 0 }}>모의고사</h2>
-              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "#8A909C", textDecoration: "none" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", margin: 0 }}>모의고사</h2>
+              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "var(--c-text-4)", textDecoration: "none" }}>
                 전체보기 ›
               </Link>
             </div>
@@ -786,14 +789,14 @@ export default function HomeClient({
       </div>{/* /home-body */}
 
       {/* Footer */}
-      <div style={{ marginTop: 32, padding: "24px 16px 16px", borderTop: "1px solid #F3F4F6" }}>
+      <div style={{ marginTop: 32, padding: "24px 16px 16px", borderTop: "1px solid var(--c-bg-muted)" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", marginBottom: 16 }}>
-          <Link href="/mypage/terms/privacy" style={{ fontSize: 12, color: "#9CA3AF", textDecoration: "none" }}>개인정보처리방침</Link>
-          <Link href="/mypage/terms/service" style={{ fontSize: 12, color: "#9CA3AF", textDecoration: "none" }}>서비스 이용약관</Link>
-          <Link href="/mypage/terms/third-party" style={{ fontSize: 12, color: "#9CA3AF", textDecoration: "none" }}>제3자 제공 동의</Link>
-          <Link href="/withdraw" style={{ fontSize: 12, color: "#D1D5DB", textDecoration: "none" }}>회원탈퇴</Link>
+          <Link href="/mypage/terms/privacy" style={{ fontSize: 12, color: "var(--c-text-4c)", textDecoration: "none" }}>개인정보처리방침</Link>
+          <Link href="/mypage/terms/service" style={{ fontSize: 12, color: "var(--c-text-4c)", textDecoration: "none" }}>서비스 이용약관</Link>
+          <Link href="/mypage/terms/third-party" style={{ fontSize: 12, color: "var(--c-text-4c)", textDecoration: "none" }}>제3자 제공 동의</Link>
+          <Link href="/withdraw" style={{ fontSize: 12, color: "var(--c-text-5d)", textDecoration: "none" }}>회원탈퇴</Link>
         </div>
-        <div style={{ fontSize: 11, color: "#D1D5DB", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 11, color: "var(--c-text-5d)", lineHeight: 1.6 }}>
           <p>스타디 | 대표자 김지승</p>
           <p>사업자 등록 번호 852-06-03583</p>
           <p>경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>

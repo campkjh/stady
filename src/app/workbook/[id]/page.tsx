@@ -198,7 +198,7 @@ export default function WorkbookDetailPage() {
     return (
       <span style={{ display: "inline-flex", gap: 1 }}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <svg key={star} width={size} height={size} viewBox="0 0 24 24" fill={star <= rating ? "#FBBF24" : "#E5E7EB"} stroke="none">
+          <svg key={star} width={size} height={size} viewBox="0 0 24 24" fill={star <= rating ? "var(--c-warn-h)" : "var(--c-border)"} stroke="none">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         ))}
@@ -217,8 +217,8 @@ export default function WorkbookDetailPage() {
   if (!workbook) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16 }}>
-        <p style={{ color: "#9CA3AF" }}>문제집을 찾을 수 없습니다.</p>
-        <button onClick={() => router.back()} className="press" style={{ color: "#3787FF", fontWeight: 600, background: "none", border: "none" }}>
+        <p style={{ color: "var(--c-text-4c)" }}>문제집을 찾을 수 없습니다.</p>
+        <button onClick={() => router.back()} className="press" style={{ color: "var(--c-brand)", fontWeight: 600, background: "none", border: "none" }}>
           돌아가기
         </button>
       </div>
@@ -226,7 +226,7 @@ export default function WorkbookDetailPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg)", display: "flex", flexDirection: "column" }}>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -247,9 +247,9 @@ export default function WorkbookDetailPage() {
       )}
 
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "#fff", display: "flex", alignItems: "center", padding: "12px 10px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "12px 10px" }}>
         <button onClick={() => router.back()} className="press" style={{ padding: 4, background: "none", border: "none" }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
@@ -262,7 +262,7 @@ export default function WorkbookDetailPage() {
           aspectRatio: "16/9",
           borderRadius: 16,
           overflow: "hidden",
-          backgroundColor: "#3787FF",
+          backgroundColor: "var(--c-brand)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -277,10 +277,10 @@ export default function WorkbookDetailPage() {
 
       {/* Title & Info */}
       <div style={{ padding: "0 16px", marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111", marginBottom: 4 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4 }}>
           {workbook.title}
         </h1>
-        <p style={{ fontSize: 14, color: "#9CA3AF" }}>
+        <p style={{ fontSize: 14, color: "var(--c-text-4c)" }}>
           {myAttemptCount}문항/{workbook.totalQuestions}문항
         </p>
       </div>
@@ -288,50 +288,50 @@ export default function WorkbookDetailPage() {
       {/* Stats */}
       <div style={{ padding: "0 16px", marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 10 }}>
-          <div style={{ flex: 1, backgroundColor: "#F9FAFB", borderRadius: 14, padding: "16px 0", textAlign: "center" }}>
-            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 4 }}>유저 평균점수</p>
-            <p style={{ fontSize: 24, fontWeight: 700, color: "#111" }}>{avgScore}점</p>
+          <div style={{ flex: 1, backgroundColor: "var(--c-bg-soft)", borderRadius: 14, padding: "16px 0", textAlign: "center" }}>
+            <p style={{ fontSize: 12, color: "var(--c-text-4c)", marginBottom: 4 }}>유저 평균점수</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-c)" }}>{avgScore}점</p>
           </div>
-          <div style={{ flex: 1, backgroundColor: "#F9FAFB", borderRadius: 14, padding: "16px 0", textAlign: "center" }}>
-            <p style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 4 }}>최고점수</p>
-            <p style={{ fontSize: 24, fontWeight: 700, color: "#3787FF" }}>{maxScore}점</p>
+          <div style={{ flex: 1, backgroundColor: "var(--c-bg-soft)", borderRadius: 14, padding: "16px 0", textAlign: "center" }}>
+            <p style={{ fontSize: 12, color: "var(--c-text-4c)", marginBottom: 4 }}>최고점수</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: "var(--c-brand)" }}>{maxScore}점</p>
           </div>
         </div>
       </div>
 
       {/* Ranking */}
       <div style={{ padding: "0 16px", marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 12 }}>랭킹</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)", marginBottom: 12 }}>랭킹</h2>
         {ranking.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#9CA3AF", fontSize: 14, padding: "32px 0" }}>
+          <p style={{ textAlign: "center", color: "var(--c-text-4c)", fontSize: 14, padding: "32px 0" }}>
             아직 도전한 유저가 없습니다.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {ranking.map((entry, index) => (
-              <div key={entry.userId} style={{ display: "flex", alignItems: "center", gap: 12, backgroundColor: "#F9FAFB", borderRadius: 14, padding: "12px 16px" }}>
+              <div key={entry.userId} style={{ display: "flex", alignItems: "center", gap: 12, backgroundColor: "var(--c-bg-soft)", borderRadius: 14, padding: "12px 16px" }}>
                 <span style={{
                   fontSize: 13, fontWeight: 700, width: 32, textAlign: "center",
-                  color: index === 0 ? "#EAB308" : index === 1 ? "#9CA3AF" : index === 2 ? "#D97706" : "#6B7280",
+                  color: index === 0 ? "var(--c-warn-f)" : index === 1 ? "var(--c-text-4c)" : index === 2 ? "var(--c-warn-b)" : "var(--c-text-3)",
                 }}>
                   {index + 1}등
                 </span>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "#E5E7EB", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "var(--c-border)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   {entry.avatar ? (
                     <img src={entry.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4c)" strokeWidth="2">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   )}
                 </div>
-                <p style={{ flex: 1, fontSize: 14, fontWeight: 500, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ flex: 1, fontSize: 14, fontWeight: 500, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {entry.nickname}
                 </p>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{entry.score}점</p>
-                  <p style={{ fontSize: 12, color: "#9CA3AF" }}>{formatTime(entry.timeTaken)}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-c)" }}>{entry.score}점</p>
+                  <p style={{ fontSize: 12, color: "var(--c-text-4c)" }}>{formatTime(entry.timeTaken)}</p>
                 </div>
               </div>
             ))}
@@ -342,13 +342,13 @@ export default function WorkbookDetailPage() {
       {/* Reviews Section */}
       <div style={{ padding: "0 16px", marginBottom: 100 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)" }}>
             후기 ({reviews.length})
           </h2>
           {reviews.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {renderStars(Math.round(Number(avgRating)))}
-              <span style={{ fontSize: 13, color: "#6B7280", marginLeft: 4 }}>{avgRating}</span>
+              <span style={{ fontSize: 13, color: "var(--c-text-3)", marginLeft: 4 }}>{avgRating}</span>
             </div>
           )}
         </div>
@@ -357,42 +357,42 @@ export default function WorkbookDetailPage() {
           <div style={{
             textAlign: "center",
             padding: "32px 0",
-            backgroundColor: "#F9FAFB",
+            backgroundColor: "var(--c-bg-soft)",
             borderRadius: 14,
           }}>
-            <p style={{ color: "#9CA3AF", fontSize: 14 }}>로그인 후 확인할 수 있습니다</p>
+            <p style={{ color: "var(--c-text-4c)", fontSize: 14 }}>로그인 후 확인할 수 있습니다</p>
           </div>
         ) : reviews.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#9CA3AF", fontSize: 14, padding: "32px 0" }}>
+          <p style={{ textAlign: "center", color: "var(--c-text-4c)", fontSize: 14, padding: "32px 0" }}>
             아직 작성된 후기가 없습니다.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {reviews.map((review) => (
-              <div key={review.id} style={{ backgroundColor: "#F9FAFB", borderRadius: 14, padding: "14px 16px" }}>
+              <div key={review.id} style={{ backgroundColor: "var(--c-bg-soft)", borderRadius: 14, padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                   <div style={{
-                    width: 32, height: 32, borderRadius: "50%", backgroundColor: "#E5E7EB",
+                    width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--c-border)",
                     overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>
                     {review.user.avatar ? (
                       <img src={review.user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4c)" strokeWidth="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{review.user.nickname}</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-c)" }}>{review.user.nickname}</p>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       {renderStars(review.rating, 12)}
-                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>{formatDate(review.createdAt)}</span>
+                      <span style={{ fontSize: 11, color: "var(--c-text-4c)" }}>{formatDate(review.createdAt)}</span>
                     </div>
                   </div>
                 </div>
-                <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>{review.content}</p>
+                <p style={{ fontSize: 13, color: "var(--c-text-2c)", lineHeight: 1.5 }}>{review.content}</p>
               </div>
             ))}
           </div>
@@ -406,10 +406,10 @@ export default function WorkbookDetailPage() {
               width: "100%",
               marginTop: 12,
               padding: "12px 0",
-              backgroundColor: "#fff",
-              border: "1px solid #3787FF",
+              backgroundColor: "var(--c-bg)",
+              border: "1px solid var(--c-brand)",
               borderRadius: 14,
-              color: "#3787FF",
+              color: "var(--c-brand)",
               fontSize: 14,
               fontWeight: 600,
               cursor: "pointer",
@@ -431,12 +431,12 @@ export default function WorkbookDetailPage() {
         >
           <div
             style={{
-              backgroundColor: "#fff", borderRadius: 20, padding: 24,
+              backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 24,
               width: "100%", maxWidth: 360,
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 20, textAlign: "center" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 20, textAlign: "center" }}>
               후기 작성
             </h3>
 
@@ -448,7 +448,7 @@ export default function WorkbookDetailPage() {
                   onClick={() => setReviewRating(star)}
                   style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
                 >
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= reviewRating ? "#FBBF24" : "#E5E7EB"} stroke="none">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= reviewRating ? "var(--c-warn-h)" : "var(--c-border)"} stroke="none">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </button>
@@ -465,9 +465,9 @@ export default function WorkbookDetailPage() {
                 minHeight: 100,
                 padding: 12,
                 borderRadius: 12,
-                border: "1px solid #E5E7EB",
+                border: "1px solid var(--c-border)",
                 fontSize: 14,
-                color: "#111",
+                color: "var(--c-text-c)",
                 resize: "vertical",
                 outline: "none",
                 boxSizing: "border-box",
@@ -481,8 +481,8 @@ export default function WorkbookDetailPage() {
                 className="press"
                 style={{
                   flex: 1, padding: "12px 0", borderRadius: 12,
-                  backgroundColor: "#F3F4F6", border: "none",
-                  fontSize: 14, fontWeight: 600, color: "#6B7280", cursor: "pointer",
+                  backgroundColor: "var(--c-bg-muted)", border: "none",
+                  fontSize: 14, fontWeight: 600, color: "var(--c-text-3)", cursor: "pointer",
                 }}
               >
                 취소
@@ -493,7 +493,7 @@ export default function WorkbookDetailPage() {
                 className="press"
                 style={{
                   flex: 1, padding: "12px 0", borderRadius: 12,
-                  backgroundColor: reviewContent.trim() ? "#3787FF" : "#93C5FD",
+                  backgroundColor: reviewContent.trim() ? "var(--c-brand)" : "var(--c-brand-line-10)",
                   border: "none",
                   fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer",
                   opacity: reviewSubmitting ? 0.6 : 1,
@@ -507,7 +507,7 @@ export default function WorkbookDetailPage() {
       )}
 
       {/* Bottom Actions */}
-      <div style={{ position: "sticky", bottom: 0, backgroundColor: "#fff", borderTop: "1px solid #F3F4F6", padding: "12px 16px", display: "flex", gap: 10 }}>
+      <div style={{ position: "sticky", bottom: 0, backgroundColor: "var(--c-bg)", borderTop: "1px solid var(--c-bg-muted)", padding: "12px 16px", display: "flex", gap: 10 }}>
         <button
           onClick={handleBookmarkToggle}
           className="press"
@@ -515,15 +515,15 @@ export default function WorkbookDetailPage() {
             width: 48,
             height: 48,
             borderRadius: 14,
-            border: bookmarked ? "none" : "1px solid #E5E7EB",
-            backgroundColor: bookmarked ? "#3787FF" : "#fff",
+            border: bookmarked ? "none" : "1px solid var(--c-border)",
+            backgroundColor: bookmarked ? "var(--c-brand)" : "var(--c-bg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 30 30" fill={bookmarked ? "#fff" : "none"} stroke={bookmarked ? "#fff" : "#9CA3AF"} strokeWidth="1.5">
+          <svg width="20" height="20" viewBox="0 0 30 30" fill={bookmarked ? "#fff" : "none"} stroke={bookmarked ? "#fff" : "var(--c-text-4c)"} strokeWidth="1.5">
             <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z"/>
           </svg>
         </button>
@@ -533,7 +533,7 @@ export default function WorkbookDetailPage() {
           style={{
             flex: 1,
             height: 48,
-            backgroundColor: "#3787FF",
+            backgroundColor: "var(--c-brand)",
             color: "#fff",
             borderRadius: 14,
             fontSize: 16,

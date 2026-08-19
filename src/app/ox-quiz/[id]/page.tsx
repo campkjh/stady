@@ -535,9 +535,9 @@ export default function OxQuizSolvePage() {
       <header
         style={{
           position: "relative", zIndex: 20, flexShrink: 0,
-          background: "rgba(255,255,255,0.92)",
+          background: "var(--c-bg-a92)",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-          borderBottom: "1px solid #EDF0F3",
+          borderBottom: "1px solid var(--c-bg-muted-8)",
           boxShadow: "0 1px 12px rgba(15,23,42,0.04)",
         }}
       >
@@ -550,19 +550,19 @@ export default function OxQuizSolvePage() {
             className="press"
             style={{ ...hIconBtn, background: "none", border: "none" }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B313D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{
-              margin: 0, fontSize: 14.5, fontWeight: 800, color: "#191F28", letterSpacing: "-0.3px",
+              margin: 0, fontSize: 14.5, fontWeight: 800, color: "var(--c-text-b)", letterSpacing: "-0.3px",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {quiz.title}
             </p>
             <p style={{
-              margin: "1px 0 0", fontSize: 11.5, fontWeight: 600, color: "#9CA3AF",
+              margin: "1px 0 0", fontSize: 11.5, fontWeight: 600, color: "var(--c-text-4c)",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {[
@@ -581,7 +581,7 @@ export default function OxQuizSolvePage() {
             className="press"
             style={{ ...hIconBtn, background: "none", border: "none" }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B313D" strokeWidth="2.2" strokeLinecap="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-2)" strokeWidth="2.2" strokeLinecap="round">
               <line x1="4" y1="7" x2="20" y2="7" />
               <line x1="4" y1="12" x2="20" y2="12" />
               <line x1="4" y1="17" x2="20" y2="17" />
@@ -593,17 +593,17 @@ export default function OxQuizSolvePage() {
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 8px" }}>
           <button type="button" aria-label="이전 문제" onClick={goPrev} disabled={currentIndex === 0} className="press"
             style={{ ...hRoundBtn, opacity: currentIndex === 0 ? 0.28 : 1 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4E5968" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#191F28", letterSpacing: "-0.3px", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-b)", letterSpacing: "-0.3px", fontVariantNumeric: "tabular-nums" }}>
             {currentIndex + 1}
-            <span style={{ color: "#B0B8C1", fontWeight: 700 }}> / {filteredQuestions.length}</span>
+            <span style={{ color: "var(--c-text-5)", fontWeight: 700 }}> / {filteredQuestions.length}</span>
           </span>
           <button type="button" aria-label="다음 문제" onClick={goNext} disabled={currentIndex >= filteredQuestions.length - 1} className="press"
             style={{ ...hRoundBtn, opacity: currentIndex >= filteredQuestions.length - 1 ? 0.28 : 1 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4E5968" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>
@@ -613,7 +613,7 @@ export default function OxQuizSolvePage() {
               <button
                 type="button" aria-label="문제 순서 섞기"
                 onClick={() => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); }}
-                className="press" style={hToolBtn(shuffleOn, "#3787FF", "#EEF5FF")}
+                className="press" style={hToolBtn(shuffleOn, "var(--c-brand)", "var(--c-brand-soft-3)")}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="16 3 21 3 21 8" />
@@ -635,7 +635,7 @@ export default function OxQuizSolvePage() {
                 className="press"
                 style={hToolBtn(
                   !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
-                  "#B26A00", "#FFF7E8"
+                  "var(--c-warn-c)", "var(--c-warn-soft-3)"
                 )}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -654,7 +654,7 @@ export default function OxQuizSolvePage() {
                 }
                 toggleBookmark();
               }}
-              className="press" style={hToolBtn(isBookmarked, "#3787FF", "#EEF5FF")}
+              className="press" style={hToolBtn(isBookmarked, "var(--c-brand)", "var(--c-brand-soft-3)")}
             >
               <svg width="16" height="16" viewBox="0 0 30 30" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" />
@@ -666,9 +666,9 @@ export default function OxQuizSolvePage() {
         {/* 3행: 필터 칩 */}
         <div style={{ display: "flex", gap: 6, padding: "0 12px 10px" }}>
           {[
-            { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "#2B313D", bg: "#EEF0F3" },
-            { key: "correct" as TabFilter, label: "맞은 문제", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "#1F5EDC", bg: "#EAF2FF" },
-            { key: "wrong" as TabFilter, label: "틀린 문제", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "#D93A4E", bg: "#FFEFF1" },
+            { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "var(--c-text-2)", bg: "var(--c-bg-muted-6)" },
+            { key: "correct" as TabFilter, label: "맞은 문제", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "var(--c-brand-deep)", bg: "var(--c-brand-soft-6)" },
+            { key: "wrong" as TabFilter, label: "틀린 문제", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "var(--c-danger-l)", bg: "var(--c-danger-soft-5)" },
           ].map((tab) => {
             const on = tabFilter === tab.key;
             return (
@@ -680,9 +680,9 @@ export default function OxQuizSolvePage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
                   height: 30, padding: "0 11px 0 8px", borderRadius: 999, cursor: "pointer",
-                  border: `1px solid ${on ? "transparent" : "#EDF0F3"}`,
-                  background: on ? tab.bg : "#fff",
-                  color: on ? tab.tint : "#8B95A1",
+                  border: `1px solid ${on ? "transparent" : "var(--c-bg-muted-8)"}`,
+                  background: on ? tab.bg : "var(--c-bg)",
+                  color: on ? tab.tint : "var(--c-text-4b)",
                   fontSize: 12.5, fontWeight: 800, letterSpacing: "-0.2px",
                   transition: "background 0.16s ease, color 0.16s ease, opacity 0.16s ease",
                 }}
@@ -703,7 +703,7 @@ export default function OxQuizSolvePage() {
         </div>
 
         {/* 진행 게이지 */}
-        <div style={{ height: 3, background: "#F1F3F5" }}>
+        <div style={{ height: 3, background: "var(--c-bg-muted-4)" }}>
           <div
             style={{
               height: "100%",
@@ -740,8 +740,8 @@ export default function OxQuizSolvePage() {
                   {currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() && (
                     <span style={{
                       display: "inline-flex",
-                      fontSize: 12, fontWeight: 700, color: "#3787FF",
-                      background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                      fontSize: 12, fontWeight: 700, color: "var(--c-brand)",
+                      background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "3px 10px",
                     }}>
                       {currentQuestion.section}
                     </span>
@@ -749,8 +749,8 @@ export default function OxQuizSolvePage() {
                   {currentQuestion.examYearMonth && (
                     <span style={{
                       display: "inline-flex",
-                      fontSize: 12, fontWeight: 700, color: "#374151",
-                      background: "#fff", border: "1px solid #D1D5DB", borderRadius: 6, padding: "3px 10px",
+                      fontSize: 12, fontWeight: 700, color: "var(--c-text-2c)",
+                      background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", borderRadius: 6, padding: "3px 10px",
                     }}>
                       {currentQuestion.examYearMonth}
                     </span>
@@ -759,8 +759,8 @@ export default function OxQuizSolvePage() {
                   {!!answered && currentQuestion.answerRate != null && (
                     <span style={{
                       display: "inline-flex",
-                      fontSize: 12, fontWeight: 700, color: "#374151",
-                      background: "#fff", border: "1px solid #D1D5DB", borderRadius: 6, padding: "3px 10px",
+                      fontSize: 12, fontWeight: 700, color: "var(--c-text-2c)",
+                      background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", borderRadius: 6, padding: "3px 10px",
                     }}>
                       정답률 {currentQuestion.answerRate}%
                     </span>
@@ -768,8 +768,8 @@ export default function OxQuizSolvePage() {
                   {!!answered && currentQuestion.answerRate != null && currentQuestion.answerRate < HARD_ANSWER_RATE && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      fontSize: 12, fontWeight: 800, color: "#F93052",
-                      background: "#FEF2F2", borderRadius: 6, padding: "3px 10px",
+                      fontSize: 12, fontWeight: 800, color: "var(--c-danger-g)",
+                      background: "var(--c-danger-soft)", borderRadius: 6, padding: "3px 10px",
                     }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/icons/fire-hard.svg" alt="" style={{ width: 14, height: 14 }} />
@@ -801,17 +801,17 @@ export default function OxQuizSolvePage() {
                   transition: "transform 0.2s ease, opacity 0.2s ease",
                   backgroundColor: answered
                     ? answered.selected === true
-                      ? answered.isCorrect ? "#E8F0FE" : "#FFE0E0"
-                      : "#F9FAFB"
-                    : "#E8F0FE",
+                      ? answered.isCorrect ? "var(--c-brand-soft)" : "var(--c-danger-soft-2)"
+                      : "var(--c-bg-soft)"
+                    : "var(--c-brand-soft)",
                   opacity: answered && answered.selected !== true ? 0.5 : 1,
                   boxShadow: answered && answered.selected === true
-                    ? answered.isCorrect ? "inset 0 0 0 2px #3787FF" : "inset 0 0 0 2px #E85D5D"
+                    ? answered.isCorrect ? "inset 0 0 0 2px var(--c-brand)" : "inset 0 0 0 2px var(--c-danger-b)"
                     : "none",
                 }}
               >
                 <img src="/icons/quiz-o.svg" alt="O" style={{ width: 64, height: 64 }} />
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#374151" }}>그렇다</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--c-text-2c)" }}>그렇다</span>
               </button>
 
               <button
@@ -830,17 +830,17 @@ export default function OxQuizSolvePage() {
                   transition: "transform 0.2s ease, opacity 0.2s ease",
                   backgroundColor: answered
                     ? answered.selected === false
-                      ? answered.isCorrect ? "#E8F0FE" : "#FFE0E0"
-                      : "#F9FAFB"
-                    : "#FFE0E0",
+                      ? answered.isCorrect ? "var(--c-brand-soft)" : "var(--c-danger-soft-2)"
+                      : "var(--c-bg-soft)"
+                    : "var(--c-danger-soft-2)",
                   opacity: answered && answered.selected !== false ? 0.5 : 1,
                   boxShadow: answered && answered.selected === false
-                    ? answered.isCorrect ? "inset 0 0 0 2px #3787FF" : "inset 0 0 0 2px #E85D5D"
+                    ? answered.isCorrect ? "inset 0 0 0 2px var(--c-brand)" : "inset 0 0 0 2px var(--c-danger-b)"
                     : "none",
                 }}
               >
                 <img src="/icons/quiz-x.svg" alt="X" style={{ width: 64, height: 64 }} />
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#374151" }}>아니다</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--c-text-2c)" }}>아니다</span>
               </button>
             </div>
 
@@ -859,7 +859,7 @@ export default function OxQuizSolvePage() {
                 <p style={{
                   fontSize: 28,
                   fontWeight: 900,
-                  color: answered.isCorrect ? "#3787FF" : "#E85D5D",
+                  color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)",
                 }}>
                   {answered.isCorrect ? "정답" : "오답"}
                 </p>
@@ -868,10 +868,10 @@ export default function OxQuizSolvePage() {
                     width: "100%",
                     padding: "14px 16px",
                     borderRadius: 12,
-                    backgroundColor: "#F9FAFB",
+                    backgroundColor: "var(--c-bg-soft)",
                     marginTop: 4,
                   }}>
-                    <p style={{ fontSize: 15.5, color: "#4B5563", lineHeight: 1.65 }}>
+                    <p style={{ fontSize: 15.5, color: "var(--c-text-2d)", lineHeight: 1.65 }}>
                       {currentQuestion.explanation}
                     </p>
                   </div>
@@ -913,17 +913,17 @@ export default function OxQuizSolvePage() {
             bottom: 0,
             width: "80%",
             maxWidth: 320,
-            backgroundColor: "#fff",
+            backgroundColor: "var(--c-bg)",
             overflowY: "auto",
             animation: "slideInRight 0.25s ease",
             boxShadow: "-4px 0 24px rgba(0,0,0,0.1)",
           }}>
             {/* Drawer Header */}
-            <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #F3F4F6" }}>
+            <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700 }}>문제 목록</h3>
                 <button type="button" onClick={() => setShowList(false)} style={{ background: "none", border: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -937,18 +937,18 @@ export default function OxQuizSolvePage() {
                   width: "100%",
                   height: 40,
                   borderRadius: 10,
-                  backgroundColor: "#F0F5FF",
+                  backgroundColor: "var(--c-brand-soft-5)",
                   border: "none",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#3787FF",
+                  color: "var(--c-brand)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3787FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
                 다른 문제 풀러가기
@@ -973,12 +973,12 @@ export default function OxQuizSolvePage() {
                         padding: "10px 12px 4px", marginTop: fIdx === 0 ? 0 : 8,
                       }}>
                         <span style={{
-                          fontSize: 12, fontWeight: 700, color: "#3787FF",
-                          background: "#EBF3FF", borderRadius: 6, padding: "3px 10px",
+                          fontSize: 12, fontWeight: 700, color: "var(--c-brand)",
+                          background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "3px 10px",
                         }}>
                           {q.section}
                         </span>
-                        <span style={{ fontSize: 11, color: "#9CA3AF" }}>{sectionTotal}문항</span>
+                        <span style={{ fontSize: 11, color: "var(--c-text-4c)" }}>{sectionTotal}문항</span>
                       </div>
                     )}
                     <button
@@ -992,7 +992,7 @@ export default function OxQuizSolvePage() {
                         gap: 12,
                         width: "100%",
                         padding: "12px",
-                        background: currentIndex === fIdx ? "#F0F5FF" : "none",
+                        background: currentIndex === fIdx ? "var(--c-brand-soft-5)" : "none",
                         border: "none",
                         borderRadius: 10,
                         textAlign: "left",
@@ -1008,16 +1008,16 @@ export default function OxQuizSolvePage() {
                         fontSize: 12,
                         fontWeight: 700,
                         color: "#fff",
-                        backgroundColor: status === "correct" ? "#3787FF" : status === "wrong" ? "#E85D5D" : "#D1D5DB",
+                        backgroundColor: status === "correct" ? "var(--c-brand)" : status === "wrong" ? "var(--c-danger-b)" : "var(--c-border-strong)",
                         flexShrink: 0,
                       }}>
                         {q.order}
                       </span>
-                      <span style={{ fontSize: 13, color: "#111", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: 13, color: "var(--c-text-c)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {q.question}
                       </span>
                       {ans && (
-                        <span style={{ fontSize: 12, color: ans.selected ? "#3787FF" : "#E85D5D", fontWeight: 600, flexShrink: 0 }}>
+                        <span style={{ fontSize: 12, color: ans.selected ? "var(--c-brand)" : "var(--c-danger-b)", fontWeight: 600, flexShrink: 0 }}>
                           {ans.selected ? "O" : "X"}
                         </span>
                       )}
@@ -1030,20 +1030,20 @@ export default function OxQuizSolvePage() {
             {/* Drawer Footer */}
             <div style={{
               padding: "12px 16px",
-              borderTop: "1px solid #F3F4F6",
+              borderTop: "1px solid var(--c-bg-muted)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               fontSize: 13,
-              color: "#9CA3AF",
+              color: "var(--c-text-4c)",
             }}>
               <span>풀은 문제 {answers.size}/{quiz.questions.length}</span>
-              <span style={{ color: "#3787FF", fontWeight: 600 }}>
+              <span style={{ color: "var(--c-brand)", fontWeight: 600 }}>
                 정답률 {answers.size > 0 ? Math.round(Array.from(answers.values()).filter(a => a.isCorrect).length / answers.size * 100) : 0}%
               </span>
             </div>
             {/* 노트 기능 켜기/끄기(끈 상태에서 되돌릴 수 있는 유일한 자리) */}
-            <div style={{ padding: "10px 16px 16px", borderTop: "1px solid #F3F4F6" }}>
+            <div style={{ padding: "10px 16px 16px", borderTop: "1px solid var(--c-bg-muted)" }}>
               <button
                 type="button"
                 onClick={() => {
@@ -1051,7 +1051,7 @@ export default function OxQuizSolvePage() {
                   setNoteEnabled(next);
                   try { localStorage.setItem("quiz_note_off", next ? "0" : "1"); } catch {}
                 }}
-                style={{ background: "none", border: "none", fontSize: 13, fontWeight: 700, color: "#6B7280", cursor: "pointer", padding: 0 }}
+                style={{ background: "none", border: "none", fontSize: 13, fontWeight: 700, color: "var(--c-text-3)", cursor: "pointer", padding: 0 }}
               >
                 {noteEnabled ? "퀴즈 노트 기능 끄기" : "퀴즈 노트 기능 켜기"}
               </button>
@@ -1141,7 +1141,7 @@ export default function OxQuizSolvePage() {
           gap: 8,
           animation: "toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-success-f)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
           {bookmarkToast}
@@ -1159,7 +1159,7 @@ export default function OxQuizSolvePage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 320, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,0.5)" }} onClick={() => setNoteOpen(false)} />
           <div style={{
-            position: "relative", width: "100%", maxWidth: 720, background: "#fff",
+            position: "relative", width: "100%", maxWidth: 720, background: "var(--c-bg)",
             borderRadius: "20px 20px 0 0", padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
             boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
           }}>
@@ -1171,14 +1171,14 @@ export default function OxQuizSolvePage() {
               placeholder={"메모..."}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid #E5E7EB", background: "#fff", color: "#4B5563", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
                 닫기
               </button>
               <button
                 type="button"
                 onClick={saveNote}
                 disabled={noteSaving}
-                style={{ flex: 2, height: 46, borderRadius: 12, border: "none", background: "#3787FF", color: "#fff", fontSize: 15, fontWeight: 800, cursor: noteSaving ? "default" : "pointer", opacity: noteSaving ? 0.6 : 1 }}
+                style={{ flex: 2, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: noteSaving ? "default" : "pointer", opacity: noteSaving ? 0.6 : 1 }}
               >
                 {noteSaving ? "저장 중..." : "저장"}
               </button>
@@ -1194,8 +1194,8 @@ export default function OxQuizSolvePage() {
           subtitle="이 문제에 저장한 노트도 함께 삭제돼요."
           onClose={() => setShowNoteLossConfirm(false)}
           buttons={[
-            { label: "취소하기", bgColor: "#E85D5D", color: "#fff", onClick: toggleBookmark },
-            { label: "그대로 두기", bgColor: "#F2F3F5", color: "#51535C", onClick: () => setShowNoteLossConfirm(false) },
+            { label: "취소하기", bgColor: "var(--c-danger-b)", color: "#fff", onClick: toggleBookmark },
+            { label: "그대로 두기", bgColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", onClick: () => setShowNoteLossConfirm(false) },
           ]}
         />
       )}
@@ -1208,7 +1208,7 @@ export default function OxQuizSolvePage() {
           onClose={() => setShowShuffleConfirm(false)}
           buttons={[
             { label: shuffleOn ? "되돌리기" : "섞기", onClick: applyShuffleToggle },
-            { label: "취소", bgColor: "#F2F3F5", color: "#51535C", onClick: () => setShowShuffleConfirm(false) },
+            { label: "취소", bgColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", onClick: () => setShowShuffleConfirm(false) },
           ]}
         />
       )}
@@ -1216,13 +1216,13 @@ export default function OxQuizSolvePage() {
       {showExitConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowExitConfirm(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "#fff", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
+          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
             <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2B313D" }}>정말로 나가시겠습니까?</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말로 나가시겠습니까?</h2>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
-              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#3787FF", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
+              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
+              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
             </div>
           </div>
           <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
@@ -1249,8 +1249,8 @@ export default function OxQuizSolvePage() {
             },
             {
               label: "처음부터 풀기",
-              bgColor: "#F2F3F5",
-              color: "#51535C",
+              bgColor: "var(--c-bg-muted-3)",
+              color: "var(--c-text-3c)",
               onClick: () => {
                 if (progressKey) {
                   fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
@@ -1267,20 +1267,20 @@ export default function OxQuizSolvePage() {
       {result && (
         <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.45)" }} onClick={() => setResult(null)} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 340, background: "#fff", borderRadius: 22, padding: "26px 22px 18px", textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.2)", animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#8A909C" }}>퀴즈 완료!</p>
-            <p style={{ margin: "10px 0 2px", fontSize: 44, fontWeight: 800, color: "#3787FF", lineHeight: 1 }}>{result.scorePct}%</p>
-            <p style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600, color: "#4B5563" }}>정답률 · {result.correct}/{result.total}개 정답</p>
+          <div style={{ position: "relative", width: "100%", maxWidth: 340, background: "var(--c-bg)", borderRadius: 22, padding: "26px 22px 18px", textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.2)", animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-4)" }}>퀴즈 완료!</p>
+            <p style={{ margin: "10px 0 2px", fontSize: 44, fontWeight: 800, color: "var(--c-brand)", lineHeight: 1 }}>{result.scorePct}%</p>
+            <p style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600, color: "var(--c-text-2d)" }}>정답률 · {result.correct}/{result.total}개 정답</p>
             {result.topPercent != null && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 999, background: "#FFF4E5", marginBottom: 20 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 999, background: "var(--c-warn-soft-4)", marginBottom: 20 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/icons/fire-hard.svg" alt="" style={{ width: 18, height: 18 }} />
-                <span style={{ fontSize: 15, fontWeight: 800, color: "#F97316" }}>상위 {result.topPercent}%</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--c-warn-g)" }}>상위 {result.topPercent}%</span>
               </div>
             )}
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => setResult(null)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#F2F3F5", color: "#51535C", fontSize: 16, fontWeight: 700, border: "none" }}>다시 보기</button>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "#3787FF", color: "#fff", fontSize: 16, fontWeight: 700, border: "none" }}>목록으로</button>
+              <button type="button" onClick={() => setResult(null)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 16, fontWeight: 700, border: "none" }}>다시 보기</button>
+              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 16, fontWeight: 700, border: "none" }}>목록으로</button>
             </div>
           </div>
           <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
@@ -1299,7 +1299,7 @@ const hIconBtn: React.CSSProperties = {
 const hRoundBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
   width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-  border: "1px solid #E9ECEF", background: "#fff", cursor: "pointer", padding: 0,
+  border: "1px solid var(--c-bg-muted-17)", background: "var(--c-bg)", cursor: "pointer", padding: 0,
 };
 
 // 섞기/노트/책갈피 같은 토글형 도구 버튼(활성 시 색·배경 강조).
@@ -1307,9 +1307,9 @@ function hToolBtn(active: boolean, tint: string, bg: string): React.CSSPropertie
   return {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     width: 32, height: 32, borderRadius: 10, flexShrink: 0, cursor: "pointer", padding: 0,
-    border: `1px solid ${active ? "transparent" : "#EDF0F3"}`,
-    background: active ? bg : "#fff",
-    color: active ? tint : "#8B95A1",
+    border: `1px solid ${active ? "transparent" : "var(--c-bg-muted-8)"}`,
+    background: active ? bg : "var(--c-bg)",
+    color: active ? tint : "var(--c-text-4b)",
     transition: "background 0.16s ease, color 0.16s ease",
   };
 }
