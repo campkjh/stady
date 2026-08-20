@@ -61,32 +61,34 @@ export default function MyPostsPage() {
         </div>
       ) : posts.length === 0 ? (
         <div style={centerBox}>
-          <p style={{ color: "var(--c-text-4b)", fontSize: 15, fontWeight: 500 }}>작성한 글이 없어요</p>
+          <p style={{ color: "var(--c-text-5)", fontSize: 15, fontWeight: 600 }}>작성한 글이 없어요</p>
         </div>
       ) : (
-        <div style={{ padding: "8px 0" }}>
-          {posts.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => router.push(`/community/${p.id}`)}
-              className="press"
-              style={itemRow}
-            >
-              {p.groupName && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-brand-b)" }}>{p.groupName}</span>
-              )}
-              <p style={{ fontSize: 15.5, fontWeight: 700, color: "var(--c-text-b)", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {p.title}
-              </p>
-              <p style={{ fontSize: 13.5, color: "var(--c-text-3)", margin: "5px 0 0", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                {p.content}
-              </p>
-              <p style={{ fontSize: 12.5, color: "var(--c-text-5)", margin: "8px 0 0", fontWeight: 500 }}>
-                {new Date(p.createdAt).toLocaleDateString("ko-KR")} · 좋아요 {p.likeCount} · 댓글 {p.commentCount}
-              </p>
-            </button>
-          ))}
+        <div style={{ padding: "8px 20px 28px" }}>
+          <div style={card}>
+            {posts.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => router.push(`/community/${p.id}`)}
+                className="press"
+                style={{ ...itemRow, borderBottom: i < posts.length - 1 ? "1px solid var(--c-bg-muted)" : "none" }}
+              >
+                {p.groupName && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-brand-b)" }}>{p.groupName}</span>
+                )}
+                <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                  {p.title}
+                </p>
+                <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "5px 0 0", lineHeight: 1.7, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  {p.content}
+                </p>
+                <p style={{ fontSize: 12, color: "var(--c-text-5)", margin: "8px 0 0", fontWeight: 600 }}>
+                  {new Date(p.createdAt).toLocaleDateString("ko-KR")} · 좋아요 {p.likeCount} · 댓글 {p.commentCount}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <style>{`@keyframes mpspin { to { transform: rotate(360deg); } }`}</style>
@@ -110,15 +112,21 @@ const spinner = {
   animation: "mpspin 0.8s linear infinite",
 } as const;
 
+const card = {
+  borderRadius: 18,
+  border: "1px solid var(--c-border)",
+  background: "var(--c-bg)",
+  overflow: "hidden",
+} as const;
+
 const itemRow = {
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
   width: "100%",
-  padding: "16px 20px",
+  padding: "14px 18px",
   background: "none",
   border: "none",
-  borderBottom: "1px solid var(--c-bg-muted-10)",
   textAlign: "left",
   cursor: "pointer",
 } as const;

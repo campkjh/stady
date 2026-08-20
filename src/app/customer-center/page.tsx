@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import BackHeader from "@/components/BackHeader";
 
 const CATEGORIES = [
   { value: "문의", icon: "💬", label: "문의" },
@@ -71,30 +72,9 @@ export default function CustomerCenterPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
-      {/* Header - Fixed */}
-      <div style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "calc(16px + env(safe-area-inset-top, 0px)) 10px 16px",
-        background: "var(--c-bg)",
-      }}>
-        <button
-          className="press"
-          onClick={() => router.back()}
-          style={{ background: "none", border: "none", padding: 4 }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>고객센터</h1>
-      </div>
+      <BackHeader title="고객센터" />
 
-      <div style={{ padding: "0 10px 40px" }}>
+      <div style={{ padding: "8px 20px 40px" }}>
         {/* Quick Links */}
         <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
           <button
@@ -107,13 +87,13 @@ export default function CustomerCenterPage() {
               alignItems: "center",
               gap: 8,
               padding: "20px 0",
-              background: "var(--c-brand-soft-5)",
-              borderRadius: 16,
+              background: "var(--c-brand-soft-2)",
+              borderRadius: 18,
               border: "none",
             }}
           >
             <img src="/icons/faq.svg" alt="" style={{ width: 44, height: 44 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--c-brand)" }}>자주묻는 질문</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--c-brand)" }}>자주묻는 질문</span>
           </button>
           <button
             className="press"
@@ -126,12 +106,12 @@ export default function CustomerCenterPage() {
               gap: 8,
               padding: "20px 0",
               background: "var(--c-bg-soft)",
-              borderRadius: 16,
+              borderRadius: 18,
               border: "none",
             }}
           >
             <img src="/icons/customer-center.svg" alt="" style={{ width: 44, height: 44 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2c)" }}>1:1 문의하기</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)" }}>1:1 문의하기</span>
           </button>
         </div>
 
@@ -252,7 +232,7 @@ export default function CustomerCenterPage() {
 
         {/* Default state when form is hidden */}
         {!showForm && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--c-text-4c)" }}>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--c-text-5)" }}>
             <p style={{ fontSize: 14, lineHeight: 1.6 }}>
               궁금하신 점이 있으시면<br />
               자주묻는 질문을 확인하시거나<br />
