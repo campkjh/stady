@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
@@ -9,6 +9,16 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
+// viewport 는 반드시 이 export 로만 정의한다. <head> 에 <meta name="viewport"> 를 직접 쓰면
+// Next 가 기본 viewport 메타(viewport-fit 없음)를 **하나 더** 뒤에 꽂아 뒤의 것이 이기고,
+// viewport-fit=cover 가 무효가 되어 iOS 앱에서 env(safe-area-inset-*) 이 전부 0 이 된다.
+// (이 때문에 34곳의 env() 패딩이 앱에서 전혀 동작하지 않고 있었다.)
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "스타디 - Stady",
@@ -32,7 +42,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* 라이트/다크 둘 다 지원함을 선언. 실제 색 스킴은 CSS(globals.css)의 color-scheme 이
             html[data-theme] 에 따라 light/dark 로 결정한다. 이 선언 + CSS color-scheme 덕분에
             안드로이드 WebView 의 강제 다크 변환(force-dark: 흰 카드를 멋대로 뒤집어 공지 팝업이
