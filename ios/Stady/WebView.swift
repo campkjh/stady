@@ -2,6 +2,36 @@ import SwiftUI
 import WebKit
 import StoreKit
 
+// SwiftUI(.ignoresSafeArea) 아래의 WKWebView 는 safeAreaInsets 가 0 으로 와서
+// 웹의 env(safe-area-inset-*) 도 전부 0 이 된다(진단 페이지로 확인 — safeAreaInsets
+// override 나 contentInsetAdjustmentBehavior 로는 안 뚫린다). WebKit 공식 API 인
+// setMinimumViewportInset 으로 윈도우의 실제 인셋을 직접 주입해 env() 가 값을 갖게 한다.
+// 윈도우 부착 시점(didMoveToWindow)에야 인셋을 알 수 있어 여기서 건다. 회전 등으로
+// 값이 바뀌면 safeAreaInsetsDidChange 에서 갱신한다.
+final class EdgeToEdgeWebView: WKWebView {
+    private var lastPushedInsets: UIEdgeInsets = .init(top: -1, left: -1, bottom: -1, right: -1)
+
+    private func pushViewportInsets() {
+        guard let w = window else { return }
+        let insets = w.safeAreaInsets
+        guard insets != lastPushedInsets else { return }
+        lastPushedInsets = insets
+        // 스크롤 인셋(상단 밴드)은 끄고, env() 로만 전달한다.
+        scrollView.contentInsetAdjustmentBehavior = .never
+        setMinimumViewportInset(insets, maximumViewportInset: insets)
+    }
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        pushViewportInsets()
+    }
+    // 아이패드는 회전을 지원해 인셋이 바뀐다. SwiftUI 아래에선 safeAreaInsetsDidChange 가
+    // 안정적으로 오지 않으므로 레이아웃 때마다 확인한다(값이 같으면 위 guard 로 즉시 반환).
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        pushViewportInsets()
+    }
+}
+
 struct WebView: UIViewRepresentable {
     let url: URL
     // 웹 페이지의 현재 테마(라이트/다크). 웹이 themeChanged 메시지로 알려주면
@@ -37,13 +67,7 @@ struct WebView: UIViewRepresentable {
         )
         config.userContentController.addUserScript(idiomScript)
 
-        let webView = WKWebView(frame: .zero, configuration: config)
-        // 세이프 영역 밴드 제거 — 기본값(.automatic)은 스크롤뷰에 상태바/홈인디케이터만큼
-        // 인셋을 넣어 페이지가 그 아래에서 시작한다(상단에 페이지 배경색 띠 + 경계선이 보였다).
-        // .never 로 끄면 페이지가 화면 끝까지 깔리고, 대신 env(safe-area-inset-*) 가 실제 값이
-        // 되므로 웹 헤더/하단 네비가 그만큼 스스로 패딩한다(viewport-fit=cover 필수 — layout.tsx 에 있음).
-        // ⚠️ 이 변경은 웹 전 화면의 상단 고정 요소가 env() 패딩을 가진 뒤에 배포할 것.
-        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        let webView = EdgeToEdgeWebView(frame: .zero, configuration: config)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK/10.0.0"
         // Enable the edge swipe-back gesture so users can navigate back from
         // pushed pages and external flows (e.g. the Toss billing/정기결제 page).
