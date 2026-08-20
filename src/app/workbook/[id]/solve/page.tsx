@@ -315,7 +315,7 @@ export default function SolvePage() {
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       {/* Top Bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--c-bg-muted)", flexShrink: 0, position: "relative", zIndex: 20, background: "var(--c-bg)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(10px + env(safe-area-inset-top, 0px)) 14px 10px", borderBottom: "1px solid var(--c-bg-muted)", flexShrink: 0, position: "relative", zIndex: 20, background: "var(--c-bg)" }}>
         <button onClick={() => router.back()} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
@@ -584,7 +584,7 @@ export default function SolvePage() {
             boxShadow: "-6px 0 24px rgba(0,0,0,0.12)",
             display: "flex", flexDirection: "column",
           }}>
-            <div style={{ padding: "18px 18px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
+            <div style={{ padding: "calc(18px + env(safe-area-inset-top, 0px)) 18px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)" }}>문제 목록</h3>
                 <button onClick={() => setShowDrawer(false)} style={{ background: "none", border: "none" }}>

@@ -454,7 +454,7 @@ export default function HomeClient({
       {/* 진입 시 첫 공지 팝업(7일동안 안보기 / 닫기) */}
       <NoticePopup />
       {/* Header */}
-      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "20px 10px 12px" }}>
+      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "calc(20px + env(safe-area-inset-top, 0px)) 10px 12px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {userName ? `${userName}님 안녕하세요!` : "로그인이 필요합니다."}
         </h1>

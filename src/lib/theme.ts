@@ -42,7 +42,21 @@ export function applyTheme(pref: ThemePreference = getTheme()): ResolvedTheme {
     if (root.getAttribute("data-theme") !== resolved) root.setAttribute("data-theme", resolved);
   }
   watchSystem(pref === "system");
+  notifyNativeTheme(resolved);
   return resolved;
+}
+
+// iOS 앱(WKWebView)에 현재 해석된 테마를 알린다. 웹뷰가 상태바 밑까지 깔리므로(엣지-투-엣지),
+// 상태바 글자색(시계·배터리)을 페이지 테마에 맞추려면 네이티브가 테마를 알아야 한다.
+// 핸들러가 없는 환경(브라우저·안드로이드·구버전 앱)에선 조용히 무시된다.
+function notifyNativeTheme(resolved: ResolvedTheme) {
+  try {
+    (window as unknown as {
+      webkit?: { messageHandlers?: { themeChanged?: { postMessage: (m: string) => void } } };
+    }).webkit?.messageHandlers?.themeChanged?.postMessage(resolved);
+  } catch {
+    /* ignore */
+  }
 }
 
 let mq: MediaQueryList | null = null;
@@ -56,6 +70,7 @@ function watchSystem(on: boolean) {
       if (getTheme() !== "system") return;
       const resolved = resolveTheme("system");
       document.documentElement.setAttribute("data-theme", resolved);
+      notifyNativeTheme(resolved);
       window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { pref: "system", resolved } }));
     };
     if (typeof mq.addEventListener === "function") mq.addEventListener("change", mqHandler);
@@ -80,4 +95,4 @@ export function setTheme(pref: ThemePreference): ResolvedTheme {
 }
 
 /** layout.tsx <head> 에 넣는 첫 페인트 전 스크립트(깜빡임 방지). applyTheme 과 같은 규칙. */
-export const THEME_BOOT_SCRIPT = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var v=localStorage.getItem(k);var t=(v==="dark"||v==="light")?v:(v==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var v=localStorage.getItem(k);var t=(v==="dark"||v==="light")?v:(v==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t);try{window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.themeChanged&&window.webkit.messageHandlers.themeChanged.postMessage(t);}catch(e){}}catch(e){}})();`;

@@ -154,7 +154,7 @@ export default function MyPage() {
   const planName = ent?.planId ? PLAN_NAMES[ent.planId] ?? "프리미엄" : "프리미엄";
 
   return (
-    <div style={{ background: "var(--c-bg)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--c-bg)", minHeight: "100vh", paddingTop: "env(safe-area-inset-top, 0px)" }}>
       {/* Profile settings */}
       <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
         <span style={iconBox}>

@@ -222,7 +222,9 @@ function BrowserStyles() {
       /* ── 기본(모바일): 메뉴가 헤더 아래 가로로 붙고, 누르면 아래로 펼쳐진다 ── */
       .mx-shell { padding-bottom: 40px; }
       .mx-rail {
-        position: sticky; top: 0; z-index: 20;
+        /* 위 BackHeader(z-50)가 env(safe-area-inset-top) 만큼 커지므로 레일도 같이 내린다.
+           (오늘 기준: 헤더가 레일 상단 패딩까지만 덮어 탭은 온전히 보인다 — 그 관계 유지) */
+        position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
         display: flex; align-items: flex-start; gap: 2px;
         padding: 8px 10px; overflow-x: auto; scrollbar-width: none;
         background: var(--c-bg-a95);

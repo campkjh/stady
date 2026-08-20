@@ -89,7 +89,7 @@ export default function HistoryPage() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="border-b border-gray-100 px-4 py-4" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)" }}>
+      <div className="border-b border-gray-100 px-4 py-4" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
         <h1 className="text-lg font-bold text-gray-800">풀이내역</h1>
       </div>
 

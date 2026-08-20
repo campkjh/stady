@@ -1234,7 +1234,7 @@ function CommunityStyles() {
         }
         .community-filter-panel {
           position: sticky;
-          top: 92px;
+          top: calc(92px + env(safe-area-inset-top, 0px));
           display: grid;
           gap: 14px;
           background: transparent;

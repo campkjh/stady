@@ -148,6 +148,7 @@ export default function LoginPage() {
         justifyContent: "center",
         minHeight: "100vh",
         padding: "40px 20px",
+        paddingTop: "calc(40px + env(safe-area-inset-top, 0px))",
         backgroundColor: "var(--c-bg)",
       }}>
         {/* Student Icon */}
@@ -175,6 +176,7 @@ export default function LoginPage() {
       justifyContent: "center",
       minHeight: "100vh",
       padding: "40px 20px",
+      paddingTop: "calc(40px + env(safe-area-inset-top, 0px))",
       backgroundColor: "var(--c-bg)",
     }}>
       {/* Student Icon */}

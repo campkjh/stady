@@ -4,8 +4,11 @@ import StoreKit
 
 struct WebView: UIViewRepresentable {
     let url: URL
+    // 웹 페이지의 현재 테마(라이트/다크). 웹이 themeChanged 메시지로 알려주면
+    // StadyApp 이 preferredColorScheme 으로 상태바 글자색을 맞춘다.
+    @Binding var colorScheme: ColorScheme
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(colorScheme: $colorScheme) }
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -16,6 +19,8 @@ struct WebView: UIViewRepresentable {
         //  별점 위젯이 호출되는 requestRating을 아무도 못 받아 팝업이 안 떴음.)
         config.userContentController.add(context.coordinator, name: "requestRating")
         config.userContentController.add(context.coordinator, name: "requestReview")
+        // 웹 테마 브리지 (web: src/lib/theme.ts notifyNativeTheme) — "light"/"dark" 문자열.
+        config.userContentController.add(context.coordinator, name: "themeChanged")
         // NOTE: register the app's other handlers here too
         // (kakaoLogin / appleLogin / showNativeLogin).
 
@@ -33,6 +38,12 @@ struct WebView: UIViewRepresentable {
         config.userContentController.addUserScript(idiomScript)
 
         let webView = WKWebView(frame: .zero, configuration: config)
+        // 세이프 영역 밴드 제거 — 기본값(.automatic)은 스크롤뷰에 상태바/홈인디케이터만큼
+        // 인셋을 넣어 페이지가 그 아래에서 시작한다(상단에 페이지 배경색 띠 + 경계선이 보였다).
+        // .never 로 끄면 페이지가 화면 끝까지 깔리고, 대신 env(safe-area-inset-*) 가 실제 값이
+        // 되므로 웹 헤더/하단 네비가 그만큼 스스로 패딩한다(viewport-fit=cover 필수 — layout.tsx 에 있음).
+        // ⚠️ 이 변경은 웹 전 화면의 상단 고정 요소가 env() 패딩을 가진 뒤에 배포할 것.
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK/10.0.0"
         // Enable the edge swipe-back gesture so users can navigate back from
         // pushed pages and external flows (e.g. the Toss billing/정기결제 page).
@@ -71,6 +82,9 @@ struct WebView: UIViewRepresentable {
         // updateUIView 가 여러 번 불려도 최초 1회만 로드하기 위한 플래그.
         var hasLoaded = false
 
+        private let colorScheme: Binding<ColorScheme>
+        init(colorScheme: Binding<ColorScheme>) { self.colorScheme = colorScheme }
+
         // 앱 스토어 ID(웹 src/lib/appReview.ts와 동일).
         private static let appStoreId = "6761746105"
 
@@ -80,6 +94,11 @@ struct WebView: UIViewRepresentable {
                 requestNativeRating()
             case "requestReview":
                 openWriteReviewPage()
+            case "themeChanged":
+                if let theme = message.body as? String {
+                    let scheme: ColorScheme = theme == "dark" ? .dark : .light
+                    DispatchQueue.main.async { [colorScheme] in colorScheme.wrappedValue = scheme }
+                }
             default:
                 break
             }

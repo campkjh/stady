@@ -79,7 +79,7 @@ export default function CustomerCenterPage() {
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "16px 10px",
+        padding: "calc(16px + env(safe-area-inset-top, 0px)) 10px 16px",
         background: "var(--c-bg)",
       }}>
         <button

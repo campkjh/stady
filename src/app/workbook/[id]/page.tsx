@@ -247,7 +247,7 @@ export default function WorkbookDetailPage() {
       )}
 
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "12px 10px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "calc(12px + env(safe-area-inset-top, 0px)) 10px 12px" }}>
         <button onClick={() => router.back()} className="press" style={{ padding: 4, background: "none", border: "none" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
@@ -507,7 +507,7 @@ export default function WorkbookDetailPage() {
       )}
 
       {/* Bottom Actions */}
-      <div style={{ position: "sticky", bottom: 0, backgroundColor: "var(--c-bg)", borderTop: "1px solid var(--c-bg-muted)", padding: "12px 16px", display: "flex", gap: 10 }}>
+      <div style={{ position: "sticky", bottom: 0, backgroundColor: "var(--c-bg)", borderTop: "1px solid var(--c-bg-muted)", padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))", display: "flex", gap: 10 }}>
         <button
           onClick={handleBookmarkToggle}
           className="press"

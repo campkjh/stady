@@ -434,7 +434,7 @@ export default function TimerPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
       {/* Title */}
-      <header style={{ padding: "20px 20px 16px" }}>
+      <header style={{ padding: "calc(20px + env(safe-area-inset-top, 0px)) 20px 16px" }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>타이머</h1>
       </header>
 

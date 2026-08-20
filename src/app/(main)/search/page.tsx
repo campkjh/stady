@@ -106,7 +106,7 @@ export default function SearchPage() {
   return (
     <div style={{ width: "100%", overflow: "hidden" }}>
       {/* Search Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: "1px solid var(--c-bg-muted)" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", gap: 8, padding: "calc(8px + env(safe-area-inset-top, 0px)) 10px 8px", borderBottom: "1px solid var(--c-bg-muted)" }}>
         <button
           type="button"
           onClick={() => router.back()}

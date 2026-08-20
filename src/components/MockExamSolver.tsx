@@ -420,7 +420,7 @@ function Styles() {
       .solver-empty { padding: 60px 24px; text-align: center; color: var(--c-text-4c); font-size: 14px; }
 
       .solver-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-        padding: 10px 12px; background: var(--c-bg); border-bottom: 1px solid var(--c-bg-muted-2); }
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--c-bg); border-bottom: 1px solid var(--c-bg-muted-2); }
       .solver-back { width: 34px; height: 34px; border: none; background: none; cursor: pointer; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center; }
       .solver-progress { flex: 1; height: 6px; border-radius: 999px; background: var(--c-bg-muted-7); overflow: hidden; }

@@ -535,6 +535,7 @@ export default function OxQuizSolvePage() {
       <header
         style={{
           position: "relative", zIndex: 20, flexShrink: 0,
+          paddingTop: "env(safe-area-inset-top, 0px)",
           background: "var(--c-bg-a92)",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
           borderBottom: "1px solid var(--c-bg-muted-8)",
@@ -919,7 +920,7 @@ export default function OxQuizSolvePage() {
             boxShadow: "-4px 0 24px rgba(0,0,0,0.1)",
           }}>
             {/* Drawer Header */}
-            <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
+            <div style={{ padding: "calc(16px + env(safe-area-inset-top, 0px)) 16px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700 }}>문제 목록</h3>
                 <button type="button" onClick={() => setShowList(false)} style={{ background: "none", border: "none" }}>

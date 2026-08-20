@@ -365,7 +365,7 @@ export default function VocabQuizSolvePage() {
       onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
+      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20, paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
         <button
           type="button"
           onClick={() => answers.size > 0 ? setShowExitConfirm(true) : router.back()}
@@ -464,7 +464,7 @@ export default function VocabQuizSolvePage() {
             animation: "slideInRight 0.25s ease",
             boxShadow: "-4px 0 24px rgba(0,0,0,0.1)",
           }}>
-            <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid var(--c-bg-muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "calc(20px + env(safe-area-inset-top, 0px)) 16px 12px", borderBottom: "1px solid var(--c-bg-muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontSize: 16, fontWeight: 700 }}>문제 목록</h3>
               <button type="button" onClick={() => setShowList(false)} style={{ background: "none", border: "none" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

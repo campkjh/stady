@@ -105,7 +105,7 @@ function WrongNoteContent() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg-soft-6)" }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", borderBottom: "1px solid var(--c-bg-muted-9)" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--c-bg)", paddingTop: "env(safe-area-inset-top, 0px)", borderBottom: "1px solid var(--c-bg-muted-9)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px" }}>
           <button
             type="button"

@@ -285,7 +285,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="px-4 pt-6">
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingBottom: 8 }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
           <h1 className="text-xl font-bold" style={{ margin: 0 }}>책갈피</h1>
           {!loading && bookmarks.length > 0 && (

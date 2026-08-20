@@ -151,7 +151,7 @@ function RetestContent() {
       style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", overflow: "hidden" }}
     >
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20 }}>
+      <header className="flex items-center gap-2 px-4 pt-4 pb-2" style={{ position: "relative", zIndex: 20, paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
         <button
           type="button"
           onClick={() => router.back()}

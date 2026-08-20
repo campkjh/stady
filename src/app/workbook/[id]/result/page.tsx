@@ -104,7 +104,7 @@ export default function ResultPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg-soft)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "12px 16px", background: "var(--c-bg)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "calc(12px + env(safe-area-inset-top, 0px)) 16px 12px", background: "var(--c-bg)" }}>
         <button
           onClick={() => router.push("/")}
           className="press"

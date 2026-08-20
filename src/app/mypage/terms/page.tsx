@@ -11,7 +11,7 @@ export default function TermsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center px-2 pt-2" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)" }}>
+      <div className="flex items-center px-2 pt-2" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingTop: "calc(8px + env(safe-area-inset-top, 0px))" }}>
         <BackButton />
       </div>
 

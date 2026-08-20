@@ -15,7 +15,8 @@ export default function BackHeader({ title }: { title: string }) {
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "8px 10px",
+        // iOS 앱은 페이지가 상태바 밑까지 깔린다(엣지-투-엣지) — 그만큼 헤더가 스스로 내려온다.
+        padding: "calc(8px + env(safe-area-inset-top, 0px)) 10px 8px",
       }}
     >
       <button

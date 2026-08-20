@@ -89,7 +89,7 @@ export default function ProfilePage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--c-bg)" }}>
       {/* Header */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "12px 10px" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", padding: "12px 10px", paddingTop: "calc(12px + env(safe-area-inset-top, 0px))" }}>
         <button
           type="button"
           onClick={() => router.back()}
