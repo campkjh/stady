@@ -27,10 +27,16 @@ const STORE_MANAGE_URL: Record<string, string> = {
   google: "https://play.google.com/store/account/subscriptions",
 };
 
+// 앱 심사(3.1.2c) 필수: 구매 화면에 이용약관(EULA)·개인정보처리방침 "동작하는 링크"가
+// 있어야 한다. iOS는 표준 Apple EULA를 쓰므로 그 링크를, 그 외엔 자체 약관을 연다.
+const APPLE_STD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const PRIVACY_URL = "/mypage/terms/privacy";
+
 export default function SubscribePage() {
   const { inApp, plans, entitlement, loading, busy, purchase, restore, refresh } = useIap();
   const [selected, setSelected] = useState<PlanId>("suneung_annual"); // 기본: 더 저렴한 연구독
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -54,9 +60,10 @@ export default function SubscribePage() {
     window.location.href = STORE_MANAGE_URL[platform] || STORE_MANAGE_URL.apple;
   }
 
+  // 확인은 인앱 모달에서 받는다(iOS WKWebView는 window.confirm이 동작하지 않아
+  // 버튼이 아무 반응 없는 것처럼 보였다 — 책갈피 페이지와 같은 패턴).
   function handleCancel() {
-    const ok = window.confirm("구독을 해지하시겠어요?\n남은 이용 기간까지는 그대로 이용할 수 있어요.");
-    if (ok) openStoreManage();
+    setShowCancelConfirm(true);
   }
 
   const savePerMonth =
@@ -93,7 +100,7 @@ export default function SubscribePage() {
                   plan={monthly}
                   selected={selected === "monthly"}
                   onSelect={() => setSelected("monthly")}
-                  subLabel="매월 결제"
+                  subLabel="1개월 구독 · 매월 결제"
                 />
               )}
               {annual && (
@@ -101,7 +108,7 @@ export default function SubscribePage() {
                   plan={annual}
                   selected={selected === "suneung_annual"}
                   onSelect={() => setSelected("suneung_annual")}
-                  subLabel={`연 ${won(annual.priceKrw)}원`}
+                  subLabel={`1년 구독 · 연 ${won(annual.priceKrw)}원`}
                   badge={annual.discountPct ? `${annual.discountPct}% 할인` : "가장 저렴"}
                   highlight={savePerMonth > 0 ? `월 ${won(savePerMonth)}원 아껴요` : undefined}
                 />
@@ -165,8 +172,77 @@ export default function SubscribePage() {
               )}
             </>
           )}
+          <LegalFooter />
         </div>
       )}
+
+      {/* 구독 해지 확인 모달 (WKWebView에서 window.confirm 미동작 → 인앱 모달) */}
+      {showCancelConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowCancelConfirm(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.42)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: "24px 20px 16px", width: "100%", maxWidth: 320, boxSizing: "border-box" }}>
+            <div style={{ fontSize: 16.5, fontWeight: 800, color: "#191F28", textAlign: "center" }}>구독을 해지하시겠어요?</div>
+            <p style={{ fontSize: 13.5, color: "#6B7280", textAlign: "center", margin: "8px 0 18px", lineHeight: 1.55 }}>
+              남은 이용 기간까지는 그대로 이용할 수 있어요.
+              <br />
+              스토어 구독 관리 화면으로 이동합니다.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <button type="button" onClick={() => setShowCancelConfirm(false)} style={{ border: "none", borderRadius: 12, background: "#F2F4F6", color: "#4E5968", padding: "12px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelConfirm(false);
+                  openStoreManage();
+                }}
+                style={{ border: "none", borderRadius: 12, background: "#3182F6", color: "#fff", padding: "12px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}
+              >
+                해지하러 가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 자동갱신 구독 필수 고지 + 이용약관(EULA)·개인정보처리방침 링크 (앱 심사 3.1.2c).
+// 미구독·구독중 상태 모두 하단에 항상 보인다.
+function LegalFooter() {
+  // SSR에선 플랫폼을 알 수 없으므로(항상 null → Apple 문구) 클라이언트에서
+  // 판별해 상태로 반영한다 — 렌더 중 직접 읽으면 hydration 불일치가 난다.
+  const [isApple, setIsApple] = useState(true);
+  useEffect(() => {
+    setIsApple(detectPlatform() !== "google");
+  }, []);
+  const storeName = isApple ? "App Store" : "Google Play";
+  return (
+    <div style={{ marginTop: 12 }}>
+      <p style={{ fontSize: 11, color: "#B0B8C1", lineHeight: 1.55, margin: 0, textAlign: "center" }}>
+        구독은 기간 종료 24시간 전까지 해지하지 않으면 자동으로 갱신되며, 요금은 {storeName} 계정으로
+        청구됩니다. 구독은 {storeName} 계정 설정에서 언제든지 관리·해지할 수 있어요.
+      </p>
+      <p style={{ fontSize: 11.5, textAlign: "center", margin: "7px 0 0" }}>
+        <a
+          href={isApple ? APPLE_STD_EULA_URL : "/mypage/terms/service"}
+          target={isApple ? "_blank" : undefined}
+          rel="noopener noreferrer"
+          style={{ color: "#8B95A1", fontWeight: 600, textDecoration: "underline" }}
+        >
+          이용약관(EULA)
+        </a>
+        <span style={{ color: "#D1D6DB", margin: "0 8px" }}>|</span>
+        <a href={PRIVACY_URL} style={{ color: "#8B95A1", fontWeight: 600, textDecoration: "underline" }}>
+          개인정보처리방침
+        </a>
+      </p>
     </div>
   );
 }
