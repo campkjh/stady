@@ -68,8 +68,16 @@ function sendToNative(action: "iapPurchase" | "iapRestore", payload: Record<stri
   }
 }
 
-/** Register a one-shot native callback and resolve when the result arrives. */
-function awaitNativeResult(timeoutMs = 30_000): Promise<IapNativeResult> {
+/** Register a one-shot native callback and resolve when the result arrives.
+ *
+ * ⚠️ The timeout must comfortably outlast the ENTIRE store sheet flow — the user
+ * reading the sheet, side-button/Face ID confirm, sandbox password entry, and
+ * Apple's (slow) sandbox processing. A 30s timeout made App Review's purchases
+ * "fail": the reviewer took ~2 minutes on the sheet, the timer fired, cleanup()
+ * removed the callback, and the completed purchase's result had nowhere to land
+ * (App Review rejection 2.1(b), 2026-08-21). The timeout is only a last-resort
+ * guard against a dead bridge, so make it generous. */
+function awaitNativeResult(timeoutMs = 10 * 60_000): Promise<IapNativeResult> {
   return new Promise<IapNativeResult>((resolve, reject) => {
     const timer = setTimeout(() => {
       cleanup();
