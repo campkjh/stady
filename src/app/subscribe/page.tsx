@@ -108,7 +108,7 @@ export default function SubscribePage() {
                   plan={annual}
                   selected={selected === "suneung_annual"}
                   onSelect={() => setSelected("suneung_annual")}
-                  subLabel={`1년 구독 · 연 ${won(annual.priceKrw)}원`}
+                  subLabel={`1년 구독 · 월 ${won(annual.monthlyEquivalentKrw)}원 꼴`}
                   badge={annual.discountPct ? `${annual.discountPct}% 할인` : "가장 저렴"}
                   highlight={savePerMonth > 0 ? `월 ${won(savePerMonth)}원 아껴요` : undefined}
                 />
@@ -255,7 +255,7 @@ function PlanCard({
   badge,
   highlight,
 }: {
-  plan: { id: PlanId; name: string; monthlyEquivalentKrw: number };
+  plan: { id: PlanId; name: string; priceKrw: number; period: "month" | "year" };
   selected: boolean;
   onSelect: () => void;
   subLabel: string;
@@ -284,11 +284,15 @@ function PlanCard({
         </span>
       )}
       <div style={{ fontSize: 14.5, fontWeight: 800, color: "var(--c-text-b)" }}>{plan.name}</div>
+      {/* 앱 심사 3.1.2(c): 가장 크고 눈에 띄는 가격은 반드시 "실제 청구 금액"이어야 한다.
+          월 환산가(9,900원/월 등)를 크게 쓰면 리젝 — 환산가는 subLabel/highlight 로만. */}
       <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 3 }}>
         <span style={{ fontSize: 21, fontWeight: 800, color: selected ? "var(--c-brand-deep-4)" : "var(--c-text-b)" }}>
-          {won(plan.monthlyEquivalentKrw)}
+          {won(plan.priceKrw)}
         </span>
-        <span style={{ fontSize: 13, color: "var(--c-text-4b)", fontWeight: 700 }}>원/월</span>
+        <span style={{ fontSize: 13, color: "var(--c-text-4b)", fontWeight: 700 }}>
+          {plan.period === "month" ? "원/월" : "원/년"}
+        </span>
       </div>
       <div style={{ fontSize: 12, color: "var(--c-text-4b)", marginTop: 3 }}>{subLabel}</div>
       {highlight && (
