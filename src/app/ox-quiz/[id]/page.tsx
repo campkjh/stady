@@ -247,13 +247,17 @@ export default function OxQuizSolvePage() {
 
   const currentQuestion = filteredQuestions[currentIndex] ?? null;
 
-  // Auto-dismiss swipe guide
+  // 조작 가이드 자동 닫기. 2.5초는 문구를 읽기도 전에 사라져 "가이드가 잘 안 보인다"는
+  // 신고로 이어졌다 — 읽고 이해할 시간을 준다(직접 닫으려면 '알겠어요' 버튼).
+  // ⚠️ '이어서 풀까요?' 모달(pendingProgress)이 떠 있는 동안엔 가이드가 그 뒤에 가려진다.
+  //    그때도 타이머가 돌면 모달을 닫는 사이 가이드가 다 소모돼 한 번도 못 보게 된다 —
+  //    모달이 사라진 뒤부터 센다.
   useEffect(() => {
-    if (showSwipeGuide) {
-      const timer = setTimeout(() => setShowSwipeGuide(false), 2500);
+    if (showSwipeGuide && !pendingProgress) {
+      const timer = setTimeout(() => setShowSwipeGuide(false), 6000);
       return () => clearTimeout(timer);
     }
-  }, [showSwipeGuide]);
+  }, [showSwipeGuide, pendingProgress]);
 
   // Auto-scroll drawer to current question
   useEffect(() => {
@@ -592,7 +596,7 @@ export default function OxQuizSolvePage() {
 
         {/* 2행: 진행도(N/M) · 이전/다음 · 섞기/노트/책갈피 */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 8px" }}>
-          <button type="button" aria-label="이전 문제" onClick={goPrev} disabled={currentIndex === 0} className="press"
+          <button type="button" aria-label="이전 문제" onClick={goPrev} disabled={currentIndex === 0} className="press hit-44"
             style={{ ...hRoundBtn, opacity: currentIndex === 0 ? 0.28 : 1 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -602,7 +606,7 @@ export default function OxQuizSolvePage() {
             {currentIndex + 1}
             <span style={{ color: "var(--c-text-5)", fontWeight: 700 }}> / {filteredQuestions.length}</span>
           </span>
-          <button type="button" aria-label="다음 문제" onClick={goNext} disabled={currentIndex >= filteredQuestions.length - 1} className="press"
+          <button type="button" aria-label="다음 문제" onClick={goNext} disabled={currentIndex >= filteredQuestions.length - 1} className="press hit-44"
             style={{ ...hRoundBtn, opacity: currentIndex >= filteredQuestions.length - 1 ? 0.28 : 1 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
@@ -1067,47 +1071,89 @@ export default function OxQuizSolvePage() {
         </div>
       )}
 
-      {/* Swipe Guide Overlay */}
-      {showSwipeGuide && (
+      {/* 첫 진입 조작 가이드 — 좌/우 영역을 실제로 갈라 보여준다.
+          예전엔 화면 전체를 균일하게 덮고 가운데 손 아이콘만 흔들어서
+          "왼쪽=이전, 오른쪽=다음"이라는 핵심이 전달되지 않았다(사용자 신고).
+          이제 두 반쪽을 다른 톤으로 딤 처리하고 각 반쪽 한가운데에 큰 화살표+라벨을 둔다. */}
+      {showSwipeGuide && !pendingProgress && (
         <div
           onClick={() => setShowSwipeGuide(false)}
+          role="button"
+          aria-label="가이드 닫기"
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 300,
-            backgroundColor: "rgba(0,0,0,0.6)",
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 16,
-            animation: "fadeIn 0.4s ease",
+            animation: "fadeIn 0.3s ease",
+            cursor: "pointer",
           }}
         >
+          {/* 왼쪽 = 이전 */}
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 24,
-            animation: "swipeHint 1.5s ease-in-out infinite",
+            flex: 1,
+            backgroundColor: "rgba(8,12,22,0.72)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
+            borderRight: "2px dashed rgba(255,255,255,0.35)",
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 11V6a2 2 0 0 0-4 0v5" />
-              <path d="M14 10V4a2 2 0 0 0-4 0v6" />
-              <path d="M10 10.5V6a2 2 0 0 0-4 0v8c0 4 3 7 7 7h1a5 5 0 0 0 5-5v-4a2 2 0 0 0-4 0v3" />
-            </svg>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <span style={{
+              width: 72, height: 72, borderRadius: "50%",
+              background: "rgba(255,255,255,0.14)",
+              border: "2px solid rgba(255,255,255,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "guideNudgeL 1.8s ease-in-out infinite",
+            }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </span>
+            <span style={{ color: "#fff", fontSize: 17, fontWeight: 800, letterSpacing: "-0.3px" }}>이전 문제</span>
+            <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, fontWeight: 600 }}>왼쪽을 탭</span>
           </div>
-          <p style={{ color: "#fff", fontSize: 16, fontWeight: 600, textAlign: "center", lineHeight: 1.6 }}>
-            좌우로 스와이프하면<br/>이전·다음 문제를 확인할 수 있어요
-          </p>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 8 }}>
-            화면을 탭하면 닫힙니다
-          </p>
+
+          {/* 오른쪽 = 다음 */}
+          <div style={{
+            flex: 1,
+            backgroundColor: "rgba(8,12,22,0.58)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
+          }}>
+            <span style={{
+              width: 72, height: 72, borderRadius: "50%",
+              background: "rgba(55,135,255,0.30)",
+              border: "2px solid rgba(125,196,255,0.95)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation: "guideNudgeR 1.8s ease-in-out infinite",
+            }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </span>
+            <span style={{ color: "#fff", fontSize: 17, fontWeight: 800, letterSpacing: "-0.3px" }}>다음 문제</span>
+            <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, fontWeight: 600 }}>오른쪽을 탭</span>
+          </div>
+
+          {/* 하단 안내 + 닫기 — 자동으로 사라지길 기다리지 않아도 되게 명시적인 버튼을 둔다 */}
+          <div style={{
+            position: "absolute", left: 0, right: 0, bottom: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+            padding: "72px 24px calc(28px + env(safe-area-inset-bottom, 0px))",
+            // 문구가 O/X 버튼 위에 겹쳐 읽히지 않던 것 — 아래쪽을 확실히 덮는다
+            background: "linear-gradient(to top, rgba(8,12,22,0.97) 55%, rgba(8,12,22,0.75) 78%, rgba(8,12,22,0) 100%)",
+          }}>
+            <p style={{ color: "#fff", fontSize: 14, fontWeight: 600, textAlign: "center", lineHeight: 1.6, textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
+              좌우로 스와이프해도 문제를 넘길 수 있어요
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSwipeGuide(false)}
+              style={{
+                minWidth: 132, height: 46, borderRadius: 14, border: "none",
+                background: "#fff", color: "#111827", fontSize: 15, fontWeight: 800, cursor: "pointer",
+              }}
+            >
+              알겠어요
+            </button>
+          </div>
         </div>
       )}
 
@@ -1116,10 +1162,16 @@ export default function OxQuizSolvePage() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes swipeHint {
+        @keyframes guideNudgeL {
           0%, 100% { transform: translateX(0); }
-          30% { transform: translateX(-12px); }
-          60% { transform: translateX(12px); }
+          45% { transform: translateX(-10px); }
+        }
+        @keyframes guideNudgeR {
+          0%, 100% { transform: translateX(0); }
+          45% { transform: translateX(10px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="guideNudge"] { animation: none !important; }
         }
       `}</style>
 
@@ -1297,7 +1349,11 @@ const hIconBtn: React.CSSProperties = {
   width: 34, height: 34, flexShrink: 0, cursor: "pointer", padding: 0,
 };
 
+// 이전/다음 원형 버튼. 보이는 원은 26px 이지만 손가락 타깃으로는 너무 작아
+// (권장 최소 44x44) "눌러도 안 넘어간다"는 신고가 있었다. 원의 크기는 그대로 두고
+// ::after 로 히트 영역만 44px 로 넓힌다(.hit-44 — globals.css). 레이아웃은 변하지 않는다.
 const hRoundBtn: React.CSSProperties = {
+  position: "relative",
   display: "flex", alignItems: "center", justifyContent: "center",
   width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
   border: "1px solid var(--c-bg-muted-17)", background: "var(--c-bg)", cursor: "pointer", padding: 0,

@@ -1156,3 +1156,17 @@ body {
 :root { --c-bg-elevated: #FFFFFF; }
 [data-theme="dark"] { --c-bg-elevated: #22222A; }
 [data-theme="dark"] .solver-sheet { background: var(--c-bg-elevated); }
+
+/* 작은 아이콘 버튼의 손가락 타깃 확장 — 보이는 크기는 그대로 두고 히트 영역만 44x44 로.
+   (OX 퀴즈 헤더의 26px 이전/다음 버튼이 "눌러도 안 넘어간다"는 신고의 원인) */
+.hit-44 { position: relative; }
+.hit-44::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.hit-44:disabled::after { display: none; }
