@@ -49,6 +49,10 @@ interface PageHandle {
   undo: () => void;
   redo: () => void;
   clear: () => void;
+  /** 부모가 스크롤 위치로 계산한 "화면 근처인가"를 알려준다. */
+  setNear: (near: boolean) => void;
+  /** 스크롤 컨테이너 기준 위/아래 좌표(px). 근접 판정용. */
+  bounds: () => { top: number; bottom: number } | null;
 }
 
 // 한 획이 바꾼 사각형 영역의 이전/이후 픽셀(디바이스 px 좌표).
@@ -133,6 +137,48 @@ const PageCanvas = forwardRef<
   // 문제/해설 필기가 섞이지 않게 섹션을 키에 포함(문제는 기존 키 유지=하위호환).
   const storageKey = `mockexam_${examId}${section === "solution" ? "_sol" : ""}_p${pageIndex}`;
 
+  // 화면 근처 페이지만 캔버스를 들고 있는다.
+  //
+  // 시험지는 한 과목이 16장까지 되는데, 페이지마다 표시용 캔버스와 되돌리기용 그림자
+  // 캔버스를 device pixel 해상도로 잡는다. 768px 태블릿에서 실측하면 캔버스만 405MB,
+  // 그림자까지 810MB, 이미지 디코딩 105MB — 도합 900MB가 넘는다. iPad Safari 는
+  // 화면 밖 리소스를 알아서 버려 버티지만, 안드로이드 WebView 는 그 압박을 이기지 못하고
+  // 이미지 디코딩부터 포기해 "시험지가 안 보인다"가 된다(갤럭시탭 신고).
+  //
+  // 그래서 뷰포트에서 멀어지면 캔버스 크기를 0으로 되돌려 메모리를 반납한다.
+  // 필기는 해제 직전에 localStorage 로 저장하고, 다시 가까워지면 fit() 이 복원한다
+  // (fit 은 원래도 크기가 바뀌면 localStorage 에서 되살리는 경로를 갖고 있다).
+  // 근접 여부는 부모가 스크롤 위치로 계산해 setNear 로 내려준다.
+  // (IntersectionObserver 를 쓰지 않는 이유: 백그라운드 탭 등 콜백이 오지 않는 환경에서
+  //  캔버스가 영원히 안 생겨 필기가 아예 막히는 위험이 있다. 스크롤 계산은 항상 동작한다.)
+  const [nearViewport, setNearViewport] = useState(true);
+  // fit() 은 이미지 onLoad 로도 불리므로(화면 밖 lazy 이미지가 뒤늦게 로드될 때)
+  // state 가 아니라 ref 로 최신값을 봐야 한다.
+  const nearRef = useRef(true);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (nearViewport) {
+      // 다시 화면 근처 — 강제로 다시 맞춘다(fit 은 같은 크기면 건너뛰므로 캐시를 비운다).
+      nearRef.current = true;
+      fittedSize.current = { w: 0, h: 0 };
+      fit();
+      return;
+    }
+    // 멀어짐 — 그리는 중이면 건드리지 않는다.
+    if (drawing.current) return;
+    persist();
+    canvas.width = 0;
+    canvas.height = 0;
+    shadowRef.current = null;
+    undoStack.current = [];
+    redoStack.current = [];
+    fittedSize.current = { w: 0, h: 0 };
+    setSized(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearViewport]);
+
   // 캔버스 크기 맞추기는 이미지 onLoad에만 기대면 안 된다. 캐시된 이미지는
   // 리액트가 핸들러를 붙이기 전에 이미 로드가 끝나 onLoad가 오지 않아서, 그
   // 페이지 캔버스가 초기화되지 않은 채(=필기해도 아무것도 안 그려짐) 남았다.
@@ -174,6 +220,9 @@ const PageCanvas = forwardRef<
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
+    // 화면에서 먼 페이지는 캔버스를 잡지 않는다. lazy 이미지가 뒤늦게 로드되며
+    // onLoad → fit() 으로 들어오는 경로가 있어 여기서 한 번 더 막아야 한다.
+    if (!nearRef.current) return;
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
     if (w === 0 || h === 0) return;
@@ -288,6 +337,16 @@ const PageCanvas = forwardRef<
   }
 
   useImperativeHandle(ref, () => ({
+    setNear(near: boolean) {
+      if (nearRef.current === near) return;
+      nearRef.current = near;
+      setNearViewport(near);
+    },
+    bounds() {
+      const wrap = wrapRef.current;
+      if (!wrap) return null;
+      return { top: wrap.offsetTop, bottom: wrap.offsetTop + wrap.offsetHeight };
+    },
     undo() {
       const patch = undoStack.current.pop();
       if (!patch) return;
@@ -635,7 +694,16 @@ const PageCanvas = forwardRef<
         src={imageUrl}
         alt={`페이지 ${pageIndex + 1}`}
         onLoad={fit}
-        style={{ width: "100%", height: "auto", display: "block", userSelect: "none" }}
+        // 시험지 16장을 한 번에 디코딩하면 이미지만 100MB가 넘어 안드로이드 WebView가
+        // 디코딩을 포기해 빈 페이지로 보인다(갤럭시탭 신고). 화면 근처만 디코딩한다.
+        loading="lazy"
+        decoding="async"
+        style={{
+          width: "100%", height: "auto", display: "block", userSelect: "none",
+          // lazy 로 두면 로드 전 높이가 0이라 스크롤이 튄다. 시험지 스캔은 A4 비율로
+          // 거의 일정하므로 기본 비율을 깔아두고, 로드되면 실제 비율이 이를 대체한다.
+          aspectRatio: "1555 / 2200",
+        }}
         draggable={false}
       />
       <canvas
@@ -752,6 +820,53 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       ro?.disconnect();
     };
   }, []);
+
+  // 화면 근처 페이지만 캔버스를 들고 있게 한다.
+  //
+  // 한 과목이 16장까지 되는데 페이지마다 표시용/되돌리기용 캔버스를 device pixel 해상도로
+  // 잡는다. 768px 태블릿 실측으로 캔버스 405MB + 그림자 405MB + 이미지 디코딩 105MB =
+  // 900MB가 넘었다. iPad Safari 는 화면 밖 리소스를 알아서 버려 버티지만 안드로이드
+  // WebView 는 그 압박에 이미지 디코딩부터 포기해 "시험지가 안 보인다"가 된다(갤럭시탭 신고).
+  //
+  // 스크롤할 때마다 위아래 한 화면 분량만 살려두고 나머지는 캔버스를 반납시킨다.
+  // 필기는 반납 직전에 저장되고 다시 가까워지면 복원된다.
+  useEffect(() => {
+    const sc = scrollRef.current;
+    if (!sc) return;
+    let timer = 0;
+    const apply = () => {
+      timer = 0;
+      const vh = sc.clientHeight || 1;
+      const z = zoomRef.current || 1;
+      const top = sc.scrollTop / z;
+      const margin = vh; // 위아래로 한 화면씩 여유
+      for (const h of pageRefs.current) {
+        const b = h?.bounds();
+        if (!h || !b) continue;
+        h.setNear(b.bottom > top - margin && b.top < top + vh / z + margin);
+      }
+    };
+    // rAF 로 묶으면 탭이 백그라운드일 때 콜백이 오지 않아 스크롤에 반응하지 못한다.
+    // (프리뷰 패널처럼 visibilityState 가 hidden 인 환경에서 실제로 멈추는 것을 확인했다.)
+    // setTimeout 은 스로틀될지언정 멈추지는 않으므로 여기서는 이쪽이 안전하다.
+    const onScroll = () => {
+      if (timer) return;
+      timer = window.setTimeout(apply, 100);
+    };
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    // 이미지가 로드되며 높이가 바뀌므로 초기에 몇 번 다시 계산한다.
+    apply();
+    const t1 = window.setTimeout(apply, 300);
+    const t2 = window.setTimeout(apply, 1200);
+    return () => {
+      sc.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (timer) window.clearTimeout(timer);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [section, pages.length]);
 
   // 핀치 제스처(두 손가락). 스타일러스가 섞이면 필기이므로 무시.
   useEffect(() => {
