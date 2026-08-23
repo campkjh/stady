@@ -696,7 +696,12 @@ const PageCanvas = forwardRef<
         onLoad={fit}
         // 시험지 16장을 한 번에 디코딩하면 이미지만 100MB가 넘어 안드로이드 WebView가
         // 디코딩을 포기해 빈 페이지로 보인다(갤럭시탭 신고). 화면 근처만 디코딩한다.
-        loading="lazy"
+        //
+        // 단 첫 두 장은 절대 lazy 로 두지 않는다 — 첫 화면에 보이는 이미지에 lazy 를 걸면
+        // 브라우저 판단에 따라 로드가 늦거나(백그라운드·저사양) 아예 시작되지 않아
+        // "시험지가 안 보인다"는 같은 증상을 만든다. 실제로 그렇게 되는 것을 확인했다.
+        loading={pageIndex < 2 ? "eager" : "lazy"}
+        fetchPriority={pageIndex === 0 ? "high" : undefined}
         decoding="async"
         style={{
           width: "100%", height: "auto", display: "block", userSelect: "none",
