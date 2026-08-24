@@ -33,7 +33,7 @@ const APPLE_STD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes
 const PRIVACY_URL = "/mypage/terms/privacy";
 
 export default function SubscribePage() {
-  const { inApp, plans, entitlement, loading, busy, purchase, restore, refresh } = useIap();
+  const { inApp, plans, entitlement, authenticated, loading, busy, purchase, restore, refresh } = useIap();
   const [selected, setSelected] = useState<PlanId>("suneung_annual"); // 기본: 더 저렴한 연구독
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -152,8 +152,14 @@ export default function SubscribePage() {
             </button>
           ) : (
             <>
+              {/* 로그인 전에는 결제를 시작하지 않는다(구독권은 계정에 붙는다) —
+                  버튼 문구부터 로그인임을 알려 결제 후 에러가 나지 않게 한다. */}
               <button type="button" onClick={handleBuy} disabled={busy} className="press" style={ctaStyle("#3182F6", "#fff", busy)}>
-                {busy ? "처리 중…" : `${plans.find((p) => p.id === selected)?.name ?? "구독"} 시작하기`}
+                {busy
+                  ? "처리 중…"
+                  : !authenticated
+                    ? "로그인하고 구독 시작하기"
+                    : `${plans.find((p) => p.id === selected)?.name ?? "구독"} 시작하기`}
               </button>
               {inApp && (
                 <button
