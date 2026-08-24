@@ -9,7 +9,7 @@ export const communityAdminNavItems = [
   { href: "/admin/comments", label: "댓글 관리" },
   { href: "/admin/category-groups", label: "카테고리 관리" },
   { href: "/admin/tags", label: "태그 관리" },
-  { href: "/admin/reports", label: "신고 관리" },
+  { href: "/admin/reports", label: "신고·차단 관리" },
   { href: "/admin/users", label: "사용자 관리" },
 ];
 
