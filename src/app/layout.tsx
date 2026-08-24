@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
+import PageViewTracker from "@/components/PageViewTracker";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
@@ -64,6 +65,10 @@ export default function RootLayout({
         }}
       >
         <ThemeBoot />
+        {/* 페이지 체류 수집. (main) 그룹에만 두면 정작 오래 머무는 화면(문제풀이·모의고사·
+            문제집·구독 등)이 그 레이아웃 밖이라 한 건도 안 잡힌다 — 반드시 루트에 둔다.
+            /admin·/api 는 서버·클라이언트 양쪽에서 제외한다. */}
+        <PageViewTracker />
         <NativeAuthProvider>
           {children}
         </NativeAuthProvider>

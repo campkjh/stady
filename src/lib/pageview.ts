@@ -34,9 +34,16 @@ export async function ensurePageViewTable(): Promise<void> {
       "path" TEXT NOT NULL,
       "dwell_ms" INTEGER NOT NULL,
       "started_at" TIMESTAMP NOT NULL,
-      "created_at" TIMESTAMP NOT NULL DEFAULT now()
+      "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+      "visit_id" TEXT
     )
   `);
+  // 이미 만들어진 테이블에도 보강(조회는 항상 컬럼을 명시하므로 Neon 캐시플랜 문제는 없다).
+  await prisma.$executeRawUnsafe(`ALTER TABLE "PageView" ADD COLUMN IF NOT EXISTS "visit_id" TEXT`);
+  // 방문 1건 = 행 1개. hidden 될 때마다 보내는 누적값을 이 키로 덮어쓴다.
+  await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "PageView_visit_uq" ON "PageView" ("visit_id") WHERE "visit_id" IS NOT NULL`
+  );
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "PageView_path_idx" ON "PageView" ("path")`
   );
@@ -130,6 +137,8 @@ export async function recordPageView(params: {
   path: string;
   dwellMs: number;
   startedAt: Date;
+  /** 방문 1회 식별자. 같은 값이 다시 오면 체류를 덮어쓴다(행이 늘지 않는다). */
+  visitId?: string | null;
 }): Promise<void> {
   const path = normalizePath(params.path);
   if (!path) return;
@@ -142,14 +151,21 @@ export async function recordPageView(params: {
 
   await ensurePageViewTable();
   // 저장은 UTC 벽시계로 고정한다(세션 타임존에 흔들리지 않게 명시 캐스팅).
+  // 같은 방문(visit_id)이 다시 오면 누적된 체류로 덮어쓴다 — 앱 전환·화면잠금 때마다
+  // 새 행을 만들면 방문 1회가 여러 건이 되어 조회수가 부풀고 평균 체류가 깎인다.
+  // 소유자가 다르면 덮어쓰지 않는다(남의 visit_id 를 알아내도 조작 불가).
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "PageView" ("id", "user_id", "path", "dwell_ms", "started_at", "created_at")
-     VALUES ($1, $2::text, $3, $4::int, ($5::timestamptz AT TIME ZONE 'utc'), (now() AT TIME ZONE 'utc'))`,
+    `INSERT INTO "PageView" ("id", "user_id", "path", "dwell_ms", "started_at", "created_at", "visit_id")
+     VALUES ($1, $2::text, $3, $4::int, ($5::timestamptz AT TIME ZONE 'utc'), (now() AT TIME ZONE 'utc'), $6::text)
+     ON CONFLICT ("visit_id") WHERE "visit_id" IS NOT NULL
+     DO UPDATE SET "dwell_ms" = EXCLUDED."dwell_ms"
+     WHERE "PageView"."user_id" IS NOT DISTINCT FROM EXCLUDED."user_id"`,
     randomUUID(),
     params.userId,
     path,
     dwellMs,
-    startedAt.toISOString()
+    startedAt.toISOString(),
+    params.visitId ?? null
   );
 }
 

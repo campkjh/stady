@@ -1,7 +1,6 @@
 import BottomNav from "@/components/BottomNav";
 import PageTransition from "@/components/PageTransition";
 import TimerPinger from "@/components/TimerPinger";
-import PageViewTracker from "@/components/PageViewTracker";
 
 export default function MainLayout({
   children,
@@ -17,7 +16,6 @@ export default function MainLayout({
       </div>
       <BottomNav />
       <TimerPinger />
-      <PageViewTracker />
     </>
   );
 }

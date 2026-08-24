@@ -21,16 +21,18 @@ export default function PageViewTracker() {
   const pathname = usePathname();
 
   const pathRef = useRef<string | null>(null);
+  const visitIdRef = useRef<string | null>(null);
   const startedAtRef = useRef<number>(0); // 이번 구간 진입 시각(벽시계)
   const visibleSinceRef = useRef<number | null>(null); // 지금 이어지는 foreground 구간의 시작
   const foregroundMsRef = useRef<number>(0); // 확정된 foreground 누적 시간
 
-  const send = useCallback((path: string, dwellMs: number, startedAt: number) => {
+  const send = useCallback((path: string, dwellMs: number, startedAt: number, visitId: string) => {
     try {
       const body = JSON.stringify({
         path,
         dwellMs,
         startedAt: new Date(startedAt).toISOString(),
+        visitId,
       });
       if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
         const blob = new Blob([body], { type: "application/json" });
@@ -53,6 +55,13 @@ export default function PageViewTracker() {
   // (백그라운드에서 라우팅이 일어난 경우엔 꺼진 채로 둔다).
   const beginVisit = useCallback((path: string | null) => {
     pathRef.current = path;
+    // 방문 1회를 식별한다. 앱 전환·화면잠금으로 hidden 될 때마다 flush 하는데,
+    // 그때마다 새 행을 만들면 방문 1회가 여러 건으로 쪼개져 조회수가 부풀고
+    // 평균 체류가 그만큼 짧아진다. 같은 visitId 는 서버에서 dwell 을 누적한다.
+    visitIdRef.current =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     startedAtRef.current = Date.now();
     foregroundMsRef.current = 0;
     visibleSinceRef.current =
@@ -73,13 +82,12 @@ export default function PageViewTracker() {
     const dwell = foregroundMsRef.current;
     const startedAt = startedAtRef.current;
 
-    if (path && dwell >= MIN_DWELL_MS) {
-      send(path, Math.min(dwell, MAX_DWELL_MS), startedAt);
+    if (path && dwell >= MIN_DWELL_MS && visitIdRef.current) {
+      // dwell 은 이 방문의 **누적값**을 그대로 보낸다(서버가 같은 visitId 를 덮어쓴다).
+      send(path, Math.min(dwell, MAX_DWELL_MS), startedAt, visitIdRef.current);
     }
-    // 보냈든 버렸든 카운터는 리셋한다. 같은 경로에 계속 머무는 경우 다음 구간이
-    // 새로 쌓이므로 이중 집계가 없고, hidden 직후 이어지는 pagehide 는 0ms 라 저절로 버려진다.
-    startedAtRef.current = Date.now();
-    foregroundMsRef.current = 0;
+    // 누적값을 보내므로 카운터는 리셋하지 않는다 — 리셋하면 복귀 후 이어 읽은 시간만 남는다.
+    // startedAt 도 그대로 둔다(방문이 시작된 시각이어야 시간대 통계가 맞는다).
     visibleSinceRef.current = null;
   }, [foldForeground, send]);
 
