@@ -33,6 +33,7 @@ const MENU_GROUP_2 = [
   { label: "공지사항", href: "/notice", icon: "/icons/mp-notice.svg" },
   { label: "자주묻는질문", href: "/faq", icon: "/icons/mp-faq.svg" },
   { label: "고객센터", href: "/customer-center", icon: "/icons/mp-support.svg" },
+  { label: "차단한사용자", href: "/mypage/blocked", icon: "/icons/mp-account.svg" },
   { label: "모든약관", href: "/mypage/terms", icon: "/icons/mp-terms.svg" },
 ];
 

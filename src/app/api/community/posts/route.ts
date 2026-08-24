@@ -36,6 +36,9 @@ function mapPost(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    // 차단한 사용자의 글을 목록에서 빼려면 보는 사람이 누구인지 알아야 한다.
+    const viewer = await getCurrentUser();
+    const viewerId = viewer?.id ?? null;
     // 주간 인기글: 최근 7일 글을 인기 점수순으로 상위 10개.
     if (searchParams.get("popular") === "week") {
       const popular = await getCommunityPosts({
@@ -43,6 +46,7 @@ export async function GET(request: NextRequest) {
         sort: "popular",
         windowDays: 7,
         limit: 5,
+        viewerId,
       });
       const popTiers = await getUserTiers(popular.map((p) => p.user_id));
       const popAdmins = await getAdminUserIds(popular.map((p) => p.user_id));
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
       groupId: searchParams.get("groupId"),
       tagId: searchParams.get("tagId"),
       query: searchParams.get("q"),
+      viewerId,
     });
     const tiers = await getUserTiers(posts.map((p) => p.user_id));
     const adminIds = await getAdminUserIds(posts.map((p) => p.user_id));

@@ -239,6 +239,37 @@ export async function ensureCommunityTables() {
     )
   `);
 
+  // --- 신고(댓글까지) / 차단 ---
+  // CommunityReport 는 원래 글 신고만 염두에 두고 만들어져 쓰이지 않고 있었다.
+  // 댓글도 신고 대상이라 컬럼을 넓힌다(기존 행이 없어 기본값으로 안전하게 채워진다).
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityReport" ADD COLUMN IF NOT EXISTS "target_type" TEXT NOT NULL DEFAULT 'post'
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityReport" ADD COLUMN IF NOT EXISTS "comment_id" TEXT
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityReport" ADD COLUMN IF NOT EXISTS "target_user_id" TEXT
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "CommunityReport" ADD COLUMN IF NOT EXISTS "detail" TEXT
+  `);
+  // 같은 사람이 같은 대상을 여러 번 신고하는 것만 막는다(신고 자체는 누구나 1회).
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "CommunityReport_once"
+    ON "CommunityReport" ("user_id", "target_type", COALESCE("post_id", ''), COALESCE("comment_id", ''))
+  `);
+
+  // 차단: 차단한 사람(blocker)에게만 상대(blocked)의 글·댓글이 숨는다(단방향).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityBlock" (
+      "blocker_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "blocked_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("blocker_id", "blocked_id")
+    )
+  `);
+
   // --- Post type (normal | poll) and author-chosen image blind ---
   await prisma.$executeRawUnsafe(`
     ALTER TABLE "CommunityPost" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'normal'
@@ -669,7 +700,7 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   return result;
 }
 
-export async function getCommunityPosts(options: { activeOnly?: boolean; groupId?: string | null; tagId?: string | null; query?: string | null; sort?: "recent" | "popular"; windowDays?: number; limit?: number } = {}) {
+export async function getCommunityPosts(options: { activeOnly?: boolean; groupId?: string | null; tagId?: string | null; query?: string | null; sort?: "recent" | "popular"; windowDays?: number; limit?: number; viewerId?: string | null } = {}) {
   await seedDefaultCommunityTaxonomy();
   const conditions = [];
   const params: unknown[] = [];
@@ -693,6 +724,13 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   if (options.windowDays && Number.isFinite(options.windowDays)) {
     const days = Math.max(1, Math.floor(options.windowDays));
     conditions.push(`p."created_at" >= NOW() - (INTERVAL '1 day' * ${days})`);
+  }
+  // 내가 차단한 사용자의 글은 목록에서 빼준다(차단은 단방향 — 내 화면에서만 숨는다).
+  if (options.viewerId) {
+    params.push(options.viewerId);
+    conditions.push(
+      `NOT EXISTS (SELECT 1 FROM "CommunityBlock" b WHERE b."blocker_id" = $${params.length} AND b."blocked_id" = p."user_id")`
+    );
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   // 인기순 = 공감×3 + 댓글×2 + 조회수 (최근 활동 가중). 그 외엔 최신순.
@@ -925,6 +963,10 @@ export async function getCommunityPostDetail(
 
   const commentConditions = [`c."post_id" = $1`];
   if (options.activeOnly) commentConditions.push(`c."is_active" = true`);
+  // 차단한 사용자의 댓글도 숨긴다($2 = viewerId, 비로그인이면 NULL 이라 아무것도 안 걸린다).
+  commentConditions.push(
+    `NOT EXISTS (SELECT 1 FROM "CommunityBlock" b WHERE b."blocker_id" = $2 AND b."blocked_id" = c."user_id")`
+  );
   const commentRows = await prisma.$queryRawUnsafe<CommunityCommentRow[]>(
     `
       SELECT
@@ -1423,4 +1465,194 @@ export async function voteCommunityPoll(postId: string, userId: string, optionId
     optionId
   );
   return getPollResult(postId, userId);
+}
+
+// ─── 신고 / 차단 ──────────────────────────────────────────────────────────────
+// App Store 가이드라인 1.2(사용자 생성 콘텐츠)가 요구하는 두 축:
+//   ① 신고 — 불쾌한 콘텐츠를 운영자에게 알리는 수단
+//   ② 차단 — 특정 사용자의 콘텐츠를 내 화면에서 안 보이게 하는 수단(단방향)
+// 차단은 상대에게 알리지 않고 차단한 쪽 화면에서만 적용된다.
+
+export const COMMUNITY_REPORT_REASONS = [
+  "스팸/광고",
+  "욕설/비방",
+  "음란물/선정성",
+  "혐오 발언",
+  "개인정보 노출",
+  "기타",
+] as const;
+export type CommunityReportReason = (typeof COMMUNITY_REPORT_REASONS)[number];
+
+export function normalizeReportReason(value: unknown): CommunityReportReason {
+  const found = COMMUNITY_REPORT_REASONS.find((r) => r === value);
+  return found ?? "기타";
+}
+
+/** 내가 차단한 사용자 id 목록. 비로그인이면 빈 배열. */
+export async function getBlockedUserIds(viewerId: string | null | undefined): Promise<string[]> {
+  if (!viewerId) return [];
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{ blocked_id: string }[]>(
+    `SELECT "blocked_id" FROM "CommunityBlock" WHERE "blocker_id" = $1`,
+    viewerId
+  );
+  return rows.map((r) => r.blocked_id);
+}
+
+/** 차단 토글. 자기 자신은 차단할 수 없다. 반환값은 처리 후 상태. */
+export async function toggleCommunityBlock(blockerId: string, blockedId: string) {
+  await ensureCommunityTables();
+  if (blockerId === blockedId) throw new Error("CommunityBlockSelf");
+  const exists = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
+    `SELECT COUNT(*)::bigint AS "count" FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`,
+    blockerId,
+    blockedId
+  );
+  if (Number(exists[0]?.count || 0) > 0) {
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`,
+      blockerId,
+      blockedId
+    );
+    return { blocked: false };
+  }
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "CommunityBlock" ("blocker_id", "blocked_id") VALUES ($1, $2)
+     ON CONFLICT ("blocker_id", "blocked_id") DO NOTHING`,
+    blockerId,
+    blockedId
+  );
+  return { blocked: true };
+}
+
+/** 내가 차단한 사용자 목록(해제 화면용). */
+export async function listCommunityBlocks(blockerId: string) {
+  await ensureCommunityTables();
+  return prisma.$queryRawUnsafe<{ blocked_id: string; nickname: string | null; created_at: Date }[]>(
+    `
+      SELECT b."blocked_id", u."nickname", b."created_at"
+      FROM "CommunityBlock" b
+      LEFT JOIN "User" u ON u."id" = b."blocked_id"
+      WHERE b."blocker_id" = $1
+      ORDER BY b."created_at" DESC
+    `,
+    blockerId
+  );
+}
+
+/**
+ * 신고 접수. 같은 사용자가 같은 대상을 두 번 신고하면 조용히 무시한다(중복 방지 인덱스).
+ * 신고 대상의 작성자 id 를 함께 저장해 운영자가 반복 신고자를 바로 본다.
+ */
+export async function createCommunityReport(input: {
+  reporterId: string;
+  targetType: "post" | "comment";
+  postId?: string | null;
+  commentId?: string | null;
+  reason: string;
+  detail?: string | null;
+}) {
+  await ensureCommunityTables();
+  const reason = normalizeReportReason(input.reason);
+  let targetUserId: string | null = null;
+  let postId = input.postId ?? null;
+
+  if (input.targetType === "comment") {
+    if (!input.commentId) throw new Error("CommunityReportTargetMissing");
+    const rows = await prisma.$queryRawUnsafe<{ user_id: string | null; post_id: string }[]>(
+      `SELECT "user_id", "post_id" FROM "CommunityComment" WHERE "id" = $1 AND "is_active" = true LIMIT 1`,
+      input.commentId
+    );
+    if (!rows[0]) throw new Error("CommunityReportTargetMissing");
+    targetUserId = rows[0].user_id;
+    postId = rows[0].post_id;
+  } else {
+    if (!postId) throw new Error("CommunityReportTargetMissing");
+    const rows = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+      `SELECT "user_id" FROM "CommunityPost" WHERE "id" = $1 AND "is_active" = true LIMIT 1`,
+      postId
+    );
+    if (!rows[0]) throw new Error("CommunityReportTargetMissing");
+    targetUserId = rows[0].user_id;
+  }
+
+  if (targetUserId && targetUserId === input.reporterId) throw new Error("CommunityReportSelf");
+
+  await prisma.$executeRawUnsafe(
+    `
+      INSERT INTO "CommunityReport"
+        ("id", "post_id", "comment_id", "target_type", "target_user_id", "user_id", "reason", "detail")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT DO NOTHING
+    `,
+    randomUUID(),
+    postId,
+    input.targetType === "comment" ? input.commentId : null,
+    input.targetType,
+    targetUserId,
+    input.reporterId,
+    reason,
+    input.detail?.slice(0, 500) || null
+  );
+  return { ok: true };
+}
+
+export interface CommunityReportRow {
+  id: string;
+  target_type: string;
+  post_id: string | null;
+  comment_id: string | null;
+  reason: string;
+  detail: string | null;
+  status: string;
+  created_at: Date;
+  reporter_nickname: string | null;
+  target_nickname: string | null;
+  post_title: string | null;
+  comment_content: string | null;
+  content_active: boolean | null;
+}
+
+/** 운영자 화면용 신고 목록(최신순). status 로 좁힐 수 있다. */
+export async function listCommunityReports(options: { status?: string | null; limit?: number } = {}) {
+  await ensureCommunityTables();
+  const params: unknown[] = [];
+  let where = "";
+  if (options.status) {
+    params.push(options.status);
+    where = `WHERE r."status" = $${params.length}`;
+  }
+  const limit = Math.max(1, Math.min(500, Math.floor(options.limit || 200)));
+  return prisma.$queryRawUnsafe<CommunityReportRow[]>(
+    `
+      SELECT
+        r."id", r."target_type", r."post_id", r."comment_id", r."reason", r."detail",
+        r."status", r."created_at",
+        ru."nickname" AS "reporter_nickname",
+        tu."nickname" AS "target_nickname",
+        p."title" AS "post_title",
+        c."content" AS "comment_content",
+        CASE WHEN r."target_type" = 'comment' THEN c."is_active" ELSE p."is_active" END AS "content_active"
+      FROM "CommunityReport" r
+      LEFT JOIN "User" ru ON ru."id" = r."user_id"
+      LEFT JOIN "User" tu ON tu."id" = r."target_user_id"
+      LEFT JOIN "CommunityPost" p ON p."id" = r."post_id"
+      LEFT JOIN "CommunityComment" c ON c."id" = r."comment_id"
+      ${where}
+      ORDER BY r."created_at" DESC
+      LIMIT ${limit}
+    `,
+    ...params
+  );
+}
+
+/** 운영자가 신고 처리 상태를 바꾼다(접수 → 처리완료/반려). */
+export async function updateCommunityReportStatus(id: string, status: string) {
+  await ensureCommunityTables();
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityReport" SET "status" = $2, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $1`,
+    id,
+    status
+  );
+  return { ok: true };
 }

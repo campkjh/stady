@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
+import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -28,6 +29,8 @@ interface CommunityTag {
 interface CommunityComment {
   id: string;
   parentId: string | null;
+  /** 신고·차단 대상 판별용 — API(mapComment)는 예전부터 내려주고 있었다. */
+  userId?: string | null;
   nickname: string;
   authorTier?: string;
   authorIsAnswerKing?: boolean;
@@ -570,7 +573,19 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
-                  <p style={{ margin: "8px 0 0", color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "8px 0 0" }}>
+                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                    <ReportBlockMenu
+                      targetType="post"
+                      postId={post.id}
+                      targetUserId={post.userId}
+                      targetNickname={post.nickname}
+                      currentUserId={currentUserId}
+                      // 차단하면 이 글 자체가 안 보이는 게 맞으므로 목록으로 되돌린다.
+                      onBlocked={() => router.push("/community")}
+                      compact
+                    />
+                  </div>
                   <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
@@ -738,6 +753,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     <CommentItem
                       key={item.id}
                       comment={item}
+                      currentUserId={currentUserId}
+                      onBlocked={() => loadDetail()}
                       replyTargetId={replyTargetId}
                       replyContent={replyContent}
                       replyPosting={replyPosting}
@@ -932,6 +949,9 @@ interface CommentItemProps {
   onOpenReply: (id: string) => void;
   onReplyChange: (value: string) => void;
   onSubmitReply: (event: FormEvent<HTMLFormElement>, parentId: string) => void;
+  currentUserId: string | null;
+  /** 차단 후 댓글 목록을 다시 불러온다. */
+  onBlocked: () => void;
 }
 
 function CommentItem({
@@ -956,6 +976,8 @@ function CommentItem({
   onOpenReply,
   onReplyChange,
   onSubmitReply,
+  currentUserId,
+  onBlocked,
 }: CommentItemProps) {
   const isEditing = editingCommentId === comment.id;
   return (
@@ -1001,6 +1023,15 @@ function CommentItem({
         <button type="button" className="community-reply-button" onClick={() => onOpenReply(comment.id)} style={smallActionButtonStyle(false)}>
           답글
         </button>
+        <ReportBlockMenu
+          targetType="comment"
+          commentId={comment.id}
+          targetUserId={comment.userId}
+          targetNickname={comment.nickname}
+          currentUserId={currentUserId}
+          onBlocked={onBlocked}
+          compact
+        />
         {canPin && (
           <button
             type="button"
@@ -1060,6 +1091,8 @@ function CommentItem({
             <CommentItem
               key={reply.id}
               comment={reply}
+              currentUserId={currentUserId}
+              onBlocked={onBlocked}
               replyTargetId={replyTargetId}
               replyContent={replyContent}
               replyPosting={replyPosting}
