@@ -94,22 +94,22 @@ export default function AdminMockExamsPage() {
     await load();
   }
 
-  const input: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid var(--c-border)", fontSize: 14, color: "var(--c-text-2)", outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
-  const label: React.CSSProperties = { display: "block", fontSize: 13, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 6 };
+  const input: React.CSSProperties = { width: "100%", padding: "11px 14px", borderRadius: 13, border: `1px solid ${JC.soft}`, background: "var(--c-bg)", fontSize: 14, color: JC.title, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
+  const label: React.CSSProperties = { display: "block", fontSize: 13, fontWeight: 600, color: JC.body, marginBottom: 6 };
 
   return (
-    <div style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
+    <div className="jc-admin" style={{ padding: "24px 20px", maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>모의고사 관리</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title, margin: 0 }}>모의고사 관리</h1>
         <button type="button" onClick={showForm ? () => { setShowForm(false); setEditingId(null); } : openAdd}
-          style={{ padding: "9px 16px", background: showForm ? "var(--c-bg)" : "var(--c-brand)", color: showForm ? "var(--c-text-2)" : "#fff", border: showForm ? "1px solid var(--c-border)" : "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          style={{ padding: "11px 20px", background: showForm ? JC.soft : JC.accent, color: showForm ? JC.body : "#fff", border: "none", borderRadius: 13, fontSize: 14, fontWeight: showForm ? 600 : 700, cursor: "pointer", boxShadow: "none" }}>
           {showForm ? "취소" : "+ 모의고사 추가"}
         </button>
       </div>
-      <p style={{ fontSize: 13, color: "var(--c-text-4)", margin: "0 0 18px" }}>시험지 이미지를 업로드하면 사용자가 태블릿에서 펜/형광펜/OCR로 풀 수 있어요.</p>
+      <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, margin: "0 0 20px" }}>시험지 이미지를 업로드하면 사용자가 태블릿에서 펜/형광펜/OCR로 풀 수 있어요.</p>
 
       {showForm && (
-        <form onSubmit={submit} style={{ background: "var(--c-bg-soft)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 18, marginBottom: 20 }}>
+        <form onSubmit={submit} style={{ ...cardStyle, padding: 22, marginBottom: 20 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <div><label style={label}>제목</label><input style={input} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required placeholder="2026 수능 대비 모의고사 1회" /></div>
             <div><label style={label}>부제 (선택)</label><input style={input} value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="국어 · 45문항" /></div>
@@ -157,45 +157,46 @@ export default function AdminMockExamsPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14, alignItems: "end" }}>
             <div><label style={label}>정렬 순서(작을수록 위)</label><input type="number" style={input} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--c-text-2)", paddingBottom: 8 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: JC.body, paddingBottom: 8 }}>
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} /> 노출
             </label>
           </div>
-          <button type="submit" disabled={busy} style={{ padding: "9px 20px", background: "var(--c-brand)", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1 }}>
+          <button type="submit" disabled={busy} style={{ padding: "11px 22px", background: JC.accent, color: "#fff", border: "none", borderRadius: 13, fontSize: 14, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1, boxShadow: "none" }}>
             {busy ? "저장 중..." : editingId ? "수정 저장" : "추가"}
           </button>
         </form>
       )}
 
       {loading ? (
-        <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>불러오는 중…</p>
+        <p style={{ color: JC.sub, fontSize: 14 }}>불러오는 중…</p>
       ) : exams.length === 0 ? (
-        <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>등록된 모의고사가 없습니다.</p>
+        <p style={{ color: JC.sub, fontSize: 14 }}>등록된 모의고사가 없습니다.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {exams.map((ex) => (
-            <div key={ex.id} style={{ border: "1px solid var(--c-border)", borderRadius: 12, padding: 14, background: ex.isActive ? "var(--c-bg)" : "var(--c-bg-soft-3)", opacity: ex.isActive ? 1 : 0.6, display: "flex", gap: 12, alignItems: "center" }}>
+            <div key={ex.id} style={{ ...cardStyle, padding: 16, background: ex.isActive ? "var(--c-bg)" : JC.soft, opacity: ex.isActive ? 1 : 0.6, display: "flex", gap: 12, alignItems: "center" }}>
               {ex.imageUrls[0] && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ex.imageUrls[0]} alt="" style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 8, border: "1px solid var(--c-border)", flexShrink: 0 }} />
+                <img src={ex.imageUrls[0]} alt="" style={{ width: 56, height: 72, objectFit: "cover", borderRadius: 13, border: `1px solid ${JC.soft}`, flexShrink: 0 }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-b)" }}>{ex.title}{!ex.isActive && <span style={{ marginLeft: 8, fontSize: 11, color: "var(--c-text-4c)", fontWeight: 600 }}>(숨김)</span>}</div>
-                {ex.subtitle && <div style={{ fontSize: 13, color: "var(--c-text-4)", marginTop: 2 }}>{ex.subtitle}</div>}
-                <div style={{ fontSize: 12, color: "var(--c-text-5)", marginTop: 4 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: JC.title }}>{ex.title}{!ex.isActive && <span style={{ marginLeft: 8, fontSize: 11, color: JC.sub, fontWeight: 400 }}>(숨김)</span>}</div>
+                {ex.subtitle && <div style={{ fontSize: 13, fontWeight: 500, color: JC.body, marginTop: 3 }}>{ex.subtitle}</div>}
+                <div style={{ fontSize: 12, fontWeight: 400, color: JC.sub, marginTop: 5 }}>
                   {ex.year ? `${ex.year}년 ` : ""}{ex.month ? `${ex.month}월 · ` : ""}
                   {SUBJECT_GROUPS.flatMap((g) => g.subjects).find((sub) => sub.id === ex.subject)?.label ?? "미분류"} ·{" "}
                   문제 {ex.imageUrls.length}장{(ex.solutionImageUrls?.length ?? 0) > 0 ? ` · 해설 ${ex.solutionImageUrls!.length}장` : ""} · 순서 {ex.sortOrder}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
-                <button type="button" onClick={() => openEdit(ex)} style={{ padding: "5px 12px", border: "1px solid var(--c-border)", background: "var(--c-bg)", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--c-brand)", cursor: "pointer" }}>수정</button>
-                <button type="button" onClick={() => remove(ex)} style={{ padding: "5px 12px", border: "1px solid var(--c-danger-line)", background: "var(--c-bg)", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "var(--c-danger)", cursor: "pointer" }}>삭제</button>
+                <button type="button" onClick={() => openEdit(ex)} style={{ padding: "7px 14px", border: "none", background: JC.accentBg, borderRadius: 13, fontSize: 13, fontWeight: 700, color: JC.accent, cursor: "pointer" }}>수정</button>
+                <button type="button" onClick={() => remove(ex)} style={{ padding: "7px 14px", border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", borderRadius: 13, fontSize: 13, fontWeight: 600, color: "var(--c-danger-c)", cursor: "pointer" }}>삭제</button>
               </div>
             </div>
           ))}
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
@@ -242,23 +243,23 @@ function ExamImageGrid({ label, hint, urls, onChange }: {
   }
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 6 }}>{label}</label>
-      {hint && <p style={{ margin: "-2px 0 8px", fontSize: 12, color: "var(--c-text-4c)" }}>{hint}</p>}
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: JC.body, marginBottom: 6 }}>{label}</label>
+      {hint && <p style={{ margin: "-2px 0 8px", fontSize: 12, fontWeight: 400, color: JC.sub }}>{hint}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         {urls.map((url, idx) => (
-          <div key={url} style={{ position: "relative", width: 100, height: 130, borderRadius: 10, overflow: "hidden", border: "1px solid var(--c-border)", background: "var(--c-bg)" }}>
+          <div key={url} style={{ position: "relative", width: 100, height: 130, borderRadius: 13, overflow: "hidden", border: `1px solid ${JC.soft}`, background: "var(--c-bg)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 6, padding: "1px 6px" }}>{idx + 1}</span>
+            <span style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 8px" }}>{idx + 1}</span>
             <button type="button" onClick={() => remove(url)} style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: 999, border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 14, lineHeight: 1, cursor: "pointer" }}>×</button>
             <div style={{ position: "absolute", bottom: 4, left: 4, right: 4, display: "flex", justifyContent: "space-between" }}>
-              <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "var(--c-bg-a90)", color: idx === 0 ? "var(--c-text-5c)" : "var(--c-text-2h)", fontSize: 12, cursor: "pointer" }}>◀</button>
-              <button type="button" onClick={() => move(idx, 1)} disabled={idx === urls.length - 1} style={{ width: 24, height: 22, border: "none", borderRadius: 6, background: "var(--c-bg-a90)", color: idx === urls.length - 1 ? "var(--c-text-5c)" : "var(--c-text-2h)", fontSize: 12, cursor: "pointer" }}>▶</button>
+              <button type="button" onClick={() => move(idx, -1)} disabled={idx === 0} style={{ width: 24, height: 22, border: "none", borderRadius: 13, background: "var(--c-bg-a90)", color: idx === 0 ? "#8A909C" : JC.body, fontSize: 12, cursor: "pointer" }}>◀</button>
+              <button type="button" onClick={() => move(idx, 1)} disabled={idx === urls.length - 1} style={{ width: 24, height: 22, border: "none", borderRadius: 13, background: "var(--c-bg-a90)", color: idx === urls.length - 1 ? "#8A909C" : JC.body, fontSize: 12, cursor: "pointer" }}>▶</button>
             </div>
           </div>
         ))}
         {urls.length < 50 && (
-          <label style={{ width: 100, height: 130, borderRadius: 10, border: "1px dashed var(--c-border-strong-2)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: uploading ? "default" : "pointer", color: "var(--c-text-4)", fontSize: 12, background: "var(--c-bg)" }}>
+          <label style={{ width: 100, height: 130, borderRadius: 13, border: "none", background: JC.soft, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: uploading ? "default" : "pointer", color: JC.body, fontSize: 12, fontWeight: 600 }}>
             <span style={{ fontSize: 24, lineHeight: 1 }}>{uploading ? "…" : "+"}</span>
             {uploading ? "업로드 중" : "이미지 추가"}
             <input type="file" accept="image/*" multiple hidden disabled={uploading} onChange={upload} />
@@ -268,3 +269,29 @@ function ExamImageGrid({ label, hint, urls, onChange }: {
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  border: `1px solid ${JC.soft}`,
+  borderRadius: 18,
+  boxShadow: "none",
+};
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

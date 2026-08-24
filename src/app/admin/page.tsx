@@ -2,13 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  StatCommentsIcon,
-  StatPostsIcon,
-  StatQuizIcon,
-  StatUsersIcon,
-  StatWorkbookIcon,
-} from "@/components/admin/admin-icons";
 
 interface Counts {
   workbooks: number;
@@ -61,6 +54,62 @@ interface ReferralStats {
   inviters: ReferralInviter[];
 }
 
+/* ── 제이씨랩 자가견적 톤 토큰 ──
+   면: 카드 #FFFFFF(--c-bg) / 보조면 #F2F3F5(--c-bg-muted-3) / 강조 #EAF2FF(--c-brand-soft-6)
+   선: 1px solid #F2F3F5 가 유일한 경계 · 그림자 없음
+   라운드: 카드 18 / 작은 요소 13 / 알약 999
+   글자: 제목 #2B313D(--c-text-2) 700 · 본문 #51535C(--c-text-3c) · 보조 #8A909C · 강조 #3180F7 */
+const SURFACE_SUB = "var(--c-bg-muted-3)"; // #F2F3F5
+const SURFACE_ACCENT = "var(--c-brand-soft-6)"; // #EAF2FF
+const LINE = "1px solid var(--c-bg-muted-3)"; // 1px solid #F2F3F5
+const TEXT_TITLE = "var(--c-text-2)"; // #2B313D
+const TEXT_BODY = "var(--c-text-3c)"; // #51535C
+const TEXT_SUB = "#8A909C";
+const ACCENT = "#3180F7";
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  border: LINE,
+  borderRadius: 18,
+  boxShadow: "none",
+  overflow: "hidden",
+};
+
+const cardHeadStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "20px 24px",
+  borderBottom: LINE,
+};
+
+const thStyle: React.CSSProperties = {
+  textAlign: "left",
+  padding: "12px 24px",
+  fontSize: 12,
+  fontWeight: 600,
+  color: TEXT_SUB,
+  whiteSpace: "nowrap",
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "14px 24px",
+  fontSize: 13,
+  fontWeight: 500,
+  color: TEXT_BODY,
+};
+
+const pillBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "5px 12px",
+  fontSize: 11,
+  fontWeight: 700,
+  lineHeight: 1.4,
+  whiteSpace: "nowrap",
+};
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -70,17 +119,12 @@ function formatDate(dateStr: string) {
   return `${month}.${day} ${hours}:${mins}`;
 }
 
+// 완료만 강조 알약(#EAF2FF/#3180F7), 나머지는 중립 알약(#F2F3F5/#51535C)
 function getStatusStyle(status: string): React.CSSProperties {
-  switch (status) {
-    case "접수":
-      return { background: "var(--c-warn-soft-2)", color: "var(--c-warn-b)" };
-    case "처리중":
-      return { background: "var(--c-brand-line-2)", color: "var(--c-brand-deep-3)" };
-    case "완료":
-      return { background: "var(--c-success-line)", color: "var(--c-success-b)" };
-    default:
-      return { background: "var(--c-bg-muted)", color: "var(--c-text-3)" };
+  if (status === "완료") {
+    return { background: SURFACE_ACCENT, color: ACCENT };
   }
+  return { background: SURFACE_SUB, color: TEXT_BODY };
 }
 
 export default function AdminDashboard() {
@@ -111,159 +155,111 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  // 아이콘은 컬러 SVG(currentColor 불가) → <img> 로 사용, 타일은 전부 중립 #F2F3F5
   const cards = [
-    {
-      label: "회원 수",
-      count: counts.users,
-      href: "/admin/users",
-      color: "var(--c-warn)",
-      bgColor: "var(--c-warn-soft)",
-      icon: <StatUsersIcon size={24} />,
-    },
-    {
-      label: "문제집 수",
-      count: counts.workbooks,
-      href: "/admin/workbooks",
-      color: "var(--c-brand)",
-      bgColor: "var(--c-brand-soft-2)",
-      icon: <StatWorkbookIcon size={24} />,
-    },
-    {
-      label: "OX퀴즈 수",
-      count: counts.oxQuizSets,
-      href: "/admin/ox-quiz",
-      color: "var(--c-success)",
-      bgColor: "var(--c-success-soft)",
-      icon: <StatQuizIcon size={24} />,
-    },
-    {
-      label: "영단어퀴즈 수",
-      count: counts.vocabQuizSets,
-      href: "/admin/vocab-quiz",
-      color: "var(--c-purple)",
-      bgColor: "var(--c-purple-soft)",
-      icon: <StatPostsIcon size={24} />,
-    },
-    {
-      label: "문의 수",
-      count: counts.inquiries,
-      href: "/admin/inquiries",
-      color: "var(--c-danger)",
-      bgColor: "var(--c-danger-soft)",
-      icon: <StatCommentsIcon size={24} />,
-    },
+    { label: "회원 수", count: counts.users, href: "/admin/users", icon: "stat-users" },
+    { label: "문제집 수", count: counts.workbooks, href: "/admin/workbooks", icon: "stat-workbook" },
+    { label: "OX퀴즈 수", count: counts.oxQuizSets, href: "/admin/ox-quiz", icon: "stat-quiz" },
+    { label: "영단어퀴즈 수", count: counts.vocabQuizSets, href: "/admin/vocab-quiz", icon: "stat-posts" },
+    { label: "문의 수", count: counts.inquiries, href: "/admin/inquiries", icon: "stat-comments" },
   ];
 
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>관리자 대시보드</h1>
-        <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>Stady 서비스 현황을 한눈에 확인하세요</p>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT_TITLE, letterSpacing: "-0.02em" }}>관리자 대시보드</h1>
+        <p style={{ fontSize: 14, fontWeight: 500, color: TEXT_SUB, marginTop: 6 }}>Stady 서비스 현황을 한눈에 확인하세요</p>
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
-          <div style={{ width: 28, height: 28, border: "3px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ display: "flex", justifyContent: "center", padding: 56 }}>
+          <div style={{ width: 28, height: 28, border: "3px solid var(--c-bg-muted-3)", borderTopColor: ACCENT, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : (
         <>
           {/* Stat Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 16 }}>
             {cards.map((card) => (
               <Link
                 key={card.label}
                 href={card.href}
-                className="press"
+                className="press admin-stat-card"
                 style={{
-                  background: "var(--c-bg)",
-                  borderRadius: 14,
-                  border: "1px solid var(--c-border)",
-                  padding: "20px 18px",
+                  ...cardStyle,
+                  padding: "22px 22px 24px",
                   textDecoration: "none",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  transition: "box-shadow 0.2s, transform 0.2s",
                   display: "block",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
-                }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 12, background: card.bgColor,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: card.color,
-                  }}>
-                    {card.icon}
-                  </div>
+                <div
+                  className="admin-stat-tile"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 13,
+                    background: SURFACE_SUB,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 18,
+                    transition: "background 0.18s ease",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/icons/admin-color/${card.icon}.svg`} alt="" aria-hidden width={24} height={24} style={{ display: "block" }} />
                 </div>
-                <p style={{ fontSize: 28, fontWeight: 700, color: "var(--c-text-2)", lineHeight: 1 }}>{card.count}</p>
-                <p style={{ fontSize: 13, color: "var(--c-text-4)", marginTop: 6, fontWeight: 500 }}>{card.label}</p>
+                <p style={{ fontSize: 30, fontWeight: 800, color: TEXT_TITLE, lineHeight: 1, letterSpacing: "-0.02em" }}>{card.count}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: TEXT_BODY, marginTop: 10 }}>{card.label}</p>
               </Link>
             ))}
           </div>
 
           {/* Recent Users & Inquiries Side by Side */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 24 }} className="admin-dashboard-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 20 }} className="admin-dashboard-grid">
             {/* Recent Users */}
-            <div style={{
-              background: "var(--c-bg)",
-              borderRadius: 14,
-              border: "1px solid var(--c-border)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              overflow: "hidden",
-            }} className="admin-table-card">
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
-              }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>최근 가입 회원</h2>
-                <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>최근 5명</span>
+            <div style={cardStyle} className="admin-table-card">
+              <div style={cardHeadStyle}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: TEXT_TITLE }}>최근 가입 회원</h2>
+                <span style={{ fontSize: 12, fontWeight: 500, color: TEXT_SUB }}>최근 5명</span>
               </div>
               {recentUsers.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
+                <div style={{ padding: 40, textAlign: "center", color: TEXT_SUB, fontSize: 14, fontWeight: 500 }}>
                   가입한 회원이 없습니다.
                 </div>
               ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ background: "var(--c-bg-soft)" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>닉네임</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>이메일</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>경로</th>
-                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>가입일</th>
+                    <tr>
+                      <th style={thStyle}>닉네임</th>
+                      <th style={thStyle}>이메일</th>
+                      <th style={thStyle}>경로</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>가입일</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentUsers.map((user) => (
-                      <tr key={user.id} style={{ borderBottom: "1px solid var(--c-bg-muted)" }}>
-                        <td style={{ padding: "10px 16px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <tr key={user.id} style={{ borderTop: LINE }}>
+                        <td style={tdStyle}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
-                              width: 28, height: 28, borderRadius: "50%", background: "var(--c-brand-soft-2)",
+                              width: 30, height: 30, borderRadius: 999, background: SURFACE_ACCENT,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 12, fontWeight: 600, color: "var(--c-brand)", flexShrink: 0,
+                              fontSize: 12, fontWeight: 700, color: ACCENT, flexShrink: 0,
                             }}>
                               {user.nickname.charAt(0)}
                             </div>
-                            <span style={{ fontWeight: 600, color: "var(--c-text-2)" }}>{user.nickname}</span>
+                            <span style={{ fontWeight: 700, color: TEXT_TITLE }}>{user.nickname}</span>
                           </div>
                         </td>
-                        <td style={{ padding: "10px 16px", color: "var(--c-text-4)" }}>{user.email}</td>
-                        <td style={{ padding: "10px 16px" }}>
-                          <span style={{
-                            fontSize: 11, padding: "2px 8px", borderRadius: 4,
-                            background: "var(--c-bg-muted)", color: "var(--c-text-3)", fontWeight: 500,
-                          }}>
+                        <td style={tdStyle}>{user.email}</td>
+                        <td style={tdStyle}>
+                          <span style={{ ...pillBase, background: SURFACE_SUB, color: TEXT_BODY }}>
                             {user.signupSource || "미응답"}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", color: "var(--c-text-4)", fontSize: 12 }}>
+                        <td style={{ ...tdStyle, textAlign: "right", color: TEXT_SUB, fontSize: 12 }}>
                           {formatDate(user.createdAt)}
                         </td>
                       </tr>
@@ -274,53 +270,40 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Inquiries */}
-            <div style={{
-              background: "var(--c-bg)",
-              borderRadius: 14,
-              border: "1px solid var(--c-border)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              overflow: "hidden",
-            }} className="admin-table-card">
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
-              }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>최근 문의</h2>
-                <Link href="/admin/inquiries" style={{ fontSize: 12, color: "var(--c-brand)", textDecoration: "none", fontWeight: 500 }}>
+            <div style={cardStyle} className="admin-table-card">
+              <div style={cardHeadStyle}>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: TEXT_TITLE }}>최근 문의</h2>
+                <Link href="/admin/inquiries" style={{ fontSize: 12, color: ACCENT, textDecoration: "none", fontWeight: 700 }}>
                   전체보기
                 </Link>
               </div>
               {recentInquiries.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
+                <div style={{ padding: 40, textAlign: "center", color: TEXT_SUB, fontSize: 14, fontWeight: 500 }}>
                   접수된 문의가 없습니다.
                 </div>
               ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ background: "var(--c-bg-soft)" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>제목</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>카테고리</th>
-                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>상태</th>
-                      <th style={{ textAlign: "right", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>접수일</th>
+                    <tr>
+                      <th style={thStyle}>제목</th>
+                      <th style={thStyle}>카테고리</th>
+                      <th style={{ ...thStyle, textAlign: "center" }}>상태</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>접수일</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentInquiries.map((inq) => (
-                      <tr key={inq.id} style={{ borderBottom: "1px solid var(--c-bg-muted)" }}>
-                        <td style={{ padding: "10px 16px", fontWeight: 500, color: "var(--c-text-2)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <tr key={inq.id} style={{ borderTop: LINE }}>
+                        <td style={{ ...tdStyle, fontWeight: 700, color: TEXT_TITLE, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {inq.title}
                         </td>
-                        <td style={{ padding: "10px 16px", color: "var(--c-text-4)" }}>{inq.category}</td>
-                        <td style={{ padding: "10px 16px", textAlign: "center" }}>
-                          <span style={{
-                            fontSize: 11, padding: "3px 10px", borderRadius: 10,
-                            fontWeight: 600,
-                            ...getStatusStyle(inq.status),
-                          }}>
+                        <td style={tdStyle}>{inq.category}</td>
+                        <td style={{ ...tdStyle, textAlign: "center" }}>
+                          <span style={{ ...pillBase, ...getStatusStyle(inq.status) }}>
                             {inq.status}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", color: "var(--c-text-4)", fontSize: 12 }}>
+                        <td style={{ ...tdStyle, textAlign: "right", color: TEXT_SUB, fontSize: 12 }}>
                           {formatDate(inq.createdAt)}
                         </td>
                       </tr>
@@ -332,65 +315,56 @@ export default function AdminDashboard() {
           </div>
 
           {/* Referral Event Stats */}
-          <div style={{ marginTop: 24 }}>
-            <div style={{
-              background: "var(--c-bg)",
-              borderRadius: 14,
-              border: "1px solid var(--c-border)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-              overflow: "hidden",
-            }} className="admin-table-card admin-referral-card">
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
-              }}>
+          <div style={{ marginTop: 20 }}>
+            <div style={cardStyle} className="admin-table-card admin-referral-card">
+              <div style={cardHeadStyle}>
                 <div>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>친구초대 이벤트 현황</h2>
-                  <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 3 }}>누가 몇 명을 초대했는지 확인합니다</p>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: TEXT_TITLE }}>친구초대 이벤트 현황</h2>
+                  <p style={{ fontSize: 12, fontWeight: 500, color: TEXT_SUB, marginTop: 4 }}>누가 몇 명을 초대했는지 확인합니다</p>
                 </div>
-                <span style={{ padding: "7px 10px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 12, fontWeight: 800 }}>
+                <span style={{ ...pillBase, padding: "7px 14px", fontSize: 12, background: SURFACE_ACCENT, color: ACCENT }}>
                   총 {referralStats.totalInvites}명
                 </span>
               </div>
               {referralStats.inviters.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "var(--c-text-4)", fontSize: 14 }}>
+                <div style={{ padding: 40, textAlign: "center", color: TEXT_SUB, fontSize: 14, fontWeight: 500 }}>
                   아직 친구초대 기록이 없습니다.
                 </div>
               ) : (
-                <table className="admin-referral-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table className="admin-referral-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ background: "var(--c-bg-soft)" }}>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대한 회원</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대코드</th>
-                      <th style={{ textAlign: "center", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>초대 수</th>
-                      <th style={{ textAlign: "left", padding: "10px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 12 }}>가입한 친구</th>
+                    <tr>
+                      <th style={thStyle}>초대한 회원</th>
+                      <th style={thStyle}>초대코드</th>
+                      <th style={{ ...thStyle, textAlign: "center" }}>초대 수</th>
+                      <th style={thStyle}>가입한 친구</th>
                     </tr>
                   </thead>
                   <tbody>
                     {referralStats.inviters.map((inviter) => (
-                      <tr key={inviter.inviterId} style={{ borderBottom: "1px solid var(--c-bg-muted)", verticalAlign: "top" }}>
-                        <td style={{ padding: "12px 16px" }}>
-                          <p style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{inviter.nickname}</p>
-                          <p style={{ marginTop: 3, color: "var(--c-text-4)", fontSize: 12 }}>{inviter.email}</p>
+                      <tr key={inviter.inviterId} style={{ borderTop: LINE, verticalAlign: "top" }}>
+                        <td style={{ ...tdStyle, padding: "16px 24px" }}>
+                          <p style={{ fontWeight: 700, color: TEXT_TITLE, fontSize: 13 }}>{inviter.nickname}</p>
+                          <p style={{ marginTop: 4, color: TEXT_SUB, fontSize: 12, fontWeight: 500 }}>{inviter.email}</p>
                         </td>
-                        <td style={{ padding: "12px 16px" }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)", background: "var(--c-brand-soft-2)", borderRadius: 8, padding: "5px 8px" }}>
+                        <td style={{ ...tdStyle, padding: "16px 24px" }}>
+                          <span style={{ ...pillBase, fontSize: 12, background: SURFACE_ACCENT, color: ACCENT }}>
                             {inviter.inviteCode}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text)" }}>{inviter.invitedCount}</span>
-                          <span style={{ marginLeft: 2, color: "var(--c-text-4)", fontSize: 12 }}>명</span>
+                        <td style={{ ...tdStyle, padding: "16px 24px", textAlign: "center" }}>
+                          <span style={{ fontSize: 18, fontWeight: 700, color: ACCENT }}>{inviter.invitedCount}</span>
+                          <span style={{ marginLeft: 3, color: TEXT_SUB, fontSize: 12, fontWeight: 500 }}>명</span>
                         </td>
-                        <td style={{ padding: "12px 16px" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <td style={{ ...tdStyle, padding: "16px 24px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {inviter.invitees.map((invitee) => (
-                              <div key={invitee.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                              <div key={invitee.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                                 <div style={{ minWidth: 0 }}>
-                                  <span style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{invitee.nickname}</span>
-                                  <span style={{ marginLeft: 6, color: "var(--c-text-4)", fontSize: 12 }}>{invitee.email}</span>
+                                  <span style={{ fontWeight: 700, color: TEXT_TITLE }}>{invitee.nickname}</span>
+                                  <span style={{ marginLeft: 6, color: TEXT_SUB, fontSize: 12, fontWeight: 500 }}>{invitee.email}</span>
                                 </div>
-                                <span style={{ color: "var(--c-text-4)", fontSize: 12, flexShrink: 0 }}>{formatDate(invitee.invitedAt)}</span>
+                                <span style={{ color: TEXT_SUB, fontSize: 12, fontWeight: 500, flexShrink: 0 }}>{formatDate(invitee.invitedAt)}</span>
                               </div>
                             ))}
                           </div>
@@ -405,38 +379,29 @@ export default function AdminDashboard() {
 
           {/* Sign-up Source Stats */}
           {sourceStats.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div style={{
-                background: "var(--c-bg)",
-                borderRadius: 14,
-                border: "1px solid var(--c-border)",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                overflow: "hidden",
-              }}>
-                <div style={{
-                  padding: "16px 20px", borderBottom: "1px solid var(--c-bg-muted)",
-                }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>가입 경로 통계</h2>
+            <div style={{ marginTop: 20 }}>
+              <div style={cardStyle}>
+                <div style={{ ...cardHeadStyle, justifyContent: "flex-start" }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: TEXT_TITLE }}>가입 경로 통계</h2>
                 </div>
-                <div style={{ padding: 20 }}>
+                <div style={{ padding: 24 }}>
                   {(() => {
                     const maxCount = Math.max(...sourceStats.map((s) => s.count), 1);
-                    const colors = ["#3787FF", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#EC4899", "#06B6D4"];
                     return sourceStats
                       .sort((a, b) => b.count - a.count)
                       .map((stat, i) => (
-                        <div key={stat.source} style={{ marginBottom: i < sourceStats.length - 1 ? 14 : 0 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2)" }}>{stat.source}</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: colors[i % colors.length] }}>{stat.count}명</span>
+                        <div key={stat.source} style={{ marginBottom: i < sourceStats.length - 1 ? 18 : 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_BODY }}>{stat.source}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT }}>{stat.count}명</span>
                           </div>
-                          <div style={{ height: 8, backgroundColor: "var(--c-bg-muted)", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ height: 8, background: SURFACE_SUB, borderRadius: 999, overflow: "hidden" }}>
                             <div
                               style={{
                                 height: "100%",
                                 width: `${(stat.count / maxCount) * 100}%`,
-                                backgroundColor: colors[i % colors.length],
-                                borderRadius: 4,
+                                background: ACCENT,
+                                borderRadius: 999,
                                 transition: "width 0.5s ease",
                               }}
                             />
@@ -453,6 +418,7 @@ export default function AdminDashboard() {
 
       {/* Responsive */}
       <style>{`
+        .admin-stat-card:hover .admin-stat-tile { background: var(--c-brand-soft-6); }
         @media (max-width: 900px) {
           .admin-dashboard-grid {
             grid-template-columns: 1fr !important;

@@ -75,31 +75,38 @@ export default function AdminCommentsPage() {
   };
 
   return (
-    <section style={{ display: "grid", gap: 16 }}>
-      <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>댓글 관리</h1>
+    <section style={{ display: "grid", gap: 20 }}>
+      <h1 style={{ margin: 0, color: JC.title, fontSize: 26, fontWeight: 700 }}>댓글 관리</h1>
       {message && (
-        <div style={{ border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", color: "var(--c-danger-deep)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 700 }}>
+        <div style={{ border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", color: "var(--c-danger-deep)", borderRadius: 13, padding: "12px 16px", fontSize: 14, fontWeight: 600 }}>
           {message}
         </div>
       )}
-      <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", overflow: "hidden" }}>
+      <div style={cardStyle}>
         {loading ? (
-          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중...</p>
+          <p style={{ margin: 0, padding: 24, color: JC.sub, fontSize: 14 }}>불러오는 중...</p>
         ) : comments.length === 0 ? (
-          <p style={{ margin: 0, padding: 20, color: "var(--c-text-3)", fontSize: 14 }}>등록된 댓글이 없습니다.</p>
+          <p style={{ margin: 0, padding: 24, color: JC.sub, fontSize: 14 }}>등록된 댓글이 없습니다.</p>
         ) : (
-          comments.map((c) => (
-            <article key={c.id} style={{ padding: 16, borderBottom: "1px solid var(--c-bg-muted)", opacity: c.isActive ? 1 : 0.6 }}>
+          comments.map((c, index) => (
+            <article
+              key={c.id}
+              style={{
+                padding: 20,
+                borderBottom: index === comments.length - 1 ? "none" : `1px solid ${JC.soft}`,
+                opacity: c.isActive ? 1 : 0.6,
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <span style={{ color: "var(--c-text-3)", fontSize: 12 }}>
+                <span style={{ color: JC.sub, fontSize: 12, fontWeight: 400 }}>
                   {c.parentId ? "↳ 대댓글 · " : ""}{c.nickname} · {new Date(c.createdAt).toLocaleString("ko-KR")}
                 </span>
-                <span style={{ color: c.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 12, fontWeight: 800 }}>
+                <span style={c.isActive ? chipAccent : chipNeutral}>
                   {c.isActive ? "노출" : "비노출"}
                 </span>
               </div>
-              <p style={{ margin: "8px 0 6px", color: "var(--c-text-2c)", fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{c.content}</p>
-              <p style={{ margin: "0 0 10px", color: "var(--c-text-4c)", fontSize: 12 }}>게시글: {c.postTitle}</p>
+              <p style={{ margin: "10px 0 6px", color: JC.body, fontSize: 14, fontWeight: 500, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{c.content}</p>
+              <p style={{ margin: "0 0 14px", color: JC.sub, fontSize: 12, fontWeight: 400 }}>게시글: {c.postTitle}</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => toggleActive(c)} disabled={busyId === c.id} style={btnGhost}>
                   {c.isActive ? "비노출" : "노출"}
@@ -114,14 +121,44 @@ export default function AdminCommentsPage() {
   );
 }
 
-const btnBase = {
-  border: "none",
-  borderRadius: 8,
-  padding: "8px 16px",
-  fontSize: 13,
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  border: `1px solid ${JC.soft}`,
+  borderRadius: 18,
+  background: "var(--c-bg)",
+  overflow: "hidden",
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
   fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const chipAccent: React.CSSProperties = { ...chipBase, background: JC.accentBg, color: JC.accent };
+const chipNeutral: React.CSSProperties = { ...chipBase, background: JC.soft, color: JC.body };
+
+const btnBase: React.CSSProperties = {
+  border: "none",
+  borderRadius: 13,
+  padding: "9px 18px",
+  fontSize: 13,
+  fontWeight: 600,
   cursor: "pointer",
 };
 
-const btnGhost = { ...btnBase, background: "var(--c-bg-muted)", color: "var(--c-text-2c)" };
-const btnDanger = { ...btnBase, background: "var(--c-danger-soft)", color: "var(--c-danger-c)", border: "1px solid var(--c-danger-line)" };
+const btnGhost: React.CSSProperties = { ...btnBase, background: JC.soft, color: JC.body };
+const btnDanger: React.CSSProperties = { ...btnBase, background: "var(--c-danger-soft)", color: "var(--c-danger-c)", border: "1px solid var(--c-danger-line)" };

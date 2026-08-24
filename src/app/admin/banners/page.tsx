@@ -105,22 +105,23 @@ export default function AdminBannersPage() {
   };
 
   return (
-    <div style={{ padding: 32 }}>
+    <div className="jc-admin" style={{ padding: 32 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text)" }}>배너 관리</h1>
-          <p style={{ marginTop: 4, fontSize: 14, color: "var(--c-text-4)" }}>홈 카테고리 아래 슬라이드 배너와 첫 진입 모달 배너를 관리합니다.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title }}>배너 관리</h1>
+          <p style={{ marginTop: 6, fontSize: 14, fontWeight: 400, color: JC.sub }}>홈 카테고리 아래 슬라이드 배너와 첫 진입 모달 배너를 관리합니다.</p>
         </div>
         {editingId && (
           <button type="button" onClick={resetForm} style={ghostButtonStyle}>새 배너</button>
         )}
       </div>
 
-      <form onSubmit={submit} style={{ background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 18 }}>
+      <form onSubmit={submit} style={{ ...cardStyle, padding: 24, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: JC.title, marginBottom: 18 }}>
           {editingId ? "배너 수정" : "배너 추가"}
         </h2>
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {/* 타입 선택 — 알약. 선택은 강조 배경, 나머지는 중립 면 */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
           {[
             { value: "slide" as const, label: "슬라이드 배너" },
             { value: "modal" as const, label: "진입 모달 배너" },
@@ -131,13 +132,14 @@ export default function AdminBannersPage() {
               onClick={() => setForm({ ...form, bannerType: type.value })}
               style={{
                 height: 38,
-                padding: "0 14px",
+                padding: "0 16px",
                 borderRadius: 999,
-                border: form.bannerType === type.value ? "none" : "1px solid var(--c-border)",
-                background: form.bannerType === type.value ? "var(--c-inverse)" : "var(--c-bg)",
-                color: form.bannerType === type.value ? "#fff" : "var(--c-text-3)",
+                border: "none",
+                cursor: "pointer",
+                background: form.bannerType === type.value ? JC.accentBg : JC.soft,
+                color: form.bannerType === type.value ? JC.accent : JC.body,
                 fontSize: 13,
-                fontWeight: 800,
+                fontWeight: form.bannerType === type.value ? 700 : 600,
               }}
             >
               {type.label}
@@ -159,7 +161,7 @@ export default function AdminBannersPage() {
           </Field>
           <Field label="배경색">
             <div style={{ display: "flex", gap: 8 }}>
-              <input type="color" value={form.bgColor} onChange={(e) => setForm({ ...form, bgColor: e.target.value })} style={{ width: 48, height: 42, border: "1px solid var(--c-border)", borderRadius: 10, background: "var(--c-bg)" }} />
+              <input type="color" value={form.bgColor} onChange={(e) => setForm({ ...form, bgColor: e.target.value })} style={{ width: 48, height: 44, border: `1px solid ${JC.soft}`, borderRadius: 13, background: "var(--c-bg)" }} />
               <input value={form.bgColor} onChange={(e) => setForm({ ...form, bgColor: e.target.value })} style={inputStyle} />
             </div>
           </Field>
@@ -167,7 +169,7 @@ export default function AdminBannersPage() {
             <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} style={inputStyle} />
           </Field>
         </div>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 16, fontSize: 14, fontWeight: 700, color: "var(--c-text-2c)" }}>
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 16, fontSize: 14, fontWeight: 600, color: JC.body }}>
           <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
           홈에 노출
         </label>
@@ -178,15 +180,15 @@ export default function AdminBannersPage() {
       </form>
 
       {loading ? (
-        <p style={{ color: "var(--c-text-4)" }}>불러오는 중...</p>
+        <p style={{ color: JC.sub }}>불러오는 중...</p>
       ) : banners.length === 0 ? (
-        <div style={{ padding: 40, borderRadius: 16, background: "var(--c-bg)", border: "1px solid var(--c-border)", textAlign: "center", color: "var(--c-text-4)" }}>
+        <div style={{ ...cardStyle, padding: 48, textAlign: "center", color: JC.sub }}>
           등록된 배너가 없습니다.
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
           {banners.map((banner) => (
-            <div key={banner.id} style={{ background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 16, overflow: "hidden" }}>
+            <div key={banner.id} style={{ ...cardStyle, overflow: "hidden" }}>
               <div style={{ position: "relative", aspectRatio: "2/1", background: banner.bgColor || "var(--c-brand)" }}>
                 {banner.imageUrl && <img src={banner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
                 <div style={{ position: "absolute", inset: 0, background: banner.imageUrl ? "linear-gradient(90deg, rgba(0,0,0,0.54), rgba(0,0,0,0.08))" : "rgba(0,0,0,0.08)" }} />
@@ -201,7 +203,7 @@ export default function AdminBannersPage() {
               </div>
               <div style={{ padding: 14, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 12, color: "var(--c-text-4)" }}>순서 {banner.sortOrder} · {banner.linkUrl || "링크 없음"}</p>
+                  <p style={{ fontSize: 12, fontWeight: 400, color: JC.sub }}>순서 {banner.sortOrder} · {banner.linkUrl || "링크 없음"}</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                   <button type="button" onClick={() => edit(banner)} style={smallButtonStyle}>수정</button>
@@ -212,6 +214,7 @@ export default function AdminBannersPage() {
           ))}
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
@@ -219,58 +222,90 @@ export default function AdminBannersPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-text-2c)" }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: JC.body }}>{label}</span>
       {children}
     </label>
   );
 }
 
-const inputStyle = {
-  width: "100%",
-  height: 42,
-  borderRadius: 10,
-  border: "1px solid var(--c-border)",
-  padding: "0 12px",
-  fontSize: 14,
-  outline: "none",
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
 };
 
-const primaryButtonStyle = {
-  height: 42,
-  padding: "0 18px",
-  borderRadius: 10,
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  border: `1px solid ${JC.soft}`,
+  borderRadius: 18,
+  boxShadow: "none",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  height: 44,
+  borderRadius: 13,
+  border: `1px solid ${JC.soft}`,
+  background: "var(--c-bg)",
+  padding: "0 14px",
+  fontSize: 14,
+  color: JC.title,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  height: 44,
+  padding: "0 20px",
+  borderRadius: 13,
   border: "none",
-  background: "var(--c-brand)",
+  background: JC.accent,
   color: "#fff",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
+  cursor: "pointer",
+  boxShadow: "none",
 };
 
-const ghostButtonStyle = {
-  height: 42,
-  padding: "0 16px",
-  borderRadius: 10,
-  border: "1px solid var(--c-border)",
-  background: "var(--c-bg)",
-  color: "var(--c-text-2c)",
-  fontSize: 14,
-  fontWeight: 800,
-};
-
-const smallButtonStyle = {
-  height: 34,
-  padding: "0 12px",
-  borderRadius: 9,
-  border: "1px solid var(--c-border)",
-  background: "var(--c-bg)",
-  color: "var(--c-text-2c)",
-  fontSize: 13,
-  fontWeight: 800,
-};
-
-const dangerButtonStyle = {
-  ...smallButtonStyle,
+const ghostButtonStyle: React.CSSProperties = {
+  height: 44,
+  padding: "0 18px",
+  borderRadius: 13,
   border: "none",
+  background: JC.soft,
+  color: JC.body,
+  fontSize: 14,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const smallButtonStyle: React.CSSProperties = {
+  height: 34,
+  padding: "0 14px",
+  borderRadius: 13,
+  border: "none",
+  background: JC.soft,
+  color: JC.body,
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+  ...smallButtonStyle,
   background: "var(--c-danger-soft-3)",
   color: "var(--c-danger-c)",
 };
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

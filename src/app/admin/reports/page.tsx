@@ -98,10 +98,11 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <section style={{ display: "grid", gap: 16 }}>
-      <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>신고·차단 관리</h1>
+    <section style={{ display: "grid", gap: 20 }}>
+      <h1 style={{ margin: 0, color: JC.title, fontSize: 26, fontWeight: 700 }}>신고·차단 관리</h1>
 
-      <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--c-border)" }}>
+      {/* 탭 — 구분선 대신 알약 트랙(#F2F3F5) 위에 흰 알약을 얹는다 */}
+      <div style={{ display: "inline-flex", gap: 4, padding: 4, borderRadius: 999, background: JC.soft, width: "fit-content" }}>
         {([["reports", "신고 접수"], ["blocks", "차단 현황"]] as const).map(([key, label]) => (
           <button
             key={key}
@@ -109,14 +110,13 @@ export default function AdminReportsPage() {
             onClick={() => setTab(key)}
             style={{
               border: "none",
-              background: "none",
-              padding: "10px 14px",
-              fontSize: 14.5,
-              fontWeight: 800,
+              borderRadius: 999,
+              padding: "8px 18px",
+              fontSize: 14,
+              fontWeight: tab === key ? 700 : 600,
               cursor: "pointer",
-              color: tab === key ? "var(--c-brand-b)" : "var(--c-text-4)",
-              borderBottom: tab === key ? "2px solid var(--c-brand-b)" : "2px solid transparent",
-              marginBottom: -1,
+              color: tab === key ? JC.accent : JC.body,
+              background: tab === key ? "var(--c-bg)" : "transparent",
             }}
           >
             {label}
@@ -131,14 +131,14 @@ export default function AdminReportsPage() {
             type="button"
             onClick={() => setFilter(item)}
             style={{
-              border: "1px solid var(--c-border)",
+              border: "none",
               borderRadius: 999,
-              padding: "6px 14px",
+              padding: "7px 16px",
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: filter === item ? 700 : 600,
               cursor: "pointer",
-              background: filter === item ? "var(--c-brand-b)" : "var(--c-bg)",
-              color: filter === item ? "#fff" : "var(--c-text-3)",
+              background: filter === item ? JC.accentBg : JC.soft,
+              color: filter === item ? JC.accent : JC.body,
             }}
           >
             {item}
@@ -146,13 +146,13 @@ export default function AdminReportsPage() {
         ))}
       </div>
 
-      {message && <p style={{ margin: 0, color: "var(--c-danger-c)", fontSize: 14 }}>{message}</p>}
+      {message && <p style={{ margin: 0, color: "var(--c-danger-c)", fontSize: 14, fontWeight: 600 }}>{message}</p>}
 
-      <div style={{ display: tab === "reports" ? "block" : "none", border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", padding: 20 }}>
+      <div style={{ ...cardStyle, display: tab === "reports" ? "block" : "none", padding: 20 }}>
         {loading ? (
-          <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중…</p>
+          <p style={{ margin: 0, color: JC.sub, fontSize: 14 }}>불러오는 중…</p>
         ) : reports.length === 0 ? (
-          <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>
+          <p style={{ margin: 0, color: JC.sub, fontSize: 14 }}>
             {filter === "접수" ? "처리할 신고가 없습니다." : "신고 내역이 없습니다."}
           </p>
         ) : (
@@ -160,38 +160,38 @@ export default function AdminReportsPage() {
             {reports.map((report) => (
               <article
                 key={report.id}
-                style={{ border: "1px solid var(--c-border)", borderRadius: 10, padding: 14, display: "grid", gap: 8 }}
+                style={{ border: `1px solid ${JC.soft}`, borderRadius: 13, padding: 16, display: "grid", gap: 8, boxShadow: "none" }}
               >
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, padding: "3px 9px", borderRadius: 999, background: "var(--c-danger-soft-3)", color: "var(--c-danger-c)" }}>
+                  <span style={{ ...chipBase, background: "var(--c-danger-soft-3)", color: "var(--c-danger-c)" }}>
                     {report.reason}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "var(--c-bg-muted-2)", color: "var(--c-text-3)" }}>
+                  <span style={chipNeutral}>
                     {report.targetType === "comment" ? "댓글" : "게시글"}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: report.status === "접수" ? "var(--c-warn-soft-2)" : "var(--c-bg-muted-2)", color: report.status === "접수" ? "var(--c-warn-c)" : "var(--c-text-3)" }}>
+                  <span style={report.status === "접수" ? { ...chipBase, background: "var(--c-warn-soft-2)", color: "var(--c-warn-c)" } : chipAccent}>
                     {report.status}
                   </span>
                   {report.contentActive === false && (
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-4)" }}>· 이미 삭제된 콘텐츠</span>
+                    <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub }}>· 이미 삭제된 콘텐츠</span>
                   )}
-                  <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--c-text-4)" }}>
+                  <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 400, color: JC.sub }}>
                     {new Date(report.createdAt).toLocaleString("ko-KR")}
                   </span>
                 </div>
 
-                <p style={{ margin: 0, fontSize: 13.5, color: "var(--c-text-3)" }}>
-                  신고한 사람 <strong style={{ color: "var(--c-text-2c)" }}>{report.reporterNickname}</strong>
-                  {" · "}대상 <strong style={{ color: "var(--c-text-2c)" }}>{report.targetNickname}</strong>
+                <p style={{ margin: 0, fontSize: 13.5, color: JC.body, fontWeight: 500 }}>
+                  신고한 사람 <strong style={{ color: JC.title, fontWeight: 700 }}>{report.reporterNickname}</strong>
+                  {" · "}대상 <strong style={{ color: JC.title, fontWeight: 700 }}>{report.targetNickname}</strong>
                 </p>
 
-                <p style={{ margin: 0, fontSize: 14, color: "var(--c-text-2c)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                <p style={{ margin: 0, fontSize: 14, color: JC.title, fontWeight: 500, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                   {report.targetType === "comment"
                     ? report.commentContent || "(삭제된 댓글)"
                     : report.postTitle || "(삭제된 게시글)"}
                 </p>
                 {report.detail && (
-                  <p style={{ margin: 0, fontSize: 13, color: "var(--c-text-4)" }}>신고 내용: {report.detail}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: JC.sub, fontWeight: 400 }}>신고 내용: {report.detail}</p>
                 )}
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -200,7 +200,7 @@ export default function AdminReportsPage() {
                       href={`/community/${report.postId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand-b)", textDecoration: "none", padding: "6px 0" }}
+                      style={{ fontSize: 13, fontWeight: 700, color: JC.accent, textDecoration: "none", padding: "6px 0" }}
                     >
                       원문 보기 ↗
                     </a>
@@ -211,7 +211,7 @@ export default function AdminReportsPage() {
                         type="button"
                         disabled={busyId === report.id}
                         onClick={() => updateStatus(report.id, "처리완료")}
-                        style={actionStyle("var(--c-brand-b)", "#fff", busyId === report.id)}
+                        style={actionStyle(JC.accent, "#fff", busyId === report.id)}
                       >
                         처리완료
                       </button>
@@ -221,7 +221,7 @@ export default function AdminReportsPage() {
                         type="button"
                         disabled={busyId === report.id}
                         onClick={() => updateStatus(report.id, "반려")}
-                        style={actionStyle("var(--c-bg-muted-2)", "var(--c-text-3b)", busyId === report.id)}
+                        style={actionStyle(JC.soft, JC.body, busyId === report.id)}
                       >
                         반려
                       </button>
@@ -234,21 +234,21 @@ export default function AdminReportsPage() {
         )}
       </div>
       {tab === "blocks" && (
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", padding: 20, display: "grid", gap: 18 }}>
+        <div style={{ ...cardStyle, padding: 20, display: "grid", gap: 20 }}>
           {loading ? (
-            <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중…</p>
+            <p style={{ margin: 0, color: JC.sub, fontSize: 14 }}>불러오는 중…</p>
           ) : (
             <>
               {mostBlocked.length > 0 && (
                 <div>
-                  <h2 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-text-2c)" }}>
+                  <h2 style={{ margin: "0 0 10px", fontSize: 15, fontWeight: 700, color: JC.title }}>
                     2명 이상에게 차단된 사용자
                   </h2>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {mostBlocked.map((item) => (
                       <span
                         key={item.userId}
-                        style={{ fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 999, background: "var(--c-danger-soft-3)", color: "var(--c-danger-c)" }}
+                        style={{ ...chipBase, fontSize: 13, padding: "6px 14px", background: "var(--c-danger-soft-3)", color: "var(--c-danger-c)" }}
                       >
                         {item.nickname} · {item.count}명
                       </span>
@@ -258,22 +258,22 @@ export default function AdminReportsPage() {
               )}
 
               <div>
-                <h2 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-text-2c)" }}>
+                <h2 style={{ margin: "0 0 10px", fontSize: 15, fontWeight: 700, color: JC.title }}>
                   최근 차단 ({blocks.length})
                 </h2>
                 {blocks.length === 0 ? (
-                  <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>차단 기록이 없습니다.</p>
+                  <p style={{ margin: 0, color: JC.sub, fontSize: 14 }}>차단 기록이 없습니다.</p>
                 ) : (
                   <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
                     {blocks.map((block, index) => (
                       <li
                         key={`${block.blockedId}-${index}`}
-                        style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid var(--c-border)", borderRadius: 8, padding: "10px 12px", fontSize: 13.5, color: "var(--c-text-2c)" }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, background: JC.soft, borderRadius: 13, padding: "12px 14px", fontSize: 13.5, fontWeight: 500, color: JC.body }}
                       >
-                        <strong>{block.blockerNickname}</strong>
-                        <span style={{ color: "var(--c-text-4)" }}>→</span>
-                        <strong style={{ color: "var(--c-danger-c)" }}>{block.blockedNickname}</strong>
-                        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--c-text-4)" }}>
+                        <strong style={{ color: JC.title, fontWeight: 700 }}>{block.blockerNickname}</strong>
+                        <span style={{ color: JC.sub }}>→</span>
+                        <strong style={{ color: "var(--c-danger-c)", fontWeight: 700 }}>{block.blockedNickname}</strong>
+                        <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 400, color: JC.sub }}>
                           {new Date(block.createdAt).toLocaleString("ko-KR")}
                         </span>
                       </li>
@@ -289,13 +289,43 @@ export default function AdminReportsPage() {
   );
 }
 
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  border: `1px solid ${JC.soft}`,
+  borderRadius: 18,
+  background: "var(--c-bg)",
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const chipAccent: React.CSSProperties = { ...chipBase, background: JC.accentBg, color: JC.accent };
+const chipNeutral: React.CSSProperties = { ...chipBase, background: JC.soft, color: JC.body };
+
 function actionStyle(bg: string, color: string, disabled: boolean): React.CSSProperties {
   return {
     border: "none",
-    borderRadius: 8,
-    padding: "7px 14px",
+    borderRadius: 13,
+    padding: "9px 18px",
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 600,
     background: bg,
     color,
     cursor: disabled ? "default" : "pointer",

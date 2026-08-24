@@ -214,18 +214,16 @@ export default function OxQuizManagement() {
     }
   };
 
+  // 난이도는 상태값이라 뜻을 지키되, 모양만 알약으로 통일한다.
   const difficultyBadge = (d: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
-      "쉬움": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
-      "보통": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
+      "쉬움": { bg: JC.soft, text: JC.body },
+      "보통": { bg: JC.accentBg, text: JC.accent },
       "어려움": { bg: "var(--c-danger-soft)", text: "var(--c-danger-c)" },
     };
     const c = colors[d] || colors["보통"];
     return (
-      <span style={{
-        display: "inline-block", padding: "3px 10px", borderRadius: 20,
-        fontSize: 12, fontWeight: 600, background: c.bg, color: c.text,
-      }}>
+      <span style={{ ...chipBase, background: c.bg, color: c.text }}>
         {d}
       </span>
     );
@@ -233,11 +231,12 @@ export default function OxQuizManagement() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "9px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--c-border)",
+    padding: "11px 14px",
+    borderRadius: 13,
+    border: `1px solid ${JC.soft}`,
+    background: "var(--c-bg)",
     fontSize: 14,
-    color: "var(--c-text-2)",
+    color: JC.title,
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -247,7 +246,7 @@ export default function OxQuizManagement() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "var(--c-text-2)",
+    color: JC.body,
     marginBottom: 6,
   };
 
@@ -263,12 +262,12 @@ export default function OxQuizManagement() {
   ).length;
 
   return (
-    <div>
+    <div className="jc-admin">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>OX 퀴즈 관리</h1>
-          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title }}>OX 퀴즈 관리</h1>
+          <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, marginTop: 6 }}>총 {quizSets.length}개의 퀴즈 세트</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -276,13 +275,13 @@ export default function OxQuizManagement() {
             onClick={handleSyncOxData}
             disabled={syncingOx}
             style={{
-              padding: "10px 16px",
-              background: "var(--c-inverse)",
-              color: "#fff",
+              padding: "11px 18px",
+              background: JC.soft,
+              color: JC.body,
               border: "none",
-              borderRadius: 10,
+              borderRadius: 13,
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: syncingOx ? "default" : "pointer",
               opacity: syncingOx ? 0.6 : 1,
             }}
@@ -293,14 +292,15 @@ export default function OxQuizManagement() {
             className="press"
             onClick={() => setShowForm(!showForm)}
             style={{
-              padding: "10px 20px",
-              background: showForm ? "var(--c-bg)" : "var(--c-brand)",
-              color: showForm ? "var(--c-text-2)" : "#fff",
-              border: showForm ? "1px solid var(--c-border)" : "none",
-              borderRadius: 10,
+              padding: "11px 22px",
+              background: showForm ? JC.soft : JC.accent,
+              color: showForm ? JC.body : "#fff",
+              border: "none",
+              borderRadius: 13,
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: showForm ? 600 : 700,
               cursor: "pointer",
+              boxShadow: "none",
             }}
           >
             {showForm ? "취소" : "+ 퀴즈 세트 추가"}
@@ -310,11 +310,8 @@ export default function OxQuizManagement() {
 
       {/* Create Form */}
       {showForm && (
-        <form onSubmit={handleCreateSet} style={{
-          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-          padding: 24, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 20 }}>새 OX 퀴즈 세트</h3>
+        <form onSubmit={handleCreateSet} style={{ ...cardStyle, padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: JC.title, marginBottom: 20 }}>새 OX 퀴즈 세트</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
@@ -323,8 +320,8 @@ export default function OxQuizManagement() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               />
             </div>
@@ -334,8 +331,8 @@ export default function OxQuizManagement() {
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{ ...inputStyle, appearance: "auto" }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               >
                 <option value="">선택하세요</option>
@@ -363,8 +360,8 @@ export default function OxQuizManagement() {
                 value={formData.totalQuestions}
                 onChange={(e) => setFormData({ ...formData, totalQuestions: Number(e.target.value) })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 min={0}
               />
             </div>
@@ -374,9 +371,10 @@ export default function OxQuizManagement() {
             disabled={submitting}
             className="press"
             style={{
-              marginTop: 20, padding: "10px 24px", background: "var(--c-brand)", color: "#fff",
-              border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
+              marginTop: 20, padding: "12px 24px", background: JC.accent, color: "#fff",
+              border: "none", borderRadius: 13, fontSize: 14, fontWeight: 700,
               cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
+              boxShadow: "none",
             }}
           >
             {submitting ? "생성 중..." : "퀴즈 세트 생성"}
@@ -385,30 +383,27 @@ export default function OxQuizManagement() {
       )}
 
       {/* 정렬 안내 */}
-      <div style={{ marginBottom: 10, fontSize: 12, color: "var(--c-text-4)" }}>
+      <div style={{ marginBottom: 12, fontSize: 12, fontWeight: 400, color: JC.sub }}>
         카테고리별로 화살표(▲▼)를 눌러 리스트 노출 순서를 바꿀 수 있어요. 변경 즉시 저장됩니다.
       </div>
 
-      {/* Table */}
-      <div style={{
-        background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-        overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-      }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      {/* Table — 넓어지면 가로 스크롤 */}
+      <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: "var(--c-bg-soft)", borderBottom: "1px solid var(--c-border)" }}>
-              <th style={{ textAlign: "center", padding: "12px 10px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13, width: 84 }}>정렬</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>난이도</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>인기</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>관리</th>
+            <tr>
+              <th style={{ ...thStyle, textAlign: "center", width: 84 }}>정렬</th>
+              <th style={thStyle}>제목</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>난이도</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>문제 수</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>인기</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "var(--c-text-4)" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: JC.sub }}>
                   등록된 OX 퀴즈 세트가 없습니다.
                 </td>
               </tr>
@@ -416,12 +411,13 @@ export default function OxQuizManagement() {
               groupByCategory(quizSets).map((group) => (
                 <Fragment key={group.catId}>
                   <tr>
-                    <td colSpan={6} style={{ padding: "11px 16px", background: "var(--c-brand-soft-15)", fontWeight: 800, color: "var(--c-text-2)", fontSize: 13, borderBottom: "1px solid var(--c-border)" }}>
-                      {group.catIcon} {group.catName} <span style={{ color: "var(--c-text-4)", fontWeight: 600 }}>· {group.sets.length}개</span>
+                    <td colSpan={6} style={{ padding: "12px 16px", background: JC.accentBg, fontWeight: 700, color: JC.accent, fontSize: 13 }}>
+                      {group.catIcon} {group.catName} <span style={{ color: JC.body, fontWeight: 600 }}>· {group.sets.length}개</span>
                     </td>
                   </tr>
                   {group.sets.map((set, index) => (
-                    <tr key={set.id} style={{ borderBottom: "1px solid var(--c-bg-muted)", background: "var(--c-bg)" }}>
+                    // 카테고리 안 마지막 행은 아래 구분선 없음(다음 카테고리 머리띠가 경계를 대신한다)
+                    <tr key={set.id} style={{ borderBottom: index === group.sets.length - 1 ? "none" : `1px solid ${JC.soft}`, background: "var(--c-bg)" }}>
                       <td style={{ padding: "10px 10px", textAlign: "center" }}>
                         <div style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
                           <button
@@ -429,20 +425,20 @@ export default function OxQuizManagement() {
                             aria-label="위로"
                             disabled={index === 0 || reordering}
                             onClick={() => moveSet(group.catId, index, "up")}
-                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid var(--c-border)", background: index === 0 ? "var(--c-bg-soft-7)" : "var(--c-bg)", color: index === 0 ? "var(--c-text-5d)" : "var(--c-text-3b)", cursor: index === 0 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                            style={{ width: 30, height: 24, borderRadius: 13, border: "none", background: JC.soft, color: index === 0 ? "#8A909C" : JC.body, cursor: index === 0 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
                           >▲</button>
                           <button
                             type="button"
                             aria-label="아래로"
                             disabled={index === group.sets.length - 1 || reordering}
                             onClick={() => moveSet(group.catId, index, "down")}
-                            style={{ width: 30, height: 24, borderRadius: 6, border: "1px solid var(--c-border)", background: index === group.sets.length - 1 ? "var(--c-bg-soft-7)" : "var(--c-bg)", color: index === group.sets.length - 1 ? "var(--c-text-5d)" : "var(--c-text-3b)", cursor: index === group.sets.length - 1 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
+                            style={{ width: 30, height: 24, borderRadius: 13, border: "none", background: JC.soft, color: index === group.sets.length - 1 ? "#8A909C" : JC.body, cursor: index === group.sets.length - 1 || reordering ? "default" : "pointer", lineHeight: 1, fontSize: 11 }}
                           >▼</button>
                         </div>
                       </td>
-                      <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--c-text-2)" }}>{set.title}</td>
+                      <td style={{ padding: "14px 16px", fontWeight: 700, color: JC.title }}>{set.title}</td>
                       <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
-                      <td style={{ padding: "14px 16px", textAlign: "center", color: "var(--c-text-2)" }}>{set.totalQuestions}</td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", fontWeight: 700, color: JC.accent }}>{set.totalQuestions}</td>
                       <td style={{ padding: "14px 16px", textAlign: "center" }}>
                         <button
                           onClick={async () => {
@@ -455,9 +451,9 @@ export default function OxQuizManagement() {
                             fetchQuizSets();
                           }}
                           style={{
-                            padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                            backgroundColor: set.isPopular ? "var(--c-danger-f)" : "var(--c-bg-muted)",
-                            color: set.isPopular ? "#fff" : "var(--c-text-4c)",
+                            ...chipBase, border: "none", cursor: "pointer",
+                            backgroundColor: set.isPopular ? JC.accentBg : JC.soft,
+                            color: set.isPopular ? JC.accent : JC.body,
                           }}
                         >
                           {set.isPopular ? "인기" : "OFF"}
@@ -467,7 +463,7 @@ export default function OxQuizManagement() {
                         <div style={{ display: "inline-flex", gap: 8 }}>
                           <button
                             onClick={() => openQuestions(set)}
-                            style={{ background: "none", border: "none", color: "var(--c-brand)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                            style={{ background: JC.accentBg, border: "none", borderRadius: 13, color: JC.accent, fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "7px 14px" }}
                           >
                             문제 관리
                           </button>
@@ -478,7 +474,7 @@ export default function OxQuizManagement() {
                               if (res.ok) fetchQuizSets();
                               else alert("삭제 실패");
                             }}
-                            style={{ background: "none", border: "none", color: "var(--c-danger)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}
+                            style={{ background: "var(--c-danger-soft)", border: "none", borderRadius: 13, color: "var(--c-danger-c)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "7px 14px" }}
                           >
                             삭제
                           </button>
@@ -496,31 +492,30 @@ export default function OxQuizManagement() {
       {/* Question Management Modal */}
       {selectedSet && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+          position: "fixed", inset: 0, background: "rgba(43,49,61,0.32)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
           <div style={{
-            background: "var(--c-bg)", borderRadius: 16, width: "100%", maxWidth: 720,
+            ...cardStyle, width: "100%", maxWidth: 720,
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
             {/* Modal Header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 24px", borderBottom: "1px solid var(--c-border)",
+              padding: "20px 24px", borderBottom: `1px solid ${JC.soft}`,
             }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>{selectedSet.title}</h3>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 13, color: "var(--c-text-4)" }}>문제 관리</span>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: JC.title }}>{selectedSet.title}</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 400, color: JC.sub }}>문제 관리</span>
                   {difficultyBadge(selectedSet.difficulty)}
                 </div>
               </div>
               <button
                 onClick={() => { setSelectedSet(null); setShowQuestionForm(false); }}
                 style={{
-                  background: "var(--c-bg-muted)", border: "none", width: 32, height: 32,
-                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "var(--c-text-4)",
+                  background: JC.soft, border: "none", width: 32, height: 32,
+                  borderRadius: 13, cursor: "pointer", fontSize: 18, color: JC.body,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -531,7 +526,7 @@ export default function OxQuizManagement() {
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <p style={{ fontSize: 14, color: "var(--c-text-4)" }}>총 {questions.length}개 문제</p>
+                <p style={{ fontSize: 14, fontWeight: 500, color: JC.body }}>총 <b style={{ color: JC.accent, fontWeight: 700 }}>{questions.length}</b>개 문제</p>
                 <button
                   className="press"
                   onClick={() => {
@@ -548,11 +543,11 @@ export default function OxQuizManagement() {
                     }
                   }}
                   style={{
-                    padding: "8px 16px",
-                    background: showQuestionForm ? "var(--c-bg)" : "var(--c-brand)",
-                    color: showQuestionForm ? "var(--c-text-2)" : "#fff",
-                    border: showQuestionForm ? "1px solid var(--c-border)" : "none",
-                    borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    padding: "9px 18px",
+                    background: showQuestionForm ? JC.soft : JC.accent,
+                    color: showQuestionForm ? JC.body : "#fff",
+                    border: "none",
+                    borderRadius: 13, fontSize: 13, fontWeight: showQuestionForm ? 600 : 700, cursor: "pointer",
                   }}
                 >
                   {showQuestionForm ? "취소" : "+ 문제 추가"}
@@ -562,8 +557,8 @@ export default function OxQuizManagement() {
               {/* Add Question Form */}
               {showQuestionForm && (
                 <form onSubmit={handleAddQuestion} style={{
-                  background: "var(--c-bg-soft)", borderRadius: 12, padding: 20, marginBottom: 20,
-                  border: "1px solid var(--c-border)",
+                  background: JC.soft, borderRadius: 13, padding: 20, marginBottom: 20,
+                  border: "none",
                 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
                     <div>
@@ -580,7 +575,7 @@ export default function OxQuizManagement() {
                           <button
                             type="button"
                             onClick={() => { setUseCustomSection(false); setQuestionData({ ...questionData, section: existingSections[0] || "" }); }}
-                            style={{ flexShrink: 0, padding: "0 12px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                            style={{ flexShrink: 0, padding: "0 14px", borderRadius: 13, border: "none", background: "var(--c-bg)", color: JC.body, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                           >
                             취소
                           </button>
@@ -613,7 +608,7 @@ export default function OxQuizManagement() {
                       />
                     </div>
                   </div>
-                  <p style={{ fontSize: 12, color: "var(--c-text-4)", margin: "0 0 14px" }}>
+                  <p style={{ fontSize: 12, fontWeight: 400, color: JC.sub, margin: "0 0 14px" }}>
                     기존 소분류를 고르면 새 소분류가 생기지 않습니다. 번호는 <b>그 소분류 안에서의 위치</b>이며, 지정한 자리에 삽입되고 그 소분류 뒤 문제들이 한 칸씩 밀립니다(비우면 그 소분류 맨 끝).
                   </p>
                   <div style={{ marginBottom: 14 }}>
@@ -622,8 +617,8 @@ export default function OxQuizManagement() {
                       value={questionData.question}
                       onChange={(e) => setQuestionData({ ...questionData, question: e.target.value })}
                       style={{ ...inputStyle, resize: "vertical", minHeight: 60 }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       rows={2}
                       required
                     />
@@ -647,8 +642,8 @@ export default function OxQuizManagement() {
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       />
                     </div>
                   </div>
@@ -661,7 +656,7 @@ export default function OxQuizManagement() {
                       style={inputStyle}
                       placeholder="예: 26학년도 6월"
                     />
-                    <p style={{ fontSize: 12, color: "var(--c-text-4)", margin: "6px 0 0" }}>
+                    <p style={{ fontSize: 12, fontWeight: 400, color: JC.sub, margin: "6px 0 0" }}>
                       정답률은 사용자 응답으로 자동 집계되어 표시됩니다(입력 불필요).
                     </p>
                   </div>
@@ -670,9 +665,10 @@ export default function OxQuizManagement() {
                     disabled={submitting}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "var(--c-brand)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      padding: "11px 22px", background: JC.accent, color: "#fff",
+                      border: "none", borderRadius: 13, fontSize: 13, fontWeight: 700,
                       cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
+                      boxShadow: "none",
                     }}
                   >
                     {submitting ? "추가 중..." : "문제 추가"}
@@ -695,23 +691,20 @@ export default function OxQuizManagement() {
                       marginTop: idx === 0 ? 0 : 14, marginBottom: 8,
                       display: "flex", alignItems: "center", gap: 8,
                     }}>
-                      <span style={{
-                        fontSize: 13, fontWeight: 700, color: "var(--c-brand)",
-                        background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "4px 10px",
-                      }}>
+                      <span style={{ ...chipBase, fontSize: 13, background: JC.accentBg, color: JC.accent }}>
                         {q.section}
                       </span>
-                      <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>{sectionCount}문항</span>
+                      <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub }}>{sectionCount}문항</span>
                     </div>
                   )}
                   <div style={{
-                    background: "var(--c-bg-soft)", borderRadius: 10, padding: "14px 16px",
-                    border: "1px solid var(--c-bg-muted)",
+                    background: "var(--c-bg)", borderRadius: 13, padding: "16px",
+                    border: `1px solid ${JC.soft}`, boxShadow: "none",
                   }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 700, color: "var(--c-text-4)",
-                        background: "var(--c-border)", borderRadius: 4, padding: "2px 6px", marginTop: 2,
+                        fontSize: 11, fontWeight: 700, color: JC.body,
+                        background: JC.soft, borderRadius: 999, padding: "3px 9px", marginTop: 2,
                       }}>
                         {q.order}
                       </span>
@@ -739,10 +732,9 @@ export default function OxQuizManagement() {
                                 type="button"
                                 onClick={() => setEditQAnswer(true)}
                                 style={{
-                                  padding: "8px 20px", borderRadius: 8,
-                                  border: `2px solid ${editQAnswer ? "var(--c-brand)" : "var(--c-border)"}`,
-                                  background: editQAnswer ? "var(--c-brand)" : "var(--c-bg)",
-                                  color: editQAnswer ? "#fff" : "var(--c-text-2)",
+                                  padding: "9px 22px", borderRadius: 13, border: "none",
+                                  background: editQAnswer ? JC.accent : JC.soft,
+                                  color: editQAnswer ? "#fff" : JC.body,
                                   fontSize: 14, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
@@ -752,10 +744,9 @@ export default function OxQuizManagement() {
                                 type="button"
                                 onClick={() => setEditQAnswer(false)}
                                 style={{
-                                  padding: "8px 20px", borderRadius: 8,
-                                  border: `2px solid ${!editQAnswer ? "var(--c-danger)" : "var(--c-border)"}`,
-                                  background: !editQAnswer ? "var(--c-danger)" : "var(--c-bg)",
-                                  color: !editQAnswer ? "#fff" : "var(--c-text-2)",
+                                  padding: "9px 22px", borderRadius: 13, border: "none",
+                                  background: !editQAnswer ? "var(--c-danger-c)" : JC.soft,
+                                  color: !editQAnswer ? "#fff" : JC.body,
                                   fontSize: 14, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
@@ -800,9 +791,9 @@ export default function OxQuizManagement() {
                                   } else alert("저장 실패");
                                 }}
                                 style={{
-                                  padding: "7px 14px", borderRadius: 6, border: "none",
-                                  background: "var(--c-brand)", color: "#fff",
-                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: JC.accent, color: "#fff",
+                                  fontSize: 13, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
                                 저장
@@ -811,9 +802,9 @@ export default function OxQuizManagement() {
                                 type="button"
                                 onClick={() => setEditingQuestionId(null)}
                                 style={{
-                                  padding: "7px 14px", borderRadius: 6,
-                                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
-                                  color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: JC.soft, color: JC.body,
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
                                 취소
@@ -822,41 +813,32 @@ export default function OxQuizManagement() {
                           </div>
                         ) : (
                           <>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 8 }}>{q.question}</p>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: JC.title, marginBottom: 10 }}>{q.question}</p>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               {q.section && (
-                                <span style={{
-                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "var(--c-bg-muted)", color: "var(--c-text-3)",
-                                }}>
+                                <span style={{ ...chipBase, fontSize: 11, background: JC.soft, color: JC.body }}>
                                   {q.section}
                                 </span>
                               )}
                               <span style={{
-                                fontSize: 12, padding: "3px 10px", borderRadius: 6, fontWeight: 600,
-                                background: q.answer ? "var(--c-brand-soft-2)" : "var(--c-danger-soft)",
-                                color: q.answer ? "var(--c-brand)" : "var(--c-danger-c)",
+                                ...chipBase,
+                                background: q.answer ? JC.accentBg : "var(--c-danger-soft)",
+                                color: q.answer ? JC.accent : "var(--c-danger-c)",
                               }}>
                                 {q.answer ? "O (참)" : "X (거짓)"}
                               </span>
                               {q.examYearMonth && (
-                                <span style={{
-                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", color: "var(--c-text-2c)",
-                                }}>
+                                <span style={{ ...chipBase, fontSize: 11, background: JC.soft, color: JC.body }}>
                                   {q.examYearMonth}
                                 </span>
                               )}
                               {q.answerRate != null && (
-                                <span style={{
-                                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                                  background: "var(--c-bg)", border: "1px solid var(--c-border-strong)", color: "var(--c-text-2c)",
-                                }}>
+                                <span style={{ ...chipBase, fontSize: 11, background: JC.soft, color: JC.body }}>
                                   정답률 {q.answerRate}%
                                 </span>
                               )}
                               {q.explanation && (
-                                <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>해설: {q.explanation}</span>
+                                <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub }}>해설: {q.explanation}</span>
                               )}
                             </div>
                           </>
@@ -874,9 +856,9 @@ export default function OxQuizManagement() {
                               setEditQExamYearMonth(q.examYearMonth || "");
                             }}
                             style={{
-                              background: "none", border: "none",
-                              color: "var(--c-brand)", fontSize: 12, fontWeight: 600,
-                              cursor: "pointer", padding: "2px 8px",
+                              background: JC.accentBg, border: "none", borderRadius: 13,
+                              color: JC.accent, fontSize: 12, fontWeight: 700,
+                              cursor: "pointer", padding: "6px 12px",
                             }}
                           >
                             편집
@@ -892,9 +874,9 @@ export default function OxQuizManagement() {
                               } else alert("삭제 실패");
                             }}
                             style={{
-                              background: "none", border: "none",
-                              color: "var(--c-danger)", fontSize: 12, fontWeight: 600,
-                              cursor: "pointer", padding: "2px 8px",
+                              background: "var(--c-danger-soft)", border: "none", borderRadius: 13,
+                              color: "var(--c-danger-c)", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "6px 12px",
                             }}
                           >
                             삭제
@@ -907,13 +889,59 @@ export default function OxQuizManagement() {
                   );
                 })}
                 {questions.length === 0 && (
-                  <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
+                  <p style={{ textAlign: "center", color: JC.sub, padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}
               </div>
             </div>
           </div>
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  borderRadius: 18,
+  border: `1px solid ${JC.soft}`,
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const thStyle: React.CSSProperties = {
+  textAlign: "left",
+  padding: "12px 16px",
+  fontWeight: 600,
+  color: JC.sub,
+  fontSize: 12,
+  whiteSpace: "nowrap",
+  borderBottom: `1px solid ${JC.soft}`,
+};
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

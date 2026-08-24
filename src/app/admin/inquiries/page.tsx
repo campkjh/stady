@@ -76,18 +76,19 @@ export default function AdminInquiriesPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
+  // 완료는 강조 알약(#EAF2FF/#3180F7), 접수·처리중은 중립 알약(#F2F3F5/#51535C).
   const statusColors: Record<string, { bg: string; text: string }> = {
-    "접수": { bg: "var(--c-brand-line-2)", text: "var(--c-brand-deep-2)" },
-    "처리중": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
-    "완료": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
+    "접수": { bg: JC.soft, text: JC.body },
+    "처리중": { bg: "var(--c-warn-soft-2)", text: "var(--c-warn-c)" },
+    "완료": { bg: JC.accentBg, text: JC.accent },
   };
 
   function statusBadge(status: string) {
     const c = statusColors[status] || statusColors["접수"];
     return (
       <span style={{
-        display: "inline-block", padding: "3px 10px", borderRadius: 20,
-        fontSize: 12, fontWeight: 600, background: c.bg, color: c.text,
+        display: "inline-block", padding: "4px 12px", borderRadius: 999,
+        fontSize: 12, fontWeight: 700, background: c.bg, color: c.text,
       }}>
         {status}
       </span>
@@ -96,11 +97,12 @@ export default function AdminInquiriesPage() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "9px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--c-border)",
+    padding: "11px 14px",
+    borderRadius: 13,
+    border: `1px solid ${JC.soft}`,
+    background: "var(--c-bg)",
     fontSize: 14,
-    color: "var(--c-text-2)",
+    color: JC.title,
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -109,47 +111,41 @@ export default function AdminInquiriesPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
-        <div style={{ width: 28, height: 28, border: "3px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ width: 28, height: 28, border: `3px solid ${JC.soft}`, borderTopColor: JC.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="jc-admin">
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>문의 관리</h1>
-        <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {inquiries.length}개의 문의</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title }}>문의 관리</h1>
+        <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, marginTop: 6 }}>총 {inquiries.length}개의 문의</p>
       </div>
 
       {inquiries.length === 0 ? (
-        <div style={{
-          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-          padding: 48, textAlign: "center",
-        }}>
+        <div style={{ ...cardStyle, padding: 48, textAlign: "center" }}>
           <EmptyInquiryIcon
             size={48}
-            style={{ margin: "0 auto 12px", display: "block", color: "var(--c-border)" }}
+            style={{ margin: "0 auto 12px", display: "block", color: "#C9CFD6" }}
             aria-hidden="true"
           />
-          <p style={{ color: "var(--c-text-4)", fontSize: 15 }}>접수된 문의가 없습니다.</p>
+          <p style={{ color: JC.sub, fontSize: 15 }}>접수된 문의가 없습니다.</p>
         </div>
       ) : (
-        <div style={{
-          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-          overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
+        <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {/* Table header */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "100px 70px 90px 1fr 80px",
-            padding: "12px 20px",
-            background: "var(--c-bg-soft)",
-            borderBottom: "1px solid var(--c-border)",
-            fontSize: 13,
+            gridTemplateColumns: "100px 70px 90px minmax(200px, 1fr) 80px",
+            minWidth: 620,
+            padding: "14px 20px",
+            borderBottom: `1px solid ${JC.soft}`,
+            fontSize: 12,
             fontWeight: 600,
-            color: "var(--c-text-4)",
+            color: JC.sub,
           }}>
             <span>날짜</span>
             <span>유형</span>
@@ -158,34 +154,33 @@ export default function AdminInquiriesPage() {
             <span style={{ textAlign: "center" }}>상태</span>
           </div>
 
-          {/* Rows */}
+          {/* Rows — 줄무늬 대신 면과 구분선으로만 나눈다 */}
           {inquiries.map((inquiry, idx) => (
-            <div key={inquiry.id}>
+            <div key={inquiry.id} style={{ minWidth: 620 }}>
               <div
                 onClick={() => toggleExpand(inquiry.id)}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "100px 70px 90px 1fr 80px",
-                  padding: "14px 20px",
-                  borderBottom: "1px solid var(--c-bg-muted)",
+                  gridTemplateColumns: "100px 70px 90px minmax(200px, 1fr) 80px",
+                  padding: "16px 20px",
+                  borderBottom: idx === inquiries.length - 1 && expandedId !== inquiry.id ? "none" : `1px solid ${JC.soft}`,
                   fontSize: 14,
                   cursor: "pointer",
                   transition: "background 0.15s",
-                  background: expandedId === inquiry.id ? "var(--c-bg-soft)" : idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)",
+                  background: expandedId === inquiry.id ? JC.accentBg : "var(--c-bg)",
                   alignItems: "center",
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "var(--c-bg-soft-5)"}
+                onMouseEnter={(e) => e.currentTarget.style.background = expandedId === inquiry.id ? JC.accentBg : JC.soft}
                 onMouseLeave={(e) =>
-                  e.currentTarget.style.background =
-                    expandedId === inquiry.id ? "var(--c-bg-soft)" : idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)"
+                  e.currentTarget.style.background = expandedId === inquiry.id ? JC.accentBg : "var(--c-bg)"
                 }
               >
-                <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>{formatDate(inquiry.createdAt)}</span>
-                <span style={{ color: "var(--c-text-2)", fontSize: 13 }}>{inquiry.category}</span>
-                <span style={{ color: "var(--c-text-2)", fontWeight: 500, fontSize: 13 }}>{inquiry.name}</span>
+                <span style={{ color: JC.sub, fontSize: 13, fontWeight: 400 }}>{formatDate(inquiry.createdAt)}</span>
+                <span style={{ color: JC.body, fontSize: 13, fontWeight: 500 }}>{inquiry.category}</span>
+                <span style={{ color: JC.body, fontWeight: 600, fontSize: 13 }}>{inquiry.name}</span>
                 <span style={{
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  color: "var(--c-text-2)", fontWeight: 500,
+                  color: JC.title, fontWeight: 700,
                 }}>
                   {inquiry.title}
                 </span>
@@ -196,17 +191,17 @@ export default function AdminInquiriesPage() {
               {expandedId === inquiry.id && (
                 <div style={{
                   padding: "20px 24px",
-                  background: "var(--c-bg-soft)",
-                  borderBottom: "1px solid var(--c-border)",
+                  background: JC.soft,
+                  borderBottom: idx === inquiries.length - 1 ? "none" : `1px solid ${JC.soft}`,
                 }}>
                   {/* Email */}
                   <div style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    fontSize: 13, color: "var(--c-text-4)", marginBottom: 12,
+                    fontSize: 13, fontWeight: 400, color: JC.sub, marginBottom: 12,
                   }}>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="var(--c-text-4)" strokeWidth="1.2"/>
-                      <path d="M1 4.5L7 8L13 4.5" stroke="var(--c-text-4)" strokeWidth="1.2"/>
+                      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="#8A909C" strokeWidth="1.2"/>
+                      <path d="M1 4.5L7 8L13 4.5" stroke="#8A909C" strokeWidth="1.2"/>
                     </svg>
                     {inquiry.email}
                   </div>
@@ -214,12 +209,13 @@ export default function AdminInquiriesPage() {
                   {/* Content */}
                   <div style={{
                     background: "var(--c-bg)",
-                    borderRadius: 10,
-                    border: "1px solid var(--c-border)",
+                    borderRadius: 13,
+                    border: `1px solid ${JC.soft}`,
                     padding: 16,
                     marginBottom: 16,
                     fontSize: 14,
-                    color: "var(--c-text-2)",
+                    fontWeight: 500,
+                    color: JC.body,
                     whiteSpace: "pre-wrap",
                     lineHeight: 1.7,
                   }}>
@@ -229,17 +225,17 @@ export default function AdminInquiriesPage() {
                   {/* Existing reply */}
                   {inquiry.reply && (
                     <div style={{
-                      background: "var(--c-brand-soft-2)",
-                      borderRadius: 10,
+                      background: JC.accentBg,
+                      borderRadius: 13,
                       padding: 16,
                       marginBottom: 16,
                       fontSize: 14,
-                      color: "var(--c-brand-deep-2)",
+                      fontWeight: 500,
+                      color: JC.title,
                       whiteSpace: "pre-wrap",
                       lineHeight: 1.7,
-                      borderLeft: "3px solid var(--c-brand)",
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-brand)", marginBottom: 6 }}>관리자 답변</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: JC.accent, marginBottom: 6 }}>관리자 답변</div>
                       {inquiry.reply}
                     </div>
                   )}
@@ -247,14 +243,14 @@ export default function AdminInquiriesPage() {
                   {/* Reply form */}
                   <div style={{
                     background: "var(--c-bg)",
-                    borderRadius: 10,
-                    border: "1px solid var(--c-border)",
+                    borderRadius: 13,
+                    border: `1px solid ${JC.soft}`,
                     padding: 16,
                   }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 12 }}>답변 작성</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: JC.title, marginBottom: 12 }}>답변 작성</div>
                     <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                       <div>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", marginBottom: 4 }}>상태 변경</label>
+                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: JC.body, marginBottom: 6 }}>상태 변경</label>
                         <select
                           value={replyStatus}
                           onChange={(e) => setReplyStatus(e.target.value)}
@@ -263,6 +259,8 @@ export default function AdminInquiriesPage() {
                             width: 130,
                             appearance: "auto" as const,
                           }}
+                          onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                          onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                         >
                           <option value="접수">접수</option>
                           <option value="처리중">처리중</option>
@@ -281,8 +279,8 @@ export default function AdminInquiriesPage() {
                         minHeight: 80,
                         marginBottom: 12,
                       }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                     />
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <button
@@ -290,15 +288,16 @@ export default function AdminInquiriesPage() {
                         onClick={() => handleReply(inquiry.id)}
                         disabled={submitting}
                         style={{
-                          padding: "9px 24px",
-                          borderRadius: 8,
+                          padding: "11px 24px",
+                          borderRadius: 13,
                           border: "none",
-                          background: "var(--c-brand)",
+                          background: JC.accent,
                           color: "#fff",
                           fontSize: 14,
-                          fontWeight: 600,
+                          fontWeight: 700,
                           cursor: submitting ? "not-allowed" : "pointer",
                           opacity: submitting ? 0.6 : 1,
+                          boxShadow: "none",
                         }}
                       >
                         {submitting ? "저장 중..." : "답변 저장"}
@@ -311,6 +310,33 @@ export default function AdminInquiriesPage() {
           ))}
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  borderRadius: 18,
+  border: `1px solid ${JC.soft}`,
+  boxShadow: "none",
+};
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

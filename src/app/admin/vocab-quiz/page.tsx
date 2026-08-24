@@ -206,18 +206,16 @@ export default function VocabQuizManagement() {
     }
   };
 
+  // 난이도는 상태값이라 뜻을 지키되, 모양만 알약으로 통일한다.
   const difficultyBadge = (d: string) => {
     const colors: Record<string, { bg: string; text: string }> = {
-      "쉬움": { bg: "var(--c-success-soft)", text: "var(--c-success-b)" },
-      "보통": { bg: "var(--c-warn-soft)", text: "var(--c-warn-b)" },
+      "쉬움": { bg: JC.soft, text: JC.body },
+      "보통": { bg: JC.accentBg, text: JC.accent },
       "어려움": { bg: "var(--c-danger-soft)", text: "var(--c-danger-c)" },
     };
     const c = colors[d] || colors["보통"];
     return (
-      <span style={{
-        display: "inline-block", padding: "3px 10px", borderRadius: 20,
-        fontSize: 12, fontWeight: 600, background: c.bg, color: c.text,
-      }}>
+      <span style={{ ...chipBase, background: c.bg, color: c.text }}>
         {d}
       </span>
     );
@@ -225,11 +223,12 @@ export default function VocabQuizManagement() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "9px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--c-border)",
+    padding: "11px 14px",
+    borderRadius: 13,
+    border: `1px solid ${JC.soft}`,
+    background: "var(--c-bg)",
     fontSize: 14,
-    color: "var(--c-text-2)",
+    color: JC.title,
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -239,30 +238,31 @@ export default function VocabQuizManagement() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "var(--c-text-2)",
+    color: JC.body,
     marginBottom: 6,
   };
 
   return (
-    <div>
+    <div className="jc-admin">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>영단어 퀴즈 관리</h1>
-          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {quizSets.length}개의 퀴즈 세트</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title }}>영단어 퀴즈 관리</h1>
+          <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, marginTop: 6 }}>총 {quizSets.length}개의 퀴즈 세트</p>
         </div>
         <button
           className="press"
           onClick={() => setShowForm(!showForm)}
           style={{
-            padding: "10px 20px",
-            background: showForm ? "var(--c-bg)" : "var(--c-brand)",
-            color: showForm ? "var(--c-text-2)" : "#fff",
-            border: showForm ? "1px solid var(--c-border)" : "none",
-            borderRadius: 10,
+            padding: "11px 22px",
+            background: showForm ? JC.soft : JC.accent,
+            color: showForm ? JC.body : "#fff",
+            border: "none",
+            borderRadius: 13,
             fontSize: 14,
-            fontWeight: 600,
+            fontWeight: showForm ? 600 : 700,
             cursor: "pointer",
+            boxShadow: "none",
           }}
         >
           {showForm ? "취소" : "+ 퀴즈 세트 추가"}
@@ -271,11 +271,8 @@ export default function VocabQuizManagement() {
 
       {/* Create Form */}
       {showForm && (
-        <form onSubmit={handleCreateSet} style={{
-          background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-          padding: 24, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 20 }}>새 영단어 퀴즈 세트</h3>
+        <form onSubmit={handleCreateSet} style={{ ...cardStyle, padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: JC.title, marginBottom: 20 }}>새 영단어 퀴즈 세트</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
@@ -284,8 +281,8 @@ export default function VocabQuizManagement() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               />
             </div>
@@ -295,8 +292,8 @@ export default function VocabQuizManagement() {
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{ ...inputStyle, appearance: "auto" }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               >
                 <option value="">선택하세요</option>
@@ -324,8 +321,8 @@ export default function VocabQuizManagement() {
                 value={formData.totalQuestions}
                 onChange={(e) => setFormData({ ...formData, totalQuestions: Number(e.target.value) })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 min={0}
               />
             </div>
@@ -335,9 +332,10 @@ export default function VocabQuizManagement() {
             disabled={submitting}
             className="press"
             style={{
-              marginTop: 20, padding: "10px 24px", background: "var(--c-brand)", color: "#fff",
-              border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
+              marginTop: 20, padding: "12px 24px", background: JC.accent, color: "#fff",
+              border: "none", borderRadius: 13, fontSize: 14, fontWeight: 700,
               cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
+              boxShadow: "none",
             }}
           >
             {submitting ? "생성 중..." : "퀴즈 세트 생성"}
@@ -346,46 +344,44 @@ export default function VocabQuizManagement() {
       )}
 
       {/* Table */}
-      <div style={{
-        background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
-        overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-      }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: "var(--c-bg-soft)", borderBottom: "1px solid var(--c-border)" }}>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>카테고리</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>난이도</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>인기</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>관리</th>
+            <tr>
+              <th style={thStyle}>제목</th>
+              <th style={thStyle}>카테고리</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>난이도</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>문제 수</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>인기</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {quizSets.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: "var(--c-text-4)" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: 48, color: JC.sub }}>
                   등록된 영단어 퀴즈 세트가 없습니다.
                 </td>
               </tr>
             ) : (
+              // 줄무늬 대신 흰 면 + 구분선 하나. 마지막 행은 선 없음.
               quizSets.map((set, idx) => (
                 <tr
                   key={set.id}
                   style={{
-                    borderBottom: "1px solid var(--c-bg-muted)",
-                    background: idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)",
+                    borderBottom: idx === quizSets.length - 1 ? "none" : `1px solid ${JC.soft}`,
+                    background: "var(--c-bg)",
                     transition: "background 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--c-bg-soft-5)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)"}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--c-bg-muted-3)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "var(--c-bg)"}
                 >
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--c-text-2)" }}>{set.title}</td>
-                  <td style={{ padding: "14px 16px", color: "var(--c-text-4)" }}>
+                  <td style={{ padding: "14px 16px", fontWeight: 700, color: JC.title }}>{set.title}</td>
+                  <td style={{ padding: "14px 16px", fontWeight: 500, color: JC.body }}>
                     {set.category.icon} {set.category.name}
                   </td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>{difficultyBadge(set.difficulty)}</td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "var(--c-text-2)" }}>{set.totalQuestions}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center", fontWeight: 700, color: JC.accent }}>{set.totalQuestions}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={async () => {
@@ -398,9 +394,9 @@ export default function VocabQuizManagement() {
                         fetchQuizSets();
                       }}
                       style={{
-                        padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        backgroundColor: set.isPopular ? "var(--c-danger-f)" : "var(--c-bg-muted)",
-                        color: set.isPopular ? "#fff" : "var(--c-text-4c)",
+                        ...chipBase, border: "none", cursor: "pointer",
+                        backgroundColor: set.isPopular ? JC.accentBg : JC.soft,
+                        color: set.isPopular ? JC.accent : JC.body,
                         transition: "all 0.15s",
                       }}
                     >
@@ -412,8 +408,8 @@ export default function VocabQuizManagement() {
                       <button
                         onClick={() => openQuestions(set)}
                         style={{
-                          background: "none", border: "none", color: "var(--c-brand)",
-                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
+                          background: JC.accentBg, border: "none", borderRadius: 13, color: JC.accent,
+                          fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "7px 14px",
                         }}
                       >
                         문제 관리
@@ -426,8 +422,8 @@ export default function VocabQuizManagement() {
                           else alert("삭제 실패");
                         }}
                         style={{
-                          background: "none", border: "none", color: "var(--c-danger)",
-                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "4px 8px",
+                          background: "var(--c-danger-soft)", border: "none", borderRadius: 13, color: "var(--c-danger-c)",
+                          fontWeight: 600, fontSize: 13, cursor: "pointer", padding: "7px 14px",
                         }}
                       >
                         삭제
@@ -444,31 +440,30 @@ export default function VocabQuizManagement() {
       {/* Question Management Modal */}
       {selectedSet && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+          position: "fixed", inset: 0, background: "rgba(43,49,61,0.32)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
           <div style={{
-            background: "var(--c-bg)", borderRadius: 16, width: "100%", maxWidth: 720,
+            ...cardStyle, width: "100%", maxWidth: 720,
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
             {/* Modal Header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 24px", borderBottom: "1px solid var(--c-border)",
+              padding: "20px 24px", borderBottom: `1px solid ${JC.soft}`,
             }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>{selectedSet.title}</h3>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 13, color: "var(--c-text-4)" }}>문제 관리</span>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: JC.title }}>{selectedSet.title}</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 400, color: JC.sub }}>문제 관리</span>
                   {difficultyBadge(selectedSet.difficulty)}
                 </div>
               </div>
               <button
                 onClick={() => { setSelectedSet(null); setShowQuestionForm(false); }}
                 style={{
-                  background: "var(--c-bg-muted)", border: "none", width: 32, height: 32,
-                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "var(--c-text-4)",
+                  background: JC.soft, border: "none", width: 32, height: 32,
+                  borderRadius: 13, cursor: "pointer", fontSize: 18, color: JC.body,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -479,16 +474,16 @@ export default function VocabQuizManagement() {
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-                <p style={{ fontSize: 14, color: "var(--c-text-4)" }}>총 {questions.length}개 문제</p>
+                <p style={{ fontSize: 14, fontWeight: 500, color: JC.body }}>총 <b style={{ color: JC.accent, fontWeight: 700 }}>{questions.length}</b>개 문제</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {/* Excel 일괄 가져오기 */}
                   <label
                     style={{
-                      padding: "8px 16px",
-                      background: "var(--c-success)",
-                      color: "#fff",
+                      padding: "9px 18px",
+                      background: JC.soft,
+                      color: JC.body,
                       border: "none",
-                      borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      borderRadius: 13, fontSize: 13, fontWeight: 600, cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
@@ -508,11 +503,11 @@ export default function VocabQuizManagement() {
                     className="press"
                     onClick={() => setShowQuestionForm(!showQuestionForm)}
                     style={{
-                      padding: "8px 16px",
-                      background: showQuestionForm ? "var(--c-bg)" : "var(--c-brand)",
-                      color: showQuestionForm ? "var(--c-text-2)" : "#fff",
-                      border: showQuestionForm ? "1px solid var(--c-border)" : "none",
-                      borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      padding: "9px 18px",
+                      background: showQuestionForm ? JC.soft : JC.accent,
+                      color: showQuestionForm ? JC.body : "#fff",
+                      border: "none",
+                      borderRadius: 13, fontSize: 13, fontWeight: showQuestionForm ? 600 : 700, cursor: "pointer",
                     }}
                   >
                     {showQuestionForm ? "취소" : "+ 문제 추가"}
@@ -523,17 +518,17 @@ export default function VocabQuizManagement() {
               {/* Excel 미리보기 */}
               {importPreview && (
                 <div style={{
-                  background: "var(--c-success-soft-2)", border: "1px solid var(--c-success-line-2)", borderRadius: 12,
+                  background: JC.accentBg, border: "none", borderRadius: 13,
                   padding: 16, marginBottom: 16,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-success-d)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: JC.accent, display: "inline-flex", alignItems: "center", gap: 6 }}>
                       <ChartBarIcon size={16} aria-hidden="true" />
                       {importPreview.length}개 단어 감지됨 — 가져오기 전 확인하세요
                     </p>
                     <button
                       onClick={() => { setImportPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      style={{ background: "none", border: "none", color: "var(--c-text-3)", cursor: "pointer", fontSize: 18 }}
+                      style={{ background: "none", border: "none", color: JC.body, cursor: "pointer", fontSize: 18 }}
                     >
                       &times;
                     </button>
@@ -541,14 +536,14 @@ export default function VocabQuizManagement() {
                   {/* 미리보기 최대 5개 */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
                     {importPreview.slice(0, 5).map((w, i) => (
-                      <div key={i} style={{ background: "var(--c-bg)", borderRadius: 8, padding: "8px 12px", fontSize: 13, border: "1px solid var(--c-success-line)" }}>
-                        <span style={{ fontWeight: 700, color: "var(--c-text-2)" }}>{w.word}</span>
-                        <span style={{ color: "var(--c-success)", marginLeft: 8 }}>{w.correct}</span>
-                        <span style={{ color: "var(--c-text-4c)", marginLeft: 8 }}>/ {w.wrong1} / {w.wrong2} / {w.wrong3}</span>
+                      <div key={i} style={{ background: "var(--c-bg)", borderRadius: 13, padding: "10px 14px", fontSize: 13, border: "none" }}>
+                        <span style={{ fontWeight: 700, color: JC.title }}>{w.word}</span>
+                        <span style={{ color: JC.accent, fontWeight: 700, marginLeft: 8 }}>{w.correct}</span>
+                        <span style={{ color: JC.sub, fontWeight: 400, marginLeft: 8 }}>/ {w.wrong1} / {w.wrong2} / {w.wrong3}</span>
                       </div>
                     ))}
                     {importPreview.length > 5 && (
-                      <p style={{ fontSize: 12, color: "var(--c-text-3)", textAlign: "center" }}>... 외 {importPreview.length - 5}개</p>
+                      <p style={{ fontSize: 12, fontWeight: 400, color: JC.sub, textAlign: "center" }}>... 외 {importPreview.length - 5}개</p>
                     )}
                   </div>
                   <button
@@ -556,9 +551,10 @@ export default function VocabQuizManagement() {
                     disabled={importing}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "var(--c-success)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      padding: "11px 22px", background: JC.accent, color: "#fff",
+                      border: "none", borderRadius: 13, fontSize: 13, fontWeight: 700,
                       cursor: importing ? "not-allowed" : "pointer", opacity: importing ? 0.6 : 1,
+                      boxShadow: "none",
                     }}
                   >
                     {importing ? "가져오는 중..." : `${importPreview.length}개 단어 일괄 추가`}
@@ -569,8 +565,8 @@ export default function VocabQuizManagement() {
               {/* Add Question Form */}
               {showQuestionForm && (
                 <form onSubmit={handleAddQuestion} style={{
-                  background: "var(--c-bg-soft)", borderRadius: 12, padding: 20, marginBottom: 20,
-                  border: "1px solid var(--c-border)",
+                  background: JC.soft, borderRadius: 13, padding: 20, marginBottom: 20,
+                  border: "none",
                 }}>
                   <div style={{ marginBottom: 14 }}>
                     <label style={labelStyle}>단어</label>
@@ -579,8 +575,8 @@ export default function VocabQuizManagement() {
                       value={questionData.word}
                       onChange={(e) => setQuestionData({ ...questionData, word: e.target.value })}
                       style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       required
                     />
                   </div>
@@ -593,8 +589,8 @@ export default function VocabQuizManagement() {
                           value={questionData[`choice${n}` as keyof typeof questionData] as string}
                           onChange={(e) => setQuestionData({ ...questionData, [`choice${n}`]: e.target.value })}
                           style={inputStyle}
-                          onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                          onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                          onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                          onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                           required
                         />
                       </div>
@@ -620,8 +616,8 @@ export default function VocabQuizManagement() {
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       />
                     </div>
                   </div>
@@ -630,9 +626,10 @@ export default function VocabQuizManagement() {
                     disabled={submitting}
                     className="press"
                     style={{
-                      padding: "9px 20px", background: "var(--c-brand)", color: "#fff",
-                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      padding: "11px 22px", background: JC.accent, color: "#fff",
+                      border: "none", borderRadius: 13, fontSize: 13, fontWeight: 700,
                       cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.6 : 1,
+                      boxShadow: "none",
                     }}
                   >
                     {submitting ? "추가 중..." : "문제 추가"}
@@ -644,13 +641,13 @@ export default function VocabQuizManagement() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {questions.map((q) => (
                   <div key={q.id} style={{
-                    background: "var(--c-bg-soft)", borderRadius: 10, padding: "14px 16px",
-                    border: "1px solid var(--c-bg-muted)",
+                    background: "var(--c-bg)", borderRadius: 13, padding: "16px",
+                    border: `1px solid ${JC.soft}`, boxShadow: "none",
                   }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 700, color: "var(--c-text-4)",
-                        background: "var(--c-border)", borderRadius: 4, padding: "2px 6px", marginTop: 2,
+                        fontSize: 11, fontWeight: 700, color: JC.body,
+                        background: JC.soft, borderRadius: 999, padding: "3px 9px", marginTop: 2,
                       }}>
                         {q.order}
                       </span>
@@ -671,10 +668,9 @@ export default function VocabQuizManagement() {
                                   type="button"
                                   onClick={() => setEditQData({ ...editQData, answer: n })}
                                   style={{
-                                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                    border: `2px solid ${editQData.answer === n ? "var(--c-brand)" : "var(--c-border)"}`,
-                                    background: editQData.answer === n ? "var(--c-brand)" : "var(--c-bg)",
-                                    color: editQData.answer === n ? "#fff" : "var(--c-text-2)",
+                                    width: 32, height: 32, borderRadius: 13, flexShrink: 0, border: "none",
+                                    background: editQData.answer === n ? JC.accent : JC.soft,
+                                    color: editQData.answer === n ? "#fff" : JC.body,
                                     fontSize: 12, fontWeight: 700, cursor: "pointer",
                                   }}
                                 >
@@ -720,9 +716,9 @@ export default function VocabQuizManagement() {
                                   } else alert("저장 실패");
                                 }}
                                 style={{
-                                  padding: "7px 14px", borderRadius: 6, border: "none",
-                                  background: "var(--c-brand)", color: "#fff",
-                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: JC.accent, color: "#fff",
+                                  fontSize: 13, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
                                 저장
@@ -731,9 +727,9 @@ export default function VocabQuizManagement() {
                                 type="button"
                                 onClick={() => setEditingQuestionId(null)}
                                 style={{
-                                  padding: "7px 14px", borderRadius: 6,
-                                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
-                                  color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: JC.soft, color: JC.body,
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
                                 취소
@@ -742,18 +738,19 @@ export default function VocabQuizManagement() {
                           </div>
                         ) : (
                           <>
-                            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 8 }}>{q.word}</p>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: JC.title, marginBottom: 10 }}>{q.word}</p>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
                               {[q.choice1, q.choice2, q.choice3, q.choice4].map((c, i) => (
                                 <span
                                   key={i}
                                   style={{
                                     fontSize: 12,
-                                    padding: "4px 8px",
-                                    borderRadius: 6,
-                                    background: i + 1 === q.answer ? "var(--c-brand)" : "var(--c-bg)",
-                                    color: i + 1 === q.answer ? "#fff" : "var(--c-text-4)",
-                                    border: i + 1 === q.answer ? "none" : "1px solid var(--c-border)",
+                                    fontWeight: i + 1 === q.answer ? 700 : 500,
+                                    padding: "6px 10px",
+                                    borderRadius: 13,
+                                    background: i + 1 === q.answer ? JC.accentBg : JC.soft,
+                                    color: i + 1 === q.answer ? JC.accent : JC.body,
+                                    border: "none",
                                   }}
                                 >
                                   {i + 1}. {c}
@@ -761,7 +758,7 @@ export default function VocabQuizManagement() {
                               ))}
                             </div>
                             {q.explanation && (
-                              <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 8 }}>해설: {q.explanation}</p>
+                              <p style={{ fontSize: 12, fontWeight: 400, color: JC.sub, marginTop: 10 }}>해설: {q.explanation}</p>
                             )}
                           </>
                         )}
@@ -782,9 +779,9 @@ export default function VocabQuizManagement() {
                               });
                             }}
                             style={{
-                              background: "none", border: "none",
-                              color: "var(--c-brand)", fontSize: 12, fontWeight: 600,
-                              cursor: "pointer", padding: "2px 8px",
+                              background: JC.accentBg, border: "none", borderRadius: 13,
+                              color: JC.accent, fontSize: 12, fontWeight: 700,
+                              cursor: "pointer", padding: "6px 12px",
                             }}
                           >
                             편집
@@ -800,9 +797,9 @@ export default function VocabQuizManagement() {
                               } else alert("삭제 실패");
                             }}
                             style={{
-                              background: "none", border: "none",
-                              color: "var(--c-danger)", fontSize: 12, fontWeight: 600,
-                              cursor: "pointer", padding: "2px 8px",
+                              background: "var(--c-danger-soft)", border: "none", borderRadius: 13,
+                              color: "var(--c-danger-c)", fontSize: 12, fontWeight: 600,
+                              cursor: "pointer", padding: "6px 12px",
                             }}
                           >
                             삭제
@@ -813,13 +810,59 @@ export default function VocabQuizManagement() {
                   </div>
                 ))}
                 {questions.length === 0 && (
-                  <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
+                  <p style={{ textAlign: "center", color: JC.sub, padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}
               </div>
             </div>
           </div>
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  borderRadius: 18,
+  border: `1px solid ${JC.soft}`,
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const thStyle: React.CSSProperties = {
+  textAlign: "left",
+  padding: "12px 16px",
+  fontWeight: 600,
+  color: JC.sub,
+  fontSize: 12,
+  whiteSpace: "nowrap",
+  borderBottom: `1px solid ${JC.soft}`,
+};
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

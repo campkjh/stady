@@ -258,11 +258,12 @@ export default function WorkbookManagement() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "9px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--c-border)",
+    padding: "11px 14px",
+    borderRadius: 13,
+    border: `1px solid ${JC.soft}`,
+    background: "var(--c-bg)",
     fontSize: 14,
-    color: "var(--c-text-2)",
+    color: JC.title,
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.15s",
@@ -272,25 +273,26 @@ export default function WorkbookManagement() {
     display: "block",
     fontSize: 13,
     fontWeight: 600,
-    color: "var(--c-text-2)",
+    color: JC.body,
     marginBottom: 6,
   };
 
+  // 업로드 자리는 점선 대신 보조 면(#F2F3F5)으로 표시한다.
   const imageDropStyle: React.CSSProperties = {
-    border: "2px dashed var(--c-border-strong)",
-    borderRadius: 12,
+    border: "none",
+    borderRadius: 13,
     padding: 20,
     textAlign: "center",
     cursor: "pointer",
-    transition: "border-color 0.15s, background 0.15s",
-    background: "var(--c-bg-soft-2)",
+    transition: "background 0.15s",
+    background: JC.soft,
   };
 
   const imagePreviewStyle: React.CSSProperties = {
     position: "relative",
-    borderRadius: 12,
+    borderRadius: 13,
     overflow: "hidden",
-    border: "1px solid var(--c-border)",
+    border: `1px solid ${JC.soft}`,
   };
 
   // 단일 이미지 선택지 모드인지 확인
@@ -299,25 +301,26 @@ export default function WorkbookManagement() {
   };
 
   return (
-    <div>
+    <div className="jc-admin">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>문제집 관리</h1>
-          <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>총 {workbooks.length}개의 문제집</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title }}>문제집 관리</h1>
+          <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, marginTop: 6 }}>총 {workbooks.length}개의 문제집</p>
         </div>
         <button
           className="press"
           onClick={() => setShowForm(!showForm)}
           style={{
-            padding: "10px 20px",
-            background: showForm ? "var(--c-bg)" : "var(--c-brand)",
-            color: showForm ? "var(--c-text-2)" : "#fff",
-            border: showForm ? "1px solid var(--c-border)" : "none",
-            borderRadius: 10,
+            padding: "11px 22px",
+            background: showForm ? JC.soft : JC.accent,
+            color: showForm ? JC.body : "#fff",
+            border: "none",
+            borderRadius: 13,
             fontSize: 14,
-            fontWeight: 600,
+            fontWeight: showForm ? 600 : 700,
             cursor: "pointer",
+            boxShadow: "none",
           }}
         >
           {showForm ? "취소" : "+ 문제집 추가"}
@@ -326,15 +329,8 @@ export default function WorkbookManagement() {
 
       {/* Create Workbook Form */}
       {showForm && (
-        <form onSubmit={handleCreateWorkbook} style={{
-          background: "var(--c-bg)",
-          borderRadius: 14,
-          border: "1px solid var(--c-border)",
-          padding: 24,
-          marginBottom: 24,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 20 }}>새 문제집</h3>
+        <form onSubmit={handleCreateWorkbook} style={{ ...cardStyle, padding: 24, marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: JC.title, marginBottom: 20 }}>새 문제집</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label style={labelStyle}>제목</label>
@@ -343,8 +339,8 @@ export default function WorkbookManagement() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 style={inputStyle}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               />
             </div>
@@ -354,8 +350,8 @@ export default function WorkbookManagement() {
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 style={{ ...inputStyle, appearance: "auto" }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                 required
               >
                 <option value="">선택하세요</option>
@@ -368,9 +364,9 @@ export default function WorkbookManagement() {
 
           {/* Thumbnail */}
           <div style={{ marginBottom: 4 }}>
-            <label style={labelStyle}>썸네일 <span style={{ color: "var(--c-text-4)", fontWeight: 400 }}>선택</span></label>
+            <label style={labelStyle}>썸네일 <span style={{ color: JC.sub, fontWeight: 400 }}>선택</span></label>
             {thumbnailPreview ? (
-              <div style={{ position: "relative", width: 180, borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-border)" }}>
+              <div style={{ position: "relative", width: 180, borderRadius: 13, overflow: "hidden", border: `1px solid ${JC.soft}` }}>
                 <img src={thumbnailPreview} alt="썸네일" style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
                 <button
                   type="button"
@@ -389,15 +385,15 @@ export default function WorkbookManagement() {
               <div
                 style={{ ...imageDropStyle, width: 180, padding: 24 }}
                 onClick={() => thumbnailInputRef.current?.click()}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--c-brand)"; e.currentTarget.style.background = "var(--c-brand-soft-2)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--c-border-strong)"; e.currentTarget.style.background = "var(--c-bg-soft-2)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--c-brand-soft-6)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--c-bg-muted-3)"; }}
               >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 6px" }}>
-                  <rect x="3" y="3" width="18" height="18" rx="3" stroke="var(--c-text-4c)" strokeWidth="1.5"/>
-                  <circle cx="8.5" cy="8.5" r="2" stroke="var(--c-text-4c)" strokeWidth="1.5"/>
-                  <path d="M3 16L8 11L13 16M13 14L16 11L21 16" stroke="var(--c-text-4c)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="3" y="3" width="18" height="18" rx="3" stroke="#8A909C" strokeWidth="1.5"/>
+                  <circle cx="8.5" cy="8.5" r="2" stroke="#8A909C" strokeWidth="1.5"/>
+                  <path d="M3 16L8 11L13 16M13 14L16 11L21 16" stroke="#8A909C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <p style={{ fontSize: 12, color: "var(--c-text-4)", fontWeight: 500 }}>썸네일 업로드</p>
+                <p style={{ fontSize: 12, color: JC.body, fontWeight: 600 }}>썸네일 업로드</p>
               </div>
             )}
             <input
@@ -414,15 +410,16 @@ export default function WorkbookManagement() {
             className="press"
             style={{
               marginTop: 20,
-              padding: "10px 24px",
-              background: "var(--c-brand)",
+              padding: "12px 24px",
+              background: JC.accent,
               color: "#fff",
               border: "none",
-              borderRadius: 10,
+              borderRadius: 13,
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: submitting ? "not-allowed" : "pointer",
               opacity: submitting ? 0.6 : 1,
+              boxShadow: "none",
             }}
           >
             {submitting ? "생성 중..." : "문제집 생성"}
@@ -431,27 +428,21 @@ export default function WorkbookManagement() {
       )}
 
       {/* Workbooks Table */}
-      <div style={{
-        background: "var(--c-bg)",
-        borderRadius: 14,
-        border: "1px solid var(--c-border)",
-        overflow: "hidden",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-      }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
-            <tr style={{ background: "var(--c-bg-soft)", borderBottom: "1px solid var(--c-border)" }}>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>제목</th>
-              <th style={{ textAlign: "left", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>카테고리</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>문제 수</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>인기</th>
-              <th style={{ textAlign: "center", padding: "12px 16px", fontWeight: 600, color: "var(--c-text-4)", fontSize: 13 }}>관리</th>
+            <tr>
+              <th style={thStyle}>제목</th>
+              <th style={thStyle}>카테고리</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>문제 수</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>인기</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>관리</th>
             </tr>
           </thead>
           <tbody>
             {workbooks.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: 48, color: "var(--c-text-4)" }}>
+                <td colSpan={5} style={{ textAlign: "center", padding: 48, color: JC.sub }}>
                   등록된 문제집이 없습니다.
                 </td>
               </tr>
@@ -462,12 +453,13 @@ export default function WorkbookManagement() {
                 <tr
                   key={wb.id}
                   style={{
-                    borderBottom: "1px solid var(--c-bg-muted)",
-                    background: isEditing ? "var(--c-brand-soft-2)" : idx % 2 === 1 ? "var(--c-bg-soft-2)" : "var(--c-bg)",
+                    // 줄무늬 없이 흰 면 + 구분선 하나. 편집 중인 행만 강조 면.
+                    borderBottom: idx === workbooks.length - 1 ? "none" : `1px solid ${JC.soft}`,
+                    background: isEditing ? JC.accentBg : "var(--c-bg)",
                     transition: "background 0.15s",
                   }}
                 >
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--c-text-2)" }}>
+                  <td style={{ padding: "14px 16px", fontWeight: 700, color: JC.title }}>
                     {isEditing ? (
                       <input
                         type="text"
@@ -477,7 +469,7 @@ export default function WorkbookManagement() {
                       />
                     ) : wb.title}
                   </td>
-                  <td style={{ padding: "14px 16px", color: "var(--c-text-4)" }}>
+                  <td style={{ padding: "14px 16px", fontWeight: 500, color: JC.body }}>
                     {isEditing ? (
                       <select
                         value={editWbData.categoryId}
@@ -492,7 +484,7 @@ export default function WorkbookManagement() {
                       <>{wb.category.icon} {wb.category.name}</>
                     )}
                   </td>
-                  <td style={{ padding: "14px 16px", textAlign: "center", color: "var(--c-text-2)" }}>{wb.totalQuestions}</td>
+                  <td style={{ padding: "14px 16px", textAlign: "center", fontWeight: 700, color: JC.accent }}>{wb.totalQuestions}</td>
                   <td style={{ padding: "14px 16px", textAlign: "center" }}>
                     <button
                       onClick={async () => {
@@ -505,9 +497,9 @@ export default function WorkbookManagement() {
                         fetchWorkbooks();
                       }}
                       style={{
-                        padding: "4px 12px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        backgroundColor: wb.isPopular ? "var(--c-danger-f)" : "var(--c-bg-muted)",
-                        color: wb.isPopular ? "#fff" : "var(--c-text-4c)",
+                        ...chipBase, border: "none", cursor: "pointer",
+                        backgroundColor: wb.isPopular ? JC.accentBg : JC.soft,
+                        color: wb.isPopular ? JC.accent : JC.body,
                         transition: "all 0.15s",
                       }}
                     >
@@ -521,9 +513,8 @@ export default function WorkbookManagement() {
                           type="button"
                           onClick={() => editWbThumbInputRef.current?.click()}
                           style={{
-                            padding: "4px 10px", borderRadius: 6,
-                            background: "var(--c-bg-muted)", border: "1px solid var(--c-border)",
-                            color: "var(--c-text-2c)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            padding: "7px 12px", borderRadius: 13, border: "none",
+                            background: JC.soft, color: JC.body, fontSize: 12, fontWeight: 600, cursor: "pointer",
                           }}
                         >
                           {editWbThumbFile ? "변경됨" : "썸네일"}
@@ -553,9 +544,9 @@ export default function WorkbookManagement() {
                             } else alert("저장 실패");
                           }}
                           style={{
-                            padding: "4px 10px", borderRadius: 6, border: "none",
-                            background: "var(--c-brand)", color: "#fff",
-                            fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            padding: "7px 12px", borderRadius: 13, border: "none",
+                            background: JC.accent, color: "#fff",
+                            fontSize: 12, fontWeight: 700, cursor: "pointer",
                           }}
                         >
                           저장
@@ -567,9 +558,8 @@ export default function WorkbookManagement() {
                             setEditWbThumbPreview(null);
                           }}
                           style={{
-                            padding: "4px 10px", borderRadius: 6,
-                            background: "none", border: "1px solid var(--c-border)",
-                            color: "var(--c-text-3)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            padding: "7px 12px", borderRadius: 13, border: "none",
+                            background: JC.soft, color: JC.body, fontSize: 12, fontWeight: 600, cursor: "pointer",
                           }}
                         >
                           취소
@@ -580,9 +570,9 @@ export default function WorkbookManagement() {
                         <button
                           onClick={() => openProblems(wb)}
                           style={{
-                            background: "none", border: "none",
-                            color: "var(--c-brand)", fontWeight: 600, fontSize: 13,
-                            cursor: "pointer", padding: "4px 8px",
+                            background: JC.accentBg, border: "none", borderRadius: 13,
+                            color: JC.accent, fontWeight: 700, fontSize: 13,
+                            cursor: "pointer", padding: "7px 14px",
                           }}
                         >
                           문제 관리
@@ -595,9 +585,9 @@ export default function WorkbookManagement() {
                             setEditWbThumbPreview(null);
                           }}
                           style={{
-                            background: "none", border: "none",
-                            color: "var(--c-brand)", fontWeight: 600, fontSize: 13,
-                            cursor: "pointer", padding: "4px 8px",
+                            background: JC.accentBg, border: "none", borderRadius: 13,
+                            color: JC.accent, fontWeight: 700, fontSize: 13,
+                            cursor: "pointer", padding: "7px 14px",
                           }}
                         >
                           편집
@@ -610,9 +600,9 @@ export default function WorkbookManagement() {
                             else alert("삭제 실패");
                           }}
                           style={{
-                            background: "none", border: "none",
-                            color: "var(--c-danger)", fontWeight: 600, fontSize: 13,
-                            cursor: "pointer", padding: "4px 8px",
+                            background: "var(--c-danger-soft)", border: "none", borderRadius: 13,
+                            color: "var(--c-danger-c)", fontWeight: 600, fontSize: 13,
+                            cursor: "pointer", padding: "7px 14px",
                           }}
                         >
                           삭제
@@ -640,30 +630,29 @@ export default function WorkbookManagement() {
       {/* Problem Management Modal */}
       {selectedWorkbook && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
+          position: "fixed", inset: 0, background: "rgba(43,49,61,0.32)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
           <div style={{
-            background: "var(--c-bg)", borderRadius: 16, width: "100%", maxWidth: 720,
+            ...cardStyle, width: "100%", maxWidth: 720,
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
             {/* Modal Header */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 24px", borderBottom: "1px solid var(--c-border)",
+              padding: "20px 24px", borderBottom: `1px solid ${JC.soft}`,
             }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: JC.title }}>
                   {selectedWorkbook.title}
                 </h3>
-                <p style={{ fontSize: 13, color: "var(--c-text-4)", marginTop: 2 }}>문제 관리</p>
+                <p style={{ fontSize: 13, fontWeight: 400, color: JC.sub, marginTop: 4 }}>문제 관리</p>
               </div>
               <button
                 onClick={() => { setSelectedWorkbook(null); setShowProblemForm(false); resetProblemForm(); }}
                 style={{
-                  background: "var(--c-bg-muted)", border: "none", width: 32, height: 32,
-                  borderRadius: 8, cursor: "pointer", fontSize: 18, color: "var(--c-text-4)",
+                  background: JC.soft, border: "none", width: 32, height: 32,
+                  borderRadius: 13, cursor: "pointer", fontSize: 18, color: JC.body,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -674,18 +663,18 @@ export default function WorkbookManagement() {
             {/* Modal Body */}
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <p style={{ fontSize: 14, color: "var(--c-text-4)" }}>총 {problems.length}개 문제</p>
+                <p style={{ fontSize: 14, fontWeight: 500, color: JC.body }}>총 <b style={{ color: JC.accent, fontWeight: 700 }}>{problems.length}</b>개 문제</p>
                 <button
                   className="press"
                   onClick={() => { setShowProblemForm(!showProblemForm); if (showProblemForm) resetProblemForm(); }}
                   style={{
-                    padding: "8px 16px",
-                    background: showProblemForm ? "var(--c-bg)" : "var(--c-brand)",
-                    color: showProblemForm ? "var(--c-text-2)" : "#fff",
-                    border: showProblemForm ? "1px solid var(--c-border)" : "none",
-                    borderRadius: 8,
+                    padding: "9px 18px",
+                    background: showProblemForm ? JC.soft : JC.accent,
+                    color: showProblemForm ? JC.body : "#fff",
+                    border: "none",
+                    borderRadius: 13,
                     fontSize: 13,
-                    fontWeight: 600,
+                    fontWeight: showProblemForm ? 600 : 700,
                     cursor: "pointer",
                   }}
                 >
@@ -696,13 +685,13 @@ export default function WorkbookManagement() {
               {/* Add Problem Form */}
               {showProblemForm && (
                 <form onSubmit={handleAddProblem} style={{
-                  background: "var(--c-bg-soft)", borderRadius: 12, padding: 24, marginBottom: 20,
-                  border: "1px solid var(--c-border)",
+                  background: JC.soft, borderRadius: 13, padding: 24, marginBottom: 20,
+                  border: "none",
                 }}>
                   {/* 문제 이미지 */}
                   <div style={{ marginBottom: 20 }}>
                     <label style={labelStyle}>
-                      문제 이미지 <span style={{ color: "var(--c-danger)" }}>*</span>
+                      문제 이미지 <span style={{ color: "var(--c-danger-c)" }}>*</span>
                     </label>
                     {questionPreview ? (
                       <div style={imagePreviewStyle}>
@@ -724,17 +713,17 @@ export default function WorkbookManagement() {
                       <div
                         style={imageDropStyle}
                         onClick={() => questionInputRef.current?.click()}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--c-brand)"; e.currentTarget.style.background = "var(--c-brand-soft-2)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--c-border-strong)"; e.currentTarget.style.background = "var(--c-bg-soft-2)"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--c-brand-soft-6)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "var(--c-bg-muted-3)"; }}
                       >
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 8px" }}>
-                          <rect x="3" y="3" width="18" height="18" rx="3" stroke="var(--c-text-4c)" strokeWidth="1.5"/>
-                          <circle cx="8.5" cy="8.5" r="2" stroke="var(--c-text-4c)" strokeWidth="1.5"/>
-                          <path d="M3 16L8 11L13 16" stroke="var(--c-text-4c)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M13 14L16 11L21 16" stroke="var(--c-text-4c)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <rect x="3" y="3" width="18" height="18" rx="3" stroke="#8A909C" strokeWidth="1.5"/>
+                          <circle cx="8.5" cy="8.5" r="2" stroke="#8A909C" strokeWidth="1.5"/>
+                          <path d="M3 16L8 11L13 16" stroke="#8A909C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M13 14L16 11L21 16" stroke="#8A909C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 500 }}>클릭하여 문제 이미지를 업로드하세요</p>
-                        <p style={{ fontSize: 11, color: "var(--c-text-4e)", marginTop: 4 }}>PNG, JPG, WEBP (최대 10MB)</p>
+                        <p style={{ fontSize: 13, color: JC.body, fontWeight: 600 }}>클릭하여 문제 이미지를 업로드하세요</p>
+                        <p style={{ fontSize: 11, color: JC.sub, fontWeight: 400, marginTop: 4 }}>PNG, JPG, WEBP (최대 10MB)</p>
                       </div>
                     )}
                     <input
@@ -749,7 +738,7 @@ export default function WorkbookManagement() {
                   {/* 선택지 이미지 */}
                   <div style={{ marginBottom: 20 }}>
                     <label style={labelStyle}>
-                      선택지 이미지 <span style={{ color: "var(--c-danger)" }}>*</span>
+                      선택지 이미지 <span style={{ color: "var(--c-danger-c)" }}>*</span>
                     </label>
                     {choicesPreview ? (
                       <div style={imagePreviewStyle}>
@@ -771,15 +760,15 @@ export default function WorkbookManagement() {
                       <div
                         style={imageDropStyle}
                         onClick={() => choicesInputRef.current?.click()}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--c-brand)"; e.currentTarget.style.background = "var(--c-brand-soft-2)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--c-border-strong)"; e.currentTarget.style.background = "var(--c-bg-soft-2)"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--c-brand-soft-6)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "var(--c-bg-muted-3)"; }}
                       >
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto 8px" }}>
-                          <rect x="3" y="3" width="18" height="18" rx="3" stroke="var(--c-text-4c)" strokeWidth="1.5"/>
-                          <path d="M7 8H17M7 12H17M7 16H13" stroke="var(--c-text-4c)" strokeWidth="1.5" strokeLinecap="round"/>
+                          <rect x="3" y="3" width="18" height="18" rx="3" stroke="#8A909C" strokeWidth="1.5"/>
+                          <path d="M7 8H17M7 12H17M7 16H13" stroke="#8A909C" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
-                        <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 500 }}>클릭하여 선택지 이미지를 업로드하세요</p>
-                        <p style={{ fontSize: 11, color: "var(--c-text-4e)", marginTop: 4 }}>1~5번 선택지가 포함된 하나의 이미지</p>
+                        <p style={{ fontSize: 13, color: JC.body, fontWeight: 600 }}>클릭하여 선택지 이미지를 업로드하세요</p>
+                        <p style={{ fontSize: 11, color: JC.sub, fontWeight: 400, marginTop: 4 }}>1~5번 선택지가 포함된 하나의 이미지</p>
                       </div>
                     )}
                     <input
@@ -793,7 +782,7 @@ export default function WorkbookManagement() {
 
                   {/* 정답 */}
                   <div style={{ marginBottom: 16 }}>
-                    <label style={labelStyle}>정답 번호 <span style={{ color: "var(--c-danger)" }}>*</span></label>
+                    <label style={labelStyle}>정답 번호 <span style={{ color: "var(--c-danger-c)" }}>*</span></label>
                     <div style={{ display: "flex", gap: 6 }}>
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button
@@ -801,10 +790,9 @@ export default function WorkbookManagement() {
                           type="button"
                           onClick={() => setAnswer(n)}
                           style={{
-                            width: 40, height: 40, borderRadius: 10,
-                            border: `2px solid ${answer === n ? "var(--c-brand)" : "var(--c-border)"}`,
-                            background: answer === n ? "var(--c-brand)" : "var(--c-bg)",
-                            color: answer === n ? "#fff" : "var(--c-text-2)",
+                            width: 40, height: 40, borderRadius: 13, border: "none",
+                            background: answer === n ? JC.accent : "var(--c-bg)",
+                            color: answer === n ? "#fff" : JC.body,
                             fontSize: 15, fontWeight: 700, cursor: "pointer",
                             transition: "all 0.15s",
                           }}
@@ -819,7 +807,7 @@ export default function WorkbookManagement() {
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                       <label style={{ ...labelStyle, marginBottom: 0 }}>
-                        해설 <span style={{ color: "var(--c-text-4)", fontWeight: 400 }}>선택</span>
+                        해설 <span style={{ color: JC.sub, fontWeight: 400 }}>선택</span>
                       </label>
                       <button
                         type="button"
@@ -828,11 +816,12 @@ export default function WorkbookManagement() {
                         className="press"
                         style={{
                           display: "inline-flex", alignItems: "center", gap: 6,
-                          padding: "6px 12px", borderRadius: 8, border: "none",
-                          background: (generatingAI || !questionFile || !choicesFile) ? "var(--c-border)" : "linear-gradient(135deg, #3787FF, #7B5BFF)",
-                          color: (generatingAI || !questionFile || !choicesFile) ? "var(--c-text-4c)" : "#fff",
+                          padding: "8px 14px", borderRadius: 13, border: "none",
+                          background: (generatingAI || !questionFile || !choicesFile) ? "var(--c-bg)" : JC.accent,
+                          color: (generatingAI || !questionFile || !choicesFile) ? "#8A909C" : "#fff",
                           fontSize: 12, fontWeight: 700,
                           cursor: (generatingAI || !questionFile || !choicesFile) ? "not-allowed" : "pointer",
+                          boxShadow: "none",
                         }}
                       >
                         {generatingAI ? (
@@ -854,8 +843,8 @@ export default function WorkbookManagement() {
                       onChange={(e) => setExplanation(e.target.value)}
                       rows={4}
                       style={{ ...inputStyle, resize: "vertical" }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--c-brand)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-border)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       placeholder="해설을 직접 입력하거나 AI 해설 자동 생성 버튼을 눌러주세요"
                     />
                   </div>
@@ -865,18 +854,19 @@ export default function WorkbookManagement() {
                     disabled={uploading}
                     className="press"
                     style={{
-                      padding: "10px 24px",
-                      background: "var(--c-brand)",
+                      padding: "12px 24px",
+                      background: JC.accent,
                       color: "#fff",
                       border: "none",
-                      borderRadius: 8,
+                      borderRadius: 13,
                       fontSize: 14,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: uploading ? "not-allowed" : "pointer",
                       opacity: uploading ? 0.6 : 1,
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
+                      boxShadow: "none",
                     }}
                   >
                     {uploading && (
@@ -892,13 +882,13 @@ export default function WorkbookManagement() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {problems.map((p) => (
                   <div key={p.id} style={{
-                    background: "var(--c-bg)", borderRadius: 12, padding: 16,
-                    border: "1px solid var(--c-border)",
+                    background: "var(--c-bg)", borderRadius: 13, padding: 16,
+                    border: `1px solid ${JC.soft}`, boxShadow: "none",
                   }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 700, color: "#fff",
-                        background: "var(--c-brand)", borderRadius: 6, padding: "3px 8px", marginTop: 2,
+                        ...chipBase, fontSize: 11, color: JC.accent,
+                        background: JC.accentBg, marginTop: 2,
                         flexShrink: 0,
                       }}>
                         {p.order}번
@@ -914,9 +904,9 @@ export default function WorkbookManagement() {
                           } else alert("삭제 실패");
                         }}
                         style={{
-                          background: "none", border: "none",
-                          color: "var(--c-danger)", fontSize: 12, fontWeight: 600,
-                          cursor: "pointer", padding: "2px 8px", marginLeft: "auto",
+                          background: "var(--c-danger-soft)", border: "none", borderRadius: 13,
+                          color: "var(--c-danger-c)", fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", padding: "6px 12px", marginLeft: "auto",
                           flexShrink: 0, order: 2,
                         }}
                       >
@@ -925,24 +915,24 @@ export default function WorkbookManagement() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {/* 문제 이미지 */}
                         {p.questionImage && (
-                          <div style={{ marginBottom: 8, borderRadius: 8, overflow: "hidden", border: "1px solid var(--c-bg-muted)" }}>
-                            <img src={p.questionImage} alt="문제" style={{ width: "100%", display: "block", background: "var(--c-bg-soft)" }} />
+                          <div style={{ marginBottom: 8, borderRadius: 13, overflow: "hidden", border: "1px solid var(--c-bg-muted-3)" }}>
+                            <img src={p.questionImage} alt="문제" style={{ width: "100%", display: "block", background: "var(--c-bg-muted-3)" }} />
                           </div>
                         )}
                         {/* 본문 이미지 (레거시) */}
                         {p.passageImage && !p.questionImage && (
-                          <div style={{ marginBottom: 8, borderRadius: 8, overflow: "hidden", border: "1px solid var(--c-bg-muted)" }}>
-                            <img src={p.passageImage} alt="본문" style={{ width: "100%", display: "block", background: "var(--c-bg-soft)" }} />
+                          <div style={{ marginBottom: 8, borderRadius: 13, overflow: "hidden", border: "1px solid var(--c-bg-muted-3)" }}>
+                            <img src={p.passageImage} alt="본문" style={{ width: "100%", display: "block", background: "var(--c-bg-muted-3)" }} />
                           </div>
                         )}
                         {/* 문제 텍스트 (레거시) */}
                         {p.questionText && (
-                          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 8 }}>{p.questionText}</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: JC.title, marginBottom: 8 }}>{p.questionText}</p>
                         )}
                         {/* 선택지 */}
                         {isSingleImageChoices(p) ? (
-                          <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid var(--c-border)" }}>
-                            <img src={p.choice1} alt="선택지" style={{ width: "100%", display: "block", background: "var(--c-bg-soft)" }} />
+                          <div style={{ borderRadius: 13, overflow: "hidden", border: `1px solid ${JC.soft}` }}>
+                            <img src={p.choice1} alt="선택지" style={{ width: "100%", display: "block", background: "var(--c-bg-muted-3)" }} />
                           </div>
                         ) : (
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
@@ -955,11 +945,12 @@ export default function WorkbookManagement() {
                                     key={i}
                                     style={{
                                       fontSize: 12,
-                                      padding: "4px 8px",
-                                      borderRadius: 6,
-                                      background: isAnswer ? "var(--c-brand)" : "var(--c-bg)",
-                                      color: isAnswer ? "#fff" : "var(--c-text-4)",
-                                      border: isAnswer ? "none" : "1px solid var(--c-border)",
+                                      fontWeight: isAnswer ? 700 : 500,
+                                      padding: "6px 10px",
+                                      borderRadius: 13,
+                                      background: isAnswer ? JC.accentBg : JC.soft,
+                                      color: isAnswer ? JC.accent : JC.body,
+                                      border: "none",
                                     }}
                                   >
                                     {i + 1}. {c}
@@ -970,7 +961,7 @@ export default function WorkbookManagement() {
                         )}
                         {/* 정답 표시 */}
                         {editingProblemId === p.id ? (
-                          <div style={{ marginTop: 12, padding: 12, background: "var(--c-bg-soft)", borderRadius: 8, border: "1px solid var(--c-border)" }}>
+                          <div style={{ marginTop: 12, padding: 14, background: JC.soft, borderRadius: 13, border: "none" }}>
                             <label style={labelStyle}>정답 번호</label>
                             <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                               {[1, 2, 3, 4, 5].map((n) => (
@@ -979,10 +970,9 @@ export default function WorkbookManagement() {
                                   type="button"
                                   onClick={() => setEditAnswer(n)}
                                   style={{
-                                    width: 36, height: 36, borderRadius: 8,
-                                    border: `2px solid ${editAnswer === n ? "var(--c-brand)" : "var(--c-border)"}`,
-                                    background: editAnswer === n ? "var(--c-brand)" : "var(--c-bg)",
-                                    color: editAnswer === n ? "#fff" : "var(--c-text-2)",
+                                    width: 36, height: 36, borderRadius: 13, border: "none",
+                                    background: editAnswer === n ? JC.accent : "var(--c-bg)",
+                                    color: editAnswer === n ? "#fff" : JC.body,
                                     fontSize: 13, fontWeight: 700, cursor: "pointer",
                                   }}
                                 >
@@ -1015,9 +1005,9 @@ export default function WorkbookManagement() {
                                   } else alert("저장 실패");
                                 }}
                                 style={{
-                                  padding: "8px 16px", borderRadius: 6, border: "none",
-                                  background: "var(--c-brand)", color: "#fff",
-                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: JC.accent, color: "#fff",
+                                  fontSize: 13, fontWeight: 700, cursor: "pointer",
                                 }}
                               >
                                 저장
@@ -1026,9 +1016,9 @@ export default function WorkbookManagement() {
                                 type="button"
                                 onClick={() => setEditingProblemId(null)}
                                 style={{
-                                  padding: "8px 16px", borderRadius: 6,
-                                  border: "1px solid var(--c-border)", background: "var(--c-bg)",
-                                  color: "var(--c-text-3)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                  padding: "9px 18px", borderRadius: 13, border: "none",
+                                  background: "var(--c-bg)", color: JC.body,
+                                  fontSize: 13, fontWeight: 600, cursor: "pointer",
                                 }}
                               >
                                 취소
@@ -1037,14 +1027,11 @@ export default function WorkbookManagement() {
                           </div>
                         ) : (
                           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{
-                              fontSize: 12, fontWeight: 600, color: "var(--c-brand)",
-                              background: "var(--c-brand-soft-2)", borderRadius: 4, padding: "2px 8px",
-                            }}>
+                            <span style={{ ...chipBase, background: JC.accentBg, color: JC.accent }}>
                               정답: {p.answer}번
                             </span>
                             {p.explanation && (
-                              <span style={{ fontSize: 12, color: "var(--c-text-4)" }}>해설: {p.explanation}</span>
+                              <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub }}>해설: {p.explanation}</span>
                             )}
                             <button
                               type="button"
@@ -1055,9 +1042,9 @@ export default function WorkbookManagement() {
                               }}
                               style={{
                                 marginLeft: "auto",
-                                background: "none", border: "none",
-                                color: "var(--c-brand)", fontSize: 12, fontWeight: 600,
-                                cursor: "pointer", padding: "2px 8px",
+                                background: JC.accentBg, border: "none", borderRadius: 13,
+                                color: JC.accent, fontSize: 12, fontWeight: 700,
+                                cursor: "pointer", padding: "6px 12px",
                               }}
                             >
                               편집
@@ -1069,13 +1056,59 @@ export default function WorkbookManagement() {
                   </div>
                 ))}
                 {problems.length === 0 && (
-                  <p style={{ textAlign: "center", color: "var(--c-text-4)", padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
+                  <p style={{ textAlign: "center", color: JC.sub, padding: 32, fontSize: 14 }}>등록된 문제가 없습니다.</p>
                 )}
               </div>
             </div>
           </div>
         </div>
       )}
+      <style>{JC_FOCUS_CSS}</style>
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "var(--c-bg)",
+  borderRadius: 18,
+  border: `1px solid ${JC.soft}`,
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const thStyle: React.CSSProperties = {
+  textAlign: "left",
+  padding: "12px 16px",
+  fontWeight: 600,
+  color: JC.sub,
+  fontSize: 12,
+  whiteSpace: "nowrap",
+  borderBottom: `1px solid ${JC.soft}`,
+};
+
+/* 인라인 style 로는 :focus 를 못 준다. 포커스 테두리만 클래스로 뺀다.
+   page.tsx 는 default 외 named export 가 금지라 모듈 로컬 상수로 둔다. */
+const JC_FOCUS_CSS = `
+  .jc-admin input:focus,
+  .jc-admin textarea:focus,
+  .jc-admin select:focus { border-color: #3180F7 !important; }
+`;

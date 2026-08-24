@@ -41,8 +41,8 @@ export default function AdminSurveysPage() {
 
   return (
     <div style={{ padding: "24px 20px", maxWidth: 920, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>온보딩 설문</h1>
-      <p style={{ fontSize: 13, color: "var(--c-text-4b)", margin: "0 0 20px" }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: JC.title, margin: "0 0 6px" }}>온보딩 설문</h1>
+      <p style={{ fontSize: 14, fontWeight: 400, color: JC.sub, margin: "0 0 24px" }}>
         사용자 첫 진입 시 1회 수집한 만족도·기능 요청입니다.
       </p>
 
@@ -55,53 +55,54 @@ export default function AdminSurveysPage() {
       </div>
 
       {/* 만족도 분포 */}
-      <div style={{ border: "1px solid var(--c-bg-muted-6)", borderRadius: 14, padding: 16, marginBottom: 22, background: "var(--c-bg)" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>만족도 분포</div>
+      <div style={{ ...cardStyle, padding: 20, marginBottom: 22 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: JC.title, marginBottom: 14 }}>만족도 분포</div>
         {[5, 4, 3, 2, 1].map((v) => {
           const c = stats.dist[v] || 0;
           const pct = stats.rated ? Math.round((c / stats.rated) * 100) : 0;
           return (
-            <div key={v} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span style={{ width: 92, fontSize: 13, color: "var(--c-text-3b)" }}>{FACE[v]} {SAT_LABEL[v]}</span>
-              <div style={{ flex: 1, height: 10, background: "var(--c-bg-muted-4)", borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pct}%`, background: "var(--c-brand)", borderRadius: 999 }} />
+            <div key={v} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ width: 92, fontSize: 13, fontWeight: 500, color: JC.body }}>{FACE[v]} {SAT_LABEL[v]}</span>
+              {/* 트랙은 보조 면(#F2F3F5), 채움은 강조색 */}
+              <div style={{ flex: 1, height: 10, background: JC.soft, borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: JC.accent, borderRadius: 999 }} />
               </div>
-              <span style={{ width: 56, textAlign: "right", fontSize: 12, color: "var(--c-text-4b)" }}>{c}명 ({pct}%)</span>
+              <span style={{ width: 62, textAlign: "right", fontSize: 12, fontWeight: 400, color: JC.sub }}>{c}명 ({pct}%)</span>
             </div>
           );
         })}
       </div>
 
       {/* 응답 목록 */}
-      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>응답 목록 ({surveys.length})</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: JC.title, marginBottom: 12 }}>응답 목록 ({surveys.length})</div>
       {loading ? (
-        <p style={{ color: "var(--c-text-4b)", fontSize: 14 }}>불러오는 중…</p>
+        <p style={{ color: JC.sub, fontSize: 14 }}>불러오는 중…</p>
       ) : surveys.length === 0 ? (
-        <p style={{ color: "var(--c-text-4b)", fontSize: 14 }}>아직 설문 응답이 없습니다.</p>
+        <p style={{ color: JC.sub, fontSize: 14 }}>아직 설문 응답이 없습니다.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {surveys.map((s) => (
-            <div key={s.id} style={{ border: "1px solid var(--c-bg-muted-6)", borderRadius: 12, padding: 14, background: "var(--c-bg)" }}>
+            <div key={s.id} style={{ ...cardStyle, padding: 18 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ minWidth: 0 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)" }}>{s.nickname}</span>
-                  {s.email && <span style={{ fontSize: 12, color: "var(--c-text-5)", marginLeft: 6 }}>{s.email}</span>}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: JC.title }}>{s.nickname}</span>
+                  {s.email && <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub, marginLeft: 6 }}>{s.email}</span>}
                 </div>
-                <span style={{ fontSize: 12, color: "var(--c-text-5)", flexShrink: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 400, color: JC.sub, flexShrink: 0 }}>
                   {new Date(s.createdAt).toLocaleString("ko-KR")}
                 </span>
               </div>
-              <div style={{ marginTop: 8, fontSize: 13 }}>
+              <div style={{ marginTop: 10, fontSize: 13 }}>
                 {s.skipped || s.satisfaction == null ? (
-                  <span style={{ color: "var(--c-text-5)", fontWeight: 600 }}>건너뜀</span>
+                  <span style={{ ...chipBase, background: JC.soft, color: JC.body }}>건너뜀</span>
                 ) : (
-                  <span style={{ color: "var(--c-text-3b)", fontWeight: 600 }}>
+                  <span style={{ ...chipBase, background: JC.accentBg, color: JC.accent }}>
                     {FACE[s.satisfaction]} {SAT_LABEL[s.satisfaction]} ({s.satisfaction}/5)
                   </span>
                 )}
               </div>
               {s.desiredFeature.trim() && (
-                <div style={{ marginTop: 8, padding: "10px 12px", background: "var(--c-bg-soft-8)", borderRadius: 10, fontSize: 13.5, color: "var(--c-text-b)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                <div style={{ marginTop: 10, padding: "12px 14px", background: JC.soft, borderRadius: 13, fontSize: 13.5, fontWeight: 500, color: JC.body, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                   {s.desiredFeature}
                 </div>
               )}
@@ -115,9 +116,36 @@ export default function AdminSurveysPage() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ border: "1px solid var(--c-bg-muted-6)", borderRadius: 12, padding: "14px 16px", background: "var(--c-bg)" }}>
-      <div style={{ fontSize: 12, color: "var(--c-text-4b)", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-b)" }}>{value}</div>
+    <div style={{ ...cardStyle, padding: "16px 18px" }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: JC.body, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: JC.accent }}>{value}</div>
     </div>
   );
 }
+
+/* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
+   면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+const JC = {
+  soft: "var(--c-bg-muted-3)", // #F2F3F5
+  accentBg: "var(--c-brand-soft-6)", // #EAF2FF
+  title: "var(--c-text-2)", // #2B313D
+  body: "var(--c-text-3c)", // #51535C
+  sub: "#8A909C",
+  accent: "#3180F7",
+};
+
+const cardStyle: React.CSSProperties = {
+  border: `1px solid ${JC.soft}`,
+  borderRadius: 18,
+  background: "var(--c-bg)",
+  boxShadow: "none",
+};
+
+const chipBase: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: 999,
+  padding: "4px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
