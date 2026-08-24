@@ -4,6 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import {
+  NavBannersIcon,
+  MenuIcon,
+  NavCategoriesIcon,
+  NavCommentsIcon,
+  NavDashboardIcon,
+  NavFaqsIcon,
+  NavInquiriesIcon,
+  NavMockexamsIcon,
+  NavNoticesIcon,
+  NavOxIcon,
+  NavPostsIcon,
+  NavReportsIcon,
+  NavSurveysIcon,
+  NavTagsIcon,
+  NavUsersIcon,
+  NavVocabIcon,
+  NavWorkbooksIcon,
+} from "@/components/admin/admin-icons";
 
 interface User {
   id: string;
@@ -16,169 +35,82 @@ const navItems = [
   {
     href: "/admin",
     label: "대시보드",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      </svg>
-    ),
+    icon: <NavDashboardIcon size={20} />,
   },
   {
     href: "/admin/community-posts",
     label: "게시글 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 3.5H16V16.5H4V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavPostsIcon size={20} />,
   },
   {
     href: "/admin/comments",
     label: "댓글 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 5.5C3 4.39543 3.89543 3.5 5 3.5H15C16.1046 3.5 17 4.39543 17 5.5V12C17 13.1046 16.1046 14 15 14H8L4 17V14H5C3.89543 14 3 13.1046 3 12V5.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M7 8H13M7 11H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavCommentsIcon size={20} />,
   },
   {
     href: "/admin/category-groups",
     label: "카테고리 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="12" y="3" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-        <rect x="3" y="12" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M12 13H17M12 16H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavCategoriesIcon size={20} />,
   },
   {
     href: "/admin/tags",
     label: "태그 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3.5 4.5V9.2C3.5 9.73 3.71 10.24 4.09 10.61L9.89 16.41C10.67 17.2 11.93 17.2 12.72 16.41L16.41 12.72C17.2 11.93 17.2 10.67 16.41 9.89L10.61 4.09C10.24 3.71 9.73 3.5 9.2 3.5H4.5C3.95 3.5 3.5 3.95 3.5 4.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <circle cx="7" cy="7" r="1" fill="currentColor"/>
-      </svg>
-    ),
+    icon: <NavTagsIcon size={20} />,
   },
   {
     href: "/admin/reports",
     label: "신고·차단 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 2.5L18 16.5H2L10 2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M10 7.5V11M10 14V14.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavReportsIcon size={20} />,
   },
   {
     href: "/admin/workbooks",
     label: "문제집 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 4C3 2.89543 3.89543 2 5 2H15C16.1046 2 17 2.89543 17 4V16C17 17.1046 16.1046 18 15 18H5C3.89543 18 3 17.1046 3 16V4Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M7 6H13M7 10H13M7 14H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavWorkbooksIcon size={20} />,
   },
   {
     href: "/admin/users",
     label: "사용자 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M4 17C4 13.9624 6.68629 11.5 10 11.5C13.3137 11.5 16 13.9624 16 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavUsersIcon size={20} />,
   },
   {
     href: "/admin/ox-quiz",
     label: "OX퀴즈 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="7" cy="10" r="4" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M13 6L17 14M17 6L13 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavOxIcon size={20} />,
   },
   {
     href: "/admin/vocab-quiz",
     label: "영단어퀴즈 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V15C17 16.1046 16.1046 17 15 17H5C3.89543 17 3 16.1046 3 15V5Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M7 7H8L10 13L12 7H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
+    icon: <NavVocabIcon size={20} />,
   },
   {
     href: "/admin/banners",
     label: "배너 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2.5" y="4" width="15" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M5 12L8 9L10.5 11.5L12 10L15 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="13.5" cy="7.5" r="1" fill="currentColor"/>
-      </svg>
-    ),
+    icon: <NavBannersIcon size={20} />,
   },
   {
     href: "/admin/inquiries",
     label: "문의 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H8L4 17V14H5C3.89543 14 3 13.1046 3 12V5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M7 8H13M7 11H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavInquiriesIcon size={20} />,
   },
   {
     href: "/admin/surveys",
     label: "설문 결과",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 3.5H15V16.5H5V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M8 7.5L9 8.5L11 6.5M8 12.5L9 13.5L11 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
+    icon: <NavSurveysIcon size={20} />,
   },
   {
     href: "/admin/notices",
     label: "공지사항 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 6L11 3V17L3 14V6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M11 6H16M11 10H16M11 13H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavNoticesIcon size={20} />,
   },
   {
     href: "/admin/faqs",
     label: "FAQ 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M8 8C8 6.9 8.9 6 10 6C11.1 6 12 6.9 12 8C12 9.1 10 9.3 10 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="10" cy="14" r="0.6" fill="currentColor"/>
-      </svg>
-    ),
+    icon: <NavFaqsIcon size={20} />,
   },
   {
     href: "/admin/mock-exams",
     label: "모의고사 관리",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 3.5H16V16.5H4V3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M7 3.5V16.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M10 7H14M10 10H14M10 13H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    icon: <NavMockexamsIcon size={20} />,
   },
 ];
 
@@ -404,9 +336,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               alignItems: "center",
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <MenuIcon size={24} />
           </button>
           <Image src="/icons/stady-logo.svg" alt="Stady" width={60} height={20} style={{ filter: "brightness(0) invert(1)" }} />
           <Link
