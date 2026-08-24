@@ -10,6 +10,7 @@ import {
   NavCategoriesIcon,
   NavCommentsIcon,
   NavDashboardIcon,
+  NavInsightsIcon,
   NavFaqsIcon,
   NavInquiriesIcon,
   NavMockexamsIcon,
@@ -36,6 +37,11 @@ const navItems = [
     href: "/admin",
     label: "대시보드",
     icon: <NavDashboardIcon size={20} />,
+  },
+  {
+    href: "/admin/insights",
+    label: "사용자 인사이트",
+    icon: <NavInsightsIcon size={20} />,
   },
   {
     href: "/admin/community-posts",
