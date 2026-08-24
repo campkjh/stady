@@ -699,9 +699,13 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   const orderBy = options.sort === "popular"
     ? `ORDER BY (COALESCE(pl."like_count", 0) * 3 + COALESCE(cc."comment_count", 0) * 2 + COALESCE(vc."count", 0)) DESC, p."created_at" DESC`
     : `ORDER BY p."created_at" DESC`;
+  // 목록 기본 한도. 100 이던 시절 글이 269개까지 쌓이면서 101번째(2026-08-09 07:23) 이전
+  // 글 166개가 목록에서 아예 사라졌다 — "8월 9일 이전 글이 안 보인다"는 신고의 원인.
+  // 글 1건당 약 0.8KB(이미지는 URL 뿐이고 lazy 로 받는다)라 500건이어도 본문은 400KB 남짓,
+  // 전송은 압축돼 훨씬 작다. 500 에 가까워지면 그때는 '더 보기'가 필요하다.
   const limit = options.limit && Number.isFinite(options.limit)
-    ? Math.max(1, Math.min(100, Math.floor(options.limit)))
-    : 100;
+    ? Math.max(1, Math.min(500, Math.floor(options.limit)))
+    : 500;
   const posts = await prisma.$queryRawUnsafe<Omit<CommunityPostRow, "tags" | "images">[]>(
     `
       SELECT
