@@ -769,6 +769,12 @@ function CommunityStyles() {
         padding-top: 0;
         min-height: 0;
       }
+      /* 상세 화면의 shell 은 '화면에 고정된 헤더' 자리를 비워두려고 padding-top 을 갖고 있다.
+         패널 안에서는 헤더를 sticky(문서 흐름 안)로 눕혔으므로 그 여백이 그대로 남으면
+         헤더 아래에 빈 줄이 하나 더 생겨 헤더가 두 개처럼 보인다 → 여백을 걷어낸다. */
+      .community-panel .community-detail-shell {
+        padding-top: 0;
+      }
       .community-panel-close {
         position: absolute;
         top: 10px;
