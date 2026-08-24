@@ -207,12 +207,15 @@ export default function VocabQuizSolvePage() {
     return () => clearTimeout(t);
   }, [answers, currentIndex, progressReady, progressKey, submitted]);
 
-  const submitQuiz = useCallback(async () => {
+  // finalAnswers: 마지막 문제를 푼 직후 자동 제출될 때, 아직 state 에 반영되지 않은
+  // 최신 답안을 직접 넘겨받는다(넘기지 않으면 마지막 문제가 무응답=오답으로 제출된다).
+  const submitQuiz = useCallback(async (finalAnswers?: Map<string, { selected: number; isCorrect: boolean }>) => {
     if (submitted || !quiz) return;
     setSubmitted(true);
+    const src = finalAnswers ?? answers;
 
     const answerArray = quiz.questions.map((q) => {
-      const ans = answers.get(q.id);
+      const ans = src.get(q.id);
       return {
         questionId: q.id,
         selected: ans?.selected ?? null,
@@ -285,7 +288,7 @@ export default function VocabQuizSolvePage() {
     // Check if all questions answered
     if (quiz && newAnswers.size === quiz.questions.length) {
       setTimeout(() => {
-        submitQuiz();
+        submitQuiz(newAnswers);
         setShowResult(true);
       }, 1000);
     }

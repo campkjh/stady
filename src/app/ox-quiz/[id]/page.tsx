@@ -269,12 +269,17 @@ export default function OxQuizSolvePage() {
     }
   }, [showList, currentIndex]);
 
-  const submitQuiz = useCallback(async () => {
+  // finalAnswers: 마지막 문제를 푼 직후 자동 제출될 때, 아직 state 에 반영되지 않은
+  // 최신 답안을 직접 넘겨받는다. 이걸 빼먹으면 이 콜백이 캡처한 answers 는 마지막 답이
+  // 빠진 이전 렌더의 것이라 마지막 문제가 무응답(오답)으로 채점·제출된다
+  // — "다 맞았는데 하나 틀렸다고 뜨고 정답률이 100%가 안 된다"는 신고의 원인이었다.
+  const submitQuiz = useCallback(async (finalAnswers?: Map<string, { selected: boolean; isCorrect: boolean }>) => {
     if (submitted || !quiz) return;
     setSubmitted(true);
+    const src = finalAnswers ?? answers;
 
     const answerArray = quiz.questions.map((q) => {
-      const ans = answers.get(q.id);
+      const ans = src.get(q.id);
       return {
         questionId: q.id,
         selected: ans?.selected ?? null,
@@ -282,7 +287,7 @@ export default function OxQuizSolvePage() {
     });
 
     // 로컬 채점(제출 실패해도 결과는 보여준다).
-    const correct = Array.from(answers.values()).filter((a) => a.isCorrect).length;
+    const correct = Array.from(src.values()).filter((a) => a.isCorrect).length;
     const total = quiz.questions.length;
     const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
     let topPercent: number | null = null;
@@ -459,7 +464,8 @@ export default function OxQuizSolvePage() {
     // Check if all questions answered
     if (quiz && newAnswers.size === quiz.questions.length) {
       // Small delay so user sees the result before submit
-      setTimeout(() => submitQuiz(), 800);
+      // 최신 답안을 직접 넘긴다(위 setAnswers 는 아직 이 콜백의 answers 에 반영되지 않았다).
+      setTimeout(() => submitQuiz(newAnswers), 800);
     }
   };
 
