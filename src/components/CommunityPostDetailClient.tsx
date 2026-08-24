@@ -502,7 +502,19 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             <article className="community-detail-panel community-post-detail-card" style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <span style={{ borderRadius: 999, border: "1px solid var(--c-bg-muted-6)", background: "transparent", color: "var(--c-text-2c)", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
-                <span style={{ color: "var(--c-text-4)", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ color: "var(--c-text-4)", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
+                  <ReportBlockMenu
+                    targetType="post"
+                    postId={post.id}
+                    targetUserId={post.userId}
+                    targetNickname={post.nickname}
+                    currentUserId={currentUserId}
+                    // 차단하면 이 글 자체가 안 보이는 게 맞으므로 목록으로 되돌린다.
+                    onBlocked={() => router.push("/community")}
+                    variant="dots"
+                  />
+                </span>
               </div>
               {editing ? (
                 <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>
@@ -573,19 +585,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "8px 0 0" }}>
-                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
-                    <ReportBlockMenu
-                      targetType="post"
-                      postId={post.id}
-                      targetUserId={post.userId}
-                      targetNickname={post.nickname}
-                      currentUserId={currentUserId}
-                      // 차단하면 이 글 자체가 안 보이는 게 맞으므로 목록으로 되돌린다.
-                      onBlocked={() => router.push("/community")}
-                      compact
-                    />
-                  </div>
+                  <p style={{ margin: "8px 0 0", color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
                   <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;

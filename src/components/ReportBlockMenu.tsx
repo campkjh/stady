@@ -29,6 +29,8 @@ interface Props {
   onBlocked?: () => void;
   /** 댓글 줄에서는 작은 아이콘만, 글 본문에서는 조금 크게. */
   compact?: boolean;
+  /** "dots" 는 우측 상단 ⋯ 버튼(글 카드용), 기본은 "신고" 텍스트(댓글 줄용). */
+  variant?: "text" | "dots";
 }
 
 export default function ReportBlockMenu({
@@ -40,6 +42,7 @@ export default function ReportBlockMenu({
   currentUserId,
   onBlocked,
   compact = false,
+  variant = "text",
 }: Props) {
   const [step, setStep] = useState<Step | null>(null);
   const [busy, setBusy] = useState(false);
@@ -113,18 +116,33 @@ export default function ReportBlockMenu({
         type="button"
         onClick={openMenu}
         aria-label={`${targetNickname}님의 ${targetType === "post" ? "글" : "댓글"} 신고 또는 차단`}
-        style={{
-          border: "none",
-          background: "none",
-          cursor: "pointer",
-          color: "var(--c-text-4c)",
-          fontSize: compact ? 12.5 : 13,
-          fontWeight: 700,
-          padding: compact ? "4px 2px" : "4px 6px",
-          lineHeight: 1,
-        }}
+        style={
+          variant === "dots"
+            ? {
+                // 글 카드 우측 상단의 ⋯ — 터치 영역을 넉넉히 준다.
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                color: "var(--c-text-4c)",
+                fontSize: 20,
+                fontWeight: 700,
+                lineHeight: 1,
+                padding: "2px 6px",
+                marginRight: -4,
+              }
+            : {
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                color: "var(--c-text-4c)",
+                fontSize: compact ? 12.5 : 13,
+                fontWeight: 700,
+                padding: compact ? "4px 2px" : "4px 6px",
+                lineHeight: 1,
+              }
+        }
       >
-        신고
+        {variant === "dots" ? "⋯" : "신고"}
       </button>
 
       {step && (
