@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -64,6 +65,22 @@ function QBadge({ answered }: { answered: boolean }) {
 
 export default function CommunityClient() {
   const router = useRouter();
+  // 넓은 화면에서 목록 위에 띄우는 상세 패널(글 id). null 이면 닫힘.
+  const [panelPostId, setPanelPostId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!panelPostId) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPanelPostId(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelPostId]);
+  // 창이 좁아지면(태블릿 세로 회전 등) 패널을 닫는다 — 좁은 화면에서 38% 패널은 못 읽는다.
+  useEffect(() => {
+    if (!panelPostId) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => { if (!mq.matches) setPanelPostId(null); };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [panelPostId]);
   const topbarRef = useRef<HTMLElement | null>(null);
   // 캐시된 값으로 초기화 → 탭 재진입 시 즉시 표시(로딩/깜빡임 없음).
   const [groups, setGroups] = useState<CategoryGroup[]>(() => clientCache.get<CategoryGroup[]>("community-groups") ?? []);
@@ -245,6 +262,12 @@ export default function CommunityClient() {
   }
 
   function openPost(postId: string) {
+    // 넓은 화면에서는 페이지를 갈아엎지 않고 우측 패널로 연다 — 목록 자리를 지킨 채
+    // 글을 훑어볼 수 있다. 좁은 화면은 예전처럼 상세 페이지로 이동한다.
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+      setPanelPostId(postId);
+      return;
+    }
     // 상세로 가기 전 현재 스크롤 위치를 저장해 두고, 돌아오면 그 자리로 복원한다.
     try { sessionStorage.setItem("community-scroll", String(window.scrollY)); } catch {}
     router.push(`/community/${postId}`);
@@ -579,6 +602,34 @@ export default function CommunityClient() {
         </button>
       </div>
       <CommunityStyles />
+
+      {/* 넓은 화면 전용 상세 패널 — 목록을 그대로 둔 채 오른쪽을 덮는다.
+          상세 화면 컴포넌트를 그대로 재사용하고, 그 안의 fixed 상단바만 패널 기준으로 눕힌다. */}
+      {panelPostId && (
+        <>
+          <div
+            className="community-panel-scrim"
+            onClick={() => setPanelPostId(null)}
+            aria-hidden="true"
+          />
+          <aside className="community-panel" role="dialog" aria-label="게시글 상세" aria-modal="false">
+            <button
+              type="button"
+              className="community-panel-close press"
+              onClick={() => setPanelPostId(null)}
+              aria-label="상세 닫기"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+            <div className="community-panel-body">
+              <CommunityPostDetailClient key={panelPostId} postId={panelPostId} />
+            </div>
+          </aside>
+        </>
+      )}
     </main>
   );
 }
@@ -672,6 +723,80 @@ function EyeIcon() {
 function CommunityStyles() {
   return (
     <style>{`
+      /* ── 넓은 화면 상세 패널 ─────────────────────────────────
+         목록을 그대로 둔 채 오른쪽 38% 를 덮는다. 1024px 미만에서는 아예 쓰지 않는다
+         (openPost 가 그 폭에서는 기존처럼 상세 페이지로 보낸다). */
+      .community-panel-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        background: rgba(15, 23, 42, 0.28);
+        animation: communityPanelFade 0.18s ease;
+      }
+      .community-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 91;
+        width: 38%;
+        min-width: 420px;
+        height: 100vh;
+        background: var(--c-bg);
+        border-left: 1px solid var(--c-border);
+        box-shadow: -18px 0 44px rgba(15, 23, 42, 0.16);
+        display: flex;
+        flex-direction: column;
+        animation: communityPanelIn 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .community-panel-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      /* 상세 화면의 상단바는 뷰포트 기준 fixed(폭 720px)라 그대로 두면 패널 밖으로 삐져나간다.
+         패널 안에서는 흐름 위에 얹히는 sticky 로 눕힌다. */
+      .community-panel .community-detail-topbar {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        max-width: none;
+        left: auto;
+        transform: none;
+      }
+      /* 상세가 페이지 단독일 때 쓰는 상단 여백은 패널 안에서 불필요하다. */
+      .community-panel .community-detail-page {
+        padding-top: 0;
+        min-height: 0;
+      }
+      .community-panel-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: none;
+        background: var(--c-bg-muted);
+        color: var(--c-text-3);
+        cursor: pointer;
+      }
+      @keyframes communityPanelIn {
+        from { transform: translateX(24px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes communityPanelFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .community-panel, .community-panel-scrim { animation: none; }
+      }
+
       .community-page {
         min-height: 100vh;
         background: var(--c-bg);
