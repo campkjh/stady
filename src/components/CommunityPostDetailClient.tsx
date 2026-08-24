@@ -477,14 +477,15 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             className="community-detail-icon-button"
             style={iconButtonStyle}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <div>
-            <p className="community-detail-eyebrow">STADY</p>
-            <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 24, fontWeight: 700 }}>커뮤니티</h1>
-          </div>
+          {/* 헤더엔 'STADY / 커뮤니티' 대신 지금 보고 있는 글 제목을 둔다 — 스크롤을 내려도
+              무슨 글인지 알 수 있다. 제목이 길면 한 줄로 줄인다. */}
+          <h1 className="community-detail-title">
+            {post?.title ?? (loading ? "" : "커뮤니티")}
+          </h1>
         </header>
 
         {message && (
@@ -808,7 +809,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           margin: 0 auto;
           display: grid;
           gap: 14px;
-          padding-top: calc(76px + env(safe-area-inset-top, 0px));
+          padding-top: calc(62px + env(safe-area-inset-top, 0px));
         }
         .community-detail-topbar {
           position: fixed;
@@ -829,11 +830,36 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           backdrop-filter: blur(18px);
           -webkit-backdrop-filter: blur(18px);
         }
-        .community-detail-eyebrow {
-          margin: 0 0 2px;
-          color: var(--c-text-4c);
-          font-size: 11px;
+        .community-detail-icon-button {
+          flex-shrink: 0;
+          transition: background-color 0.14s ease, color 0.14s ease;
+        }
+        .community-detail-icon-button:active {
+          background: var(--c-bg-muted-20) !important;
+          color: var(--c-text-2) !important;
+        }
+        .community-detail-title {
+          margin: 0;
+          min-width: 0;
+          flex: 1;
+          color: var(--c-text);
+          font-size: 17px;
           font-weight: 700;
+          letter-spacing: -0.3px;
+          line-height: 1.35;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        /* 넓은 화면에서 헤더가 24px 제목 + 두 줄 구성이라 지나치게 두꺼웠다.
+           한 줄 제목으로 바꾸면서 높이도 함께 낮춘다. */
+        @media (min-width: 720px) {
+          .community-detail-topbar {
+            padding: calc(12px + env(safe-area-inset-top, 0px)) 18px 12px;
+          }
+          .community-detail-title {
+            font-size: 18px;
+          }
         }
         .community-detail-panel {
           animation: communityDetailIn 0.22s ease;
@@ -1128,13 +1154,15 @@ function updateComment(
   });
 }
 
+// 뒤로가기. 흰 면 + 테두리 원은 헤더에서 버튼만 도드라져 투박했다 —
+// 테두리를 없애고 은은한 회색 면에 회색 화살표로 낮춘다(누르면 한 톤 진해진다).
 const iconButtonStyle = {
-  width: 38,
-  height: 38,
-  border: "1px solid var(--c-border)",
+  width: 34,
+  height: 34,
+  border: "none",
   borderRadius: 999,
-  background: "var(--c-bg)",
-  color: "var(--c-text)",
+  background: "var(--c-bg-muted-3)",
+  color: "var(--c-text-3c)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
