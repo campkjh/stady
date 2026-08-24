@@ -69,7 +69,7 @@ const navItems = [
   },
   {
     href: "/admin/reports",
-    label: "신고 관리",
+    label: "신고·차단 관리",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10 2.5L18 16.5H2L10 2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
@@ -275,7 +275,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             flexDirection: "column",
             position: "fixed",
             top: 0,
-            left: sidebarOpen ? 0 : -240,
+            // 데스크톱은 항상 펼쳐둔다. 예전엔 여기서도 sidebarOpen 을 봤는데,
+            // 햄버거 버튼이 모바일 전용이라 데스크톱에선 열 방법이 없어 메뉴가
+            // 영영 화면 밖(-240)에 숨어 있었다. 모바일 동작은 아래 미디어쿼리가 담당.
+            left: 0,
             zIndex: 50,
             transition: "left 0.25s ease",
           }}
