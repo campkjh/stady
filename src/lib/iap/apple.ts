@@ -62,6 +62,74 @@ function appleAuthToken(): string {
   return `${signingInput}.${b64url(signature)}`;
 }
 
+/**
+ * 결제 없이 APPLE_IAP_* 자격증명만 점검한다.
+ *
+ * 존재할 수 없는 거래 id 로 App Store Server API 를 한 번 호출해 상태 코드만 본다:
+ *   401/403 → 키·issuer·bundleId·개인키 중 하나가 잘못됨(인증 실패)
+ *   404/400 → 인증은 통과했고 "그런 거래가 없다"는 정상 응답 = 자격증명 정상
+ * 샌드박스 실결제를 돌리지 않고도 검증 경로가 살아있는지 확인하려고 둔다.
+ */
+export async function appleCredentialSelfTest(): Promise<{
+  configured: boolean;
+  ok: boolean;
+  detail: string;
+  statuses?: Record<string, number>;
+}> {
+  if (!appleConfigured()) {
+    const missing = [
+      ["APPLE_IAP_ISSUER_ID", process.env.APPLE_IAP_ISSUER_ID],
+      ["APPLE_IAP_KEY_ID", process.env.APPLE_IAP_KEY_ID],
+      ["APPLE_IAP_PRIVATE_KEY", process.env.APPLE_IAP_PRIVATE_KEY],
+      ["APPLE_BUNDLE_ID", process.env.APPLE_BUNDLE_ID],
+    ]
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+    return { configured: false, ok: false, detail: `env 누락: ${missing.join(", ")}` };
+  }
+
+  let token: string;
+  try {
+    token = appleAuthToken();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      configured: true,
+      ok: false,
+      detail: `JWT 서명 실패 — APPLE_IAP_PRIVATE_KEY 형식(.p8 PEM) 확인: ${message}`,
+    };
+  }
+
+  const statuses: Record<string, number> = {};
+  for (const host of [PROD_HOST, SANDBOX_HOST]) {
+    const label = host === SANDBOX_HOST ? "sandbox" : "production";
+    try {
+      const res = await fetch(`${host}/inApps/v1/transactions/0`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      statuses[label] = res.status;
+    } catch {
+      statuses[label] = 0; // 네트워크 실패
+    }
+  }
+
+  const authFailed = Object.values(statuses).every((s) => s === 401 || s === 403);
+  return authFailed
+    ? {
+        configured: true,
+        ok: false,
+        detail:
+          "Apple 인증 실패(401/403) — ISSUER_ID·KEY_ID·PRIVATE_KEY·BUNDLE_ID 중 하나가 잘못됐습니다.",
+        statuses,
+      }
+    : {
+        configured: true,
+        ok: true,
+        detail: "Apple 자격증명 정상 — 인증 통과(존재하지 않는 거래라 404/400은 정상 응답).",
+        statuses,
+      };
+}
+
 /** GET against the App Store Server API, trying the hinted environment first
  *  then the other (Apple recommends prod→sandbox fallback). */
 async function appleGet(path: string, environmentHint?: "Production" | "Sandbox") {
