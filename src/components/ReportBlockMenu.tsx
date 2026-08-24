@@ -119,16 +119,17 @@ export default function ReportBlockMenu({
         style={
           variant === "dots"
             ? {
-                // 글 카드 우측 상단의 ⋯ — 터치 영역을 넉넉히 준다.
+                // 글 카드 우측 상단의 점 3개. 글자(⋯)로 그리면 그 글리프가 없는
+                // 안드로이드 기기에서 통째로 안 보인다 → SVG 로 그린다.
                 border: "none",
                 background: "none",
                 cursor: "pointer",
                 color: "var(--c-text-4c)",
-                fontSize: 20,
-                fontWeight: 700,
-                lineHeight: 1,
-                padding: "2px 6px",
+                lineHeight: 0,
+                padding: "6px 4px",
                 marginRight: -4,
+                display: "inline-flex",
+                alignItems: "center",
               }
             : {
                 border: "none",
@@ -142,7 +143,15 @@ export default function ReportBlockMenu({
               }
         }
       >
-        {variant === "dots" ? "⋯" : "신고"}
+        {variant === "dots" ? (
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <circle cx="4" cy="10" r="1.7" fill="currentColor" />
+            <circle cx="10" cy="10" r="1.7" fill="currentColor" />
+            <circle cx="16" cy="10" r="1.7" fill="currentColor" />
+          </svg>
+        ) : (
+          "신고"
+        )}
       </button>
 
       {step && (
