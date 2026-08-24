@@ -1525,19 +1525,99 @@ export async function toggleCommunityBlock(blockerId: string, blockedId: string)
   return { blocked: true };
 }
 
-/** 내가 차단한 사용자 목록(해제 화면용). */
+/** 내가 차단한 사용자 목록(해제 화면용) + 그 사람 때문에 숨겨진 글·댓글 수. */
 export async function listCommunityBlocks(blockerId: string) {
   await ensureCommunityTables();
-  return prisma.$queryRawUnsafe<{ blocked_id: string; nickname: string | null; created_at: Date }[]>(
+  return prisma.$queryRawUnsafe<
+    { blocked_id: string; nickname: string | null; created_at: Date; post_count: number; comment_count: number }[]
+  >(
     `
-      SELECT b."blocked_id", u."nickname", b."created_at"
+      SELECT
+        b."blocked_id",
+        u."nickname",
+        b."created_at",
+        COALESCE(pc."c", 0)::int AS "post_count",
+        COALESCE(cc."c", 0)::int AS "comment_count"
       FROM "CommunityBlock" b
       LEFT JOIN "User" u ON u."id" = b."blocked_id"
+      LEFT JOIN (
+        SELECT "user_id", COUNT(*)::int AS "c" FROM "CommunityPost"
+        WHERE "is_active" = true GROUP BY "user_id"
+      ) pc ON pc."user_id" = b."blocked_id"
+      LEFT JOIN (
+        SELECT "user_id", COUNT(*)::int AS "c" FROM "CommunityComment"
+        WHERE "is_active" = true GROUP BY "user_id"
+      ) cc ON cc."user_id" = b."blocked_id"
       WHERE b."blocker_id" = $1
       ORDER BY b."created_at" DESC
     `,
     blockerId
   );
+}
+
+/**
+ * 내가 차단해서 숨겨진 글·댓글을 직접 확인한다(차단 해제 판단용).
+ * 실제로 차단한 상대인지 먼저 확인해, 아무 사용자의 글이나 긁어오지 못하게 막는다.
+ */
+export async function getBlockedUserContent(blockerId: string, blockedId: string) {
+  await ensureCommunityTables();
+  const blocked = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
+    `SELECT COUNT(*)::bigint AS "count" FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`,
+    blockerId,
+    blockedId
+  );
+  if (Number(blocked[0]?.count || 0) === 0) throw new Error("CommunityBlockNotFound");
+
+  const posts = await prisma.$queryRawUnsafe<{ id: string; title: string; created_at: Date }[]>(
+    `SELECT "id", "title", "created_at" FROM "CommunityPost"
+     WHERE "user_id" = $1 AND "is_active" = true ORDER BY "created_at" DESC LIMIT 50`,
+    blockedId
+  );
+  const comments = await prisma.$queryRawUnsafe<
+    { id: string; post_id: string; content: string; created_at: Date; post_title: string | null }[]
+  >(
+    `SELECT c."id", c."post_id", c."content", c."created_at", p."title" AS "post_title"
+     FROM "CommunityComment" c
+     LEFT JOIN "CommunityPost" p ON p."id" = c."post_id"
+     WHERE c."user_id" = $1 AND c."is_active" = true
+     ORDER BY c."created_at" DESC LIMIT 50`,
+    blockedId
+  );
+  return { posts, comments };
+}
+
+/** 운영자용 — 전체 차단 현황(누가 누구를, 언제). 반복 차단당하는 사용자를 찾는 신호. */
+export async function listAllCommunityBlocks(limit = 300) {
+  await ensureCommunityTables();
+  const capped = Math.max(1, Math.min(1000, Math.floor(limit)));
+  const rows = await prisma.$queryRawUnsafe<
+    { blocker_id: string; blocked_id: string; blocker_nickname: string | null; blocked_nickname: string | null; created_at: Date }[]
+  >(
+    `
+      SELECT b."blocker_id", b."blocked_id",
+             bu."nickname" AS "blocker_nickname",
+             tu."nickname" AS "blocked_nickname",
+             b."created_at"
+      FROM "CommunityBlock" b
+      LEFT JOIN "User" bu ON bu."id" = b."blocker_id"
+      LEFT JOIN "User" tu ON tu."id" = b."blocked_id"
+      ORDER BY b."created_at" DESC
+      LIMIT ${capped}
+    `
+  );
+  // 많이 차단당한 사용자 순위 — 운영자가 먼저 살펴봐야 할 계정.
+  const top = await prisma.$queryRawUnsafe<{ blocked_id: string; nickname: string | null; c: number }[]>(
+    `
+      SELECT b."blocked_id", u."nickname", COUNT(*)::int AS "c"
+      FROM "CommunityBlock" b
+      LEFT JOIN "User" u ON u."id" = b."blocked_id"
+      GROUP BY b."blocked_id", u."nickname"
+      HAVING COUNT(*) >= 2
+      ORDER BY COUNT(*) DESC
+      LIMIT 20
+    `
+  );
+  return { rows, top };
 }
 
 /**

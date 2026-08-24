@@ -23,8 +23,23 @@ interface AdminReport {
 
 const FILTERS = ["접수", "전체", "처리완료", "반려"] as const;
 
+interface AdminBlock {
+  blockerNickname: string;
+  blockedId: string;
+  blockedNickname: string;
+  createdAt: string;
+}
+interface MostBlocked {
+  userId: string;
+  nickname: string;
+  count: number;
+}
+
 export default function AdminReportsPage() {
+  const [tab, setTab] = useState<"reports" | "blocks">("reports");
   const [reports, setReports] = useState<AdminReport[]>([]);
+  const [blocks, setBlocks] = useState<AdminBlock[]>([]);
+  const [mostBlocked, setMostBlocked] = useState<MostBlocked[]>([]);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("접수");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -44,7 +59,24 @@ export default function AdminReportsPage() {
       .finally(() => setLoading(false));
   }, [filter]);
 
-  useEffect(load, [load]);
+  useEffect(() => {
+    if (tab === "reports") load();
+  }, [tab, load]);
+
+  useEffect(() => {
+    if (tab !== "blocks") return;
+    setLoading(true);
+    fetch("/api/admin/community-blocks", { credentials: "include" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "차단 현황을 불러오지 못했습니다.");
+        setBlocks(data.blocks || []);
+        setMostBlocked(data.mostBlocked || []);
+        setMessage("");
+      })
+      .catch((error) => setMessage(error instanceof Error ? error.message : "차단 현황을 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
+  }, [tab]);
 
   async function updateStatus(id: string, status: string) {
     setBusyId(id);
@@ -67,9 +99,32 @@ export default function AdminReportsPage() {
 
   return (
     <section style={{ display: "grid", gap: 16 }}>
-      <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>신고 관리</h1>
+      <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>신고·차단 관리</h1>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--c-border)" }}>
+        {([["reports", "신고 접수"], ["blocks", "차단 현황"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            style={{
+              border: "none",
+              background: "none",
+              padding: "10px 14px",
+              fontSize: 14.5,
+              fontWeight: 800,
+              cursor: "pointer",
+              color: tab === key ? "var(--c-brand-b)" : "var(--c-text-4)",
+              borderBottom: tab === key ? "2px solid var(--c-brand-b)" : "2px solid transparent",
+              marginBottom: -1,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: tab === "reports" ? "flex" : "none", gap: 8, flexWrap: "wrap" }}>
         {FILTERS.map((item) => (
           <button
             key={item}
@@ -93,7 +148,7 @@ export default function AdminReportsPage() {
 
       {message && <p style={{ margin: 0, color: "var(--c-danger-c)", fontSize: 14 }}>{message}</p>}
 
-      <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", padding: 20 }}>
+      <div style={{ display: tab === "reports" ? "block" : "none", border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", padding: 20 }}>
         {loading ? (
           <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중…</p>
         ) : reports.length === 0 ? (
@@ -178,6 +233,58 @@ export default function AdminReportsPage() {
           </div>
         )}
       </div>
+      {tab === "blocks" && (
+        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, background: "var(--c-bg)", padding: 20, display: "grid", gap: 18 }}>
+          {loading ? (
+            <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>불러오는 중…</p>
+          ) : (
+            <>
+              {mostBlocked.length > 0 && (
+                <div>
+                  <h2 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-text-2c)" }}>
+                    2명 이상에게 차단된 사용자
+                  </h2>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {mostBlocked.map((item) => (
+                      <span
+                        key={item.userId}
+                        style={{ fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 999, background: "var(--c-danger-soft-3)", color: "var(--c-danger-c)" }}
+                      >
+                        {item.nickname} · {item.count}명
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h2 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 800, color: "var(--c-text-2c)" }}>
+                  최근 차단 ({blocks.length})
+                </h2>
+                {blocks.length === 0 ? (
+                  <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>차단 기록이 없습니다.</p>
+                ) : (
+                  <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
+                    {blocks.map((block, index) => (
+                      <li
+                        key={`${block.blockedId}-${index}`}
+                        style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid var(--c-border)", borderRadius: 8, padding: "10px 12px", fontSize: 13.5, color: "var(--c-text-2c)" }}
+                      >
+                        <strong>{block.blockerNickname}</strong>
+                        <span style={{ color: "var(--c-text-4)" }}>→</span>
+                        <strong style={{ color: "var(--c-danger-c)" }}>{block.blockedNickname}</strong>
+                        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--c-text-4)" }}>
+                          {new Date(block.createdAt).toLocaleString("ko-KR")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }

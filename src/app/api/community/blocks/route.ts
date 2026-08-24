@@ -1,21 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { listCommunityBlocks, toggleCommunityBlock } from "@/lib/community";
+import { getBlockedUserContent, listCommunityBlocks, toggleCommunityBlock } from "@/lib/community";
 
 export const dynamic = "force-dynamic";
 
 // 내가 차단한 사용자 목록 (마이페이지 > 차단한 사용자).
-export async function GET() {
+// ?userId=... 를 주면 그 사람 때문에 숨겨진 글·댓글을 돌려준다(해제 판단용).
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
+
+  const targetId = new URL(request.url).searchParams.get("userId");
+  if (targetId) {
+    try {
+      const content = await getBlockedUserContent(user.id, targetId);
+      return NextResponse.json({
+        posts: content.posts.map((post) => ({
+          id: post.id,
+          title: post.title,
+          createdAt: post.created_at,
+        })),
+        comments: content.comments.map((comment) => ({
+          id: comment.id,
+          postId: comment.post_id,
+          postTitle: comment.post_title,
+          content: comment.content,
+          createdAt: comment.created_at,
+        })),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "CommunityBlockNotFound") {
+        return NextResponse.json({ error: "차단한 사용자가 아닙니다." }, { status: 404 });
+      }
+      console.error("blocked content error:", error);
+      return NextResponse.json({ error: "불러오지 못했습니다." }, { status: 500 });
+    }
+  }
+
   const rows = await listCommunityBlocks(user.id);
   return NextResponse.json({
     blocks: rows.map((row) => ({
       userId: row.blocked_id,
       nickname: row.nickname || "익명",
       createdAt: row.created_at,
+      postCount: row.post_count,
+      commentCount: row.comment_count,
     })),
   });
 }
