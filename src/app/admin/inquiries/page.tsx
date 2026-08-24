@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EmptyInquiryIcon } from "@/components/admin/admin-icons";
 
 interface Inquiry {
   id: string;
@@ -127,9 +128,11 @@ export default function AdminInquiriesPage() {
           background: "var(--c-bg)", borderRadius: 14, border: "1px solid var(--c-border)",
           padding: 48, textAlign: "center",
         }}>
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ margin: "0 auto 12px", display: "block" }}>
-            <path d="M8 12C8 9.79 9.79 8 12 8H36C38.21 8 40 9.79 40 12V28C40 30.21 38.21 32 36 32H20L12 38V32H12C9.79 32 8 30.21 8 28V12Z" stroke="var(--c-border)" strokeWidth="2" strokeLinejoin="round"/>
-          </svg>
+          <EmptyInquiryIcon
+            size={48}
+            style={{ margin: "0 auto 12px", display: "block", color: "var(--c-border)" }}
+            aria-hidden="true"
+          />
           <p style={{ color: "var(--c-text-4)", fontSize: 15 }}>접수된 문의가 없습니다.</p>
         </div>
       ) : (

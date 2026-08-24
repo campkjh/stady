@@ -51,14 +51,82 @@ export function kstToday(): { dateStr: string; daySeed: number } {
   return { dateStr, daySeed };
 }
 
+// ── 데일리 퀴즈 과목 설정 ────────────────────────────────────────────────
+// 예전엔 전체 문항에서 하나를 뽑아 그날그날 과목이 달라졌다("사문이랑 생윤이 랜덤하게 나온다").
+// 사용자가 고른 과목에서만 나오게 한다. 고르지 않았으면 전과 똑같이 전체에서 뽑는다.
+let dailyPrefTableReady = false;
+export async function ensureDailyQuizPrefTable(): Promise<void> {
+  if (dailyPrefTableReady) return;
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "DailyQuizPref" (
+      "user_id" TEXT PRIMARY KEY,
+      "category_ids" TEXT NOT NULL,
+      "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
+  dailyPrefTableReady = true;
+}
+
+/** 사용자가 고른 과목 id 목록. 설정한 적이 없으면 빈 배열(=전체). */
+export async function getDailyCategoryPref(userId: string): Promise<string[]> {
+  await ensureDailyQuizPrefTable();
+  const rows = await prisma.$queryRawUnsafe<{ category_ids: string }[]>(
+    `SELECT "category_ids" FROM "DailyQuizPref" WHERE "user_id" = $1 LIMIT 1`,
+    userId
+  );
+  const raw = rows[0]?.category_ids;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 과목 설정 저장. 빈 배열이면 '전체'로 되돌린다. */
+export async function setDailyCategoryPref(userId: string, categoryIds: string[]): Promise<void> {
+  await ensureDailyQuizPrefTable();
+  const clean = [...new Set(categoryIds.filter((x) => typeof x === "string" && x.length > 0))].slice(0, 20);
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "DailyQuizPref" ("user_id", "category_ids", "updated_at")
+     VALUES ($1, $2, now())
+     ON CONFLICT ("user_id") DO UPDATE SET "category_ids" = EXCLUDED."category_ids", "updated_at" = now()`,
+    userId,
+    JSON.stringify(clean)
+  );
+}
+
+/** 데일리 퀴즈에 쓸 수 있는 과목(= OX 문항이 실제로 있는 과목)과 문항 수. */
+export async function getDailyCategoryOptions(): Promise<{ id: string; name: string; count: number }[]> {
+  const rows = await prisma.$queryRawUnsafe<{ id: string; name: string; c: bigint }[]>(
+    `SELECT c."id", c."name", COUNT(q."id")::bigint AS c
+     FROM "OxQuestion" q
+     JOIN "OxQuizSet" s ON s."id" = q."oxQuizSetId"
+     JOIN "Category" c ON c."id" = s."categoryId"
+     GROUP BY c."id", c."name"
+     HAVING COUNT(q."id") > 0
+     ORDER BY COUNT(q."id") DESC`
+  );
+  return rows.map((r) => ({ id: r.id, name: r.name, count: Number(r.c) }));
+}
+
 // 오늘의 데일리 문항(KST 일 시드로 결정적 선택).
-export async function getTodaysDailyQuestion(): Promise<DailyQuestion | null> {
+export async function getTodaysDailyQuestion(categoryIds: string[] = []): Promise<DailyQuestion | null> {
   const { daySeed } = kstToday();
+  // 고른 과목이 있으면 그 안에서만 뽑는다. 없으면 전체(기존 동작).
+  const filter = categoryIds.length > 0 ? `WHERE s."categoryId" = ANY($1::text[])` : "";
+  const params = categoryIds.length > 0 ? [categoryIds] : [];
   const countRows = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
-    `SELECT COUNT(*)::bigint AS c FROM "OxQuestion"`
+    `SELECT COUNT(*)::bigint AS c
+     FROM "OxQuestion" q
+     JOIN "OxQuizSet" s ON s."id" = q."oxQuizSetId"
+     ${filter}`,
+    ...params
   );
   const total = Number(countRows[0]?.c ?? 0);
-  if (total === 0) return null;
+  // 고른 과목에 문항이 없으면(과목이 비었거나 삭제됨) 전체로 되돌아간다 — 카드가 비지 않게.
+  if (total === 0) return categoryIds.length > 0 ? getTodaysDailyQuestion([]) : null;
   const offset = ((daySeed % total) + total) % total;
   const rows = await prisma.$queryRawUnsafe<
     { id: string; question: string; answer: boolean; category_name: string; set_title: string }[]
@@ -67,8 +135,10 @@ export async function getTodaysDailyQuestion(): Promise<DailyQuestion | null> {
      FROM "OxQuestion" q
      JOIN "OxQuizSet" s ON s."id" = q."oxQuizSetId"
      JOIN "Category" c ON c."id" = s."categoryId"
+     ${filter}
      ORDER BY q."id"
-     OFFSET ${offset} LIMIT 1`
+     OFFSET ${offset} LIMIT 1`,
+    ...params
   );
   const r = rows[0];
   if (!r) return null;

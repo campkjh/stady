@@ -4,6 +4,7 @@ import {
   kstToday,
   getTodaysDailyQuestion,
   getMyDailyAnswer,
+  getDailyCategoryPref,
   getDailyStats,
   recordDailyAnswer,
 } from "@/lib/daily-quiz";
@@ -12,12 +13,14 @@ import {
 export async function GET() {
   try {
     const { dateStr } = kstToday();
-    const question = await getTodaysDailyQuestion();
+    // 로그인 사용자가 과목을 골라뒀으면 그 안에서만 뽑는다(설정 없으면 전체 = 기존 동작).
+    const user = await getCurrentUser();
+    const pref = user ? await getDailyCategoryPref(user.id) : [];
+    const question = await getTodaysDailyQuestion(pref);
     if (!question) {
       return NextResponse.json({ date: dateStr, question: null });
     }
 
-    const user = await getCurrentUser();
     const mine = user ? await getMyDailyAnswer(user.id, dateStr) : null;
     const answered = !!mine;
     const stats = answered ? await getDailyStats(dateStr, question.id) : null;
@@ -54,13 +57,16 @@ export async function POST(request: Request) {
     const selected: boolean = body.selected;
 
     const { dateStr } = kstToday();
-    const question = await getTodaysDailyQuestion();
+    // ⚠️ 채점할 문항은 GET 이 보여준 것과 **반드시 같아야** 한다. 과목 설정을 반영하지 않으면
+    //    사용자가 본 문제와 다른 문제로 채점된다 — user 를 먼저 구하고 같은 선호로 뽑는다.
+    const user = await getCurrentUser();
+    const pref = user ? await getDailyCategoryPref(user.id) : [];
+    const question = await getTodaysDailyQuestion(pref);
     if (!question) {
       return NextResponse.json({ error: "오늘의 퀴즈가 없습니다." }, { status: 404 });
     }
     const isCorrect = selected === question.answer;
 
-    const user = await getCurrentUser();
     if (!user) {
       // 게스트: 결과/통계만 제공(기록·경험치 없음).
       const stats = await getDailyStats(dateStr, question.id);

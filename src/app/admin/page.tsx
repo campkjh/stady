@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  StatCommentsIcon,
+  StatPostsIcon,
+  StatQuizIcon,
+  StatUsersIcon,
+  StatWorkbookIcon,
+} from "@/components/admin/admin-icons";
 
 interface Counts {
   workbooks: number;
@@ -111,12 +118,7 @@ export default function AdminDashboard() {
       href: "/admin/users",
       color: "var(--c-warn)",
       bgColor: "var(--c-warn-soft)",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="8" r="4" stroke="var(--c-warn)" strokeWidth="1.5"/>
-          <path d="M5 20C5 16.6863 8.13401 14 12 14C15.866 14 19 16.6863 19 20" stroke="var(--c-warn)" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: <StatUsersIcon size={24} />,
     },
     {
       label: "문제집 수",
@@ -124,12 +126,7 @@ export default function AdminDashboard() {
       href: "/admin/workbooks",
       color: "var(--c-brand)",
       bgColor: "var(--c-brand-soft-2)",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 5C4 3.89543 4.89543 3 6 3H18C19.1046 3 20 3.89543 20 5V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V5Z" stroke="var(--c-brand)" strokeWidth="1.5"/>
-          <path d="M8 7H16M8 11H16M8 15H12" stroke="var(--c-brand)" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: <StatWorkbookIcon size={24} />,
     },
     {
       label: "OX퀴즈 수",
@@ -137,12 +134,7 @@ export default function AdminDashboard() {
       href: "/admin/ox-quiz",
       color: "var(--c-success)",
       bgColor: "var(--c-success-soft)",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="8" cy="12" r="4.5" stroke="var(--c-success)" strokeWidth="1.5"/>
-          <path d="M16 7.5L20 16.5M20 7.5L16 16.5" stroke="var(--c-success)" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: <StatQuizIcon size={24} />,
     },
     {
       label: "영단어퀴즈 수",
@@ -150,12 +142,7 @@ export default function AdminDashboard() {
       href: "/admin/vocab-quiz",
       color: "var(--c-purple)",
       bgColor: "var(--c-purple-soft)",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V6Z" stroke="var(--c-purple)" strokeWidth="1.5"/>
-          <path d="M8 8H9.5L12 16L14.5 8H16" stroke="var(--c-purple)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
+      icon: <StatPostsIcon size={24} />,
     },
     {
       label: "문의 수",
@@ -163,12 +150,7 @@ export default function AdminDashboard() {
       href: "/admin/inquiries",
       color: "var(--c-danger)",
       bgColor: "var(--c-danger-soft)",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V14C20 15.1046 19.1046 16 18 16H10L5 20V16H6C4.89543 16 4 15.1046 4 14V6Z" stroke="var(--c-danger)" strokeWidth="1.5" strokeLinejoin="round"/>
-          <path d="M8 9H16M8 12H12" stroke="var(--c-danger)" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: <StatCommentsIcon size={24} />,
     },
   ];
 
@@ -215,6 +197,7 @@ export default function AdminDashboard() {
                   <div style={{
                     width: 42, height: 42, borderRadius: 12, background: card.bgColor,
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    color: card.color,
                   }}>
                     {card.icon}
                   </div>

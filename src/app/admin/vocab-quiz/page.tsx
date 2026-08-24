@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
+import { ChartBarIcon, ExcelImportIcon } from "@/components/admin/admin-icons";
 
 interface Category {
   id: string;
@@ -488,10 +489,13 @@ export default function VocabQuizManagement() {
                       color: "#fff",
                       border: "none",
                       borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                      display: "inline-block",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    📥 Excel 가져오기
+                    <ExcelImportIcon size={16} aria-hidden="true" />
+                    Excel 가져오기
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -523,8 +527,9 @@ export default function VocabQuizManagement() {
                   padding: 16, marginBottom: 16,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-success-d)" }}>
-                      📊 {importPreview.length}개 단어 감지됨 — 가져오기 전 확인하세요
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-success-d)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <ChartBarIcon size={16} aria-hidden="true" />
+                      {importPreview.length}개 단어 감지됨 — 가져오기 전 확인하세요
                     </p>
                     <button
                       onClick={() => { setImportPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}

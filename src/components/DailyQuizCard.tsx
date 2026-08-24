@@ -44,6 +44,43 @@ export default function DailyQuizCard() {
   const [isGuest, setIsGuest] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── 과목 설정 ──────────────────────────────────────────────
+  // 예전엔 전체 문항에서 뽑아 그날그날 과목이 달라졌다("사문이랑 생윤이 랜덤하게 나온다").
+  // 여기서 고른 과목에서만 오늘의 문제가 나온다. 아무것도 고르지 않으면 전체.
+  const [prefOpen, setPrefOpen] = useState(false);
+  const [prefOptions, setPrefOptions] = useState<{ id: string; name: string; count: number }[]>([]);
+  const [prefSelected, setPrefSelected] = useState<string[]>([]);
+  const [prefSaving, setPrefSaving] = useState(false);
+
+  async function openPref() {
+    setPrefOpen(true);
+    try {
+      const res = await fetch("/api/daily-quiz/preferences", { credentials: "include" });
+      const data = await res.json();
+      setPrefOptions(Array.isArray(data?.options) ? data.options : []);
+      setPrefSelected(Array.isArray(data?.selected) ? data.selected : []);
+    } catch {
+      /* 목록을 못 받아도 시트는 열려 있는다 — 다시 열면 재시도 */
+    }
+  }
+
+  async function savePref(next: string[]) {
+    setPrefSaving(true);
+    try {
+      const res = await fetch("/api/daily-quiz/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ categoryIds: next }),
+      });
+      if (!res.ok) throw new Error("save failed");
+      setPrefOpen(false);
+      window.location.reload(); // 고른 과목으로 오늘의 문제를 다시 받는다.
+    } catch {
+      setPrefSaving(false);
+    }
+  }
+
   // 오늘의 데일리 퀴즈 로드(백그라운드 재검증, 달라졌을 때만 갱신).
   useEffect(() => {
     let alive = true;
@@ -182,8 +219,26 @@ export default function DailyQuizCard() {
           <span style={{ fontSize: 13, color: "var(--c-text-5e)", fontWeight: 500, letterSpacing: 0.2 }}>
             오늘의 퀴즈
           </span>
-          <span style={{ fontSize: 14, color: "var(--c-text-5e)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
-            {fmtTime(elapsed)}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14, color: "var(--c-text-5e)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+              {fmtTime(elapsed)}
+            </span>
+            <button
+              type="button"
+              aria-label="데일리 퀴즈 과목 설정"
+              onClick={openPref}
+              className="press"
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 24, height: 24, borderRadius: 8, border: "none", padding: 0,
+                background: "transparent", cursor: "pointer", color: "var(--c-text-5e)",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.46.66.79 1.16.9H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
           </span>
         </div>
 
@@ -274,6 +329,109 @@ export default function DailyQuizCard() {
           </div>
         )}
       </div>
+
+      {/* 과목 설정 시트 — 고른 과목에서만 오늘의 문제가 나온다(아무것도 안 고르면 전체) */}
+      {prefOpen && (
+        <div
+          onClick={() => !prefSaving && setPrefOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 400,
+            background: "rgba(15,23,42,0.5)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 520,
+              background: "var(--c-bg-elevated)",
+              borderTopLeftRadius: 20, borderTopRightRadius: 20,
+              padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--c-text-2)" }}>
+              데일리 퀴즈 과목
+            </p>
+            <p style={{ margin: "6px 0 16px", fontSize: 13, color: "var(--c-text-5)", lineHeight: 1.5 }}>
+              고른 과목에서만 오늘의 문제가 나와요. 아무것도 고르지 않으면 전체에서 나옵니다.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "46vh", overflowY: "auto" }}>
+              {prefOptions.length === 0 ? (
+                <p style={{ fontSize: 14, color: "var(--c-text-5)", textAlign: "center", padding: "16px 0" }}>
+                  불러오는 중이에요.
+                </p>
+              ) : (
+                prefOptions.map((opt) => {
+                  const on = prefSelected.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() =>
+                        setPrefSelected((prev) =>
+                          prev.includes(opt.id) ? prev.filter((x) => x !== opt.id) : [...prev, opt.id]
+                        )
+                      }
+                      className="press"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", minHeight: 52, padding: "0 16px", borderRadius: 14,
+                        border: `1.5px solid ${on ? "var(--c-brand)" : "var(--c-border)"}`,
+                        background: on ? "var(--c-brand-soft-2)" : "var(--c-bg)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: on ? "var(--c-brand)" : "var(--c-text-2)" }}>
+                          {opt.name}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-5)" }}>
+                          {opt.count}문항
+                        </span>
+                      </span>
+                      {on && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => savePref([])}
+                disabled={prefSaving}
+                className="press"
+                style={{
+                  flex: 1, height: 50, borderRadius: 14, border: "1px solid var(--c-border)",
+                  background: "var(--c-bg)", color: "var(--c-text-3)", fontSize: 15, fontWeight: 700,
+                  cursor: prefSaving ? "default" : "pointer",
+                }}
+              >
+                전체로
+              </button>
+              <button
+                type="button"
+                onClick={() => savePref(prefSelected)}
+                disabled={prefSaving}
+                className="press"
+                style={{
+                  flex: 2, height: 50, borderRadius: 14, border: "none",
+                  background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800,
+                  cursor: prefSaving ? "default" : "pointer", opacity: prefSaving ? 0.6 : 1,
+                }}
+              >
+                {prefSaving ? "저장 중…" : "저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
