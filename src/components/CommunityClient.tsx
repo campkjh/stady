@@ -573,7 +573,7 @@ export default function CommunityClient() {
                         <div key={imageUrl} className="community-post-image-thumb">
                           <img
                             src={imageUrl}
-                            alt={post.isBlinded ? "블라인드 이미지" : `${post.title} 이미지 ${index + 1}`}
+                            alt={post.isBlinded ? "스포일러 이미지" : `${post.title} 이미지 ${index + 1}`}
                             // 목록은 최신 100개 글을 한 번에 그리는데 화면에 보이는 건 두세 개뿐이다.
                             // lazy 가 없던 동안은 화면 밖 이미지까지 전부 즉시 받아서, 진입 1회에
                             // 실측 53.6MB 를 내려받았다(초기 뷰포트에 실제로 필요한 건 ~3MB).

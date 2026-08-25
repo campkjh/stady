@@ -375,7 +375,7 @@ export default function CommunityWriteClient() {
             {uploadedImages.length > 0 && (
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--c-text-2c)", fontSize: 14, fontWeight: 500 }}>
                 <input type="checkbox" checked={isBlinded} onChange={(event) => setIsBlinded(event.target.checked)} style={{ width: 18, height: 18 }} />
-                사진 블라인드 (터치해야 보이게)
+                스포일러로 표시 (터치하면 공개)
               </label>
             )}
           </div>
