@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { EmptyInquiryIcon } from "@/components/admin/admin-icons";
 
 interface Inquiry {
@@ -23,25 +23,10 @@ export default function AdminInquiriesPage() {
   const [replyText, setReplyText] = useState("");
   const [replyStatus, setReplyStatus] = useState("완료");
   const [submitting, setSubmitting] = useState(false);
-  // 표는 minWidth 620 가로스크롤 안에 있다. 펼친 상세까지 그 폭에 갇히면
-  // 모바일에서 오른쪽(문의 내용·답변 작성)이 잘린다. 스크롤 컨테이너의
-  // 보이는 폭을 재서 상세 패널을 딱 그 폭으로 고정한다(데스크톱은 폭이
-  // 카드폭과 같아 변화 없음).
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [viewW, setViewW] = useState<number>();
 
   useEffect(() => {
     fetchInquiries();
   }, []);
-
-  useEffect(() => {
-    const measure = () => setViewW(scrollRef.current?.clientWidth);
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [loading, inquiries.length]);
-
-  const isNarrow = viewW !== undefined && viewW < 620;
 
   async function fetchInquiries() {
     try {
@@ -123,6 +108,8 @@ export default function AdminInquiriesPage() {
     transition: "border-color 0.15s",
   };
 
+  const expandedInquiry = inquiries.find((i) => i.id === expandedId) || null;
+
   if (loading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
@@ -150,7 +137,7 @@ export default function AdminInquiriesPage() {
           <p style={{ color: JC.sub, fontSize: 15 }}>접수된 문의가 없습니다.</p>
         </div>
       ) : (
-        <div ref={scrollRef} style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {/* Table header */}
           <div style={{
             display: "grid",
@@ -178,7 +165,7 @@ export default function AdminInquiriesPage() {
                   display: "grid",
                   gridTemplateColumns: "100px 70px 90px minmax(200px, 1fr) 80px",
                   padding: "16px 20px",
-                  borderBottom: idx === inquiries.length - 1 && expandedId !== inquiry.id ? "none" : `1px solid ${JC.soft}`,
+                  borderBottom: idx === inquiries.length - 1 ? "none" : `1px solid ${JC.soft}`,
                   fontSize: 14,
                   cursor: "pointer",
                   transition: "background 0.15s",
@@ -201,134 +188,138 @@ export default function AdminInquiriesPage() {
                 </span>
                 <span style={{ textAlign: "center" }}>{statusBadge(inquiry.status)}</span>
               </div>
-
-              {/* Expanded detail — 가로스크롤 폭(620)에 갇히지 않게 보이는
-                  폭으로 고정하고 왼쪽에 sticky 로 붙인다. 좁은 화면에선
-                  좌우 패딩을 걷어 내용이 최대한 넓게 보이게 한다. */}
-              {expandedId === inquiry.id && (
-                <div style={{
-                  position: "sticky",
-                  left: 0,
-                  width: viewW,
-                  boxSizing: "border-box",
-                  padding: isNarrow ? "16px 12px" : "20px 24px",
-                  background: JC.soft,
-                  borderBottom: idx === inquiries.length - 1 ? "none" : `1px solid ${JC.soft}`,
-                }}>
-                  {/* Email */}
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    fontSize: 13, fontWeight: 400, color: JC.sub, marginBottom: 12,
-                  }}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="#8A909C" strokeWidth="1.2"/>
-                      <path d="M1 4.5L7 8L13 4.5" stroke="#8A909C" strokeWidth="1.2"/>
-                    </svg>
-                    {inquiry.email}
-                  </div>
-
-                  {/* Content */}
-                  <div style={{
-                    background: "var(--c-bg)",
-                    borderRadius: 13,
-                    border: `1px solid ${JC.soft}`,
-                    padding: 16,
-                    marginBottom: 16,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: JC.body,
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 1.7,
-                  }}>
-                    {inquiry.content}
-                  </div>
-
-                  {/* Existing reply */}
-                  {inquiry.reply && (
-                    <div style={{
-                      background: JC.accentBg,
-                      borderRadius: 13,
-                      padding: 16,
-                      marginBottom: 16,
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: JC.title,
-                      whiteSpace: "pre-wrap",
-                      lineHeight: 1.7,
-                    }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: JC.accent, marginBottom: 6 }}>관리자 답변</div>
-                      {inquiry.reply}
-                    </div>
-                  )}
-
-                  {/* Reply form */}
-                  <div style={{
-                    background: "var(--c-bg)",
-                    borderRadius: 13,
-                    border: `1px solid ${JC.soft}`,
-                    padding: 16,
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: JC.title, marginBottom: 12 }}>답변 작성</div>
-                    <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: JC.body, marginBottom: 6 }}>상태 변경</label>
-                        <select
-                          value={replyStatus}
-                          onChange={(e) => setReplyStatus(e.target.value)}
-                          style={{
-                            ...inputStyle,
-                            width: 130,
-                            appearance: "auto" as const,
-                          }}
-                          onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
-                          onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
-                        >
-                          <option value="접수">접수</option>
-                          <option value="처리중">처리중</option>
-                          <option value="완료">완료</option>
-                        </select>
-                      </div>
-                    </div>
-                    <textarea
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="답변을 입력하세요"
-                      rows={3}
-                      style={{
-                        ...inputStyle,
-                        resize: "vertical",
-                        minHeight: 80,
-                        marginBottom: 12,
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
-                    />
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                      <button
-                        className="press"
-                        onClick={() => handleReply(inquiry.id)}
-                        disabled={submitting}
-                        style={{
-                          padding: "11px 24px",
-                          borderRadius: 13,
-                          border: "none",
-                          background: JC.accent,
-                          color: "#fff",
-                          fontSize: 14,
-                          fontWeight: 700,
-                          cursor: submitting ? "not-allowed" : "pointer",
-                          opacity: submitting ? 0.6 : 1,
-                          boxShadow: "none",
-                        }}
-                      >
-                        {submitting ? "저장 중..." : "답변 저장"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Expanded detail — 표(minWidth 620 가로스크롤) 밖에서 전체 폭으로
+          그린다. 스크롤 컨테이너 안에 있으면 그 620 폭에 갇혀 모바일에서
+          문의 내용·답변 작성 오른쪽이 잘렸다. 밖으로 빼 자연스럽게 반응형. */}
+      {expandedInquiry && (
+        <div style={{
+          ...cardStyle,
+          marginTop: 12,
+          padding: 16,
+          background: JC.soft,
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+        }}>
+          {/* Title + email */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: JC.title, marginBottom: 4 }}>{expandedInquiry.title}</div>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: 13, fontWeight: 400, color: JC.sub,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+                <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="#8A909C" strokeWidth="1.2"/>
+                <path d="M1 4.5L7 8L13 4.5" stroke="#8A909C" strokeWidth="1.2"/>
+              </svg>
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{expandedInquiry.email}</span>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{
+            background: "var(--c-bg)",
+            borderRadius: 13,
+            border: `1px solid ${JC.soft}`,
+            padding: 16,
+            marginBottom: 16,
+            fontSize: 14,
+            fontWeight: 500,
+            color: JC.body,
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+            lineHeight: 1.7,
+          }}>
+            {expandedInquiry.content}
+          </div>
+
+          {/* Existing reply */}
+          {expandedInquiry.reply && (
+            <div style={{
+              background: JC.accentBg,
+              borderRadius: 13,
+              padding: 16,
+              marginBottom: 16,
+              fontSize: 14,
+              fontWeight: 500,
+              color: JC.title,
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+              lineHeight: 1.7,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: JC.accent, marginBottom: 6 }}>관리자 답변</div>
+              {expandedInquiry.reply}
+            </div>
+          )}
+
+          {/* Reply form */}
+          <div style={{
+            background: "var(--c-bg)",
+            borderRadius: 13,
+            border: `1px solid ${JC.soft}`,
+            padding: 16,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: JC.title, marginBottom: 12 }}>답변 작성</div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: JC.body, marginBottom: 6 }}>상태 변경</label>
+              <select
+                value={replyStatus}
+                onChange={(e) => setReplyStatus(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  width: 130,
+                  appearance: "auto" as const,
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+                onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
+              >
+                <option value="접수">접수</option>
+                <option value="처리중">처리중</option>
+                <option value="완료">완료</option>
+              </select>
+            </div>
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="답변을 입력하세요"
+              rows={3}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                minHeight: 80,
+                marginBottom: 12,
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
+              onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                className="press"
+                onClick={() => handleReply(expandedInquiry.id)}
+                disabled={submitting}
+                style={{
+                  padding: "11px 24px",
+                  borderRadius: 13,
+                  border: "none",
+                  background: JC.accent,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  opacity: submitting ? 0.6 : 1,
+                  boxShadow: "none",
+                }}
+              >
+                {submitting ? "저장 중..." : "답변 저장"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
       <style>{JC_FOCUS_CSS}</style>
