@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
+import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -27,6 +28,18 @@ interface CommunityTag {
   slug: string;
 }
 
+interface CommunityPollOption {
+  id: string;
+  text: string;
+  sort_order: number;
+  votes: number;
+}
+interface CommunityPoll {
+  options: CommunityPollOption[];
+  totalVotes: number;
+  myOptionId: string | null;
+}
+
 interface CommunityPost {
   id: string;
   nickname: string;
@@ -38,6 +51,7 @@ interface CommunityPost {
   title: string;
   content: string;
   type?: string;
+  poll?: CommunityPoll | null;
   isBlinded?: boolean;
   createdAt: string;
   viewCount: number;
@@ -102,6 +116,37 @@ export default function CommunityClient() {
   const [showWriteNudge, setShowWriteNudge] = useState(false);
   // 아래로 스크롤하면 카테고리 탭을 한 줄(아이콘+라벨)로 접어 헤더를 낮춘다.
   const [compactHeader, setCompactHeader] = useState(false);
+  // 블라인드 노이즈를 탭해서 공개한 글 id 모음(피드에서 바로 걷기).
+  const [revealedBlind, setRevealedBlind] = useState<Set<string>>(() => new Set());
+  // 지금 투표 요청 중인 글 id(중복 클릭 방지).
+  const [votingPostId, setVotingPostId] = useState<string | null>(null);
+
+  // 목록에서 바로 투표. 결과를 받아 해당 글의 poll 만 갱신한다(상세 진입 불필요).
+  async function votePoll(postId: string, optionId: string) {
+    if (votingPostId) return;
+    setVotingPostId(postId);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/vote`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "투표를 처리하지 못했습니다.");
+      setPosts((prev) => {
+        const next = prev.map((p) => (p.id === postId ? { ...p, poll: data.poll } : p));
+        // 현재 필터 조합의 캐시도 갱신해 탭 재진입 시 투표 상태가 유지되게 한다.
+        clientCache.set(postsKey(selectedGroupId, query), next);
+        return next;
+      });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "투표를 처리하지 못했습니다.");
+    } finally {
+      setVotingPostId(null);
+    }
+  }
 
   useEffect(() => {
     loadGroups();
@@ -493,9 +538,11 @@ export default function CommunityClient() {
                     {post.type === "poll" && (
                       <span
                         style={{
-                          display: "inline-block",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 3,
                           marginRight: 6,
-                          padding: "1px 7px",
+                          padding: "2px 8px 2px 5px",
                           borderRadius: 999,
                           background: "var(--c-brand-soft-4)",
                           color: "var(--c-brand-deep-2)",
@@ -504,13 +551,22 @@ export default function CommunityClient() {
                           verticalAlign: "middle",
                         }}
                       >
-                        📊 투표
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/icons/community/chart-vote.svg" alt="" width={14} height={14} style={{ display: "block" }} />
+                        투표
                       </span>
                     )}
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
                   <p className="community-post-content">{post.content}</p>
+                  {post.type === "poll" && post.poll && post.poll.options.length > 0 && (
+                    <FeedPoll
+                      poll={post.poll}
+                      voting={votingPostId === post.id}
+                      onVote={(optionId) => votePoll(post.id, optionId)}
+                    />
+                  )}
                   {post.imageUrls.length > 0 && (
                     <div className={post.imageUrls.length === 1 ? "community-post-image-single" : "community-post-image-grid"}>
                       {post.imageUrls.slice(0, 4).map((imageUrl, index) => (
@@ -529,28 +585,20 @@ export default function CommunityClient() {
                             loading={postIndex === firstImagePostIndex && index === 0 ? "eager" : "lazy"}
                             fetchPriority={postIndex === firstImagePostIndex && index === 0 ? "high" : undefined}
                             decoding="async"
-                            style={post.isBlinded ? { filter: "blur(18px)", transform: "scale(1.05)" } : undefined}
+                            style={post.isBlinded && !revealedBlind.has(post.id) ? { filter: "blur(18px)", transform: "scale(1.05)" } : undefined}
                           />
-                          {post.isBlinded && (
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: "translate(-50%, -50%)",
-                                padding: "4px 10px",
-                                borderRadius: 999,
-                                background: "rgba(17, 24, 39, 0.55)",
-                                color: "#fff",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              🙈 블라인드
-                            </span>
+                          {post.isBlinded && !revealedBlind.has(post.id) && (
+                            <BlindNoiseCover
+                              onReveal={() =>
+                                setRevealedBlind((prev) => {
+                                  const next = new Set(prev);
+                                  next.add(post.id);
+                                  return next;
+                                })
+                              }
+                            />
                           )}
-                          {index === 3 && post.imageUrls.length > 4 && (
+                          {index === 3 && post.imageUrls.length > 4 && !(post.isBlinded && !revealedBlind.has(post.id)) && (
                             <span>+{post.imageUrls.length - 4}</span>
                           )}
                         </div>
@@ -717,6 +765,107 @@ function EyeIcon() {
       <path d="M2.5 12C4 8.2 7.7 5.8 12 5.8C16.3 5.8 20 8.2 21.5 12C20 15.8 16.3 18.2 12 18.2C7.7 18.2 4 15.8 2.5 12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.8" />
     </svg>
+  );
+}
+
+// 목록 인라인 투표 카드 — 데일리 퀴즈 옵션 톤(둥근 면 + 결과 채움 바).
+// 투표 전엔 깔끔한 선택지, 투표 후엔 퍼센트 바 + 내 선택 강조(체크). 상세 진입 불필요.
+function FeedPoll({
+  poll,
+  voting,
+  onVote,
+}: {
+  poll: CommunityPoll;
+  voting: boolean;
+  onVote: (optionId: string) => void;
+}) {
+  const voted = poll.myOptionId !== null;
+  const total = poll.totalVotes;
+  return (
+    <div
+      className="feed-poll"
+      role="group"
+      aria-label="투표"
+      // 카드 클릭(상세 이동)으로 번지지 않게 막는다 — 여기선 투표만.
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+      style={{ display: "grid", gap: 7, margin: "2px 0" }}
+    >
+      {poll.options.map((opt) => {
+        const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+        const mine = poll.myOptionId === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            className="feed-poll-option press"
+            disabled={voting}
+            onClick={(event) => {
+              event.stopPropagation();
+              onVote(opt.id);
+            }}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              width: "100%",
+              minHeight: 46,
+              padding: "0 14px",
+              borderRadius: 14,
+              border: "none",
+              boxShadow: mine ? "inset 0 0 0 2px var(--c-brand)" : "none",
+              background: voted ? "var(--c-bg-soft-12)" : "var(--c-bg-muted-13)",
+              color: "var(--c-text-2e)",
+              fontSize: 15,
+              fontWeight: 600,
+              textAlign: "left",
+              cursor: voting ? "default" : "pointer",
+            }}
+          >
+            {voted && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  width: `${pct}%`,
+                  background: mine ? "var(--c-brand-line-2)" : "var(--c-bg-muted)",
+                  transition: "width 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
+              />
+            )}
+            <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              {mine && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/icons/community/check.svg" alt="" width={16} height={16} style={{ display: "block", flexShrink: 0 }} />
+              )}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.text}</span>
+            </span>
+            {voted && (
+              <span
+                style={{
+                  position: "relative",
+                  flexShrink: 0,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: mine ? "var(--c-brand-deep-2)" : "var(--c-text-4)",
+                }}
+              >
+                {pct}%
+              </span>
+            )}
+          </button>
+        );
+      })}
+      <span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-4)", paddingLeft: 2 }}>
+        {voted ? `총 ${total}표 · 다시 누르면 변경` : "눌러서 바로 투표"}
+      </span>
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
 import NudgeBubble from "@/components/NudgeBubble";
+import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 
@@ -94,13 +95,14 @@ interface CommunityPostDetail {
   pinnedCommentId?: string | null;
 }
 
-const REACTIONS: { key: string; emoji: string; label: string }[] = [
-  { key: "heart", emoji: "❤️", label: "좋아요" },
-  { key: "sad", emoji: "🥺", label: "슬퍼요" },
-  { key: "laugh", emoji: "🤣", label: "웃겨요" },
-  { key: "smile", emoji: "😄", label: "좋아요" },
-  { key: "devil", emoji: "👿", label: "화나요" },
-  { key: "skull", emoji: "☠️", label: "충격" },
+// 이모지 대신 아이콘셋(public/icons/community/*.svg)으로 통일한다.
+const REACTIONS: { key: string; icon: string; label: string }[] = [
+  { key: "heart", icon: "heart-red", label: "좋아요" },
+  { key: "sad", icon: "emoji-cry", label: "슬퍼요" },
+  { key: "laugh", icon: "emoji-grin", label: "웃겨요" },
+  { key: "smile", icon: "emoji-ok", label: "좋아요" },
+  { key: "devil", icon: "emoji-fire", label: "화나요" },
+  { key: "skull", icon: "emoji-cold", label: "충격" },
 ];
 
 interface CommunityPostDetailClientProps {
@@ -629,10 +631,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     />
                   ))}
                   {post.isBlinded && !revealBlind && (
-                    <button type="button" onClick={() => setRevealBlind(true)} style={blindOverlayStyle}>
-                      <span style={{ fontSize: 24 }}>🙈</span>
-                      터치하여 보기
-                    </button>
+                    <BlindNoiseCover onReveal={() => setRevealBlind(true)} />
                   )}
                 </div>
               )}
@@ -663,8 +662,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                             transition: "width 0.3s ease",
                           }}
                         />
-                        <span style={{ position: "relative", fontWeight: 600, color: "var(--c-text)" }}>
-                          {mine ? "✓ " : ""}
+                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 600, color: "var(--c-text)" }}>
+                          {mine && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src="/icons/community/check.svg" alt="" width={16} height={16} style={{ display: "block", flexShrink: 0 }} />
+                          )}
                           {opt.text}
                         </span>
                         <span style={{ position: "relative", fontWeight: 600, color: "var(--c-text-3)", fontSize: 13 }}>
@@ -706,7 +708,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     onClick={() => react("heart")}
                     style={actionButtonStyle(!!post.myReaction)}
                   >
-                    <span style={{ fontSize: 17 }}>{post.myReaction ? reactionEmoji(post.myReaction) : "🤍"}</span>
+                    <ReactionIcon name={post.myReaction ? reactionIcon(post.myReaction) : "heart-grey"} size={18} />
                     {post.myReaction ? reactionLabel(post.myReaction) : "좋아요"} {post.likeCount}
                   </button>
                   <span style={{ color: "var(--c-text-3)", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
@@ -714,8 +716,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 {post.likeCount > 0 && (
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {REACTIONS.filter((r) => (post.reactionCounts[r.key] || 0) > 0).map((r) => (
-                      <span key={r.key} style={{ fontSize: 13, color: "var(--c-text-3)", fontWeight: 500 }}>
-                        {r.emoji} {post.reactionCounts[r.key]}
+                      <span key={r.key} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--c-text-3)", fontWeight: 500 }}>
+                        <ReactionIcon name={r.icon} size={15} /> {post.reactionCounts[r.key]}
                       </span>
                     ))}
                   </div>
@@ -1251,32 +1253,28 @@ const ownerDangerStyle = {
   cursor: "pointer",
 } as const;
 
-function reactionEmoji(key: string) {
-  return REACTIONS.find((r) => r.key === key)?.emoji || "🙂";
+// 리액션 키 → 아이콘 파일명(없으면 기본 하트).
+function reactionIcon(key: string) {
+  return REACTIONS.find((r) => r.key === key)?.icon || "heart-red";
 }
 
 function reactionLabel(key: string) {
   return REACTIONS.find((r) => r.key === key)?.label || "좋아요";
 }
 
-const blindOverlayStyle = {
-  position: "absolute",
-  inset: 0,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 6,
-  border: "none",
-  borderRadius: 8,
-  background: "rgba(17, 24, 39, 0.32)",
-  color: "#fff",
-  fontSize: 14,
-  fontWeight: 700,
-  cursor: "pointer",
-  backdropFilter: "blur(2px)",
-  WebkitBackdropFilter: "blur(2px)",
-} as const;
+// 리액션 아이콘 이미지(이모지 대체).
+function ReactionIcon({ name, size = 18 }: { name: string; size?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/icons/community/${name}.svg`}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: "block", flexShrink: 0 }}
+    />
+  );
+}
 
 function pollOptionStyle(mine: boolean) {
   return {

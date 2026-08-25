@@ -781,6 +781,16 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   `);
   const imagesByPost = await getImagesByPost(posts.map((post) => post.id));
   const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+  // 투표글은 목록에서도 바로 투표할 수 있게 결과(내 선택 포함)를 함께 실어 보낸다.
+  // 투표글은 드물어 건별 조회 비용이 미미하다. 투표가 아닌 글은 null.
+  const pollByPost = new Map<string, CommunityPollResult | null>();
+  await Promise.all(
+    posts
+      .filter((post) => post.type === "poll")
+      .map(async (post) => {
+        pollByPost.set(post.id, await getPollResult(post.id, options.viewerId ?? null));
+      })
+  );
   return posts.map((post) => ({
     ...post,
     tags: tagsByPost
@@ -788,6 +798,7 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
       .map((item) => tagById.get(item.tag_id))
       .filter(Boolean) as CommunityTagRow[],
     images: imagesByPost.get(post.id) || [],
+    poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
   }));
 }
 
