@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EmptyInquiryIcon } from "@/components/admin/admin-icons";
 
 interface Inquiry {
@@ -23,10 +23,25 @@ export default function AdminInquiriesPage() {
   const [replyText, setReplyText] = useState("");
   const [replyStatus, setReplyStatus] = useState("완료");
   const [submitting, setSubmitting] = useState(false);
+  // 표는 minWidth 620 가로스크롤 안에 있다. 펼친 상세까지 그 폭에 갇히면
+  // 모바일에서 오른쪽(문의 내용·답변 작성)이 잘린다. 스크롤 컨테이너의
+  // 보이는 폭을 재서 상세 패널을 딱 그 폭으로 고정한다(데스크톱은 폭이
+  // 카드폭과 같아 변화 없음).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [viewW, setViewW] = useState<number>();
 
   useEffect(() => {
     fetchInquiries();
   }, []);
+
+  useEffect(() => {
+    const measure = () => setViewW(scrollRef.current?.clientWidth);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [loading, inquiries.length]);
+
+  const isNarrow = viewW !== undefined && viewW < 620;
 
   async function fetchInquiries() {
     try {
@@ -135,7 +150,7 @@ export default function AdminInquiriesPage() {
           <p style={{ color: JC.sub, fontSize: 15 }}>접수된 문의가 없습니다.</p>
         </div>
       ) : (
-        <div style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <div ref={scrollRef} style={{ ...cardStyle, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           {/* Table header */}
           <div style={{
             display: "grid",
@@ -187,10 +202,16 @@ export default function AdminInquiriesPage() {
                 <span style={{ textAlign: "center" }}>{statusBadge(inquiry.status)}</span>
               </div>
 
-              {/* Expanded detail */}
+              {/* Expanded detail — 가로스크롤 폭(620)에 갇히지 않게 보이는
+                  폭으로 고정하고 왼쪽에 sticky 로 붙인다. 좁은 화면에선
+                  좌우 패딩을 걷어 내용이 최대한 넓게 보이게 한다. */}
               {expandedId === inquiry.id && (
                 <div style={{
-                  padding: "20px 24px",
+                  position: "sticky",
+                  left: 0,
+                  width: viewW,
+                  boxSizing: "border-box",
+                  padding: isNarrow ? "16px 12px" : "20px 24px",
                   background: JC.soft,
                   borderBottom: idx === inquiries.length - 1 ? "none" : `1px solid ${JC.soft}`,
                 }}>
