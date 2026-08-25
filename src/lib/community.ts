@@ -1478,6 +1478,64 @@ export async function voteCommunityPoll(postId: string, userId: string, optionId
   return getPollResult(postId, userId);
 }
 
+// 투표 선택지 수정(작성자/관리자): 텍스트 변경·추가·삭제.
+//  - id 가 있는 항목 = 기존 선택지 → 텍스트/순서만 갱신(그 항목의 표는 유지).
+//  - id 가 없는 항목 = 새 선택지 → 추가.
+//  - 목록에서 빠진 기존 선택지 = 삭제(그 항목에 찍힌 표는 CASCADE 로 함께 삭제, 총표 재계산).
+// 항상 2~4개를 강제한다.
+export async function updateCommunityPollOptions(
+  postId: string,
+  options: { id?: string | null; text: string }[]
+) {
+  await ensureCommunityTables();
+  const typeRow = await prisma.$queryRawUnsafe<{ type: string }[]>(
+    `SELECT "type" FROM "CommunityPost" WHERE "id" = $1`,
+    postId
+  );
+  if (typeRow.length === 0) throw new Error("CommunityPostNotFound");
+  if (typeRow[0].type !== "poll") throw new Error("CommunityPostNotPoll");
+
+  const cleaned = options
+    .map((o) => ({ id: o.id || null, text: String(o.text || "").trim() }))
+    .filter((o) => o.text.length > 0)
+    .slice(0, 4);
+  if (cleaned.length < 2) throw new Error("CommunityPollTooFewOptions");
+
+  const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "id" FROM "CommunityPollOption" WHERE "post_id" = $1`,
+    postId
+  );
+  const existingIds = new Set(existing.map((r) => r.id));
+  const keptIds = new Set(
+    cleaned.map((o) => o.id).filter((id): id is string => !!id && existingIds.has(id))
+  );
+  // 빠진 기존 선택지 삭제(표는 CASCADE).
+  for (const row of existing) {
+    if (!keptIds.has(row.id)) {
+      await prisma.$executeRawUnsafe(`DELETE FROM "CommunityPollOption" WHERE "id" = $1`, row.id);
+    }
+  }
+  // 순서대로 수정/추가.
+  for (const [index, opt] of cleaned.entries()) {
+    if (opt.id && existingIds.has(opt.id)) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "CommunityPollOption" SET "text" = $1, "sort_order" = $2 WHERE "id" = $3`,
+        opt.text,
+        index,
+        opt.id
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "CommunityPollOption" ("id", "post_id", "text", "sort_order") VALUES ($1, $2, $3, $4)`,
+        randomUUID(),
+        postId,
+        opt.text,
+        index
+      );
+    }
+  }
+}
+
 // ─── 신고 / 차단 ──────────────────────────────────────────────────────────────
 // App Store 가이드라인 1.2(사용자 생성 콘텐츠)가 요구하는 두 축:
 //   ① 신고 — 불쾌한 콘텐츠를 운영자에게 알리는 수단

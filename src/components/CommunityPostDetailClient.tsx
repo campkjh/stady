@@ -128,6 +128,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<string[]>([]);
+  // 투표 선택지 편집: id 있으면 기존 항목(표 유지), 없으면 새 항목.
+  const [editPoll, setEditPoll] = useState<{ id: string | null; text: string }[]>([]);
   // 이번 편집에서 새로 올린 이미지의 로컬 프리뷰(서버 URL → objectURL).
   // 기존 이미지는 File 이 없으므로 여기 없고, 그때는 서버 URL 로 폴백한다.
   const [editPreviews, setEditPreviews] = useState<Record<string, string>>({});
@@ -189,6 +191,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     setEditTitle(post.title);
     setEditContent(post.content);
     setEditImages([...post.imageUrls]);
+    setEditPoll(
+      post.type === "poll" && post.poll
+        ? post.poll.options.map((o) => ({ id: o.id, text: o.text }))
+        : []
+    );
     setEditing(true);
   }
 
@@ -241,6 +248,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       setMessage("제목과 내용을 입력해주세요.");
       return;
     }
+    const isPoll = post.type === "poll";
+    const trimmedPoll = editPoll
+      .map((o) => ({ id: o.id, text: o.text.trim() }))
+      .filter((o) => o.text.length > 0);
+    if (isPoll && trimmedPoll.length < 2) {
+      setMessage("투표 선택지는 2개 이상 입력해주세요.");
+      return;
+    }
     setActionBusy(true);
     setMessage("");
     try {
@@ -248,7 +263,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: t, content: c, imageUrls: editImages }),
+        body: JSON.stringify({
+          title: t,
+          content: c,
+          imageUrls: editImages,
+          ...(isPoll ? { pollOptions: trimmedPoll } : {}),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "수정에 실패했습니다.");
@@ -573,6 +593,59 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       </div>
                     )}
                   </div>
+                  {post.type === "poll" && (
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2c)" }}>투표 선택지</span>
+                        {editPoll.length < 4 && (
+                          <button
+                            type="button"
+                            onClick={() => setEditPoll((cur) => [...cur, { id: null, text: "" }])}
+                            style={ownerBtnStyle(false)}
+                          >
+                            선택지 추가
+                          </button>
+                        )}
+                      </div>
+                      {editPoll.map((opt, index) => (
+                        <div key={opt.id ?? `new-${index}`} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <input
+                            value={opt.text}
+                            onChange={(e) =>
+                              setEditPoll((cur) => cur.map((o, i) => (i === index ? { ...o, text: e.target.value } : o)))
+                            }
+                            placeholder={`선택지 ${index + 1}`}
+                            maxLength={80}
+                            style={{ ...inputStyle, flex: 1 }}
+                          />
+                          {editPoll.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => setEditPoll((cur) => cur.filter((_, i) => i !== index))}
+                              aria-label="선택지 삭제"
+                              style={{
+                                flexShrink: 0,
+                                width: 40,
+                                height: 40,
+                                borderRadius: 8,
+                                border: "1px solid var(--c-border)",
+                                background: "var(--c-bg)",
+                                color: "var(--c-text-3)",
+                                cursor: "pointer",
+                                fontSize: 20,
+                                lineHeight: 1,
+                              }}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <span style={{ fontSize: 12, color: "var(--c-text-4)", fontWeight: 500 }}>
+                        선택지를 삭제하면 그 선택지에 담긴 표도 함께 사라집니다.
+                      </span>
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" onClick={saveEdit} disabled={actionBusy || uploadingEdit} style={ownerBtnStyle(true)}>
                       저장

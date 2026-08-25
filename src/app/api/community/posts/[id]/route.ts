@@ -7,6 +7,7 @@ import {
   adminUpdateCommunityPost,
   adminDeleteCommunityPost,
   setCommunityPostImages,
+  updateCommunityPollOptions,
   incrementCommunityPostView,
   getUserTiers,
   getAnswerKings,
@@ -140,13 +141,29 @@ export async function PATCH(
           .filter((u: string) => /^https?:\/\//.test(u))
           .slice(0, 5)
       : undefined;
+    // 투표 선택지 수정: [{ id?, text }] 또는 문자열 배열. id 있으면 기존 항목(표 유지).
+    const pollOptions: { id: string | null; text: string }[] | undefined = Array.isArray(body?.pollOptions)
+      ? body.pollOptions
+          .map((o: unknown) => {
+            if (o && typeof o === "object") {
+              const obj = o as { id?: unknown; text?: unknown };
+              return { id: obj.id ? String(obj.id) : null, text: String(obj.text || "").trim() };
+            }
+            return { id: null, text: String(o || "").trim() };
+          })
+          .filter((o: { text: string }) => o.text.length > 0)
+          .slice(0, 4)
+      : undefined;
     if (title !== undefined && title.length === 0) {
       return NextResponse.json({ error: "제목을 입력해주세요." }, { status: 400 });
     }
     if (content !== undefined && content.length === 0) {
       return NextResponse.json({ error: "내용을 입력해주세요." }, { status: 400 });
     }
-    if (title === undefined && content === undefined && imageUrls === undefined) {
+    if (pollOptions !== undefined && pollOptions.length < 2) {
+      return NextResponse.json({ error: "투표는 항목을 2개 이상 입력해주세요." }, { status: 400 });
+    }
+    if (title === undefined && content === undefined && imageUrls === undefined && pollOptions === undefined) {
       return NextResponse.json({ error: "수정할 내용이 없습니다." }, { status: 400 });
     }
 
@@ -158,6 +175,9 @@ export async function PATCH(
     }
     if (imageUrls !== undefined) {
       await setCommunityPostImages(id, imageUrls);
+    }
+    if (pollOptions !== undefined) {
+      await updateCommunityPollOptions(id, pollOptions);
     }
     return NextResponse.json({ success: true });
   } catch (error) {
