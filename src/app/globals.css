@@ -950,6 +950,20 @@ body {
   font-size: 11.5px;
 }
 
+/* 탭 지연 제거: 안드로이드/삼성(갤럭시탭)에서 버튼·링크를 탭하면 브라우저가
+   '더블탭 줌' 두 번째 탭을 기다리느라 click 을 ~300ms 늦춘다 → 영단어 퀴즈 등
+   선택지가 굼떠 보였다. touch-action: manipulation 은 더블탭 줌만 끄고
+   패닝/핀치줌은 유지하므로(줌 접근성 보존) 지연만 사라진다.
+   (필기 캔버스는 button/a 가 아니라 자체 touch-action(pan-y)을 유지 — 영향 없음) */
+button,
+a[href],
+[role="button"],
+.press,
+.press-deep,
+label {
+  touch-action: manipulation;
+}
+
 /* 토스 스타일 인터렉션 */
 .press {
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
