@@ -4,8 +4,11 @@ import {
   createCommunityComment,
   getCommunityComments,
   toNumber,
+  type CommentSort,
   type CommunityCommentNode,
 } from "@/lib/community";
+
+const SORTS: CommentSort[] = ["popular", "recommended", "newest", "oldest"];
 
 // 목록의 댓글 모달용 — 상세 진입 없이 한 글의 댓글 트리를 내려준다.
 function mapComment(c: CommunityCommentNode): unknown {
@@ -14,6 +17,7 @@ function mapComment(c: CommunityCommentNode): unknown {
     userId: c.user_id,
     parentId: c.parent_id,
     nickname: c.nickname || "익명",
+    avatar: c.user_id && c.has_avatar ? `/api/community/avatar/${c.user_id}` : null,
     content: c.content,
     createdAt: c.created_at,
     likeCount: toNumber(c.like_count ?? 0),
@@ -23,13 +27,15 @@ function mapComment(c: CommunityCommentNode): unknown {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: postId } = await params;
     const viewer = await getCurrentUser();
-    const comments = await getCommunityComments(postId, viewer?.id ?? null, true);
+    const sortRaw = new URL(request.url).searchParams.get("sort") as CommentSort | null;
+    const sort: CommentSort = sortRaw && SORTS.includes(sortRaw) ? sortRaw : "popular";
+    const comments = await getCommunityComments(postId, viewer?.id ?? null, true, sort);
     return NextResponse.json({
       comments: comments.map(mapComment),
       currentUserId: viewer?.id ?? null,

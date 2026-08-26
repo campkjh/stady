@@ -46,6 +46,7 @@ export interface CommunityPostRow {
   id: string;
   user_id: string | null;
   nickname: string | null;
+  has_avatar?: boolean;
   group_id: string;
   group_name: string;
   group_slug: string;
@@ -81,6 +82,7 @@ export interface CommunityCommentRow {
   parent_id: string | null;
   user_id: string | null;
   nickname: string | null;
+  has_avatar?: boolean;
   content: string;
   is_active: boolean;
   created_at: Date;
@@ -749,6 +751,7 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
       SELECT
         p.*,
         u."nickname",
+        (u."avatar" IS NOT NULL) AS "has_avatar",
         g."name" AS "group_name",
         g."slug" AS "group_slug",
         COALESCE(pl."like_count", 0) AS "like_count",
@@ -793,6 +796,8 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   );
   // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
   const topCommentByPost = await getTopCommentsByPost(posts.map((post) => post.id));
+  // 좋아요 3명 이상이면 목록에 누른 사람 프로필을 겹쳐 보여주기 위한 최근 좋아요 유저.
+  const likersByPost = await getLikersByPost(posts.map((post) => post.id), 5);
   // 목록에서 바로 좋아요를 누를 수 있게, 보는 사람이 각 글에 누른 반응 타입을 함께 싣는다.
   const myReactionByPost = new Map<string, string>();
   if (options.viewerId && posts.length > 0) {
@@ -815,6 +820,7 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
     poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
     topComment: topCommentByPost.get(post.id) ?? null,
     myReaction: myReactionByPost.get(post.id) ?? null,
+    likers: likersByPost.get(post.id) ?? [],
   }));
 }
 
@@ -898,6 +904,49 @@ export async function getTopCommentsByPost(
     });
   }
 
+  return result;
+}
+
+export interface CommunityLiker {
+  userId: string;
+  nickname: string;
+  avatar: string | null;
+}
+
+// 여러 글의 '좋아요 누른 사람' 최근 N명씩(목록의 겹친 프로필 아바타 UI용).
+export async function getLikersByPost(
+  postIds: string[],
+  limit = 5
+): Promise<Map<string, CommunityLiker[]>> {
+  const result = new Map<string, CommunityLiker[]>();
+  if (postIds.length === 0) return result;
+  const ph = postIds.map((_, i) => `$${i + 1}`).join(", ");
+  const cap = Math.max(1, Math.min(10, Math.floor(limit)));
+  const rows = await prisma.$queryRawUnsafe<
+    { post_id: string; user_id: string; nickname: string | null; has_avatar: boolean }[]
+  >(
+    `
+      SELECT "post_id", "user_id", "nickname", "has_avatar" FROM (
+        SELECT
+          l."post_id", l."user_id", u."nickname", (u."avatar" IS NOT NULL) AS "has_avatar",
+          ROW_NUMBER() OVER (PARTITION BY l."post_id" ORDER BY l."created_at" DESC) AS rn
+        FROM "CommunityPostLike" l
+        JOIN "User" u ON u."id" = l."user_id"
+        WHERE l."post_id" IN (${ph})
+      ) t WHERE t.rn <= ${cap}
+      ORDER BY "post_id", t.rn
+    `,
+    ...postIds
+  );
+  for (const r of rows) {
+    const arr = result.get(r.post_id) ?? [];
+    arr.push({
+      userId: r.user_id,
+      nickname: r.nickname || "익명",
+      avatar: r.has_avatar ? `/api/community/avatar/${r.user_id}` : null,
+    });
+    result.set(r.post_id, arr);
+  }
   return result;
 }
 
@@ -996,12 +1045,42 @@ export async function createCommunityPost(input: {
   return id;
 }
 
-// 목록에서 상세 진입 없이 댓글 모달로 볼 수 있게, 한 글의 댓글 트리만 가져온다.
-// 상세와 동일한 정렬(고정 우선 → 최상위 좋아요순·오래된순, 대댓글은 오래된순)·차단 숨김.
+// 댓글 정렬 옵션. 최상위 댓글만 정렬(대댓글은 항상 등록순), 고정 댓글은 항상 맨 위.
+//  - popular(인기순): 좋아요 많은 순
+//  - recommended(추천순): 좋아요+답글(참여) 종합 순
+//  - newest(최신순): 최근 등록 순
+//  - oldest(오래된순): 먼저 등록 순
+export type CommentSort = "popular" | "recommended" | "newest" | "oldest";
+
+function commentLikeOf(n: CommunityCommentNode): number {
+  return Number(n.like_count ?? 0);
+}
+function commentTimeOf(n: CommunityCommentNode): number {
+  return new Date(n.created_at as unknown as string).getTime();
+}
+function sortCommentRoots(roots: CommunityCommentNode[], sort: CommentSort): void {
+  const oldest = (a: CommunityCommentNode, b: CommunityCommentNode) => commentTimeOf(a) - commentTimeOf(b);
+  if (sort === "oldest") {
+    roots.sort(oldest);
+  } else if (sort === "newest") {
+    roots.sort((a, b) => commentTimeOf(b) - commentTimeOf(a));
+  } else if (sort === "recommended") {
+    roots.sort(
+      (a, b) =>
+        commentLikeOf(b) + (b.replies?.length || 0) - (commentLikeOf(a) + (a.replies?.length || 0)) || oldest(a, b)
+    );
+  } else {
+    // popular
+    roots.sort((a, b) => commentLikeOf(b) - commentLikeOf(a) || oldest(a, b));
+  }
+}
+
+// 상세/모달 공용 댓글 조회 — 정렬 선택 가능, 차단 숨김, 고정 댓글은 맨 위.
 export async function getCommunityComments(
   postId: string,
   viewerId?: string | null,
-  activeOnly = true
+  activeOnly = true,
+  sort: CommentSort = "popular"
 ): Promise<CommunityCommentNode[]> {
   await ensureCommunityTables();
   const conditions = [`c."post_id" = $1`];
@@ -1009,10 +1088,11 @@ export async function getCommunityComments(
   conditions.push(
     `NOT EXISTS (SELECT 1 FROM "CommunityBlock" b WHERE b."blocker_id" = $2 AND b."blocked_id" = c."user_id")`
   );
+  // 등록순으로 받아 트리를 만든다(대댓글은 항상 등록순). 최상위 정렬은 JS 에서.
   const rows = await prisma.$queryRawUnsafe<CommunityCommentRow[]>(
     `
       SELECT
-        c.*, u."nickname",
+        c.*, u."nickname", (u."avatar" IS NOT NULL) AS "has_avatar",
         COALESCE(cl."like_count", 0) AS "like_count",
         EXISTS (
           SELECT 1 FROM "CommunityCommentLike" x
@@ -1025,9 +1105,7 @@ export async function getCommunityComments(
         FROM "CommunityCommentLike" GROUP BY "comment_id"
       ) cl ON cl."comment_id" = c."id"
       WHERE ${conditions.join(" AND ")}
-      ORDER BY
-        CASE WHEN c."parent_id" IS NULL THEN COALESCE(cl."like_count", 0) ELSE 0 END DESC,
-        c."created_at" ASC
+      ORDER BY c."created_at" ASC
     `,
     postId,
     viewerId ?? null
@@ -1038,6 +1116,7 @@ export async function getCommunityComments(
   );
   const pinnedId = pinnedRows[0]?.comment_id ?? null;
   const tree = buildCommentTree(rows);
+  sortCommentRoots(tree, sort);
   return pinnedId
     ? [...tree].sort((a, b) => (a.id === pinnedId ? -1 : b.id === pinnedId ? 1 : 0))
     : tree;
@@ -1045,7 +1124,7 @@ export async function getCommunityComments(
 
 export async function getCommunityPostDetail(
   postId: string,
-  options: { activeOnly?: boolean; viewerId?: string | null } = {}
+  options: { activeOnly?: boolean; viewerId?: string | null; sort?: CommentSort } = {}
 ) {
   await seedDefaultCommunityTaxonomy();
   const viewerId = options.viewerId || null;
@@ -1060,6 +1139,7 @@ export async function getCommunityPostDetail(
       SELECT
         p.*,
         u."nickname",
+        (u."avatar" IS NOT NULL) AS "has_avatar",
         g."name" AS "group_name",
         g."slug" AS "group_slug",
         COALESCE(pl."like_count", 0) AS "like_count",
@@ -1118,49 +1198,20 @@ export async function getCommunityPostDetail(
   const reactions = await getPostReactions(postId, viewerId);
   const poll = post.type === "poll" ? await getPollResult(postId, viewerId) : null;
 
-  const commentConditions = [`c."post_id" = $1`];
-  if (options.activeOnly) commentConditions.push(`c."is_active" = true`);
-  // 차단한 사용자의 댓글도 숨긴다($2 = viewerId, 비로그인이면 NULL 이라 아무것도 안 걸린다).
-  commentConditions.push(
-    `NOT EXISTS (SELECT 1 FROM "CommunityBlock" b WHERE b."blocker_id" = $2 AND b."blocked_id" = c."user_id")`
-  );
-  const commentRows = await prisma.$queryRawUnsafe<CommunityCommentRow[]>(
-    `
-      SELECT
-        c.*,
-        u."nickname",
-        COALESCE(cl."like_count", 0) AS "like_count",
-        EXISTS (
-          SELECT 1
-          FROM "CommunityCommentLike" x
-          WHERE x."comment_id" = c."id" AND x."user_id" = $2
-        ) AS "liked_by_me"
-      FROM "CommunityComment" c
-      LEFT JOIN "User" u ON u."id" = c."user_id"
-      LEFT JOIN (
-        SELECT "comment_id", COUNT(*)::bigint AS "like_count"
-        FROM "CommunityCommentLike"
-        GROUP BY "comment_id"
-      ) cl ON cl."comment_id" = c."id"
-      WHERE ${commentConditions.join(" AND ")}
-      ORDER BY
-        CASE WHEN c."parent_id" IS NULL THEN COALESCE(cl."like_count", 0) ELSE 0 END DESC,
-        c."created_at" ASC
-    `,
+  // 댓글은 공용 조회로 일원화(정렬 선택·차단 숨김·고정 최상위·아바타 포함).
+  const comments = await getCommunityComments(
     postId,
-    viewerId
+    viewerId,
+    Boolean(options.activeOnly),
+    options.sort ?? "popular"
   );
 
+  // 고정 댓글 id 는 상세 payload 에도 실어 보낸다(UI 고정 배지용).
   const pinnedRows = await prisma.$queryRawUnsafe<{ comment_id: string }[]>(
     `SELECT "comment_id" FROM "CommunityPinnedComment" WHERE "post_id" = $1 LIMIT 1`,
     postId
   );
   const pinnedId = pinnedRows[0]?.comment_id ?? null;
-  const tree = buildCommentTree(commentRows);
-  // 고정된 댓글은 맨 위로(대댓글은 고정 대상이 아니라 최상위만 본다).
-  const comments = pinnedId
-    ? [...tree].sort((a, b) => (a.id === pinnedId ? -1 : b.id === pinnedId ? 1 : 0))
-    : tree;
 
   return {
     post: {

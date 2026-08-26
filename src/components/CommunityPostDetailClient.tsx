@@ -33,6 +33,7 @@ interface CommunityComment {
   /** 신고·차단 대상 판별용 — API(mapComment)는 예전부터 내려주고 있었다. */
   userId?: string | null;
   nickname: string;
+  avatar?: string | null;
   authorTier?: string;
   authorIsAnswerKing?: boolean;
   content: string;
@@ -43,11 +44,49 @@ interface CommunityComment {
 }
 
 const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+// 댓글 정렬(백엔드 CommentSort 키와 일치).
+const COMMENT_SORTS = [
+  { key: "newest", label: "최신순" },
+  { key: "oldest", label: "오래된순" },
+  { key: "popular", label: "인기순" },
+  { key: "recommended", label: "추천순" },
+] as const;
+type CommentSortKey = (typeof COMMENT_SORTS)[number]["key"];
 function TierBadge({ tier }: { tier?: string }) {
   if (!tier || !TIERS.includes(tier)) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={`/icons/tier-${tier}.svg`} alt="" width={15} height={15} style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 4 }} />
+  );
+}
+
+// 프로필 사진(카톡)이 있으면 사진, 없으면 닉네임 첫 글자. 애플 로그인은 사진 없음 → 첫 글자.
+function MiniAvatar({ nickname, avatar, size = 30 }: { nickname: string; avatar?: string | null; size?: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        flexShrink: 0,
+        width: size,
+        height: size,
+        borderRadius: 999,
+        overflow: "hidden",
+        background: "var(--c-bg-muted)",
+        color: "var(--c-text)",
+        fontSize: Math.round(size * 0.44),
+        fontWeight: 700,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={avatar} alt="" referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+      ) : (
+        nickname.slice(0, 1)
+      )}
+    </span>
   );
 }
 
@@ -74,6 +113,7 @@ interface CommunityPostDetail {
   id: string;
   userId: string | null;
   nickname: string;
+  avatar?: string | null;
   authorTier?: string;
   authorIsAnswerKing?: boolean;
   groupName: string;
@@ -152,6 +192,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [deleteCommentId, setDeleteCommentId] = useState("");
   const [pinBusy, setPinBusy] = useState(false);
 
+  const [commentSort, setCommentSort] = useState<CommentSortKey>("popular");
+
   const loadDetail = useCallback(async (track = false) => {
     setLoading(true);
     try {
@@ -168,6 +210,18 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       setLoading(false);
     }
   }, [postId]);
+
+  // 정렬만 바꿀 땐 댓글만 다시 받아 화면 전체 로딩 없이 갱신(조회수도 안 올림).
+  async function changeCommentSort(s: CommentSortKey) {
+    setCommentSort(s);
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}?sort=${s}`);
+      const data = await res.json();
+      if (res.ok) setComments(data.comments || []);
+    } catch {
+      /* 실패해도 기존 목록 유지 */
+    }
+  }
 
   useEffect(() => {
     loadDetail(true);
@@ -661,7 +715,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
-                  <p style={{ margin: "8px 0 0", color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                  <div style={{ margin: "10px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
+                    <MiniAvatar nickname={post.nickname} avatar={post.avatar} size={34} />
+                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                  </div>
                   <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
@@ -820,6 +877,34 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   {commentPosting ? "등록 중..." : "댓글 등록"}
                 </button>
               </form>
+
+              {comments.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {COMMENT_SORTS.map((s) => {
+                    const on = commentSort === s.key;
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() => changeCommentSort(s.key)}
+                        aria-selected={on}
+                        style={{
+                          border: `1px solid ${on ? "var(--c-inverse)" : "var(--c-border)"}`,
+                          background: on ? "var(--c-inverse)" : "transparent",
+                          color: on ? "#fff" : "var(--c-text-3)",
+                          borderRadius: 999,
+                          padding: "6px 12px",
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               <div style={{ display: "grid", gap: 10 }}>
                 {comments.length === 0 ? (
@@ -1090,9 +1175,12 @@ function CommentItem({
           <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--c-warn-d)" }}>고정</span>
         </div>
       )}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-        <strong style={{ color: "var(--c-text)", fontSize: 14 }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
-        <span style={{ color: "var(--c-text-4c)", fontSize: 12 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={28} />
+          <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
+        </span>
+        <span style={{ color: "var(--c-text-4c)", fontSize: 12, flexShrink: 0 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
       </div>
       {isEditing ? (
         <div style={{ display: "grid", gap: 8, marginTop: 8 }}>

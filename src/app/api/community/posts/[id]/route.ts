@@ -41,6 +41,7 @@ function mapComment(comment: CommunityCommentNode, tiers: Record<string, Communi
     parentId: comment.parent_id,
     userId: comment.user_id,
     nickname: comment.nickname || "익명",
+    avatar: comment.user_id && comment.has_avatar ? `/api/community/avatar/${comment.user_id}` : null,
     authorTier: comment.user_id ? tiers[comment.user_id] ?? "iron" : "iron",
     authorIsAnswerKing: comment.user_id ? kings.has(comment.user_id) : false,
     content: comment.content,
@@ -71,9 +72,16 @@ export async function GET(
     if (new URL(request.url).searchParams.get("track") === "1") {
       await incrementCommunityPostView(id);
     }
+    const sortRaw = new URL(request.url).searchParams.get("sort");
+    const sort = (["popular", "recommended", "newest", "oldest"] as const).includes(
+      sortRaw as never
+    )
+      ? (sortRaw as "popular" | "recommended" | "newest" | "oldest")
+      : "popular";
     const detail = await getCommunityPostDetail(id, {
       activeOnly: true,
       viewerId: user?.id,
+      sort,
     });
 
     if (!detail) {
@@ -91,6 +99,7 @@ export async function GET(
         id: detail.post.id,
         userId: detail.post.user_id,
         nickname: detail.post.nickname || "익명",
+        avatar: detail.post.user_id && detail.post.has_avatar ? `/api/community/avatar/${detail.post.user_id}` : null,
         authorTier: detail.post.user_id ? tiers[detail.post.user_id] ?? "iron" : "iron",
         authorIsAnswerKing: detail.post.user_id ? answerKings.has(detail.post.user_id) : false,
         groupId: detail.post.group_id,

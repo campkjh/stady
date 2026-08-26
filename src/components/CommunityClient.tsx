@@ -48,9 +48,17 @@ interface CommunityTopComment {
   pinned: boolean;
 }
 
+interface Liker {
+  userId: string;
+  nickname: string;
+  avatar: string | null;
+}
+
 interface CommunityPost {
   id: string;
   nickname: string;
+  avatar?: string | null;
+  likers?: Liker[];
   authorTier?: string;
   authorIsAdmin?: boolean;
   authorIsAnswerKing?: boolean;
@@ -589,6 +597,10 @@ export default function CommunityClient() {
                       {post.authorIsAdmin ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src="/icons/stady-app-icon.svg" alt="" className="community-avatar-img" />
+                      ) : post.avatar ? (
+                        // 카톡 등 프로필 사진. 없으면 닉네임 첫 글자.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={post.avatar} alt="" className="community-avatar-photo" referrerPolicy="no-referrer" />
                       ) : (
                         post.nickname.slice(0, 1)
                       )}
@@ -693,6 +705,9 @@ export default function CommunityClient() {
                         <span className="ctc-more">댓글 {post.commentCount}</span>
                       )}
                     </div>
+                  )}
+                  {(post.likeCount || 0) >= 3 && (post.likers?.length || 0) > 0 && (
+                    <LikerStack likers={post.likers!} count={post.likeCount} />
                   )}
                   <div className="community-post-metrics">
                     <button
@@ -801,6 +816,28 @@ const GROUP_ICONS: Record<string, string> = {
 };
 function groupIcon(name: string): string {
   return GROUP_ICONS[name.trim()] ?? "cg-etc";
+}
+
+// 좋아요 3명 이상일 때 누른 사람 프로필을 겹쳐 보여준다(사진 없으면 첫 글자).
+function LikerStack({ likers, count }: { likers: Liker[]; count: number }) {
+  const show = likers.slice(0, 4);
+  return (
+    <div className="liker-stack" aria-label={`${count}명이 좋아요`}>
+      <span className="liker-avatars">
+        {show.map((u, i) => (
+          <span key={u.userId} className="liker-av" style={{ marginLeft: i === 0 ? 0 : -8, zIndex: show.length - i }}>
+            {u.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={u.avatar} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="liker-letter">{u.nickname.slice(0, 1)}</span>
+            )}
+          </span>
+        ))}
+      </span>
+      <span className="liker-count">{count}명이 좋아요를 눌렀어요</span>
+    </div>
+  );
 }
 
 function CategoryChips({
@@ -983,6 +1020,7 @@ interface FeedComment {
   userId: string | null;
   parentId: string | null;
   nickname: string;
+  avatar?: string | null;
   content: string;
   createdAt: string;
   likeCount: number;
@@ -990,18 +1028,39 @@ interface FeedComment {
   replies: FeedComment[];
 }
 
+// 댓글 정렬 옵션(백엔드 CommentSort 와 키 일치).
+const COMMENT_SORTS = [
+  { key: "newest", label: "최신순" },
+  { key: "oldest", label: "오래된순" },
+  { key: "popular", label: "인기순" },
+  { key: "recommended", label: "추천순" },
+] as const;
+type CommentSortKey = (typeof COMMENT_SORTS)[number]["key"];
+
 function countComments(list: FeedComment[]): number {
   return list.reduce((sum, c) => sum + 1 + countComments(c.replies || []), 0);
 }
 
 function CommentRow({ c, depth = 0 }: { c: FeedComment; depth?: number }) {
   return (
-    <div style={{ paddingLeft: depth ? 14 : 0 }}>
-      <div className="ccs-item">
-        <span className="ccs-name">{c.nickname}</span>
-        <span className="ccs-time">{formatRelativeTime(c.createdAt)}</span>
+    <div style={{ paddingLeft: depth ? 14 : 0, marginTop: depth ? 10 : 0 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <span className="ccs-av" aria-hidden="true">
+          {c.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={c.avatar} alt="" referrerPolicy="no-referrer" />
+          ) : (
+            c.nickname.slice(0, 1)
+          )}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="ccs-item">
+            <span className="ccs-name">{c.nickname}</span>
+            <span className="ccs-time">{formatRelativeTime(c.createdAt)}</span>
+          </div>
+          <p className="ccs-content">{c.content}</p>
+        </div>
       </div>
-      <p className="ccs-content">{c.content}</p>
       {(c.replies || []).map((r) => (
         <CommentRow key={r.id} c={r} depth={depth + 1} />
       ))}
@@ -1024,10 +1083,14 @@ function CommentModal({
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
   const [msg, setMsg] = useState("");
+  const [sort, setSort] = useState<CommentSortKey>("popular");
 
-  async function load() {
+  async function load(s: CommentSortKey = sort) {
     try {
-      const res = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/comments`, { credentials: "include" });
+      const res = await fetch(
+        `/api/community/posts/${encodeURIComponent(post.id)}/comments?sort=${s}`,
+        { credentials: "include" }
+      );
       const data = await res.json();
       if (res.ok) setComments(data.comments || []);
     } catch {
@@ -1038,12 +1101,15 @@ function CommentModal({
   }
 
   useEffect(() => {
-    load();
+    load(sort);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id, sort]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post.id]);
+  }, [onClose]);
 
   async function submit() {
     const content = text.trim();
@@ -1085,6 +1151,19 @@ function CommentModal({
               <line x1="18" y1="6" x2="6" y2="18" />
             </svg>
           </button>
+        </div>
+        <div className="ccs-sorts" role="tablist" aria-label="댓글 정렬">
+          {COMMENT_SORTS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              className={`ccs-sort${sort === s.key ? " is-on" : ""}`}
+              aria-selected={sort === s.key}
+              onClick={() => setSort(s.key)}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
         <div className="ccs-list">
           {loading ? (
@@ -1612,6 +1691,52 @@ function CommunityStyles() {
         object-fit: contain;
         display: block;
       }
+      /* 프로필 사진(카톡)은 원을 꽉 채운다. */
+      .community-avatar-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      /* 좋아요 누른 사람 겹친 프로필 */
+      .liker-stack {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .liker-avatars {
+        display: inline-flex;
+        align-items: center;
+      }
+      .liker-av {
+        position: relative;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--c-bg-muted);
+        border: 1.5px solid var(--c-bg);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .liker-av img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .liker-letter {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--c-text-3);
+      }
+      .liker-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--c-text-4);
+      }
       .community-post-author {
         margin: 0;
         color: var(--c-text);
@@ -1861,6 +1986,45 @@ function CommunityStyles() {
       }
       .ccs-item { display: flex; align-items: center; gap: 6px; }
       .ccs-name { font-size: 13px; font-weight: 700; color: var(--c-text); }
+      /* 댓글 아바타(사진 or 첫 글자) */
+      .ccs-av {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--c-bg-muted);
+        color: var(--c-text);
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ccs-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      /* 댓글 정렬 탭 */
+      .ccs-sorts {
+        display: flex;
+        gap: 6px;
+        padding: 10px 16px 2px;
+        flex-wrap: wrap;
+      }
+      .ccs-sort {
+        border: 1px solid var(--c-bg-muted-8);
+        background: transparent;
+        color: var(--c-text-3);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ccs-sort.is-on {
+        background: var(--c-inverse);
+        border-color: var(--c-inverse);
+        color: #fff;
+      }
       .ccs-time { font-size: 12px; font-weight: 500; color: var(--c-text-4); }
       .ccs-content {
         margin: 3px 0 0;
