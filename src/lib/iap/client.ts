@@ -66,14 +66,20 @@ function requestNativeLogin() {
 }
 
 /** Is there a signed-in stady account right now? Asked fresh (not from state)
- *  because the purchase must never start on a stale "logged in" assumption. */
+ *  because the purchase must never start on a stale "logged in" assumption.
+ *
+ *  ⚠️ 확실히 "로그아웃"일 때만 false 를 돌려준다(fail-open). 네트워크가 한 번
+ *  튀거나 서버가 5xx 를 주면 예전엔 false 가 되어, 멀쩡히 로그인한 사람에게
+ *  "먼저 로그인해 주세요" 에러 + 로그인 시트가 떴다. 결제 자체는 어차피 서버
+ *  검증(세션 필수)에서 막히므로, 여기서 막는 건 확정적인 경우로 한정한다. */
 async function isAuthenticated(): Promise<boolean> {
   try {
     const res = await fetch("/api/iap/status", { credentials: "include" });
+    if (!res.ok) return true; // 판단 불가 — 결제를 막지 않는다
     const data = await res.json();
-    return !!data.authenticated;
+    return data.authenticated !== false;
   } catch {
-    return false;
+    return true; // 판단 불가 — 결제를 막지 않는다
   }
 }
 

@@ -22,15 +22,27 @@ export async function GET() {
     productIds: p.productIds,
   }));
 
+  // ⚠️ authenticated 는 "세션이 있는가" 만 답해야 한다. 예전엔 아래 두 조회를 한
+  // try 로 묶어, 구독권 조회(DB)가 잠깐 실패하면 로그인한 사람에게도
+  // authenticated:false 를 돌려줬다 — 그러면 결제 버튼이 "로그인이 필요하다"는
+  // 에러를 띄우고 로그인 시트를 연다(App Review 2.1(b) 로 보이는 그 증상).
+  let user: Awaited<ReturnType<typeof getCurrentUser>> = null;
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ authenticated: false, entitlement: null, plans });
-    }
+    user = await getCurrentUser();
+  } catch (error) {
+    console.error("iap status: session lookup failed:", error);
+    return NextResponse.json({ authenticated: false, entitlement: null, plans });
+  }
+  if (!user) {
+    return NextResponse.json({ authenticated: false, entitlement: null, plans });
+  }
+
+  try {
     const entitlement = await getActiveEntitlement(user.id);
     return NextResponse.json({ authenticated: true, entitlement, plans });
   } catch (error) {
-    console.error("iap status error:", error);
-    return NextResponse.json({ authenticated: false, entitlement: null, plans });
+    console.error("iap status: entitlement lookup failed:", error);
+    // 로그인은 확실하다. 구독권만 모른 채로 응답한다.
+    return NextResponse.json({ authenticated: true, entitlement: null, plans });
   }
 }

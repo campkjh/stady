@@ -12,19 +12,44 @@ import type { SubStatus, VerifiedSubscription } from "./types";
 //   APPLE_IAP_ISSUER_ID   — App Store Connect API key issuer id (UUID)
 //   APPLE_IAP_KEY_ID      — the key id (kid)
 //   APPLE_IAP_PRIVATE_KEY — the .p8 private key contents (PEM; \n allowed)
-//   APPLE_BUNDLE_ID       — the app bundle id (e.g. kr.co.stady)
+//   APPLE_BUNDLE_ID       — the app bundle id (com.stady.app)
+//                           APPLE_IAP_BUNDLE_ID is accepted as an alias, see below.
 
 const PROD_HOST = "https://api.storekit.itunes.apple.com";
 const SANDBOX_HOST = "https://api.storekit-sandbox.itunes.apple.com";
+
+/** 번들 id. 세 형제 키가 APPLE_IAP_* 라서 이것도 APPLE_IAP_BUNDLE_ID 로 넣기 쉬운데,
+ *  그러면 appleConfigured() 가 false 가 되어 결제가 끝난 직후 503("인앱결제가 아직
+ *  구성되지 않았습니다")만 뜬다 — 결제 화면에선 원인을 알 길이 없는 실패다.
+ *  둘 다 받아 준다. */
+function appleBundleId(): string | undefined {
+  return process.env.APPLE_BUNDLE_ID || process.env.APPLE_IAP_BUNDLE_ID;
+}
 
 export function appleConfigured(): boolean {
   return !!(
     process.env.APPLE_IAP_ISSUER_ID &&
     process.env.APPLE_IAP_KEY_ID &&
     process.env.APPLE_IAP_PRIVATE_KEY &&
-    process.env.APPLE_BUNDLE_ID
+    appleBundleId()
   );
 }
+
+/** Apple(App Store Server API) 쪽에서 온 실패. `retryable` 이면 잠시 뒤 같은 요청이
+ *  성공할 수 있다(샌드박스 색인 지연·5xx·네트워크). 라우트는 이걸 502 로 내보내
+ *  클라이언트가 한 번 더 시도하게 한다. */
+export class AppleUpstreamError extends Error {
+  readonly retryable: boolean;
+  readonly status: number;
+  constructor(message: string, retryable: boolean, status = 0) {
+    super(message);
+    this.name = "AppleUpstreamError";
+    this.retryable = retryable;
+    this.status = status;
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
@@ -43,7 +68,7 @@ function decodeJwsPayload<T = Record<string, unknown>>(jws: string): T {
 function appleAuthToken(): string {
   const issuerId = process.env.APPLE_IAP_ISSUER_ID!;
   const keyId = process.env.APPLE_IAP_KEY_ID!;
-  const bundleId = process.env.APPLE_BUNDLE_ID!;
+  const bundleId = appleBundleId()!;
   const privateKeyPem = process.env.APPLE_IAP_PRIVATE_KEY!.replace(/\\n/g, "\n");
 
   const now = Math.floor(Date.now() / 1000);
@@ -74,6 +99,7 @@ export async function appleCredentialSelfTest(): Promise<{
   configured: boolean;
   ok: boolean;
   detail: string;
+  config?: { issuerId: string; keyId: string; bundleId: string; privateKeyHead: string };
   statuses?: Record<string, number>;
 }> {
   if (!appleConfigured()) {
@@ -81,12 +107,24 @@ export async function appleCredentialSelfTest(): Promise<{
       ["APPLE_IAP_ISSUER_ID", process.env.APPLE_IAP_ISSUER_ID],
       ["APPLE_IAP_KEY_ID", process.env.APPLE_IAP_KEY_ID],
       ["APPLE_IAP_PRIVATE_KEY", process.env.APPLE_IAP_PRIVATE_KEY],
-      ["APPLE_BUNDLE_ID", process.env.APPLE_BUNDLE_ID],
+      ["APPLE_BUNDLE_ID (또는 APPLE_IAP_BUNDLE_ID)", appleBundleId()],
     ]
       .filter(([, v]) => !v)
       .map(([k]) => k);
     return { configured: false, ok: false, detail: `env 누락: ${missing.join(", ")}` };
   }
+
+  // 401 을 만나면 "어느 값이 잘못됐나"를 ASC 화면과 눈으로 대조해야 한다. 개인키만
+  // 빼고 실제 설정값을 돌려준다(앱 내 구입 키의 Issuer ID 는 App Store Connect API
+  // 쪽 Issuer ID 와 다른데, 그걸 잘못 넣는 게 401 의 단골 원인이다).
+  const privateKeyPem = process.env.APPLE_IAP_PRIVATE_KEY!.replace(/\\n/g, "\n").trim();
+  const config = {
+    issuerId: process.env.APPLE_IAP_ISSUER_ID!,
+    keyId: process.env.APPLE_IAP_KEY_ID!,
+    bundleId: appleBundleId()!,
+    // 개인키는 첫 줄(헤더)만 — 형식이 깨졌는지만 보면 된다.
+    privateKeyHead: `${privateKeyPem.split("\n")[0]} … (${privateKeyPem.length}자)`,
+  };
 
   let token: string;
   try {
@@ -97,6 +135,7 @@ export async function appleCredentialSelfTest(): Promise<{
       configured: true,
       ok: false,
       detail: `JWT 서명 실패 — APPLE_IAP_PRIVATE_KEY 형식(.p8 PEM) 확인: ${message}`,
+      config,
     };
   }
 
@@ -119,39 +158,68 @@ export async function appleCredentialSelfTest(): Promise<{
         configured: true,
         ok: false,
         detail:
-          "Apple 인증 실패(401/403) — ISSUER_ID·KEY_ID·PRIVATE_KEY·BUNDLE_ID 중 하나가 잘못됐습니다.",
+          "Apple 인증 실패(401/403) — ISSUER_ID·KEY_ID·PRIVATE_KEY·BUNDLE_ID 중 하나가 잘못됐습니다. " +
+          "특히 ISSUER_ID 는 App Store Connect API 쪽이 아니라 '앱 내 구입' 키 페이지에 표시된 값이어야 합니다.",
+        config,
         statuses,
       }
     : {
         configured: true,
         ok: true,
         detail: "Apple 자격증명 정상 — 인증 통과(존재하지 않는 거래라 404/400은 정상 응답).",
+        config,
         statuses,
       };
 }
 
+/** 샌드박스는 결제 직후 몇 초 동안 거래를 색인하지 못해 404 를 돌려준다. 한 번의
+ *  404 를 "검증 실패"로 단정하면 이미 결제를 마친 사람에게 에러만 남으므로(App
+ *  Review 2.1(b) 의 전형적인 모습) 짧게 여러 번 다시 물어본다. */
+const APPLE_RETRY_DELAYS_MS = [600, 1800];
+
 /** GET against the App Store Server API, trying the hinted environment first
- *  then the other (Apple recommends prod→sandbox fallback). */
+ *  then the other (Apple recommends prod→sandbox fallback). Retries transient
+ *  failures (404 indexing lag, 5xx, network) before giving up. */
 async function appleGet(path: string, environmentHint?: "Production" | "Sandbox") {
   const token = appleAuthToken();
   const order: string[] =
     environmentHint === "Sandbox" ? [SANDBOX_HOST, PROD_HOST] : [PROD_HOST, SANDBOX_HOST];
 
-  let lastError: unknown = null;
-  for (const host of order) {
-    const res = await fetch(`${host}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const env: "Production" | "Sandbox" = host === SANDBOX_HOST ? "Sandbox" : "Production";
-      return { data: (await res.json()) as Record<string, unknown>, environment: env };
-    }
-    // 404 usually means "wrong environment" — fall through and try the other host.
-    if (res.status !== 404) {
-      lastError = new Error(`Apple API ${res.status}: ${await res.text().catch(() => "")}`);
+  let lastStatus = 0;
+  let lastDetail = "";
+  for (let attempt = 0; attempt <= APPLE_RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) await sleep(APPLE_RETRY_DELAYS_MS[attempt - 1]);
+    for (const host of order) {
+      let res: Response;
+      try {
+        res = await fetch(`${host}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+      } catch (error) {
+        lastStatus = 0;
+        lastDetail = error instanceof Error ? error.message : String(error);
+        continue;
+      }
+      if (res.ok) {
+        const env: "Production" | "Sandbox" = host === SANDBOX_HOST ? "Sandbox" : "Production";
+        return { data: (await res.json()) as Record<string, unknown>, environment: env };
+      }
+      lastStatus = res.status;
+      lastDetail = await res.text().catch(() => "");
+      // 인증 실패는 재시도해도 그대로다 — 키 설정 문제이므로 즉시 중단한다.
+      if (res.status === 401 || res.status === 403) {
+        throw new AppleUpstreamError(
+          `Apple 인증 실패(${res.status}) — APPLE_IAP_ISSUER_ID·KEY_ID·PRIVATE_KEY·BUNDLE_ID 확인 필요. ${lastDetail}`,
+          false,
+          res.status
+        );
+      }
+      // 404 는 "다른 환경" 이거나 "아직 색인 전" — 다른 호스트/다음 시도로 넘어간다.
     }
   }
-  throw lastError ?? new Error("Apple 거래를 찾을 수 없습니다.");
+  throw new AppleUpstreamError(
+    `Apple 거래 조회 실패(${lastStatus || "network"}) ${path}. ${lastDetail}`.trim(),
+    true,
+    lastStatus
+  );
 }
 
 interface AppleTransactionInfo {
@@ -215,11 +283,19 @@ export async function verifyAppleTransaction(input: {
   const environment = txnResp.environment;
 
   // 2) Fetch the group's latest subscription state for autoRenew/status/expiry.
-  const subResp = await appleGet(
-    `/inApps/v1/subscriptions/${txn.originalTransactionId}`,
-    environment
-  );
-  const groups = (subResp.data.data as Array<Record<string, unknown>> | undefined) ?? [];
+  //    여기서 실패해도 1)의 거래만으로 지급에 필요한 값(상품·만료·original id)은 이미
+  //    갖고 있다. 이미 결제를 마친 사람을 이 부가 조회 하나 때문에 에러로 돌려보내지
+  //    않는다 — 정확한 상태는 웹훅(ASSN)이 곧 덮어쓴다.
+  let subResp: { data: Record<string, unknown> } | null = null;
+  try {
+    subResp = await appleGet(`/inApps/v1/subscriptions/${txn.originalTransactionId}`, environment);
+  } catch (error) {
+    console.error(
+      "apple verify: subscription lookup failed, falling back to transaction info:",
+      error instanceof Error ? error.message : error
+    );
+  }
+  const groups = (subResp?.data.data as Array<Record<string, unknown>> | undefined) ?? [];
   let latestTxn: AppleTransactionInfo = txn;
   let renewal: AppleRenewalInfo = {};
   let statusCode: number | undefined;
@@ -244,10 +320,13 @@ export async function verifyAppleTransaction(input: {
     }
   }
 
+  // 부가 조회가 실패했으면 방금 애플이 확인해 준 거래를 그대로 유효한 구독으로 본다.
+  if (statusCode === undefined && !subResp) statusCode = 1;
+
   const plan = planForProductId(latestTxn.productId);
   if (!plan) throw new Error(`알 수 없는 상품입니다: ${latestTxn.productId}`);
 
-  const autoRenew = renewal.autoRenewStatus === 1;
+  const autoRenew = subResp ? renewal.autoRenewStatus === 1 : true;
   const expiresMs =
     latestTxn.expiresDate ?? renewal.gracePeriodExpiresDate ?? Date.now();
 
