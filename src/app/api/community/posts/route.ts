@@ -22,6 +22,7 @@ function mapPost(
     content: post.content,
     type: post.type,
     poll: post.poll ?? null,
+    topComment: post.topComment ?? null,
     isBlinded: post.is_blinded,
     isActive: post.is_active,
     createdAt: post.created_at,

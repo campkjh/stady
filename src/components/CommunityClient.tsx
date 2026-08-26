@@ -40,6 +40,14 @@ interface CommunityPoll {
   myOptionId: string | null;
 }
 
+interface CommunityTopComment {
+  id: string;
+  nickname: string;
+  content: string;
+  likeCount: number;
+  pinned: boolean;
+}
+
 interface CommunityPost {
   id: string;
   nickname: string;
@@ -52,6 +60,7 @@ interface CommunityPost {
   content: string;
   type?: string;
   poll?: CommunityPoll | null;
+  topComment?: CommunityTopComment | null;
   isBlinded?: boolean;
   createdAt: string;
   viewCount: number;
@@ -612,6 +621,23 @@ export default function CommunityClient() {
                       </span>
                     ))}
                   </div>
+                  {post.topComment && (
+                    <div className="community-top-comment">
+                      {post.topComment.pinned && (
+                        <svg className="ctc-pin" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                          <path d="M12 15v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      )}
+                      {!post.topComment.pinned && <CommentIcon />}
+                      <span className="ctc-body">
+                        <b>{post.topComment.nickname}</b> {post.topComment.content}
+                      </span>
+                      {post.commentCount > 1 && (
+                        <span className="ctc-more">댓글 {post.commentCount}</span>
+                      )}
+                    </div>
+                  )}
                   <div className="community-post-metrics">
                     <span>
                       <HeartIcon /> 좋아요 {post.likeCount || 0}
@@ -1445,6 +1471,44 @@ function CommunityStyles() {
         border: 1px solid var(--c-bg-muted-6);
         color: var(--c-text-3);
         padding: 6px 9px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      /* 목록에서 미리 보는 '제일 상단 댓글' 1개 */
+      .community-top-comment {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        padding: 9px 12px;
+        border-radius: 12px;
+        background: var(--c-bg-soft-3);
+        color: var(--c-text-3);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .community-top-comment > svg {
+        flex-shrink: 0;
+        color: var(--c-text-4);
+      }
+      .community-top-comment .ctc-pin {
+        color: var(--c-brand);
+      }
+      .community-top-comment .ctc-body {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .community-top-comment .ctc-body b {
+        color: var(--c-text-2c);
+        font-weight: 700;
+        margin-right: 4px;
+      }
+      .community-top-comment .ctc-more {
+        flex-shrink: 0;
+        color: var(--c-text-4);
         font-size: 12px;
         font-weight: 600;
       }

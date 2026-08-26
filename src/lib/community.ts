@@ -791,6 +791,8 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
         pollByPost.set(post.id, await getPollResult(post.id, options.viewerId ?? null));
       })
   );
+  // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
+  const topCommentByPost = await getTopCommentsByPost(posts.map((post) => post.id));
   return posts.map((post) => ({
     ...post,
     tags: tagsByPost
@@ -799,7 +801,91 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
       .filter(Boolean) as CommunityTagRow[],
     images: imagesByPost.get(post.id) || [],
     poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
+    topComment: topCommentByPost.get(post.id) ?? null,
   }));
+}
+
+export interface CommunityTopComment {
+  id: string;
+  nickname: string;
+  content: string;
+  likeCount: number;
+  pinned: boolean;
+}
+
+// 여러 글의 '제일 상단 댓글' 1개씩을 한 번에 가져온다(상세의 정렬 규칙과 동일:
+// 고정 댓글이 있으면 그것, 없으면 최상위 댓글 중 좋아요 많은 순·오래된 순).
+export async function getTopCommentsByPost(
+  postIds: string[]
+): Promise<Map<string, CommunityTopComment>> {
+  const result = new Map<string, CommunityTopComment>();
+  if (postIds.length === 0) return result;
+  const ph = postIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  // 1) 최상위·활성 댓글 중 글별 1위(좋아요 DESC, 오래된 순).
+  const topRows = await prisma.$queryRawUnsafe<
+    { post_id: string; id: string; nickname: string | null; content: string; like_count: bigint }[]
+  >(
+    `
+      SELECT "post_id", "id", "nickname", "content", "like_count" FROM (
+        SELECT
+          c."post_id", c."id", u."nickname", c."content",
+          COALESCE(cl."like_count", 0) AS "like_count",
+          ROW_NUMBER() OVER (
+            PARTITION BY c."post_id"
+            ORDER BY COALESCE(cl."like_count", 0) DESC, c."created_at" ASC
+          ) AS rn
+        FROM "CommunityComment" c
+        LEFT JOIN "User" u ON u."id" = c."user_id"
+        LEFT JOIN (
+          SELECT "comment_id", COUNT(*)::bigint AS "like_count"
+          FROM "CommunityCommentLike" GROUP BY "comment_id"
+        ) cl ON cl."comment_id" = c."id"
+        WHERE c."post_id" IN (${ph}) AND c."parent_id" IS NULL AND c."is_active" = true
+      ) t WHERE t.rn = 1
+    `,
+    ...postIds
+  );
+  for (const r of topRows) {
+    result.set(r.post_id, {
+      id: r.id,
+      nickname: r.nickname || "익명",
+      content: r.content,
+      likeCount: Number(r.like_count),
+      pinned: false,
+    });
+  }
+
+  // 2) 고정 댓글이 있으면 그걸로 덮어쓴다(상세와 동일하게 최우선).
+  const pinnedRows = await prisma.$queryRawUnsafe<
+    { post_id: string; id: string; nickname: string | null; content: string; like_count: bigint }[]
+  >(
+    `
+      SELECT
+        p."post_id", c."id", u."nickname", c."content",
+        COALESCE(cl."like_count", 0) AS "like_count"
+      FROM "CommunityPinnedComment" p
+      JOIN "CommunityComment" c ON c."id" = p."comment_id" AND c."is_active" = true
+      LEFT JOIN "User" u ON u."id" = c."user_id"
+      LEFT JOIN (
+        SELECT "comment_id", COUNT(*)::bigint AS "like_count"
+        FROM "CommunityCommentLike" GROUP BY "comment_id"
+      ) cl ON cl."comment_id" = c."id"
+      WHERE p."post_id" IN (${ph})
+    `,
+    ...postIds
+  );
+  for (const r of pinnedRows) {
+    result.set(r.post_id, {
+      id: r.id,
+      nickname: r.nickname || "익명",
+      content: r.content,
+      likeCount: Number(r.like_count),
+      pinned: true,
+    });
+  }
+
+  return result;
 }
 
 // 조회수 +1 (활성 글만). 글 상세 최초 진입 시 1회 호출한다.
