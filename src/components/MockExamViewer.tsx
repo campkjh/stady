@@ -155,6 +155,8 @@ const PageCanvas = forwardRef<
   // fit() 은 이미지 onLoad 로도 불리므로(화면 밖 lazy 이미지가 뒤늦게 로드될 때)
   // state 가 아니라 ref 로 최신값을 봐야 한다.
   const nearRef = useRef(true);
+  // 메모리 압박으로 이미지 디코딩이 드롭됐을 때 재시도 횟수(갤럭시탭 해설 빈 화면 복구).
+  const imgRetry = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -187,10 +189,23 @@ const PageCanvas = forwardRef<
     const wrap = wrapRef.current;
     if (!wrap) return;
     fit();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => fit());
-    ro.observe(wrap);
-    return () => ro.disconnect();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => fit()) : null;
+    ro?.observe(wrap);
+    return () => {
+      ro?.disconnect();
+      // 언마운트(문제↔해설 전환 등) 시 픽셀 메모리를 즉시 반납한다.
+      // 페이지 key 에 section 이 들어가 전환마다 이전 섹션 페이지가 전부 언마운트되는데,
+      // 여기서 캔버스를 비워주지 않으면 안드로이드 WebView 가 두 섹션의 캔버스·이미지
+      // 픽셀을 잠깐 동시에 들고 있다가 새 해설 이미지 디코딩을 포기해 해설이 빈 화면이
+      // 된다(iPad 는 여유가 있어 증상이 안 나타남 — 갤럭시탭 '해설 안 뜸' 신고의 원인).
+      persist();
+      const c = canvasRef.current;
+      if (c) {
+        c.width = 0;
+        c.height = 0;
+      }
+      shadowRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -693,7 +708,23 @@ const PageCanvas = forwardRef<
         ref={imgRef}
         src={imageUrl}
         alt={`페이지 ${pageIndex + 1}`}
-        onLoad={fit}
+        onLoad={() => {
+          imgRetry.current = 0;
+          fit();
+        }}
+        // 메모리 압박(갤럭시탭)으로 디코딩이 드롭돼 빈 페이지가 되면, 캐시버스터 쿼리로
+        // 강제 재로딩·재디코딩을 몇 번 재시도해 해설 빈 화면을 자동 복구한다.
+        onError={() => {
+          if (imgRetry.current >= 3) return;
+          imgRetry.current += 1;
+          const attempt = imgRetry.current;
+          const base = imageUrl.split("#")[0];
+          const sep = base.includes("?") ? "&" : "?";
+          window.setTimeout(() => {
+            const el = imgRef.current;
+            if (el) el.src = `${base}${sep}_retry=${attempt}`;
+          }, 400 * attempt);
+        }}
         // 시험지 16장을 한 번에 디코딩하면 이미지만 100MB가 넘어 안드로이드 WebView가
         // 디코딩을 포기해 빈 페이지로 보인다(갤럭시탭 신고). 화면 근처만 디코딩한다.
         //
