@@ -227,7 +227,7 @@ export default function DailyQuizCard() {
               type="button"
               aria-label="데일리 퀴즈 과목 설정"
               onClick={openPref}
-              className="press"
+              className="press hit-44"
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 width: 24, height: 24, borderRadius: 8, border: "none", padding: 0,
