@@ -1,6 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createCommunityComment } from "@/lib/community";
+import {
+  createCommunityComment,
+  getCommunityComments,
+  toNumber,
+  type CommunityCommentNode,
+} from "@/lib/community";
+
+// 목록의 댓글 모달용 — 상세 진입 없이 한 글의 댓글 트리를 내려준다.
+function mapComment(c: CommunityCommentNode): unknown {
+  return {
+    id: c.id,
+    userId: c.user_id,
+    parentId: c.parent_id,
+    nickname: c.nickname || "익명",
+    content: c.content,
+    createdAt: c.created_at,
+    likeCount: toNumber(c.like_count ?? 0),
+    likedByMe: Boolean(c.liked_by_me),
+    replies: c.replies.map(mapComment),
+  };
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: postId } = await params;
+    const viewer = await getCurrentUser();
+    const comments = await getCommunityComments(postId, viewer?.id ?? null, true);
+    return NextResponse.json({
+      comments: comments.map(mapComment),
+      currentUserId: viewer?.id ?? null,
+    });
+  } catch (error) {
+    console.error("Community comments GET error:", error);
+    return NextResponse.json({ error: "댓글을 불러오지 못했습니다." }, { status: 500 });
+  }
+}
 
 function errorResponse(error: unknown) {
   if (error instanceof Error) {

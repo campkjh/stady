@@ -61,6 +61,7 @@ interface CommunityPost {
   type?: string;
   poll?: CommunityPoll | null;
   topComment?: CommunityTopComment | null;
+  myReaction?: string | null;
   isBlinded?: boolean;
   createdAt: string;
   viewCount: number;
@@ -129,6 +130,61 @@ export default function CommunityClient() {
   const [revealedBlind, setRevealedBlind] = useState<Set<string>>(() => new Set());
   // 지금 투표 요청 중인 글 id(중복 클릭 방지).
   const [votingPostId, setVotingPostId] = useState<string | null>(null);
+  // 목록에서 바로 좋아요/댓글: 좋아요 진행중 글 id, 댓글 모달을 띄운 글.
+  const [likingPostId, setLikingPostId] = useState<string | null>(null);
+  const [commentModalPost, setCommentModalPost] = useState<CommunityPost | null>(null);
+
+  // 목록에서 좋아요 토글(상세 진입 불필요). 낙관적 갱신 후 서버 결과로 확정.
+  async function toggleLike(post: CommunityPost) {
+    if (likingPostId) return;
+    setLikingPostId(post.id);
+    const wasLiked = !!post.myReaction;
+    // 낙관적 갱신
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === post.id
+          ? { ...p, myReaction: wasLiked ? null : "heart", likeCount: Math.max(0, (p.likeCount || 0) + (wasLiked ? -1 : 1)) }
+          : p
+      )
+    );
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/like`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: wasLiked ? null : "heart" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "공감을 처리하지 못했습니다.");
+      // 서버 확정값으로 동기화
+      setPosts((prev) => {
+        const next = prev.map((p) =>
+          p.id === post.id ? { ...p, myReaction: data.myReaction ?? null, likeCount: data.total ?? p.likeCount } : p
+        );
+        clientCache.set(postsKey(selectedGroupId, query), next);
+        return next;
+      });
+    } catch (error) {
+      // 실패 시 롤백
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === post.id ? { ...p, myReaction: wasLiked ? "heart" : null, likeCount: post.likeCount } : p
+        )
+      );
+      setMessage(error instanceof Error ? error.message : "공감을 처리하지 못했습니다.");
+    } finally {
+      setLikingPostId(null);
+    }
+  }
+
+  // 댓글 모달에서 댓글이 추가되면 목록 카드의 댓글 수도 +1.
+  function bumpCommentCount(postId: string, delta: number) {
+    setPosts((prev) => {
+      const next = prev.map((p) => (p.id === postId ? { ...p, commentCount: Math.max(0, (p.commentCount || 0) + delta) } : p));
+      clientCache.set(postsKey(selectedGroupId, query), next);
+      return next;
+    });
+  }
 
   // 목록에서 바로 투표. 결과를 받아 해당 글의 poll 만 갱신한다(상세 진입 불필요).
   async function votePoll(postId: string, optionId: string) {
@@ -639,12 +695,28 @@ export default function CommunityClient() {
                     </div>
                   )}
                   <div className="community-post-metrics">
-                    <span>
+                    <button
+                      type="button"
+                      className={`community-metric-btn${post.myReaction ? " is-liked" : ""}`}
+                      aria-pressed={!!post.myReaction}
+                      disabled={likingPostId === post.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleLike(post);
+                      }}
+                    >
                       <HeartIcon /> 좋아요 {post.likeCount || 0}
-                    </span>
-                    <span>
+                    </button>
+                    <button
+                      type="button"
+                      className="community-metric-btn"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCommentModalPost(post);
+                      }}
+                    >
                       <CommentIcon /> 댓글 {post.commentCount || 0}
-                    </span>
+                    </button>
                     <span>
                       <EyeIcon /> 조회 {post.viewCount || 0}
                     </span>
@@ -703,6 +775,15 @@ export default function CommunityClient() {
             </div>
           </aside>
         </>
+      )}
+
+      {/* 목록에서 바로 여는 댓글 모달(상세 진입 불필요) */}
+      {commentModalPost && (
+        <CommentModal
+          post={commentModalPost}
+          onClose={() => setCommentModalPost(null)}
+          onCommentAdded={() => bumpCommentCount(commentModalPost.id, 1)}
+        />
       )}
     </main>
   );
@@ -893,6 +974,147 @@ function FeedPoll({
       <span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-4)", paddingLeft: 2 }}>
         {voted ? `총 ${total}표 · 다시 누르면 변경` : "눌러서 바로 투표"}
       </span>
+    </div>
+  );
+}
+
+interface FeedComment {
+  id: string;
+  userId: string | null;
+  parentId: string | null;
+  nickname: string;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
+  replies: FeedComment[];
+}
+
+function countComments(list: FeedComment[]): number {
+  return list.reduce((sum, c) => sum + 1 + countComments(c.replies || []), 0);
+}
+
+function CommentRow({ c, depth = 0 }: { c: FeedComment; depth?: number }) {
+  return (
+    <div style={{ paddingLeft: depth ? 14 : 0 }}>
+      <div className="ccs-item">
+        <span className="ccs-name">{c.nickname}</span>
+        <span className="ccs-time">{formatRelativeTime(c.createdAt)}</span>
+      </div>
+      <p className="ccs-content">{c.content}</p>
+      {(c.replies || []).map((r) => (
+        <CommentRow key={r.id} c={r} depth={depth + 1} />
+      ))}
+    </div>
+  );
+}
+
+// 목록에서 상세 진입 없이 여는 댓글 모달(바텀시트) — 댓글 보기 + 작성.
+function CommentModal({
+  post,
+  onClose,
+  onCommentAdded,
+}: {
+  post: CommunityPost;
+  onClose: () => void;
+  onCommentAdded: () => void;
+}) {
+  const [comments, setComments] = useState<FeedComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/comments`, { credentials: "include" });
+      const data = await res.json();
+      if (res.ok) setComments(data.comments || []);
+    } catch {
+      /* 댓글을 못 받아도 모달은 열어둔다(작성은 가능) */
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id]);
+
+  async function submit() {
+    const content = text.trim();
+    if (!content || posting) return;
+    setPosting(true);
+    setMsg("");
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/comments`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "댓글을 저장하지 못했습니다.");
+      setText("");
+      onCommentAdded();
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "댓글을 저장하지 못했습니다.");
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  const total = countComments(comments);
+
+  return (
+    <div className="community-comment-modal" onClick={onClose}>
+      <div className="community-comment-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="댓글">
+        <div className="ccs-head">
+          <div style={{ minWidth: 0 }}>
+            <p className="ccs-title">댓글 {total}</p>
+            <p className="ccs-sub">{post.title}</p>
+          </div>
+          <button type="button" className="ccs-close" onClick={onClose} aria-label="닫기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="ccs-list">
+          {loading ? (
+            <p className="ccs-empty">불러오는 중이에요.</p>
+          ) : comments.length === 0 ? (
+            <p className="ccs-empty">첫 댓글을 남겨보세요.</p>
+          ) : (
+            comments.map((c) => <CommentRow key={c.id} c={c} />)
+          )}
+        </div>
+        {msg && <p className="ccs-msg">{msg}</p>}
+        <div className="ccs-compose">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submit();
+              }
+            }}
+            placeholder="댓글을 입력하세요"
+            className="ccs-input"
+            aria-label="댓글 입력"
+          />
+          <button type="button" className="ccs-submit" onClick={submit} disabled={posting || !text.trim()}>
+            등록
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1346,11 +1568,17 @@ function CommunityStyles() {
         cursor: pointer;
         animation: communityCardIn 0.22s ease;
         transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, background 0.18s ease;
+        /* 모바일 탭 시 회색 플래시(눌린 듯 어두워짐) 제거 */
+        -webkit-tap-highlight-color: transparent;
       }
-      .community-post-card:hover {
-        transform: translateX(2px);
-        border-color: var(--c-border-strong-4);
-        background: var(--c-bg-soft-3);
+      /* 호버 반응(이동+음영)은 마우스가 있는 기기에서만. 터치에선 :hover 가 눌린 채로
+         남아 '어두워지고 살짝 밀리는' 잔상이 생겼다 → hover 가능 기기로 한정. */
+      @media (hover: hover) {
+        .community-post-card:hover {
+          transform: translateX(2px);
+          border-color: var(--c-border-strong-4);
+          background: var(--c-bg-soft-3);
+        }
       }
       .community-post-card:focus-visible,
       .community-icon-button:focus-visible,
@@ -1525,6 +1753,167 @@ function CommunityStyles() {
         display: inline-flex;
         align-items: center;
         gap: 4px;
+      }
+      /* 목록에서 바로 누르는 좋아요/댓글 버튼 — 텍스트처럼 보이되 눌리는 티(축소/음영)는 없앤다. */
+      .community-metric-btn {
+        appearance: none;
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s ease;
+      }
+      .community-metric-btn:disabled {
+        cursor: default;
+      }
+      .community-metric-btn.is-liked {
+        color: var(--c-danger-b, #e8544e);
+      }
+      @media (hover: hover) {
+        .community-metric-btn:not(.is-liked):hover {
+          color: var(--c-text);
+        }
+      }
+      /* ── 목록 댓글 모달(바텀시트) ── */
+      .community-comment-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 95;
+        background: rgba(15, 23, 42, 0.42);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        animation: communityPanelFade 0.16s ease;
+      }
+      .community-comment-sheet {
+        width: 100%;
+        max-width: 620px;
+        max-height: 82vh;
+        display: flex;
+        flex-direction: column;
+        background: var(--c-bg);
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        box-shadow: 0 -14px 40px rgba(15, 23, 42, 0.18);
+        animation: communitySheetUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+        overflow: hidden;
+      }
+      @media (min-width: 720px) {
+        .community-comment-modal { align-items: center; }
+        .community-comment-sheet { border-radius: 20px; max-height: 74vh; }
+      }
+      .ccs-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--c-bg-muted-6);
+      }
+      .ccs-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--c-text); }
+      .ccs-sub {
+        margin: 3px 0 0;
+        font-size: 13px;
+        color: var(--c-text-4);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ccs-close {
+        flex-shrink: 0;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: none;
+        background: var(--c-bg-muted);
+        color: var(--c-text-3);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ccs-list {
+        flex: 1;
+        min-height: 80px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .ccs-empty {
+        margin: 0;
+        padding: 28px 0;
+        text-align: center;
+        color: var(--c-text-4);
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .ccs-item { display: flex; align-items: center; gap: 6px; }
+      .ccs-name { font-size: 13px; font-weight: 700; color: var(--c-text); }
+      .ccs-time { font-size: 12px; font-weight: 500; color: var(--c-text-4); }
+      .ccs-content {
+        margin: 3px 0 0;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--c-text-2d);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .ccs-msg {
+        margin: 0;
+        padding: 6px 16px;
+        color: var(--c-brand-deep-2);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .ccs-compose {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--c-bg-muted-6);
+        background: var(--c-bg);
+      }
+      .ccs-input {
+        flex: 1;
+        min-width: 0;
+        height: 44px;
+        border: 1px solid var(--c-border);
+        border-radius: 12px;
+        padding: 0 14px;
+        font-size: 16px;
+        color: var(--c-text);
+        background: var(--c-bg);
+        outline: none;
+      }
+      .ccs-input:focus { border-color: var(--c-brand); }
+      .ccs-submit {
+        flex-shrink: 0;
+        height: 44px;
+        padding: 0 18px;
+        border: none;
+        border-radius: 12px;
+        background: var(--c-inverse);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ccs-submit:disabled { opacity: 0.5; cursor: default; }
+      @keyframes communitySheetUp {
+        from { transform: translateY(28px); opacity: 0.6; }
+        to { transform: translateY(0); opacity: 1; }
       }
       .community-icon-button:active,
       .community-floating-write:active {

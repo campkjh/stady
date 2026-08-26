@@ -793,6 +793,18 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   );
   // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
   const topCommentByPost = await getTopCommentsByPost(posts.map((post) => post.id));
+  // 목록에서 바로 좋아요를 누를 수 있게, 보는 사람이 각 글에 누른 반응 타입을 함께 싣는다.
+  const myReactionByPost = new Map<string, string>();
+  if (options.viewerId && posts.length > 0) {
+    const ids = posts.map((p) => p.id);
+    const inPh = ids.map((_, i) => `$${i + 2}`).join(", ");
+    const rr = await prisma.$queryRawUnsafe<{ post_id: string; type: string }[]>(
+      `SELECT "post_id", "type" FROM "CommunityPostLike" WHERE "user_id" = $1 AND "post_id" IN (${inPh})`,
+      options.viewerId,
+      ...ids
+    );
+    for (const r of rr) myReactionByPost.set(r.post_id, r.type);
+  }
   return posts.map((post) => ({
     ...post,
     tags: tagsByPost
@@ -802,6 +814,7 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
     images: imagesByPost.get(post.id) || [],
     poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
     topComment: topCommentByPost.get(post.id) ?? null,
+    myReaction: myReactionByPost.get(post.id) ?? null,
   }));
 }
 
@@ -981,6 +994,53 @@ export async function createCommunityPost(input: {
     );
   }
   return id;
+}
+
+// 목록에서 상세 진입 없이 댓글 모달로 볼 수 있게, 한 글의 댓글 트리만 가져온다.
+// 상세와 동일한 정렬(고정 우선 → 최상위 좋아요순·오래된순, 대댓글은 오래된순)·차단 숨김.
+export async function getCommunityComments(
+  postId: string,
+  viewerId?: string | null,
+  activeOnly = true
+): Promise<CommunityCommentNode[]> {
+  await ensureCommunityTables();
+  const conditions = [`c."post_id" = $1`];
+  if (activeOnly) conditions.push(`c."is_active" = true`);
+  conditions.push(
+    `NOT EXISTS (SELECT 1 FROM "CommunityBlock" b WHERE b."blocker_id" = $2 AND b."blocked_id" = c."user_id")`
+  );
+  const rows = await prisma.$queryRawUnsafe<CommunityCommentRow[]>(
+    `
+      SELECT
+        c.*, u."nickname",
+        COALESCE(cl."like_count", 0) AS "like_count",
+        EXISTS (
+          SELECT 1 FROM "CommunityCommentLike" x
+          WHERE x."comment_id" = c."id" AND x."user_id" = $2
+        ) AS "liked_by_me"
+      FROM "CommunityComment" c
+      LEFT JOIN "User" u ON u."id" = c."user_id"
+      LEFT JOIN (
+        SELECT "comment_id", COUNT(*)::bigint AS "like_count"
+        FROM "CommunityCommentLike" GROUP BY "comment_id"
+      ) cl ON cl."comment_id" = c."id"
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY
+        CASE WHEN c."parent_id" IS NULL THEN COALESCE(cl."like_count", 0) ELSE 0 END DESC,
+        c."created_at" ASC
+    `,
+    postId,
+    viewerId ?? null
+  );
+  const pinnedRows = await prisma.$queryRawUnsafe<{ comment_id: string }[]>(
+    `SELECT "comment_id" FROM "CommunityPinnedComment" WHERE "post_id" = $1 LIMIT 1`,
+    postId
+  );
+  const pinnedId = pinnedRows[0]?.comment_id ?? null;
+  const tree = buildCommentTree(rows);
+  return pinnedId
+    ? [...tree].sort((a, b) => (a.id === pinnedId ? -1 : b.id === pinnedId ? 1 : 0))
+    : tree;
 }
 
 export async function getCommunityPostDetail(
