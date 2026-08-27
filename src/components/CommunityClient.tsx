@@ -538,7 +538,9 @@ export default function CommunityClient() {
                     type="button"
                     className="weekly-popular-card"
                     onClick={() => openPost(post.id)}
-                    style={{ transform: index === weeklyActiveIndex ? "scale(1)" : "scale(0.94)" }}
+                    // 비활성 카드는 '축소'가 아니라 '흐리게'로 구분한다. scale 은 슬라이드 중
+                    // 카드가 중심으로 줄며 빠져나가 좌측이 잘려 보였다(크기 변화=지오메트리 변형).
+                    style={{ opacity: index === weeklyActiveIndex ? 1 : 0.5 }}
                   >
                     <span className="weekly-popular-top">
                       <span className="weekly-popular-rank">{index + 1}</span>
@@ -1549,8 +1551,7 @@ function CommunityStyles() {
         border: 1px solid var(--c-bg-muted-6);
         background: var(--c-bg);
         cursor: pointer;
-        transform-origin: center center;
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: opacity 0.35s ease;
       }
       .weekly-popular-top {
         display: flex;
