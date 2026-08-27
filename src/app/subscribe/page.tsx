@@ -142,7 +142,10 @@ export default function SubscribePage() {
 
       {/* 하단 CTA — 이 페이지는 (main) 그룹 밖이라 하단 네비가 없다. 뷰포트 하단에 붙인다. */}
       {!loading && (
-        <div style={{ position: "sticky", bottom: 0, background: "var(--c-bg)", borderTop: "1px solid var(--c-bg-muted-2)", padding: "14px 20px calc(14px + env(safe-area-inset-bottom, 0px))", maxWidth: 480, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+        // zIndex 필수: 혜택 행(.benefit-row)이 animation/transform 으로 자기 쌓임 맥락을
+        // 만들어서, z-index 없는 sticky 바 위로 그려졌다(스크롤하면 카드·혜택 리스트가
+        // 결제 버튼을 덮음). 같은 맥락의 형제들보다 확실히 위에 오도록 올려 둔다.
+        <div style={{ position: "sticky", bottom: 0, zIndex: 20, background: "var(--c-bg)", borderTop: "1px solid var(--c-bg-muted-2)", padding: "14px 20px calc(14px + env(safe-area-inset-bottom, 0px))", maxWidth: 480, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
           {error && (
             <p style={{ color: "var(--c-danger-h)", fontSize: 13, textAlign: "center", margin: "0 0 10px" }}>{error}</p>
           )}
