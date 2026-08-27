@@ -431,8 +431,15 @@ export default function CommunityClient() {
       if (next >= cards.length) { dir = -1; next = cur - 1; }
       else if (next < 0) { dir = 1; next = cur + 1; }
       if (next < 0 || next >= cards.length) return;
-      const delta = cards[next].getBoundingClientRect().left - trackLeft;
-      track.scrollBy({ left: delta, behavior: "smooth" });
+      // 마지막 카드는 왼쪽 끝에 딱 붙을 수 없어(뒤에 콘텐츠가 없음), scrollBy 로 목표를
+      // 넘겨 스크롤하면 브라우저가 최대치에서 스냅으로 되당겨 '뚜둑'거렸다.
+      // 목표를 [0, maxScroll] 로 클램프해 넘치지 않게 하면 끝에서도 부드럽게 선다.
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      const target = Math.max(
+        0,
+        Math.min(maxScroll, track.scrollLeft + (cards[next].getBoundingClientRect().left - trackLeft))
+      );
+      track.scrollTo({ left: target, behavior: "smooth" });
     }, 2400);
     return () => window.clearInterval(id);
   }, [weeklyPosts.length]);
@@ -1567,6 +1574,11 @@ function CommunityStyles() {
         cursor: pointer;
         transition: opacity 0.35s ease;
       }
+      /* 마지막 카드는 왼쪽 끝에 못 붙으므로(뒤 콘텐츠 없음) 오른쪽 끝 정렬로 스냅 →
+         스크롤 최대치가 유효한 스냅 지점이 돼 끝에서 되당겨지는 '뚜둑'이 사라진다. */
+      .weekly-popular-card:last-child {
+        scroll-snap-align: end;
+      }
       /* 순위 메달 — 카드 좌상단 모서리에 살짝 걸쳐진(위로 삐져나온) 느낌 */
       .weekly-popular-medal {
         position: absolute;
@@ -1576,7 +1588,7 @@ function CommunityStyles() {
         height: 40px;
         z-index: 2;
         pointer-events: none;
-        filter: drop-shadow(0 3px 5px rgba(15, 23, 42, 0.18));
+        filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.1));
       }
       .weekly-popular-top {
         display: flex;
