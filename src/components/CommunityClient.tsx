@@ -266,9 +266,10 @@ export default function CommunityClient() {
     bar.querySelectorAll<HTMLElement>(".tabrail-item").forEach((item) => {
       const label = item.querySelector<HTMLElement>(".tabrail-label");
       if (!label) return;
-      // 라벨은 접히면 11px → 12.5px 로 커지므로 그 비율만큼 넉넉히 잡는다.
-      const w = Math.ceil(label.scrollWidth * (12.5 / 11));
-      item.style.setProperty("--cw", `${38 + w + 10}px`);
+      // 라벨 레이아웃 폰트는 이제 12.5px 고정(축소는 transform: scale 로만) →
+      // scrollWidth 가 곧 접힘 상태의 라벨 폭이라 비율 보정이 필요 없다.
+      const w = Math.ceil(label.scrollWidth);
+      item.style.setProperty("--cw", `${38 + w + 12}px`);
     });
   }, [groups]);
 
@@ -1338,48 +1339,48 @@ function CommunityStyles() {
         padding: 0;
         transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), height 0.26s cubic-bezier(0.22, 1, 0.36, 1);
       }
+      /* 부드럽게: 위치·크기 변화를 레이아웃 속성(left/top/width/height/font-size) 대신
+         transform 으로 준다. font-size 애니메이션은 매 프레임 글자를 다시 래스터라이즈해
+         '프레임 보이는' 끊김의 주범이라 scale 로 대체한다. */
       .community-topbar .tabrail-ico {
         position: absolute;
-        left: 50%;
-        top: 4px;
-        transform: translateX(-50%);
-        transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), width 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-          height 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.26s ease, background 0.16s ease;
-      }
-      .community-topbar .tabrail-ico img {
-        transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), height 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+        left: 0;
+        top: 0;
+        /* 40px 아이콘을 64px 항목 안에서 가로 중앙·상단(4px)에 */
+        transform: translate(12px, 4px);
+        transform-origin: top left;
+        will-change: transform;
+        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background 0.16s ease;
       }
       .community-topbar .tabrail-label {
         position: absolute;
-        left: 50%;
-        top: 47px;
-        transform: translateX(-50%);
-        transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-          transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), font-size 0.26s cubic-bezier(0.22, 1, 0.36, 1),
-          color 0.16s ease;
+        left: 0;
+        top: 0;
+        font-size: 12.5px;
+        /* 항목(64px) 하단 중앙: 가로 중앙은 부모 폭에 의존하므로 %가 필요하지만,
+           transform 으로만 옮겨 레이아웃을 안 건드린다. */
+        transform: translate(calc(32px - 50%), 46px) scale(0.88);
+        transform-origin: left top;
+        will-change: transform;
+        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease;
       }
       .community-topbar.is-compact .tabrail-item {
         width: var(--cw, 96px);
         height: 36px;
       }
       .community-topbar.is-compact .tabrail-ico {
-        left: 3px;
-        top: 3px;
-        transform: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-      }
-      .community-topbar.is-compact .tabrail-ico img {
-        width: 19px;
-        height: 19px;
+        transform: translate(3px, 3px) scale(0.75);
       }
       .community-topbar.is-compact .tabrail-label {
-        left: 38px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 12.5px;
+        transform: translate(38px, 11px) scale(1);
+      }
+      /* 전역 .tabrail-item:active .tabrail-ico { transform: scale(0.94) } 가 위치 transform 을
+         덮어써 탭 누를 때 아이콘이 튀는 걸 막는다 — 위치는 유지하고 눌림만 살짝. */
+      .community-topbar .tabrail-item:active .tabrail-ico {
+        transform: translate(12px, 4px) scale(0.95);
+      }
+      .community-topbar.is-compact .tabrail-item:active .tabrail-ico {
+        transform: translate(3px, 3px) scale(0.71);
       }
       @media (prefers-reduced-motion: reduce) {
         .community-topbar {
