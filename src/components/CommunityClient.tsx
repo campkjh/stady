@@ -547,8 +547,15 @@ export default function CommunityClient() {
                     // 카드가 중심으로 줄며 빠져나가 좌측이 잘려 보였다(크기 변화=지오메트리 변형).
                     style={{ opacity: index === weeklyActiveIndex ? 1 : 0.5 }}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className="weekly-popular-medal"
+                      src={`/icons/community/medal-${Math.min(index + 1, 5)}.svg`}
+                      alt={`${index + 1}위`}
+                      width={44}
+                      height={44}
+                    />
                     <span className="weekly-popular-top">
-                      <span className="weekly-popular-rank">{index + 1}</span>
                       <span className="weekly-popular-group">{post.groupName}</span>
                     </span>
                     <span className="weekly-popular-card-title">{post.title}</span>
@@ -1539,11 +1546,13 @@ function CommunityStyles() {
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
         scroll-padding-left: 2px;
-        padding: 2px 0 10px;
+        /* 메달이 카드 위로 살짝 걸쳐지므로(위로 삐져나옴) 트랙 상단 여백을 줘서 안 잘리게 */
+        padding: 20px 0 10px;
         scrollbar-width: none;
       }
       .weekly-popular-track::-webkit-scrollbar { display: none; }
       .weekly-popular-card {
+        position: relative;
         scroll-snap-align: start;
         flex: 0 0 82%;
         max-width: 320px;
@@ -1558,23 +1567,24 @@ function CommunityStyles() {
         cursor: pointer;
         transition: opacity 0.35s ease;
       }
+      /* 순위 메달 — 카드 좌상단 모서리에 살짝 걸쳐진(위로 삐져나온) 느낌 */
+      .weekly-popular-medal {
+        position: absolute;
+        top: -16px;
+        left: 6px;
+        width: 40px;
+        height: 40px;
+        z-index: 2;
+        pointer-events: none;
+        filter: drop-shadow(0 3px 5px rgba(15, 23, 42, 0.18));
+      }
       .weekly-popular-top {
         display: flex;
         align-items: center;
         gap: 8px;
-      }
-      .weekly-popular-rank {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 22px;
-        height: 22px;
-        border-radius: 999px;
-        background: var(--c-brand);
-        color: #fff;
-        font-size: 12px;
-        font-weight: 700;
-        flex-shrink: 0;
+        /* 좌상단 메달을 피해 그룹명을 오른쪽으로 */
+        padding-left: 38px;
+        min-height: 22px;
       }
       .weekly-popular-group {
         font-size: 12px;

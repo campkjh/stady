@@ -225,19 +225,19 @@ export default function DailyQuizCard() {
             </span>
             <button
               type="button"
-              aria-label="데일리 퀴즈 과목 설정"
+              aria-label="데일리 과목 변경"
               onClick={openPref}
-              className="press hit-44"
+              className="press"
               style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 24, height: 24, borderRadius: 8, border: "none", padding: 0,
-                background: "transparent", cursor: "pointer", color: "var(--c-text-5e)",
+                display: "inline-flex", alignItems: "center", gap: 5,
+                height: 28, borderRadius: 999, border: "1px solid var(--c-bg-muted-6)",
+                padding: "0 11px 0 8px", background: "var(--c-bg-soft-8)", cursor: "pointer",
+                color: "var(--c-text-5e)", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.2.46.66.79 1.16.9H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/community/machine.svg" alt="" width={16} height={16} style={{ display: "block" }} />
+              데일리 과목 변경
             </button>
           </span>
         </div>
