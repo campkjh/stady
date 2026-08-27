@@ -1335,7 +1335,7 @@ const iconButtonStyle = {
 const panelStyle = {
   display: "grid",
   gap: 14,
-  borderTop: "1px solid var(--c-bg-muted-6)",
+  // borderTop 제거: 위 요소(헤더/글 영역)의 border-bottom 과 겹쳐 줄이 2개로 보였다.
   borderBottom: "1px solid var(--c-bg-muted-6)",
   borderRadius: 0,
   background: "transparent",

@@ -555,7 +555,7 @@ const backButtonStyle = {
 const panelStyle = {
   display: "grid",
   gap: 16,
-  borderTop: "1px solid var(--c-bg-muted-6)",
+  // borderTop 제거: 헤더 border-bottom 과 겹쳐 줄이 2개로 보였다(아래 구분선만 유지).
   borderBottom: "1px solid var(--c-bg-muted-6)",
   borderRadius: 0,
   background: "transparent",
