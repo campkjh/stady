@@ -187,6 +187,18 @@ export interface IapPlanView {
   badge: string | null;
   recommended: boolean;
   productIds: Record<Platform, string>;
+  /** 플랫폼별 가격 차이(Apple 가격표 제약 등). refresh() 에서 이미 적용해 내려주므로
+   *  화면은 신경 쓸 필요 없다 — 위의 priceKrw/monthlyEquivalentKrw 가 곧 청구액이다. */
+  overrides?: Partial<Record<Platform, { priceKrw: number; monthlyEquivalentKrw: number }>> | null;
+}
+
+/** 실행 중인 플랫폼의 실제 청구액으로 가격을 확정한다. 화면에 크게 쓰는 가격이
+ *  스토어 결제 시트 금액과 달라지면 App Store 3.1.2(c) 위반이다. */
+function applyPlatformPricing(plans: IapPlanView[], platform: Platform | null): IapPlanView[] {
+  return plans.map((p) => {
+    const o = platform ? p.overrides?.[platform] : undefined;
+    return o ? { ...p, priceKrw: o.priceKrw, monthlyEquivalentKrw: o.monthlyEquivalentKrw } : p;
+  });
 }
 export interface EntitlementView {
   active: boolean;
@@ -216,7 +228,7 @@ export function useIap() {
     try {
       const res = await fetch("/api/iap/status", { credentials: "include" });
       const data = await res.json();
-      setPlans(data.plans ?? []);
+      setPlans(applyPlatformPricing(data.plans ?? [], detectPlatform()));
       setEntitlement(data.entitlement ?? null);
       setAuthenticated(!!data.authenticated);
     } catch {

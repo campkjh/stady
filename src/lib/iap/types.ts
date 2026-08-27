@@ -26,6 +26,14 @@ export interface IapPlan {
   badge?: string;
   recommended?: boolean;
   productIds: Record<Platform, string>;
+  /**
+   * 플랫폼별 가격 차이. Apple 은 정해진 가격 포인트 중에서만 고를 수 있어서
+   * (원화 10만원 초과 구간은 1,000원 단위) Google Play 와 같은 금액을 쓸 수 없는
+   * 경우가 있다. 화면에 크게 쓰는 가격은 반드시 실제 청구액과 같아야 하므로
+   * (App Store 3.1.2c) 그럴 땐 여기에 해당 플랫폼 값을 덮어쓴다.
+   * 없으면 위의 priceKrw/monthlyEquivalentKrw 를 그대로 쓴다.
+   */
+  overrides?: Partial<Record<Platform, { priceKrw: number; monthlyEquivalentKrw: number }>>;
 }
 
 /**

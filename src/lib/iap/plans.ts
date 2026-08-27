@@ -31,15 +31,38 @@ export const IAP_PLANS: Record<PlanId, IapPlan> = {
     monthlyEquivalentKrw: 9900, // 118,800 ÷ 12
     // 13,900 × 12 = 166,800원 기준 118,800원 → 28.8% 할인. 30% 로 올려 쓰면 실제보다
     // 부풀린 표기가 된다(3.1.2c 로 이미 한 번 리젝당한 항목이라 내림으로 맞춘다).
+    // 119,000원(Apple)은 28.7% 라 배지는 양쪽 다 29% 로 같다.
     discountPct: 29,
     badge: "29% 할인",
     recommended: true,
     productIds: { apple: APPLE_ANNUAL, google: GOOGLE_ANNUAL },
+    // Apple 가격표에는 118,800원이 없다 — 원화 10만원 초과 구간은 1,000원 단위라
+    // 118,000 다음이 곧장 119,000 이다. 화면에 크게 쓰는 가격이 실제 청구액과
+    // 달라지면 3.1.2(c) 위반이므로 iOS 에서만 119,000원으로 표시한다.
+    // Google Play 는 임의 금액이 가능해 118,800원 그대로 둔다.
+    overrides: {
+      apple: { priceKrw: 119000, monthlyEquivalentKrw: 9917 }, // 119,000 ÷ 12 = 9,916.67
+    },
   },
 };
 
 /** Display order for the plan picker. */
 export const IAP_PLAN_LIST: IapPlan[] = [IAP_PLANS.monthly, IAP_PLANS.suneung_annual];
+
+/**
+ * 해당 플랫폼에서 실제로 청구되는 가격. 오버라이드가 없으면 기본값을 그대로 쓴다.
+ * 플랫폼을 모를 때(웹 브라우저 — 결제 자체가 불가)는 기본값을 보여준다.
+ */
+export function resolvePlanPricing(
+  plan: IapPlan,
+  platform: Platform | null
+): { priceKrw: number; monthlyEquivalentKrw: number } {
+  const override = platform ? plan.overrides?.[platform] : undefined;
+  return {
+    priceKrw: override?.priceKrw ?? plan.priceKrw,
+    monthlyEquivalentKrw: override?.monthlyEquivalentKrw ?? plan.monthlyEquivalentKrw,
+  };
+}
 
 export function getPlanById(id: string | null | undefined): IapPlan | null {
   if (!id) return null;

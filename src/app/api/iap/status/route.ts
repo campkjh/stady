@@ -20,6 +20,9 @@ export async function GET() {
     badge: p.badge ?? null,
     recommended: !!p.recommended,
     productIds: p.productIds,
+    // 플랫폼별 가격 차이는 그대로 실어 보내고, 어느 값을 쓸지는 네이티브 브리지로
+    // 플랫폼을 아는 클라이언트가 고른다(useIap).
+    overrides: p.overrides ?? null,
   }));
 
   // ⚠️ authenticated 는 "세션이 있는가" 만 답해야 한다. 예전엔 아래 두 조회를 한
