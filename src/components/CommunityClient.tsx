@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
+import CommunityComposeModal from "@/components/CommunityComposeModal";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
@@ -141,6 +142,8 @@ export default function CommunityClient() {
   // 목록에서 바로 좋아요/댓글: 좋아요 진행중 글 id, 댓글 모달을 띄운 글.
   const [likingPostId, setLikingPostId] = useState<string | null>(null);
   const [commentModalPost, setCommentModalPost] = useState<CommunityPost | null>(null);
+  // 스레드 스타일 글 작성 모달.
+  const [composeOpen, setComposeOpen] = useState(false);
 
   // 목록에서 좋아요 토글(상세 진입 불필요). 낙관적 갱신 후 서버 결과로 확정.
   async function toggleLike(post: CommunityPost) {
@@ -778,7 +781,7 @@ export default function CommunityClient() {
         <button
           type="button"
           className="community-floating-write"
-          onClick={() => router.push("/community/write")}
+          onClick={() => setComposeOpen(true)}
           style={floatingWriteButtonStyle}
         >
           게시글 +
@@ -812,6 +815,14 @@ export default function CommunityClient() {
             </div>
           </aside>
         </>
+      )}
+
+      {/* 스레드 스타일 글 작성 모달 */}
+      {composeOpen && (
+        <CommunityComposeModal
+          onClose={() => setComposeOpen(false)}
+          onPosted={() => { setComposeOpen(false); loadPosts(); loadWeeklyPopular(); }}
+        />
       )}
 
       {/* 목록에서 바로 여는 댓글 모달(상세 진입 불필요) */}
