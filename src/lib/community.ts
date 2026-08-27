@@ -105,7 +105,13 @@ export function normalizeSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+// 테이블 보장 DDL(33개)은 프로세스당 1회만 돌린다. 가드가 없어서 커뮤니티 함수마다
+// 매 요청 33개 DDL 을 반복 실행했고(피드 한 번에 ensure 3회 = ~100 DDL 왕복),
+// 이게 커뮤니티가 느려진 원인이었다(로컬 실측 54초). CREATE/ALTER/INDEX 모두
+// IF NOT EXISTS 라 1회 후 스킵해도 안전. 새 마이그 추가 시 배포로 프로세스가 갈리며 재실행됨.
+let communityTablesReady = false;
 export async function ensureCommunityTables() {
+  if (communityTablesReady) return;
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CommunityCategoryGroup" (
       "id" TEXT PRIMARY KEY,
@@ -344,6 +350,7 @@ export async function ensureCommunityTables() {
       ON CONFLICT ("slug") DO NOTHING
     `
   );
+  communityTablesReady = true;
 }
 
 // The 6 supported empathy reactions. Order = display order.
