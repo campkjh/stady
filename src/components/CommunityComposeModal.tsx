@@ -54,6 +54,8 @@ export default function CommunityComposeModal({
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // GIF 피커 (인스타/스레드처럼 GIPHY 에서 검색해 붙인다)
+  // GIF 버튼은 서버에 GIPHY 키가 설정돼 있을 때만 보인다(값싼 probe 로 확인).
+  const [gifEnabled, setGifEnabled] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
   const [gifQuery, setGifQuery] = useState("");
   const [gifResults, setGifResults] = useState<GifResult[]>([]);
@@ -84,6 +86,16 @@ export default function CommunityComposeModal({
         }
       } catch {
         /* 로그인 정보 없으면 기본 아바타 */
+      }
+    })();
+    // GIF 사용 가능 여부 확인(키 있으면 버튼 노출)
+    (async () => {
+      try {
+        const r = await fetch("/api/gifs?probe=1");
+        const d = await r.json();
+        setGifEnabled(d?.configured === true);
+      } catch {
+        /* 실패하면 버튼 숨김 유지 */
       }
     })();
     // 언마운트 시 프리뷰 objectURL 해제
@@ -298,7 +310,9 @@ export default function CommunityComposeModal({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/icons/community/compose-image.svg" alt="" />
               </button>
-              <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => { setGifOpen(true); setMessage(""); }} aria-label="GIF">GIF</button>
+              {gifEnabled && (
+                <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => { setGifOpen(true); setMessage(""); }} aria-label="GIF">GIF</button>
+              )}
             </div>
             <input ref={fileRef} type="file" accept="image/*" multiple onChange={onPickImages} style={{ display: "none" }} />
           </div>

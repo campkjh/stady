@@ -23,11 +23,17 @@ interface GiphyItem {
 
 export async function GET(request: NextRequest) {
   const key = process.env.GIPHY_API_KEY;
+  const params = request.nextUrl.searchParams;
+
+  // 설정 여부만 묻는 값싼 프로브(외부 호출 없음) — 작성 모달이 GIF 버튼을 켤지 판단.
+  if (params.get("probe")) {
+    return NextResponse.json({ configured: !!key });
+  }
+
   if (!key) {
     return NextResponse.json({ gifs: [], configured: false });
   }
 
-  const params = request.nextUrl.searchParams;
   const q = (params.get("q") || "").trim();
   const offset = Math.max(0, Number(params.get("offset") || "0") || 0);
   const limit = 24;
