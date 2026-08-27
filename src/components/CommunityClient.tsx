@@ -412,11 +412,14 @@ export default function CommunityClient() {
   // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 처음으로 순환.
   useEffect(() => {
     if (weeklyPosts.length <= 1) return;
+    // 끝에서 처음으로 되감던(마지막→첫 카드 전체 스무스 스크롤) 게 '뚜둑'거렸다.
+    // 대신 끝에 닿으면 방향을 뒤집어(핑퐁) 매 스텝 한 칸씩만 이동 → 항상 부드럽다.
+    let dir = 1;
     const id = window.setInterval(() => {
       const track = weeklyTrackRef.current;
       if (!track) return;
       const cards = Array.from(track.children) as HTMLElement[];
-      if (cards.length === 0) return;
+      if (cards.length <= 1) return;
       const trackLeft = track.getBoundingClientRect().left;
       let cur = 0;
       let min = Infinity;
@@ -424,8 +427,10 @@ export default function CommunityClient() {
         const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
         if (d < min) { min = d; cur = i; }
       });
-      const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 4;
-      const next = atEnd ? 0 : (cur + 1) % cards.length;
+      let next = cur + dir;
+      if (next >= cards.length) { dir = -1; next = cur - 1; }
+      else if (next < 0) { dir = 1; next = cur + 1; }
+      if (next < 0 || next >= cards.length) return;
       const delta = cards[next].getBoundingClientRect().left - trackLeft;
       track.scrollBy({ left: delta, behavior: "smooth" });
     }, 2400);
