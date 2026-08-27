@@ -17,6 +17,11 @@ interface UploadedImage {
   previewUrl: string;
   name: string;
 }
+interface GifResult {
+  id: string;
+  preview: string;
+  url: string;
+}
 
 const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i;
 function isImageFile(file: File) {
@@ -47,11 +52,13 @@ export default function CommunityComposeModal({
   const [nickname, setNickname] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // 게시물 옵션(고급): 투표·스포일러.
-  const [optionsOpen, setOptionsOpen] = useState(false);
-  const [isPoll, setIsPoll] = useState(false);
-  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
-  const [isBlinded, setIsBlinded] = useState(false);
+
+  // GIF 피커 (인스타/스레드처럼 GIPHY 에서 검색해 붙인다)
+  const [gifOpen, setGifOpen] = useState(false);
+  const [gifQuery, setGifQuery] = useState("");
+  const [gifResults, setGifResults] = useState<GifResult[]>([]);
+  const [gifLoading, setGifLoading] = useState(false);
+  const [gifConfigured, setGifConfigured] = useState(true);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -85,7 +92,12 @@ export default function CommunityComposeModal({
   }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // GIF 피커가 열려 있으면 그것만 닫는다.
+      if (gifOpen) setGifOpen(false);
+      else onClose();
+    };
     window.addEventListener("keydown", onKey);
     // 모달 열리면 배경 스크롤 잠금
     const prev = document.body.style.overflow;
@@ -94,7 +106,32 @@ export default function CommunityComposeModal({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, [onClose, gifOpen]);
+
+  // GIF 검색 — 피커가 열려 있는 동안 질의가 바뀌면 디바운스 후 조회(빈 질의는 트렌딩).
+  useEffect(() => {
+    if (!gifOpen) return;
+    let alive = true;
+    setGifLoading(true);
+    const q = gifQuery.trim();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/gifs?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (!alive) return;
+        setGifConfigured(data.configured !== false);
+        setGifResults(data.gifs || []);
+      } catch {
+        if (alive) setGifResults([]);
+      } finally {
+        if (alive) setGifLoading(false);
+      }
+    }, q ? 350 : 0);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [gifOpen, gifQuery]);
 
   function autoGrow() {
     const ta = taRef.current;
@@ -135,14 +172,25 @@ export default function CommunityComposeModal({
     });
   }
 
-  const filledPoll = pollOptions.map((o) => o.trim()).filter(Boolean);
+  function pickGif(gif: GifResult) {
+    if (images.length >= 5) {
+      setMessage("이미지는 최대 5장까지 올릴 수 있어요.");
+      setGifOpen(false);
+      return;
+    }
+    // GIF 는 GIPHY CDN URL 을 그대로 붙인다(업로드 없음). previewUrl=url 이라 해제 대상 아님.
+    setImages((cur) => [...cur, { url: gif.url, previewUrl: gif.url, name: "GIF" }]);
+    setGifOpen(false);
+    setGifQuery("");
+    setMessage("");
+  }
+
   const canPost = !!content.trim() && !posting && !uploading;
   const selectedGroup = groups.find((g) => g.id === groupId);
 
   async function submit() {
     if (!canPost) return;
     if (!groupId) { setPickerOpen(true); setMessage("커뮤니티(주제)를 선택해주세요."); return; }
-    if (isPoll && filledPoll.length < 2) { setOptionsOpen(true); setMessage("투표 항목을 2개 이상 입력해주세요."); return; }
     setPosting(true);
     setMessage("");
     try {
@@ -156,9 +204,9 @@ export default function CommunityComposeModal({
           content: content.trim(),
           tagIds: [],
           imageUrls: images.map((i) => i.url),
-          type: isPoll ? "poll" : "normal",
-          isBlinded,
-          pollOptions: isPoll ? filledPoll : [],
+          type: "normal",
+          isBlinded: false,
+          pollOptions: [],
         }),
       });
       const data = await res.json();
@@ -180,12 +228,7 @@ export default function CommunityComposeModal({
       <div className="cmp-head">
         <button type="button" className="cmp-cancel" onClick={onClose}>취소</button>
         <span className="cmp-title">새로운 스레드</span>
-        <span className="cmp-head-right">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="cmp-head-ic" src="/icons/community/compose-draft.svg" alt="" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="cmp-head-ic" src="/icons/community/compose-menu.svg" alt="" />
-        </span>
+        <span className="cmp-head-right" aria-hidden="true" />
       </div>
 
       {/* 본문 */}
@@ -249,29 +292,13 @@ export default function CommunityComposeModal({
               </div>
             )}
 
-            {/* 첨부 아이콘 줄 */}
+            {/* 첨부 아이콘 줄 — 사진 · GIF */}
             <div className="cmp-attach">
               <button type="button" className="cmp-attach-btn" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="사진">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/icons/community/compose-image.svg" alt="" />
               </button>
-              <button type="button" className="cmp-attach-btn" onClick={() => setMessage("준비 중이에요.")} aria-label="스티커">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/community/compose-emoji.svg" alt="" />
-              </button>
-              <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => setMessage("준비 중이에요.")} aria-label="GIF">GIF</button>
-              <button type="button" className="cmp-attach-btn" onClick={() => setMessage("준비 중이에요.")} aria-label="음악">
-                {/* 폴더에 음표 아이콘이 없어 레퍼런스(음표)에 맞춰 인라인으로 그린다. */}
-                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9 17.5V6.2l9.5-1.9v11.2" stroke="#7f858c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="6.6" cy="17.6" r="2.6" fill="#7f858c" />
-                  <circle cx="16" cy="15.6" r="2.6" fill="#7f858c" />
-                </svg>
-              </button>
-              <button type="button" className="cmp-attach-btn" onClick={() => setOptionsOpen((v) => !v)} aria-label="더보기">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/community/compose-more.svg" alt="" />
-              </button>
+              <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => { setGifOpen(true); setMessage(""); }} aria-label="GIF">GIF</button>
             </div>
             <input ref={fileRef} type="file" accept="image/*" multiple onChange={onPickImages} style={{ display: "none" }} />
           </div>
@@ -286,63 +313,53 @@ export default function CommunityComposeModal({
           <span className="cmp-add-text">스레드에 추가</span>
         </div>
 
-        {/* 게시물 옵션(고급) */}
-        {optionsOpen && (
-          <div className="cmp-options">
-            <label className="cmp-opt-toggle">
-              <input type="checkbox" checked={isPoll} onChange={(e) => setIsPoll(e.target.checked)} />
-              투표 넣기
-            </label>
-            {isPoll && (
-              <div className="cmp-poll">
-                {pollOptions.map((opt, i) => (
-                  <div key={i} className="cmp-poll-row">
-                    <input
-                      value={opt}
-                      onChange={(e) => setPollOptions((cur) => cur.map((o, j) => (j === i ? e.target.value : o)))}
-                      placeholder={`항목 ${i + 1}`}
-                      maxLength={60}
-                      className="cmp-poll-input"
-                    />
-                    {pollOptions.length > 2 && (
-                      <button type="button" className="cmp-poll-x" onClick={() => setPollOptions((cur) => cur.filter((_, j) => j !== i))} aria-label="삭제">×</button>
-                    )}
-                  </div>
-                ))}
-                {pollOptions.length < 4 && (
-                  <button type="button" className="cmp-poll-add" onClick={() => setPollOptions((cur) => [...cur, ""])}>항목 추가</button>
-                )}
-              </div>
-            )}
-            <label className="cmp-opt-toggle">
-              <input type="checkbox" checked={isBlinded} onChange={(e) => setIsBlinded(e.target.checked)} />
-              스포일러로 표시 (사진을 가림)
-            </label>
-          </div>
-        )}
-
         {message && <p className="cmp-msg">{message}</p>}
       </div>
 
       {/* 푸터 */}
       <div className="cmp-foot">
-        <button type="button" className="cmp-foot-opt" onClick={() => setOptionsOpen((v) => !v)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/community/compose-options.svg" alt="" />
-          게시물 옵션
+        <button type="button" className="cmp-post" disabled={!canPost} onClick={submit}>
+          {posting ? "게시 중…" : "게시"}
         </button>
-        <span className="cmp-foot-right">
-          <span className="cmp-foot-toggle" aria-hidden="true">
-            <span className="cmp-foot-knob">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/community/compose-emoji.svg" alt="" />
-            </span>
-          </span>
-          <button type="button" className="cmp-post" disabled={!canPost} onClick={submit}>
-            {posting ? "게시 중…" : "게시"}
-          </button>
-        </span>
       </div>
+
+      {/* GIF 피커 시트 */}
+      {gifOpen && (
+        <div className="cmp-gif-sheet">
+          <div className="cmp-head">
+            <button type="button" className="cmp-cancel" onClick={() => setGifOpen(false)}>취소</button>
+            <span className="cmp-title">GIF</span>
+            <span className="cmp-head-right" aria-hidden="true" />
+          </div>
+          <div className="cmp-gif-search">
+            <input
+              value={gifQuery}
+              onChange={(e) => setGifQuery(e.target.value)}
+              placeholder="GIF 검색"
+              autoFocus
+            />
+          </div>
+          <div className="cmp-gif-body">
+            {!gifConfigured ? (
+              <p className="cmp-gif-empty">GIF 기능이 아직 설정되지 않았어요.</p>
+            ) : gifLoading && gifResults.length === 0 ? (
+              <p className="cmp-gif-empty">불러오는 중…</p>
+            ) : gifResults.length === 0 ? (
+              <p className="cmp-gif-empty">결과가 없어요.</p>
+            ) : (
+              <div className="cmp-gif-grid">
+                {gifResults.map((g) => (
+                  <button key={g.id} type="button" className="cmp-gif-cell" onClick={() => pickGif(g)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={g.preview} alt="" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="cmp-gif-powered">Powered by GIPHY</div>
+        </div>
+      )}
 
       <ComposeStyles />
     </div>
@@ -373,9 +390,7 @@ function ComposeStyles() {
       }
       .cmp-cancel { justify-self: start; border: none; background: none; padding: 0; font-size: 16px; font-weight: 500; color: var(--c-text); cursor: pointer; }
       .cmp-title { justify-self: center; font-size: 16px; font-weight: 800; color: var(--c-text); }
-      .cmp-head-right { justify-self: end; display: inline-flex; align-items: center; gap: 14px; }
-      /* 아이콘이 옅은 회색(#B0B8C1)이라 헤더/옵션 아이콘은 어둡게 눌러 진하게 보이게. */
-      .cmp-head-ic { width: 24px; height: 24px; display: block; filter: brightness(0.45); }
+      .cmp-head-right { justify-self: end; }
       .cmp-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
       .cmp-row { display: flex; gap: 12px; }
       .cmp-avatar-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
@@ -418,33 +433,41 @@ function ComposeStyles() {
       .cmp-add-avatar { width: 26px; height: 26px; border-radius: 999px; overflow: hidden; background: var(--c-bg-muted); color: var(--c-text-4); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-left: 7px; }
       .cmp-add-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .cmp-add-text { color: var(--c-text-4); font-size: 15px; }
-      .cmp-options { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--c-bg-muted-6); display: grid; gap: 14px; }
-      .cmp-opt-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--c-text-2c); cursor: pointer; }
-      .cmp-opt-toggle input { width: 18px; height: 18px; }
-      .cmp-poll { display: grid; gap: 8px; }
-      .cmp-poll-row { display: flex; gap: 6px; align-items: center; }
-      .cmp-poll-input { flex: 1; height: 42px; border: 1px solid var(--c-border); border-radius: 12px; padding: 0 12px; font-size: 15px; color: var(--c-text); background: var(--c-bg); }
-      .cmp-poll-x { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text-3); font-size: 18px; cursor: pointer; }
-      .cmp-poll-add { justify-self: start; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-3); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
       .cmp-msg { margin: 12px 0 0; color: var(--c-brand-deep-2); font-size: 13px; font-weight: 600; }
       .cmp-foot {
-        flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+        flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end;
         gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         border-top: 1px solid var(--c-bg-muted-6);
       }
-      .cmp-foot-opt { display: inline-flex; align-items: center; gap: 7px; border: none; background: none; padding: 0; font-size: 15px; font-weight: 500; color: var(--c-text-4); cursor: pointer; }
-      .cmp-foot-opt img { width: 22px; height: 22px; display: block; filter: brightness(0.6); }
-      .cmp-foot-right { display: inline-flex; align-items: center; gap: 12px; }
-      /* 레퍼런스의 장식용 토글 알약(얼굴 노브) */
-      .cmp-foot-toggle { width: 58px; height: 34px; border-radius: 999px; background: var(--c-bg-muted-6); display: inline-flex; align-items: center; padding: 3px; }
-      .cmp-foot-knob { width: 28px; height: 28px; border-radius: 999px; background: var(--c-bg); box-shadow: 0 1px 3px rgba(15,23,42,0.14); display: inline-flex; align-items: center; justify-content: center; }
-      .cmp-foot-knob img { width: 18px; height: 18px; display: block; filter: brightness(0.7); }
       .cmp-post {
         border: none; border-radius: 999px; padding: 9px 20px;
         background: var(--c-inverse); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
         -webkit-tap-highlight-color: transparent; transition: opacity 0.15s ease;
       }
       .cmp-post:disabled { opacity: 0.4; cursor: default; }
+
+      /* GIF 피커 시트 — 모달 위에 덮는다 */
+      .cmp-gif-sheet {
+        position: absolute; inset: 0; z-index: 10;
+        background: var(--c-bg); display: flex; flex-direction: column;
+        animation: cmpUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .cmp-gif-search { flex-shrink: 0; padding: 12px 16px; }
+      .cmp-gif-search input {
+        width: 100%; height: 42px; border: 1px solid var(--c-border); border-radius: 999px;
+        padding: 0 16px; font-size: 15px; color: var(--c-text); background: var(--c-bg-muted);
+        outline: none; font-family: inherit;
+      }
+      .cmp-gif-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 16px; }
+      .cmp-gif-empty { text-align: center; color: var(--c-text-4); font-size: 14px; padding: 40px 0; }
+      .cmp-gif-grid { column-count: 2; column-gap: 8px; }
+      .cmp-gif-cell {
+        display: block; width: 100%; margin: 0 0 8px; padding: 0; border: none; cursor: pointer;
+        border-radius: 12px; overflow: hidden; background: var(--c-bg-muted); break-inside: avoid;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .cmp-gif-cell img { width: 100%; height: auto; display: block; }
+      .cmp-gif-powered { flex-shrink: 0; text-align: center; color: var(--c-text-4); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px)); }
     `}</style>
   );
 }
