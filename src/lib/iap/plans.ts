@@ -29,8 +29,10 @@ export const IAP_PLANS: Record<PlanId, IapPlan> = {
     priceKrw: 118800,
     period: "year",
     monthlyEquivalentKrw: 9900, // 118,800 ÷ 12
-    discountPct: 30,
-    badge: "30% 할인",
+    // 13,900 × 12 = 166,800원 기준 118,800원 → 28.8% 할인. 30% 로 올려 쓰면 실제보다
+    // 부풀린 표기가 된다(3.1.2c 로 이미 한 번 리젝당한 항목이라 내림으로 맞춘다).
+    discountPct: 29,
+    badge: "29% 할인",
     recommended: true,
     productIds: { apple: APPLE_ANNUAL, google: GOOGLE_ANNUAL },
   },
