@@ -413,36 +413,48 @@ export default function CommunityClient() {
     setWeeklyAtEnd(track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
   }
 
-  // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 처음으로 순환.
+  // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 방향을 뒤집어(핑퐁) 순환.
   useEffect(() => {
     if (weeklyPosts.length <= 1) return;
-    // 끝에서 처음으로 되감던(마지막→첫 카드 전체 스무스 스크롤) 게 '뚜둑'거렸다.
-    // 대신 끝에 닿으면 방향을 뒤집어(핑퐁) 매 스텝 한 칸씩만 이동 → 항상 부드럽다.
-    let dir = 1;
+    // 방향 전환 기준은 카드 '인덱스'가 아니라 실제 스크롤 경계(maxScroll·0)다.
+    // 태블릿처럼 뷰포트가 넓으면 마지막 카드들이 왼쪽 끝에 못 붙어(뒤에 콘텐츠가 없음)
+    // 스크롤은 maxScroll 에서 포화되는데, 왼쪽 최근접 카드 인덱스는 중간에서 멈춘다.
+    // 인덱스로만 뒤집으면 그 지점에서 매 틱 제자리 클램프 → '중간에서 멈춤'(태블릿 리포트 2026-08-27).
+    const EPS = 4;
+    let dir: 1 | -1 = 1;
+    const stepTo = (track: HTMLDivElement, cards: HTMLElement[], cur: number, d: 1 | -1) => {
+      const trackLeft = track.getBoundingClientRect().left;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      const idx = Math.max(0, Math.min(cards.length - 1, cur + d));
+      const target = Math.max(
+        0,
+        Math.min(maxScroll, track.scrollLeft + (cards[idx].getBoundingClientRect().left - trackLeft))
+      );
+      return target;
+    };
     const id = window.setInterval(() => {
       const track = weeklyTrackRef.current;
       if (!track) return;
       const cards = Array.from(track.children) as HTMLElement[];
       if (cards.length <= 1) return;
       const trackLeft = track.getBoundingClientRect().left;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      // 이미 경계에 닿아 있으면 먼저 방향을 뒤집는다.
+      if (dir === 1 && track.scrollLeft >= maxScroll - EPS) dir = -1;
+      else if (dir === -1 && track.scrollLeft <= EPS) dir = 1;
       let cur = 0;
       let min = Infinity;
       cards.forEach((card, i) => {
         const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
         if (d < min) { min = d; cur = i; }
       });
-      let next = cur + dir;
-      if (next >= cards.length) { dir = -1; next = cur - 1; }
-      else if (next < 0) { dir = 1; next = cur + 1; }
-      if (next < 0 || next >= cards.length) return;
-      // 마지막 카드는 왼쪽 끝에 딱 붙을 수 없어(뒤에 콘텐츠가 없음), scrollBy 로 목표를
-      // 넘겨 스크롤하면 브라우저가 최대치에서 스냅으로 되당겨 '뚜둑'거렸다.
-      // 목표를 [0, maxScroll] 로 클램프해 넘치지 않게 하면 끝에서도 부드럽게 선다.
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      const target = Math.max(
-        0,
-        Math.min(maxScroll, track.scrollLeft + (cards[next].getBoundingClientRect().left - trackLeft))
-      );
+      let target = stepTo(track, cards, cur, dir);
+      // 클램프로 제자리면(경계에서 더 못 감) 방향을 뒤집어 반대편 카드로 간다 — 멈춤 방지.
+      if (Math.abs(target - track.scrollLeft) < EPS) {
+        dir = dir === 1 ? -1 : 1;
+        target = stepTo(track, cards, cur, dir);
+        if (Math.abs(target - track.scrollLeft) < EPS) return; // 이동할 곳이 없으면(카드 1~2개) 대기
+      }
       track.scrollTo({ left: target, behavior: "smooth" });
     }, 2400);
     return () => window.clearInterval(id);
