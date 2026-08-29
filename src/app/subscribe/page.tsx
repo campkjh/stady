@@ -155,14 +155,39 @@ export default function SubscribePage() {
             </button>
           ) : (
             <>
+              {/* 구독하기 위의 2주 무료 체험 안내 — 실제 무료기간은 스토어 인트로 오퍼가
+                  적용한다(App Store Connect·Play Console). 선택 플랜의 이후 청구가를 병기. */}
+              {(() => {
+                const sel = plans.find((p) => p.id === selected);
+                const after = sel
+                  ? sel.period === "year"
+                    ? `이후 연 ${won(sel.priceKrw)}원`
+                    : `이후 월 ${won(sel.priceKrw)}원`
+                  : "";
+                return (
+                  <div
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      margin: "0 0 10px", padding: "11px 14px", borderRadius: 14,
+                      background: "var(--c-brand-soft-7)", border: "1px solid var(--c-brand-line-10, rgba(49,130,246,0.18))",
+                    }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1 }} aria-hidden="true">🎁</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2b)", letterSpacing: "-0.2px" }}>
+                      첫 <span style={{ color: "var(--c-brand-b)", fontWeight: 800 }}>2주 무료 체험</span>
+                      {after && <span style={{ color: "var(--c-text-4b)", fontWeight: 600 }}>{` · ${after}`}</span>}
+                    </span>
+                  </div>
+                );
+              })()}
               {/* 로그인 전에는 결제를 시작하지 않는다(구독권은 계정에 붙는다) —
                   버튼 문구부터 로그인임을 알려 결제 후 에러가 나지 않게 한다. */}
               <button type="button" onClick={handleBuy} disabled={busy} className="press" style={ctaStyle("#3182F6", "#fff", busy)}>
                 {busy
                   ? "처리 중…"
                   : !authenticated
-                    ? "로그인하고 구독 시작하기"
-                    : `${plans.find((p) => p.id === selected)?.name ?? "구독"} 시작하기`}
+                    ? "로그인하고 2주 무료 체험 시작하기"
+                    : "2주 무료로 시작하기"}
               </button>
               {inApp && (
                 <button
@@ -235,8 +260,9 @@ function LegalFooter() {
   return (
     <div style={{ marginTop: 12 }}>
       <p style={{ fontSize: 11, color: "#B0B8C1", lineHeight: 1.55, margin: 0, textAlign: "center" }}>
-        구독은 기간 종료 24시간 전까지 해지하지 않으면 자동으로 갱신되며, 요금은 {storeName} 계정으로
-        청구됩니다. 구독은 {storeName} 계정 설정에서 언제든지 관리·해지할 수 있어요.
+        첫 2주는 무료로 이용하며, 무료 체험 기간이 끝나기 24시간 전까지 해지하지 않으면 선택한 요금제로
+        자동 결제·갱신됩니다. 요금은 {storeName} 계정으로 청구되며, 구독은 {storeName} 계정 설정에서
+        언제든지 관리·해지할 수 있어요. (무료 체험은 신규 구독자에게 1회 제공됩니다.)
       </p>
       <p style={{ fontSize: 11.5, textAlign: "center", margin: "7px 0 0" }}>
         <a
