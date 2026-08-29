@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getMockExam } from "@/lib/mockExam";
 import MockExamSolver from "@/components/MockExamSolver";
+import PremiumRequired from "@/components/PremiumRequired";
+import { viewerHasPremiumAccess } from "@/lib/premiumGate";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,11 @@ export const dynamic = "force-dynamic";
 export default async function MockExamSolvePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const exam = await getMockExam(id);
+
+  // 모의고사는 전부 프리미엄 전용.
+  if (!(await viewerHasPremiumAccess())) {
+    return <PremiumRequired />;
+  }
 
   if (!exam || !exam.isActive) {
     return (

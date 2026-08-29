@@ -11,6 +11,7 @@ interface OxQuizSet {
   totalQuestions: number;
   category?: { id: string; name: string } | null;
   questions?: { section: string | null }[];
+  isPremium?: boolean; // 생윤·윤사 앞 5개 이후 = 프리미엄 잠금
 }
 
 interface QuizSummaryEntry {
@@ -28,6 +29,7 @@ export default function OxQuizListPage() {
   const [summary, setSummary] = useState<QuizSummaryMap>({});
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const dailyMessage = getDailyQuizMessage("ox");
 
@@ -50,10 +52,16 @@ export default function OxQuizListPage() {
         .then((res) => res.json())
         .then((data) => (data?.ox ?? {}) as QuizSummaryMap)
         .catch(() => ({} as QuizSummaryMap)),
-    ]).then(([loggedIn, sets, oxSummary]) => {
+      // 프리미엄 구독 여부 — 잠금 배지/이동 분기용
+      fetch("/api/iap/status", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => !!data?.entitlement?.active)
+        .catch(() => false),
+    ]).then(([loggedIn, sets, oxSummary, premium]) => {
       setIsLoggedIn(loggedIn);
       setQuizSets(sets);
       setSummary(oxSummary);
+      setIsPremiumUser(premium);
       setLoading(false);
     });
   }, []);
@@ -64,6 +72,15 @@ export default function OxQuizListPage() {
       return;
     }
     action();
+  }
+
+  // 세트 열기 — 프리미엄 잠금이면 결제 화면으로, 아니면 로그인 확인 후 풀이 화면으로.
+  function openSet(qs: OxQuizSet) {
+    if (qs.isPremium && !isPremiumUser) {
+      requireLoginThen(() => router.push("/subscribe"));
+      return;
+    }
+    requireLoginThen(() => router.push(`/ox-quiz/${qs.id}`));
   }
 
   if (loading) {
@@ -201,11 +218,12 @@ export default function OxQuizListPage() {
                   const completed = stat?.completed ?? false;
                   const inProgress = !completed && answered > 0;
                   const progressPct = denom > 0 ? Math.min(100, Math.round((answered / denom) * 100)) : 0;
+                  const locked = !!qs.isPremium && !isPremiumUser;
                   return (
                     <button
                       key={qs.id}
                       type="button"
-                      onClick={() => requireLoginThen(() => router.push(`/ox-quiz/${qs.id}`))}
+                      onClick={() => openSet(qs)}
                       className="press"
                       style={{
                         position: "relative", overflow: "hidden",
@@ -217,8 +235,17 @@ export default function OxQuizListPage() {
                         animation: "quizItemFadeUp 0.5s",
                       }}
                     >
-                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center" }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center", opacity: locked ? 0.85 : 1 }}>
+                        {locked && (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="var(--c-text-4)" strokeWidth="2" strokeLinecap="round" />
+                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="var(--c-text-4)" />
+                          </svg>
+                        )}
                         <span>{qs.title}</span>
+                        {locked && (
+                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "var(--c-warn-i-deep, #B8860B)", background: "var(--c-warn-i, #FFF3D6)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
+                        )}
                         {completed && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                             <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />

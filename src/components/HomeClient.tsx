@@ -44,6 +44,7 @@ interface OxQuizSet {
   createdAt: string | Date;
   category: Category;
   answerRate?: number | null;
+  isPremium?: boolean; // 생윤·윤사 앞 5개 이후 = 프리미엄 잠금
 }
 
 interface VocabQuizSet {
@@ -85,7 +86,7 @@ function vocabEyebrow(title: string): string {
 // 문제집(책) 표지 스타일 퀴즈 카드: 흰 표지 + 카테고리(연회색)·제목(네이비) +
 // 하단 그라데이션 띠 + 월계관 엠블럼. NEW·인기·완료 뱃지와 진척도 바 포함.
 function QuizBookCard({
-  eyebrow, title, isNew, isPopular, isDone, progressPct, answerRate, onClick,
+  eyebrow, title, isNew, isPopular, isDone, progressPct, answerRate, locked, onClick,
 }: {
   eyebrow: string;
   title: string;
@@ -94,6 +95,7 @@ function QuizBookCard({
   isDone?: boolean;
   progressPct?: number | null;
   answerRate?: number | null;
+  locked?: boolean;
   onClick: () => void;
 }) {
   // 우측 상단 배지 줄(완료 아이콘 + NEW)이 차지하는 폭. 카테고리 라벨이 그 아래로 깔려
@@ -123,6 +125,15 @@ function QuizBookCard({
           containerType: "inline-size",
         }}
       >
+        {locked && (
+          <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 7, left: 7, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 7px", fontSize: 10, fontWeight: 800 }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 10V8a5 5 0 0110 0v2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+              <rect x="5" y="10" width="14" height="9" rx="2.5" fill="#fff" />
+            </svg>
+            프리미엄
+          </span>
+        )}
         {/* 카테고리 + 제목 */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "9% 8% 0" }}>
           <p
@@ -288,6 +299,7 @@ interface HomeClientProps {
   vocabQuizSets: VocabQuizSet[];
   mockExams: BrowserExam[];
   mockExamYears: number[];
+  isPremiumUser: boolean;
 }
 
 type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
@@ -334,6 +346,7 @@ export default function HomeClient({
   vocabQuizSets,
   mockExams,
   mockExamYears,
+  isPremiumUser,
 }: HomeClientProps) {
   const router = useRouter();
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
@@ -413,8 +426,8 @@ export default function HomeClient({
 
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
   const newQuizzes = [
-    ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: q.answerRate ?? null })),
-    ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: null })),
+    ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: q.answerRate ?? null, isPremium: q.isPremium ?? false })),
+    ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: null, isPremium: false })),
   ]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
@@ -765,7 +778,12 @@ export default function HomeClient({
                   isDone={quizStat(q.type, q.id)?.completed === true}
                   progressPct={quizProgressPct(q.type, q.id, q.totalQuestions)}
                   answerRate={q.answerRate}
-                  onClick={() => router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)}
+                  locked={q.isPremium && !isPremiumUser}
+                  onClick={() =>
+                    q.isPremium && !isPremiumUser
+                      ? router.push("/subscribe")
+                      : router.push(q.type === "ox" ? `/ox-quiz/${q.id}` : `/vocab-quiz/${q.id}`)
+                  }
                 />
               ))}
             </div>
@@ -836,7 +854,7 @@ export default function HomeClient({
                 전체보기 ›
               </Link>
             </div>
-            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded />
+            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded isPremiumUser={isPremiumUser} />
           </section>
         )}
       </div>

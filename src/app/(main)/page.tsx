@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
 import { isMasterAdminEmail } from "@/lib/auth";
+import { isPremium } from "@/lib/iap/entitlements";
 import { computeSetAnswerRates } from "@/lib/oxAnswerRate";
+import { getLockedOxSetIds } from "@/lib/premiumGate";
 import HomeClient from "@/components/HomeClient";
 import { type BrowserExam } from "@/components/MockExamBrowser";
 import { listMockExams } from "@/lib/mockExam";
@@ -40,7 +42,17 @@ export default async function HomePage() {
   const categories = categoriesRaw.filter((c) => c.name !== "전체");
   const isAdmin = user?.role === "admin" || isMasterAdminEmail(user?.email);
 
-  const oxQuizSetsWithRate = oxQuizSets.map((s) => ({ ...s, answerRate: setRates.get(s.id) ?? null }));
+  // 프리미엄 접근 여부 + 잠금 OX 세트 — 홈의 모의고사/생윤·윤사 카드 잠금 표시용.
+  const [isPremiumUser, lockedOxIds] = await Promise.all([
+    isAdmin ? Promise.resolve(true) : userId ? isPremium(userId).catch(() => false) : Promise.resolve(false),
+    getLockedOxSetIds().catch(() => new Set<string>()),
+  ]);
+
+  const oxQuizSetsWithRate = oxQuizSets.map((s) => ({
+    ...s,
+    answerRate: setRates.get(s.id) ?? null,
+    isPremium: lockedOxIds.has(s.id),
+  }));
 
   // 홈 모의고사 섹션은 목록 화면과 같은 분류 탭을 쓰므로 전체를 넘긴다(필터가 골라낸다).
   // 카드 순서는 최근 회차 먼저, 한 회차 안에서는 목록 화면과 같은 과목 순서(sort_order).
@@ -79,6 +91,7 @@ export default async function HomePage() {
       vocabQuizSets={vocabQuizSets}
       mockExams={mockExams}
       mockExamYears={mockExamYears}
+      isPremiumUser={isPremiumUser}
     />
   );
 }

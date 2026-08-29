@@ -7,6 +7,7 @@ import AlertModal from "@/components/AlertModal";
 import QuizMemoPad, { type MemoPadHandle } from "@/components/QuizMemoPad";
 import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
+import PremiumRequired from "@/components/PremiumRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 
 interface OxQuestion {
@@ -48,6 +49,7 @@ export default function OxQuizSolvePage() {
 
   const [quiz, setQuiz] = useState<OxQuizSet | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [premiumLocked, setPremiumLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<
@@ -121,8 +123,16 @@ export default function OxQuizSolvePage() {
     if (isLoggedIn !== true) return;
     setLoading(true);
     fetch(`/api/ox-quiz/${id}`)
-      .then((res) => res.json())
+      .then(async (res) => {
+        // 프리미엄 잠금(생윤·윤사 앞 5개 이후) → 결제 유도 화면
+        if (res.status === 403) {
+          const d = await res.json().catch(() => ({}));
+          if (d?.premiumRequired) { setPremiumLocked(true); setLoading(false); return null; }
+        }
+        return res.json();
+      })
       .then(async (data) => {
+        if (!data) return;
         let nextQuiz = data.oxQuizSet as OxQuizSet;
         let bookmarkedIds = new Set<string>();
 
@@ -508,6 +518,7 @@ export default function OxQuizSolvePage() {
   }, [tabFilter]);
 
   if (isLoggedIn === false) return <LoginRequired />;
+  if (premiumLocked) return <PremiumRequired />;
 
   if (loading) {
     return (

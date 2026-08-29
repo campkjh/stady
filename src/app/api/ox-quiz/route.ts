@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { getOxOrderMap } from "@/lib/oxOrder";
+import { getLockedOxSetIds } from "@/lib/premiumGate";
 import oxImportData from "../../../../scripts/ox-import-data.json";
 
 interface OxImportQuestion {
@@ -127,7 +128,11 @@ export async function GET(request: NextRequest) {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
-    return NextResponse.json({ oxQuizSets: sorted });
+    // 프리미엄 잠금 여부(생윤·윤사 앞 5개 이후)를 세트마다 표기 — 인트로가 자물쇠 배지로 쓴다.
+    const locked = await getLockedOxSetIds();
+    const withFlag = sorted.map((s) => ({ ...s, isPremium: locked.has(s.id) }));
+
+    return NextResponse.json({ oxQuizSets: withFlag });
   } catch (error) {
     console.error("OX Quiz GET error:", error);
     return NextResponse.json(

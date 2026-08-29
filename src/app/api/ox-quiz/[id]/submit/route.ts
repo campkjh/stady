@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { isOxSetLocked, viewerHasPremiumAccess } from "@/lib/premiumGate";
 
 export async function POST(
   request: NextRequest,
@@ -9,6 +10,15 @@ export async function POST(
   try {
     const user = await requireUser();
     const { id } = await params;
+
+    // 프리미엄 잠금 세트는 채점·기록도 막는다.
+    if ((await isOxSetLocked(id)) && !(await viewerHasPremiumAccess())) {
+      return NextResponse.json(
+        { error: "프리미엄 구독이 필요한 콘텐츠예요.", premiumRequired: true },
+        { status: 403 }
+      );
+    }
+
     const { answers, timeTaken } = await request.json();
 
     if (!answers || !Array.isArray(answers)) {

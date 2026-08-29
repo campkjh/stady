@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { viewerHasPremiumAccess } from "@/lib/premiumGate";
 import { listQuestions, getMyAnswers, saveAnswer } from "@/lib/mockExamQuestion";
 
 export const dynamic = "force-dynamic";
 
-// GET: 문항 목록(정답 없음) + 내가 지금까지 고른 답
+// GET: 문항 목록(정답 없음) + 내가 지금까지 고른 답 — 모의고사는 프리미엄 전용
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (!(await viewerHasPremiumAccess())) {
+      return NextResponse.json({ error: "프리미엄 구독이 필요한 콘텐츠예요.", premiumRequired: true }, { status: 403 });
+    }
     const user = await getCurrentUser();
     const [questions, myAnswers] = await Promise.all([
       listQuestions(id),
@@ -26,6 +30,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { id } = await params;
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+    if (!(await viewerHasPremiumAccess())) {
+      return NextResponse.json({ error: "프리미엄 구독이 필요한 콘텐츠예요.", premiumRequired: true }, { status: 403 });
+    }
 
     const body = await request.json().catch(() => ({}));
     const number = Number(body?.number);

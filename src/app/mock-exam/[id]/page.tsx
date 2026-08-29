@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { getMockExam } from "@/lib/mockExam";
 import MockExamViewer from "@/components/MockExamViewer";
+import PremiumRequired from "@/components/PremiumRequired";
+import { viewerHasPremiumAccess } from "@/lib/premiumGate";
 
 export const dynamic = "force-dynamic";
 
 export default async function MockExamViewerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const exam = await getMockExam(id);
+
+  // 모의고사는 전부 프리미엄 전용.
+  if (!(await viewerHasPremiumAccess())) {
+    return <PremiumRequired />;
+  }
 
   if (!exam || !exam.isActive) {
     return (

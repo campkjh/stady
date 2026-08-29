@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { computeAnswerRates } from "@/lib/oxAnswerRate";
+import { isOxSetLocked, viewerHasPremiumAccess } from "@/lib/premiumGate";
 
 export async function GET(
   request: NextRequest,
@@ -9,6 +10,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // 생윤·윤사 앞 5개 소단원을 뺀 나머지는 프리미엄 전용 — 풀이 데이터(정답 포함)를 막는다.
+    if ((await isOxSetLocked(id)) && !(await viewerHasPremiumAccess())) {
+      return NextResponse.json(
+        { error: "프리미엄 구독이 필요한 콘텐츠예요.", premiumRequired: true },
+        { status: 403 }
+      );
+    }
 
     const oxQuizSet = await prisma.oxQuizSet.findUnique({
       where: { id },

@@ -34,10 +34,13 @@ export default function MockExamBrowser({
   // 홈 섹션 안에 넣을 때. 레일의 sticky/블러와 페이지 여백을 끄고, 좁은 우측 컬럼에 맞게
   // 태블릿에서도 "레일이 위에 붙는" 한 단 레이아웃을 유지한다.
   embedded = false,
+  // 모의고사는 전부 프리미엄 전용. 비구독자면 카드가 잠기고 구독 화면으로 보낸다.
+  isPremiumUser = false,
 }: {
   exams: BrowserExam[];
   years: number[];
   embedded?: boolean;
+  isPremiumUser?: boolean;
 }) {
   const [year, setYear] = useState<number | typeof ALL>(ALL);
   const [month, setMonth] = useState<number | typeof ALL>(ALL);
@@ -164,19 +167,29 @@ export default function MockExamBrowser({
           <div className="mx-grid">
             {filtered.map((ex) => {
               const hit = findSubject(ex.subject);
+              const locked = !isPremiumUser;
               return (
                 // 카드 전체(→ 필기 뷰어)와 "문제 풀기"(→ 문항 풀이)는 형제 링크로 둔다.
                 // 링크 안에 링크를 넣으면 안 되기 때문.
                 <div key={ex.id} className="mx-item-wrap">
-                  <Link href={`/mock-exam/${ex.id}`} className="hover-lift mx-item">
+                  <Link href={locked ? "/subscribe" : `/mock-exam/${ex.id}`} className="hover-lift mx-item">
                     <div className="mx-thumb">
                       {ex.coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" />
+                        <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" style={locked ? { filter: "grayscale(0.4) brightness(0.92)" } : undefined} />
                       ) : (
                         <span className="mx-thumb-empty">📄</span>
                       )}
                       {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
+                      {locked && (
+                        <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="#fff" />
+                          </svg>
+                          프리미엄
+                        </span>
+                      )}
                     </div>
                     <p className="mx-title">{ex.title}</p>
                     <p className="mx-sub">
@@ -192,7 +205,7 @@ export default function MockExamBrowser({
                     </p>
                   </Link>
                   {ex.hasQuestions && (
-                    <Link href={`/mock-exam/${ex.id}/solve`} className="mx-solve">
+                    <Link href={locked ? "/subscribe" : `/mock-exam/${ex.id}/solve`} className="mx-solve">
                       문제 풀기
                     </Link>
                   )}
