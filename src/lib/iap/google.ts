@@ -31,12 +31,39 @@ function b64url(input: Buffer | string): string {
 
 let cachedToken: { token: string; exp: number } | null = null;
 
+// 서비스 계정 private_key 를 어떤 형태로 넣어도 파싱되게 정규화한다.
+// Vercel 등에 붙여넣을 때 흔히 깨지는 케이스를 모두 흡수:
+//  · 앞뒤 따옴표  · 이스케이프 개행(\n, \r\n)  · 이중 이스케이프(\\n 잔재)
+//  · \r  · PEM 헤더가 없으면 base64 통째로 넣은 것으로 보고 디코드
+// (에러 error:1E08010C:DECODER routines::unsupported = 대부분 개행/이스케이프 문제)
+export function normalizePrivateKey(raw: string): string {
+  let k = (raw ?? "").trim();
+  if (k.length >= 2 && (k[0] === '"' || k[0] === "'") && k[k.length - 1] === k[0]) {
+    k = k.slice(1, -1);
+  }
+  if (!k.includes("BEGIN")) {
+    try {
+      const decoded = Buffer.from(k, "base64").toString("utf8");
+      if (decoded.includes("BEGIN")) k = decoded;
+    } catch {
+      /* base64 아님 — 그대로 둔다 */
+    }
+  }
+  k = k
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\\\n/g, "\n"); // 이중 이스케이프로 남은 "역슬래시+개행" 정리
+  return k;
+}
+
 async function getGoogleAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   if (cachedToken && cachedToken.exp - 60 > now) return cachedToken.token;
 
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
-  const privateKeyPem = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n");
+  const privateKeyPem = normalizePrivateKey(process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!);
 
   const header = { alg: "RS256", typ: "JWT" };
   const claims = {
