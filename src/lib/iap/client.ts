@@ -175,6 +175,33 @@ async function verifyWithServer(result: IapNativeResult): Promise<void> {
   throw new Error(data.error || "결제 검증에 실패했습니다.");
 }
 
+// 앱 실행 시 "조용한 자동 구매복원" — 스토어엔 구독이 있는데 우리 이용권이 없는
+// 사용자를 사용자 조작 없이 지급한다. (구글 서버검증이 오래 미구성이라 안드 결제분이
+// 지급 안 된 채 쌓였는데, 그분들이 '구매 복원'을 안 눌러도 앱만 켜면 살아나도록.)
+// 세션당 1회. 네이티브(앱) + 로그인 + 미보유일 때만. 실패/없음은 조용히 무시(방해 금지).
+let autoRestoreAttempted = false;
+export async function autoRestoreEntitlement(): Promise<void> {
+  if (autoRestoreAttempted) return;
+  if (typeof window === "undefined") return;
+  if (!detectPlatform()) return; // 앱(네이티브 브리지) 안에서만
+  autoRestoreAttempted = true;
+  try {
+    const st = await fetch("/api/iap/status", { credentials: "include" })
+      .then((r) => r.json())
+      .catch(() => null);
+    // 비로그인(검증이 계정에 붙으므로)·이미 보유면 굳이 복원하지 않는다.
+    if (!st || st.authenticated === false || st.entitlement?.active) return;
+    const pending = awaitNativeResult(30_000); // 조용한 경로라 짧게 — 응답 없으면 포기
+    sendToNative("iapRestore", {});
+    const result = await pending;
+    if (result.ok && (result.transactionId || result.purchaseToken || result.signedTransaction)) {
+      await verifyWithServer(result);
+    }
+  } catch {
+    /* 복원할 게 없거나 실패해도 사용자에게 방해가 되면 안 된다 — 조용히 무시 */
+  }
+}
+
 // ── Public types for the status endpoint ────────────────────────────────────
 export interface IapPlanView {
   id: PlanId;
