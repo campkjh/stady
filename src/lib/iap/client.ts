@@ -268,6 +268,24 @@ export function useIap() {
         const result = await pending;
         if (!result.ok) {
           if (result.error === "cancelled") return; // user dismissed — silent
+          // 이미 구매한 구독인데 지급이 안 된 경우(Google ITEM_ALREADY_OWNED=7 등):
+          // 새 결제는 스토어가 막으므로, 소유 중인 구매를 복원(query→서버검증)해 그대로 지급한다.
+          const alreadyOwned =
+            result.code === "7" || /already|이미\s*(구매|소유|구독)/i.test(result.error || "");
+          if (alreadyOwned) {
+            const restorePending = awaitNativeResult();
+            sendToNative("iapRestore", {});
+            const restored = await restorePending;
+            if (
+              restored.ok &&
+              (restored.transactionId || restored.purchaseToken || restored.signedTransaction)
+            ) {
+              await verifyWithServer({ ...restored, platform: restored.platform ?? plat });
+              await refresh();
+              return;
+            }
+            throw new Error("이미 구독 중인 결제가 있어요. 잠시 후 ‘구매 복원’을 눌러 적용해 주세요.");
+          }
           throw new Error(result.error || "결제가 완료되지 않았어요.");
         }
         await verifyWithServer({ ...result, platform: result.platform ?? plat, productId });
