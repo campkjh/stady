@@ -38,23 +38,34 @@ let cachedToken: { token: string; exp: number } | null = null;
 // (에러 error:1E08010C:DECODER routines::unsupported = 대부분 개행/이스케이프 문제)
 export function normalizePrivateKey(raw: string): string {
   let k = (raw ?? "").trim();
+  // 1) 앞뒤 따옴표 제거
   if (k.length >= 2 && (k[0] === '"' || k[0] === "'") && k[k.length - 1] === k[0]) {
     k = k.slice(1, -1);
   }
-  if (!k.includes("BEGIN")) {
-    try {
-      const decoded = Buffer.from(k, "base64").toString("utf8");
-      if (decoded.includes("BEGIN")) k = decoded;
-    } catch {
-      /* base64 아님 — 그대로 둔다 */
-    }
-  }
+  // 2) 이스케이프/실제 개행 정규화
   k = k
     .replace(/\\r\\n/g, "\n")
     .replace(/\\n/g, "\n")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
-    .replace(/\\\n/g, "\n"); // 이중 이스케이프로 남은 "역슬래시+개행" 정리
+    .replace(/\\\n/g, "\n") // 이중 이스케이프로 남은 "역슬래시+개행" 정리
+    .trim();
+  // 이미 PEM 이면 그대로
+  if (k.includes("BEGIN")) return k;
+  // 3) PEM 전체를 base64 로 넣은 경우 → 디코드하면 BEGIN 이 나온다
+  try {
+    const decoded = Buffer.from(k, "base64").toString("utf8");
+    if (decoded.includes("BEGIN")) return decoded.replace(/\\n/g, "\n");
+  } catch {
+    /* base64 아님 */
+  }
+  // 4) 붙여넣다 헤더/푸터(-----BEGIN/END-----)만 유실되고 base64 본문만 남은 경우
+  //    → PKCS8("PRIVATE KEY")로 재래핑한다. Google 서비스계정 키는 항상 PKCS8.
+  const body = k.replace(/[^A-Za-z0-9+/=]/g, "");
+  if (body.length > 100) {
+    const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+    return `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+  }
   return k;
 }
 
