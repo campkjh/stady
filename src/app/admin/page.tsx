@@ -9,6 +9,7 @@ interface Counts {
   vocabQuizSets: number;
   users: number;
   inquiries: number;
+  premiumActive: number;
 }
 
 interface SourceStat {
@@ -134,6 +135,7 @@ export default function AdminDashboard() {
     vocabQuizSets: 0,
     users: 0,
     inquiries: 0,
+    premiumActive: 0,
   });
   const [loading, setLoading] = useState(true);
   const [sourceStats, setSourceStats] = useState<SourceStat[]>([]);
@@ -158,6 +160,7 @@ export default function AdminDashboard() {
   // 아이콘은 컬러 SVG(currentColor 불가) → <img> 로 사용, 타일은 전부 중립 #F2F3F5
   const cards = [
     { label: "회원 수", count: counts.users, href: "/admin/users", icon: "stat-users" },
+    { label: "프리미엄 구독", count: counts.premiumActive, href: "/admin/payments", icon: "nav-payments" },
     { label: "문제집 수", count: counts.workbooks, href: "/admin/workbooks", icon: "stat-workbook" },
     { label: "OX퀴즈 수", count: counts.oxQuizSets, href: "/admin/ox-quiz", icon: "stat-quiz" },
     { label: "영단어퀴즈 수", count: counts.vocabQuizSets, href: "/admin/vocab-quiz", icon: "stat-posts" },

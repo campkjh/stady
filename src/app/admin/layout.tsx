@@ -37,6 +37,7 @@ const navItems = [
   { href: "/admin/reports", label: "신고·차단 관리", icon: "/icons/admin-color/nav-reports.svg" },
   { href: "/admin/workbooks", label: "문제집 관리", icon: "/icons/admin-color/nav-workbooks.svg" },
   { href: "/admin/users", label: "사용자 관리", icon: "/icons/admin-color/nav-users.svg" },
+  { href: "/admin/payments", label: "결제 관리", icon: "/icons/admin-color/nav-payments.svg" },
   { href: "/admin/ox-quiz", label: "OX퀴즈 관리", icon: "/icons/admin-color/nav-ox.svg" },
   { href: "/admin/vocab-quiz", label: "영단어퀴즈 관리", icon: "/icons/admin-color/nav-vocab.svg" },
   { href: "/admin/banners", label: "배너 관리", icon: "/icons/admin-color/nav-banners.svg" },

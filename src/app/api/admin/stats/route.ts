@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureReferralTable, makeInviteCode } from "@/lib/referrals";
+import { ensureIapTables } from "@/lib/iap/entitlements";
 
 interface ReferralInviteRow {
   inviterId: string;
@@ -17,6 +18,7 @@ export async function GET() {
   try {
     await requireAdmin();
     await ensureReferralTable();
+    await ensureIapTables();
 
     const [
       workbookCount,
@@ -24,6 +26,7 @@ export async function GET() {
       vocabQuizSetCount,
       userCount,
       inquiryCount,
+      premiumRows,
       sourceResults,
       recentUsers,
       recentInquiries,
@@ -34,6 +37,10 @@ export async function GET() {
       prisma.vocabQuizSet.count(),
       prisma.user.count(),
       prisma.inquiry.count(),
+      prisma.$queryRawUnsafe<{ c: number }[]>(
+        `SELECT COUNT(*)::int AS c FROM "IapSubscription"
+         WHERE "status" NOT IN ('REFUNDED','EXPIRED') AND "current_period_end" > now()`
+      ),
       prisma.user.groupBy({
         by: ["signupSource"],
         _count: { signupSource: true },
@@ -129,6 +136,7 @@ export async function GET() {
         vocabQuizSets: vocabQuizSetCount,
         users: userCount,
         inquiries: inquiryCount,
+        premiumActive: premiumRows[0]?.c ?? 0,
       },
       sources,
       recentUsers,
