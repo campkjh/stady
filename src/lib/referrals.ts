@@ -78,17 +78,18 @@ export async function registerReferralInvite(inviteeId: string, rawInviteCode: u
     inviteCode
   );
 
-  // 새 초대가 성사됐을 때만(중복 아님) 초대한 사람에게 2주 무료 프리미엄 지급.
+  // 새 초대가 성사됐을 때만(중복 아님) 초대한 사람 + 초대받은 친구 모두에게 2주 무료 프리미엄.
   if (inserted.length > 0) {
     try {
       await grantFreePremiumDays(inviter.id, REFERRAL_REWARD_DAYS, "referral");
+      await grantFreePremiumDays(inviteeId, REFERRAL_REWARD_DAYS, "referral_invitee");
     } catch (error) {
       // 보상 지급 실패가 가입 흐름을 막지 않도록 삼킨다 (초대 기록은 이미 남았다).
       console.error("referral reward grant failed:", error);
     }
   }
 
-  return { applied: true, rewardedInviter: inserted.length > 0 };
+  return { applied: true, rewarded: inserted.length > 0 };
 }
 
 export interface ReferralPair {

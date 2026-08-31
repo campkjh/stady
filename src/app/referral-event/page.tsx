@@ -90,15 +90,15 @@ export default function ReferralEventPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
-      <BackHeader title="오픈베타 이벤트" />
+      <BackHeader title="친구초대 이벤트" />
 
       <div style={{ padding: "8px 20px 28px" }}>
         <div style={{ borderRadius: 18, overflow: "hidden", background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
           <Image
-            src="/banners/referral-detail.png"
-            alt="스타디 오픈베타 이벤트"
-            width={768}
-            height={2048}
+            src="/banners/referral-event-detail.webp"
+            alt="친구와 함께 프라임 2주 무료 — 친구초대 이벤트"
+            width={880}
+            height={1855}
             priority
             unoptimized
             style={{ display: "block", width: "100%", height: "auto" }}
@@ -125,23 +125,12 @@ export default function ReferralEventPage() {
           </p>
         </section>
 
-        {/* 리퍼럴 보상 — 친구 1명 초대할 때마다 결제 없이 무료 프리미엄 (2주) */}
-        <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-brand)", color: "#fff" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">🎁</span>
-            <h2 style={{ fontSize: 16.5, fontWeight: 900, letterSpacing: "-0.3px" }}>
-              친구 1명 초대할 때마다 {summary?.rewardDays ?? 14}일 무료 프리미엄
-            </h2>
+        {/* 현재 프라임(무료 프리미엄) 상태 — 상세 혜택 안내는 위 이미지가 담당 */}
+        {summary?.freePremiumUntil && (
+          <div style={{ marginTop: 12, padding: "13px 16px", borderRadius: 14, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13.5, fontWeight: 800, textAlign: "center" }}>
+            🎁 현재 프라임 이용 중 · {fmtDay(summary.freePremiumUntil)}까지
           </div>
-          <p style={{ marginTop: 8, fontSize: 13, fontWeight: 700, opacity: 0.92, lineHeight: 1.5 }}>
-            결제 없이, 초대한 친구가 가입을 완료하면 바로 지급돼요. 여러 명 초대하면 기간이 쌓입니다.
-          </p>
-          <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.16)", fontSize: 13.5, fontWeight: 800 }}>
-            {summary?.freePremiumUntil
-              ? `현재 무료 프리미엄 이용 중 · ${fmtDay(summary.freePremiumUntil)}까지`
-              : "지금 친구를 초대하고 무료 프리미엄을 받아보세요!"}
-          </div>
-        </section>
+        )}
 
         <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>

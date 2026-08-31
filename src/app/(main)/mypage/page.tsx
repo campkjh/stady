@@ -168,7 +168,7 @@ export default function MyPage() {
       {active ? (
         <div style={{ padding: "20px 20px 8px" }}>
           <Link href="/subscribe" style={{ display: "block", textDecoration: "none" }} aria-label="구독 관리">
-            <StadyPrimeBanner expiresAt={ent?.expiresAt} autoRenew={ent?.autoRenew} />
+            <StadyPrimeBanner />
           </Link>
         </div>
       ) : (
