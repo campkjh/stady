@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isNoticePopupActive } from "./NoticePopup";
 
 interface Notice {
   id: string;
   title: string;
   body: string;
   imageUrls: string[];
+  popupEnabled?: boolean;
+  popupVersion?: number;
 }
 
 // 사용자가 × 로 "닫은" 공지 id. 이 id와 다른(=새) 공지면 카드 노출.
@@ -27,6 +30,9 @@ export default function NoticeHomeCard() {
         if (!alive) return;
         const first: Notice | undefined = d?.notices?.[0];
         if (!first) return;
+        // 맨 위 공지가 진입 팝업으로 뜨는 중이면 같은 공지를 카드로 중복 노출하지 않는다.
+        // (팝업을 "N일 안보기"로 닫은 뒤에는 팝업이 사라지므로 그때부터 카드로만 남는다.)
+        if (isNoticePopupActive(first)) return;
         let seen = "";
         try {
           seen = localStorage.getItem(SEEN_KEY) || "";

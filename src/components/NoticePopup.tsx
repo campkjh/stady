@@ -49,6 +49,11 @@ function isDismissed(n: Notice): boolean {
   return false;
 }
 
+// 홈의 "새 공지 카드"가 '진입 팝업으로도 뜨는 공지'를 카드로 중복 노출하지 않도록 공유한다.
+export function isNoticePopupActive(n: { id: string; popupEnabled?: boolean; popupVersion?: number }): boolean {
+  return n.popupEnabled === true && !isDismissed(n as Notice);
+}
+
 export default function NoticePopup() {
   const router = useRouter();
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -67,9 +72,11 @@ export default function NoticePopup() {
       .then((d) => {
         if (!alive) return;
         const list: Notice[] = Array.isArray(d?.notices) ? d.notices : [];
-        // 팝업 켜진 공지(정렬순) 중 아직 안 숨긴 첫 번째를 노출(맨 위가 숨겨졌으면 다음으로).
-        const pick = list.filter((n) => n.popupEnabled === true).find((n) => !isDismissed(n));
-        if (pick) setNotice(pick);
+        // 진입 팝업은 '맨 위(정렬 최상단) 공지'가 팝업 대상일 때만 띄운다.
+        // 예전엔 맨 위 공지를 숨기면 아래로 내려가 오래된 팝업 공지까지 다시 꺼내왔고,
+        // 그 탓에 홈 카드(최신 공지) + 팝업(오래된 공지)이 동시에 떠 "2개가 뜨는" 중복이 생겼다.
+        const top = list[0];
+        if (top && top.popupEnabled === true && !isDismissed(top)) setNotice(top);
       })
       .catch(() => {});
     return () => {
