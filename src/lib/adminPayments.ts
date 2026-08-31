@@ -1,14 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { ensureIapTables } from "@/lib/iap/entitlements";
-import { ensurePaymentTable } from "@/lib/payments";
-import { ensureSubscriptionTables } from "@/lib/subscriptions";
 import { getPlanById, resolvePlanPricing } from "@/lib/iap/plans";
 import type { Platform } from "@/lib/iap/types";
 
-// 어드민 결제 조회 — 세 결제 소스를 한 번에 모아 준다.
-//  1) IapSubscription : 애플/구글 인앱결제 프리미엄 구독(현재 실사용 경로)
-//  2) Payment         : 토스 단건 결제(한국사 PDF 등)
-//  3) Subscription    : 토스 정기결제(구 월정액 — 레거시)
+// 어드민 결제 조회 — 실제 결제 채널은 인앱결제(IAP) 둘뿐이라 그것만 모은다.
+//  · IapSubscription : 애플(앱스토어)/구글(안드로이드) 인앱결제 프리미엄 구독
+// 토스(Payment·Subscription)는 실제 연결·심사가 안 된 개발 잔여물이라 제외한다
+// (어드민에 '결제된 것처럼' 보이면 오해를 부른다 — 2026-08-31 사용자 확인).
 
 interface IapJoinRow {
   id: string;
@@ -23,31 +21,6 @@ interface IapJoinRow {
   environment: string;
   current_period_end: Date;
   purchased_at: Date | null;
-  canceled_at: Date | null;
-  created_at: Date;
-}
-interface PaymentJoinRow {
-  id: string;
-  order_id: string;
-  email: string | null;
-  nickname: string | null;
-  product_id: string;
-  amount: number;
-  status: string;
-  method: string | null;
-  approved_at: Date | null;
-  created_at: Date;
-}
-interface SubJoinRow {
-  id: string;
-  email: string | null;
-  nickname: string | null;
-  plan_id: string;
-  amount: number;
-  status: string;
-  card_company: string | null;
-  card_number: string | null;
-  current_period_end: Date;
   canceled_at: Date | null;
   created_at: Date;
 }
@@ -70,43 +43,15 @@ export interface AdminIapPayment {
   canceledAt: string | null;
   createdAt: string;
 }
-export interface AdminTossPayment {
-  id: string;
-  orderId: string;
-  email: string | null;
-  nickname: string | null;
-  productId: string;
-  amount: number;
-  status: string;
-  method: string | null;
-  approvedAt: string | null;
-  createdAt: string;
-}
-export interface AdminTossSub {
-  id: string;
-  email: string | null;
-  nickname: string | null;
-  planId: string;
-  amount: number;
-  status: string;
-  cardCompany: string | null;
-  cardNumber: string | null;
-  currentPeriodEnd: string;
-  canceledAt: string | null;
-  createdAt: string;
-}
 
 export interface AdminPaymentsResult {
   summary: {
-    iapActive: number;
-    iapTotal: number;
-    tossPaidCount: number;
-    tossPaidAmount: number;
-    tossSubActive: number;
+    active: number; // 전체 활성 구독
+    total: number; // 전체 구독(만료·환불 포함)
+    googleActive: number; // 안드로이드(구글) 활성
+    appleActive: number; // 앱스토어(애플) 활성
   };
   iap: AdminIapPayment[];
-  toss: AdminTossPayment[];
-  tossSub: AdminTossSub[];
 }
 
 const PLAN_LABEL: Record<string, string> = { apple: "App Store", google: "Google Play" };
@@ -118,29 +63,13 @@ function iapIsActive(row: IapJoinRow, now: number): boolean {
 }
 
 export async function getAdminPayments(): Promise<AdminPaymentsResult> {
-  // 테이블이 아직 없을 수 있으니 먼저 보장(멱등). 없으면 JOIN 이 깨진다.
-  await Promise.all([ensureIapTables(), ensurePaymentTable(), ensureSubscriptionTables()]);
+  await ensureIapTables();
 
-  const [iapRows, tossRows, subRows] = await Promise.all([
-    prisma.$queryRawUnsafe<IapJoinRow[]>(
-      `SELECT s.*, u.email AS email, u.nickname AS nickname
-       FROM "IapSubscription" s LEFT JOIN "User" u ON u.id = s.user_id
-       ORDER BY s.created_at DESC`
-    ),
-    prisma.$queryRawUnsafe<PaymentJoinRow[]>(
-      `SELECT p.id, p.order_id, p.product_id, p.amount, p.status, p.method, p.approved_at, p.created_at,
-              u.email AS email, u.nickname AS nickname
-       FROM "Payment" p LEFT JOIN "User" u ON u.id = p.user_id
-       ORDER BY p.created_at DESC`
-    ),
-    prisma.$queryRawUnsafe<SubJoinRow[]>(
-      `SELECT s.id, s.plan_id, s.amount, s.status, s.card_company, s.card_number,
-              s.current_period_end, s.canceled_at, s.created_at,
-              u.email AS email, u.nickname AS nickname
-       FROM "Subscription" s LEFT JOIN "User" u ON u.id = s.user_id
-       ORDER BY s.created_at DESC`
-    ),
-  ]);
+  const iapRows = await prisma.$queryRawUnsafe<IapJoinRow[]>(
+    `SELECT s.*, u.email AS email, u.nickname AS nickname
+     FROM "IapSubscription" s LEFT JOIN "User" u ON u.id = s.user_id
+     ORDER BY s.created_at DESC`
+  );
 
   const now = Date.now();
 
@@ -167,43 +96,14 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
     };
   });
 
-  const toss: AdminTossPayment[] = tossRows.map((r) => ({
-    id: r.id,
-    orderId: r.order_id,
-    email: r.email,
-    nickname: r.nickname,
-    productId: r.product_id,
-    amount: r.amount,
-    status: r.status,
-    method: r.method,
-    approvedAt: r.approved_at ? new Date(r.approved_at).toISOString() : null,
-    createdAt: new Date(r.created_at).toISOString(),
-  }));
-
-  const tossSub: AdminTossSub[] = subRows.map((r) => ({
-    id: r.id,
-    email: r.email,
-    nickname: r.nickname,
-    planId: r.plan_id,
-    amount: r.amount,
-    status: r.status,
-    cardCompany: r.card_company,
-    cardNumber: r.card_number,
-    currentPeriodEnd: new Date(r.current_period_end).toISOString(),
-    canceledAt: r.canceled_at ? new Date(r.canceled_at).toISOString() : null,
-    createdAt: new Date(r.created_at).toISOString(),
-  }));
-
+  const active = iap.filter((r) => r.active);
   return {
     summary: {
-      iapActive: iap.filter((r) => r.active).length,
-      iapTotal: iap.length,
-      tossPaidCount: toss.filter((r) => r.status === "DONE").length,
-      tossPaidAmount: toss.filter((r) => r.status === "DONE").reduce((s, r) => s + r.amount, 0),
-      tossSubActive: tossSub.filter((r) => r.status === "ACTIVE").length,
+      active: active.length,
+      total: iap.length,
+      googleActive: active.filter((r) => r.platform === "google").length,
+      appleActive: active.filter((r) => r.platform === "apple").length,
     },
     iap,
-    toss,
-    tossSub,
   };
 }
