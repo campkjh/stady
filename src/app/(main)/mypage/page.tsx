@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import LoginRequired from "@/components/LoginRequired";
 import MyActivityCard from "@/components/MyActivityCard";
+import StadyPrimeBanner from "@/components/StadyPrimeBanner";
 import { getTheme, setTheme, type ThemePreference } from "@/lib/theme";
 
 interface Entitlement {
@@ -12,15 +13,6 @@ interface Entitlement {
   status: string | null;
   expiresAt: string | null;
   autoRenew: boolean;
-}
-
-const PLAN_NAMES: Record<string, string> = {
-  monthly: "월간 구독",
-  suneung_annual: "수능 구독",
-};
-
-function fmtDate(value: string) {
-  return new Date(value).toLocaleDateString("ko-KR");
 }
 
 const MENU_GROUP_1 = [
@@ -152,7 +144,6 @@ export default function MyPage() {
   }
 
   const active = !!ent?.active;
-  const planName = ent?.planId ? PLAN_NAMES[ent.planId] ?? "프리미엄" : "프리미엄";
 
   return (
     <div style={{ background: "var(--c-bg)", minHeight: "100vh", paddingTop: "env(safe-area-inset-top, 0px)" }}>
@@ -173,38 +164,40 @@ export default function MyPage() {
 
       <div style={dividerStyle} />
 
-      {/* Subscription package */}
-      <div style={{ padding: "24px 20px 22px" }}>
-        <h2 style={{ fontSize: 23, fontWeight: 800, margin: 0, lineHeight: 1.3, letterSpacing: "-0.4px" }}>
-          <span style={{ color: "var(--c-brand-b)" }}>스타디</span> <span style={{ color: "var(--c-text-b)" }}>프리미엄</span>
-        </h2>
-        <p style={{ fontSize: 14.5, color: "var(--c-text-4b)", margin: "10px 0 0", fontWeight: 500 }}>
-          {active
-            ? `${planName} 이용 중${
-                ent?.expiresAt
-                  ? ` · ${ent.autoRenew ? "다음 갱신일" : "이용 종료일"} ${fmtDate(ent.expiresAt)}`
-                  : ""
-              }`
-            : "1등급을 위한 학습자료를 놓치지 마세요!"}
-        </p>
-        <Link
-          href="/subscribe"
-          className="press"
-          style={{
-            display: "inline-block",
-            marginTop: 16,
-            borderRadius: 8,
-            background: "var(--c-tint-a5)",
-            color: "var(--c-text-3b)",
-            padding: "9px 18px",
-            fontSize: 14,
-            fontWeight: 700,
-            textDecoration: "none",
-          }}
-        >
-          {active ? "구독 관리" : "구독하기"}
-        </Link>
-      </div>
+      {/* 프리미엄 = 스타디 프라임 배너(티어 뱃지 아래). 구독하기 버튼 없음. 미구독은 기존 구독 유도 */}
+      {active ? (
+        <div style={{ padding: "20px 20px 8px" }}>
+          <Link href="/subscribe" style={{ display: "block", textDecoration: "none" }} aria-label="구독 관리">
+            <StadyPrimeBanner expiresAt={ent?.expiresAt} autoRenew={ent?.autoRenew} />
+          </Link>
+        </div>
+      ) : (
+        <div style={{ padding: "24px 20px 22px" }}>
+          <h2 style={{ fontSize: 23, fontWeight: 800, margin: 0, lineHeight: 1.3, letterSpacing: "-0.4px" }}>
+            <span style={{ color: "var(--c-brand-b)" }}>스타디</span> <span style={{ color: "var(--c-text-b)" }}>프리미엄</span>
+          </h2>
+          <p style={{ fontSize: 14.5, color: "var(--c-text-4b)", margin: "10px 0 0", fontWeight: 500 }}>
+            1등급을 위한 학습자료를 놓치지 마세요!
+          </p>
+          <Link
+            href="/subscribe"
+            className="press"
+            style={{
+              display: "inline-block",
+              marginTop: 16,
+              borderRadius: 8,
+              background: "var(--c-tint-a5)",
+              color: "var(--c-text-3b)",
+              padding: "9px 18px",
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+            }}
+          >
+            구독하기
+          </Link>
+        </div>
+      )}
 
       {/* Menu group 1 */}
       {MENU_GROUP_1.map((item) => (

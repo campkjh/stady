@@ -4,6 +4,7 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
+import PrimeReferralBanner from "@/components/PrimeReferralBanner";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
@@ -551,6 +552,9 @@ export default function CommunityClient() {
               {message}
             </div>
           )}
+
+          {/* 주간 인기글 위: 스타디 프라임 친구초대 배너 (메인 피드에서만) */}
+          {!selectedGroupId && !query.trim() && <PrimeReferralBanner />}
 
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
