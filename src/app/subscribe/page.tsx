@@ -71,7 +71,7 @@ export default function SubscribePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg)", display: "flex", flexDirection: "column" }}>
-      <BackHeader title="스타디 프리미엄" />
+      <BackHeader title="스타디 프라임" />
 
       <div style={{ flex: 1, padding: "8px 20px 0", maxWidth: 480, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
         {/* 헤더 */}
@@ -80,7 +80,7 @@ export default function SubscribePage() {
           {/* SVG 는 배경이 투명이라 다크에서 타일이 사라진다 → 앱 아이콘 본래의 흰 타일을 명시(두 테마 동일). */}
           <img src="/icons/stady-app-icon.svg" alt="스타디" style={{ width: 72, height: 72, borderRadius: 20, display: "block", margin: "0 auto 12px", background: "#fff", boxShadow: "0 6px 18px rgba(49,130,246,0.18)" }} />
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "var(--c-text-b)", letterSpacing: "-0.5px" }}>
-            <span style={{ color: "var(--c-brand-b)" }}>스타디</span> 프리미엄
+            <span style={{ color: "var(--c-brand-b)" }}>스타디</span> 프라임
           </h1>
           <p style={{ margin: "8px 0 0", fontSize: 14.5, color: "var(--c-text-4b)", fontWeight: 500 }}>
             1등급을 위한 학습자료를 제한 없이
@@ -321,7 +321,7 @@ function ActiveState({
   plans: ReturnType<typeof useIap>["plans"];
 }) {
   const isFree = entitlement.source === "free";
-  const planName = isFree ? "무료 프리미엄" : plans.find((p) => p.id === entitlement.planId)?.name ?? "프리미엄";
+  const planName = isFree ? "스타디 프라임" : plans.find((p) => p.id === entitlement.planId)?.name ?? "스타디 프라임";
   const canceled = entitlement.status === "CANCELED";
   return (
     <div style={{ textAlign: "center", padding: "10px 0 4px" }}>

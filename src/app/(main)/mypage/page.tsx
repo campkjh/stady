@@ -165,39 +165,12 @@ export default function MyPage() {
       <div style={dividerStyle} />
 
       {/* 프리미엄 = 스타디 프라임 배너(티어 뱃지 아래). 구독하기 버튼 없음. 미구독은 기존 구독 유도 */}
-      {active ? (
-        <div style={{ padding: "20px 20px 8px" }}>
-          <Link href="/subscribe" style={{ display: "block", textDecoration: "none" }} aria-label="구독 관리">
-            <StadyPrimeBanner />
-          </Link>
-        </div>
-      ) : (
-        <div style={{ padding: "24px 20px 22px" }}>
-          <h2 style={{ fontSize: 23, fontWeight: 800, margin: 0, lineHeight: 1.3, letterSpacing: "-0.4px" }}>
-            <span style={{ color: "var(--c-brand-b)" }}>스타디</span> <span style={{ color: "var(--c-text-b)" }}>프리미엄</span>
-          </h2>
-          <p style={{ fontSize: 14.5, color: "var(--c-text-4b)", margin: "10px 0 0", fontWeight: 500 }}>
-            1등급을 위한 학습자료를 놓치지 마세요!
-          </p>
-          <Link
-            href="/subscribe"
-            className="press"
-            style={{
-              display: "inline-block",
-              marginTop: 16,
-              borderRadius: 8,
-              background: "var(--c-tint-a5)",
-              color: "var(--c-text-3b)",
-              padding: "9px 18px",
-              fontSize: 14,
-              fontWeight: 700,
-              textDecoration: "none",
-            }}
-          >
-            구독하기
-          </Link>
-        </div>
-      )}
+      {/* 스타디 프라임 배너 — 구독 중이면 버튼 없음(관리 링크), 미구독이면 글래스 '구독하기' 버튼 */}
+      <div style={{ padding: "20px 20px 8px" }}>
+        <Link href="/subscribe" className="press" style={{ display: "block", textDecoration: "none" }} aria-label={active ? "구독 관리" : "구독하기"}>
+          <StadyPrimeBanner cta={active ? undefined : "구독하기"} />
+        </Link>
+      </div>
 
       {/* Menu group 1 */}
       {MENU_GROUP_1.map((item) => (
