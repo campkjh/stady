@@ -54,3 +54,19 @@ export async function getFreePremiumUntil(userId: string): Promise<Date | null> 
   );
   return rows[0] ? new Date(rows[0].expires_at) : null;
 }
+
+/** 만료 여부와 무관하게 저장된 만료 시각(어드민 표시용 — 지난 것도 보인다). */
+export async function getPremiumGrantRaw(userId: string): Promise<Date | null> {
+  await ensure();
+  const rows = await prisma.$queryRawUnsafe<{ expires_at: Date }[]>(
+    `SELECT "expires_at" FROM "PremiumGrant" WHERE "user_id" = $1 LIMIT 1`,
+    userId
+  );
+  return rows[0] ? new Date(rows[0].expires_at) : null;
+}
+
+/** 무료 프리미엄 회수(지급 취소). */
+export async function revokeFreePremium(userId: string): Promise<void> {
+  await ensure();
+  await prisma.$executeRawUnsafe(`DELETE FROM "PremiumGrant" WHERE "user_id" = $1`, userId);
+}

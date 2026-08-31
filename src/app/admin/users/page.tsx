@@ -53,6 +53,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [grantUser, setGrantUser] = useState<AdminUser | null>(null); // 프리미엄 지급 모달 대상
 
   useEffect(() => {
     fetch("/api/admin/users", { credentials: "include" })
@@ -148,7 +149,7 @@ export default function AdminUsersPage() {
             <table style={{ width: "100%", minWidth: 1120, borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["가입일", "이름", "이메일", "전화번호", "권한", "가입경로", "가입 기기", "최근 접속", "활동"].map((heading) => (
+                  {["가입일", "이름", "이메일", "전화번호", "권한", "가입경로", "가입 기기", "최근 접속", "활동", "프리미엄"].map((heading) => (
                     <th key={heading} style={thStyle}>
                       {heading}
                     </th>
@@ -195,6 +196,15 @@ export default function AdminUsersPage() {
                       <p style={{ marginTop: 3, color: JC.body }}>공부 {formatStudyTime(user.totalStudySeconds)}</p>
                       <p style={{ marginTop: 3, color: JC.body }}>문의 {user.inquiryCount}건</p>
                     </td>
+                    <td style={tdStyle}>
+                      <button
+                        type="button"
+                        onClick={() => setGrantUser(user)}
+                        style={{ border: "none", borderRadius: 8, background: JC.accentBg, color: JC.accent, padding: "7px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        지급
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -202,6 +212,8 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {grantUser && <PremiumGrantModal user={grantUser} onClose={() => setGrantUser(null)} />}
 
       <style>{JC_FOCUS_CSS}</style>
       <style>{`
@@ -211,6 +223,124 @@ export default function AdminUsersPage() {
           }
         }
       `}</style>
+    </div>
+  );
+}
+
+// 프리미엄권 지급 모달 — 계정별 무료 프리미엄 지급/회수. 2주·한달·두달.
+function PremiumGrantModal({ user, onClose }: { user: AdminUser; onClose: () => void }) {
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    fetch(`/api/admin/premium-grant?userId=${encodeURIComponent(user.id)}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setExpiresAt(d?.expiresAt ?? null))
+      .catch(() => setExpiresAt(null))
+      .finally(() => setLoading(false));
+  }, [user.id]);
+
+  const now = Date.now();
+  const active = !!expiresAt && new Date(expiresAt).getTime() > now;
+
+  async function grant(days: number, label: string) {
+    if (busy) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/premium-grant", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, days }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.error || "지급 실패");
+      setExpiresAt(d.expiresAt);
+      setMsg(`${label} 지급 완료`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "지급 실패");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke() {
+    if (busy) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/premium-grant", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (!res.ok) throw new Error("회수 실패");
+      setExpiresAt(null);
+      setMsg("회수 완료");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "회수 실패");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const DURATIONS: { days: number; label: string }[] = [
+    { days: 14, label: "2주권" },
+    { days: 30, label: "한달권" },
+    { days: 60, label: "두달권" },
+  ];
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(43,49,61,0.4)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 380, background: "var(--c-bg)", border: `1px solid ${JC.soft}`, borderRadius: 18, padding: "24px 22px 20px", boxSizing: "border-box" }}
+      >
+        <div style={{ fontSize: 17, fontWeight: 800, color: JC.title }}>프리미엄권 지급</div>
+        <div style={{ marginTop: 6, fontSize: 13, color: JC.body }}>
+          <b style={{ color: JC.title }}>{user.nickname}</b> · {user.email}
+        </div>
+
+        <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 12, background: JC.soft, fontSize: 13, fontWeight: 700, color: active ? "#1B8A3B" : JC.sub }}>
+          {loading ? "확인 중…" : active ? `프리미엄 이용 중 · ${formatDate(expiresAt)}까지` : "현재 무료 프리미엄 없음"}
+        </div>
+
+        <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {DURATIONS.map((d) => (
+            <button
+              key={d.days}
+              type="button"
+              disabled={busy}
+              onClick={() => grant(d.days, d.label)}
+              className="press"
+              style={{ border: "none", borderRadius: 12, background: "#3180F7", color: "#fff", padding: "12px 0", fontSize: 14, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        <p style={{ marginTop: 8, fontSize: 11.5, color: JC.sub }}>여러 번 누르면 기간이 누적됩니다.</p>
+
+        {msg && <p style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: JC.accent, textAlign: "center" }}>{msg}</p>}
+
+        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+          {active && (
+            <button type="button" disabled={busy} onClick={revoke} style={{ flex: 1, border: `1px solid ${JC.soft}`, borderRadius: 12, background: "var(--c-bg)", color: "#D63A3A", padding: "11px 0", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+              회수
+            </button>
+          )}
+          <button type="button" onClick={onClose} style={{ flex: 1, border: "none", borderRadius: 12, background: JC.soft, color: JC.body, padding: "11px 0", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
