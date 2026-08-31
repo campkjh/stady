@@ -658,6 +658,17 @@ export async function getUserActivityScore(userId: string): Promise<number> {
   return score;
 }
 
+// 단일 유저가 현재 답변왕인지 — 프리미엄 판정용(getAnswerKings와 같은 기준: 최근 7일 활성 댓글 10+).
+// 답변왕을 '유지하는 동안' 스타디 프라임이 유지된다(잃으면 자동 해제).
+export async function isAnswerKing(userId: string | null | undefined): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    return (await getAnswerKings([userId])).has(userId);
+  } catch {
+    return false;
+  }
+}
+
 // 답변왕: 최근 7일간 활성 댓글을 10개 이상 쓴 유저 id 집합. 커뮤니티 작성자 뱃지용.
 export async function getAnswerKings(userIds: (string | null | undefined)[]): Promise<Set<string>> {
   const ids = [...new Set(userIds.filter((id): id is string => !!id))];

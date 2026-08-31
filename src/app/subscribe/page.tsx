@@ -320,7 +320,8 @@ function ActiveState({
   entitlement: NonNullable<ReturnType<typeof useIap>["entitlement"]>;
   plans: ReturnType<typeof useIap>["plans"];
 }) {
-  const isFree = entitlement.source === "free";
+  const isKing = entitlement.source === "answer_king";
+  const isFree = entitlement.source === "free" || isKing;
   const planName = isFree ? "스타디 프라임" : plans.find((p) => p.id === entitlement.planId)?.name ?? "스타디 프라임";
   const canceled = entitlement.status === "CANCELED";
   return (
@@ -335,9 +336,11 @@ function ActiveState({
           {canceled ? "이용 종료일" : entitlement.autoRenew ? "다음 갱신일" : "이용 종료일"} {fmtDate(entitlement.expiresAt)}
         </div>
       )}
-      {isFree && (
+      {isKing ? (
+        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>답변왕 유지 중 무료 이용권이에요 👑</p>
+      ) : isFree ? (
         <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>친구 초대로 받은 무료 이용권이에요 🎁</p>
-      )}
+      ) : null}
       <div style={{ marginTop: 18, background: "var(--c-bg-soft)", borderRadius: 14, padding: "14px 16px", textAlign: "left" }}>
         {BENEFITS.map((b) => (
           <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>

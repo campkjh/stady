@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getFreePremiumUntil } from "@/lib/premiumGrant";
+import { isAnswerKing } from "@/lib/community";
 import type { Platform, PlanId, SubStatus, VerifiedSubscription } from "./types";
 
 // Single source of truth for a user's premium access, granted by store receipts
@@ -140,7 +141,7 @@ export interface Entitlement {
   expiresAt: string | null;
   autoRenew: boolean;
   environment: string | null;
-  source: "iap" | "free" | null; // free = 결제 없이 받은 무료 프리미엄(리퍼럴 보상 등)
+  source: "iap" | "free" | "answer_king" | null; // free=무료 프리미엄(리퍼럴·수동), answer_king=답변왕 유지 중
 }
 
 const INACTIVE: Entitlement = {
@@ -197,6 +198,19 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
       autoRenew: false,
       environment: null,
       source: "free",
+    };
+  }
+  // 답변왕을 '유지하는 동안' 프리미엄 유지 — 만료일 없음(유지 여부를 매번 라이브로 판정).
+  if (await isAnswerKing(userId)) {
+    return {
+      active: true,
+      planId: null,
+      platform: null,
+      status: "ACTIVE",
+      expiresAt: null,
+      autoRenew: false,
+      environment: null,
+      source: "answer_king",
     };
   }
   return INACTIVE;
