@@ -320,7 +320,8 @@ function ActiveState({
   entitlement: NonNullable<ReturnType<typeof useIap>["entitlement"]>;
   plans: ReturnType<typeof useIap>["plans"];
 }) {
-  const planName = plans.find((p) => p.id === entitlement.planId)?.name ?? "프리미엄";
+  const isFree = entitlement.source === "free";
+  const planName = isFree ? "무료 프리미엄" : plans.find((p) => p.id === entitlement.planId)?.name ?? "프리미엄";
   const canceled = entitlement.status === "CANCELED";
   return (
     <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
@@ -333,6 +334,9 @@ function ActiveState({
         <div style={{ fontSize: 13.5, color: "var(--c-text-3)", marginTop: 6 }}>
           {canceled ? "이용 종료일" : entitlement.autoRenew ? "다음 갱신일" : "이용 종료일"} {fmtDate(entitlement.expiresAt)}
         </div>
+      )}
+      {isFree && (
+        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>친구 초대로 받은 무료 이용권이에요 🎁</p>
       )}
       <div style={{ marginTop: 18, background: "var(--c-bg-soft)", borderRadius: 14, padding: "14px 16px", textAlign: "left" }}>
         {BENEFITS.map((b) => (

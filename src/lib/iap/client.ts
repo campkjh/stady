@@ -235,6 +235,7 @@ export interface EntitlementView {
   expiresAt: string | null;
   autoRenew: boolean;
   environment: string | null;
+  source?: "iap" | "free" | null; // free = 결제 없이 받은 무료 프리미엄(리퍼럴 등)
 }
 
 /**

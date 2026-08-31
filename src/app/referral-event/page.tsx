@@ -28,11 +28,19 @@ interface ReferralPair {
 interface ReferralSummary {
   inviteCode: string;
   invitedCount: number;
+  rewardDays?: number;
+  freePremiumUntil?: string | null;
   canClaimThreeMonths: boolean;
   canClaimSixMonths: boolean;
   invitees: Invitee[];
   isMasterAdmin?: boolean;
   allReferrals?: ReferralPair[];
+}
+
+function fmtDay(iso: string) {
+  const d = new Date(iso);
+  const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return `${k.getUTCFullYear()}.${String(k.getUTCMonth() + 1).padStart(2, "0")}.${String(k.getUTCDate()).padStart(2, "0")}`;
 }
 
 const primary = "var(--c-brand)";
@@ -117,9 +125,22 @@ export default function ReferralEventPage() {
           </p>
         </section>
 
-        <section style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <RewardCard title="3개월 무료권 받기" count="5명" active={!!summary?.canClaimThreeMonths} />
-          <RewardCard title="6개월 무료권 받기" count="10명" active={!!summary?.canClaimSixMonths} />
+        {/* 리퍼럴 보상 — 친구 1명 초대할 때마다 결제 없이 무료 프리미엄 (2주) */}
+        <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-brand)", color: "#fff" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">🎁</span>
+            <h2 style={{ fontSize: 16.5, fontWeight: 900, letterSpacing: "-0.3px" }}>
+              친구 1명 초대할 때마다 {summary?.rewardDays ?? 14}일 무료 프리미엄
+            </h2>
+          </div>
+          <p style={{ marginTop: 8, fontSize: 13, fontWeight: 700, opacity: 0.92, lineHeight: 1.5 }}>
+            결제 없이, 초대한 친구가 가입을 완료하면 바로 지급돼요. 여러 명 초대하면 기간이 쌓입니다.
+          </p>
+          <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.16)", fontSize: 13.5, fontWeight: 800 }}>
+            {summary?.freePremiumUntil
+              ? `현재 무료 프리미엄 이용 중 · ${fmtDay(summary.freePremiumUntil)}까지`
+              : "지금 친구를 초대하고 무료 프리미엄을 받아보세요!"}
+          </div>
         </section>
 
         <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
@@ -197,29 +218,6 @@ function ReferralAvatar({ nickname, avatar }: { nickname: string; avatar: string
     <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "var(--c-brand-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
       {avatar ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : nickname.slice(0, 1)}
     </div>
-  );
-}
-
-function RewardCard({ title, count, active }: { title: string; count: string; active: boolean }) {
-  return (
-    <button
-      type="button"
-      disabled={!active}
-      onClick={() => active && alert("혜택 신청이 접수되었습니다.")}
-      style={{
-        minHeight: 108,
-        padding: 14,
-        border: active ? "none" : "1px solid var(--c-border)",
-        borderRadius: 18,
-        background: active ? "linear-gradient(135deg, #3787FF, #2ED3A6)" : "var(--c-bg)",
-        color: active ? "#fff" : "var(--c-text-4c)",
-        textAlign: "left",
-      }}
-    >
-      <p style={{ fontSize: 12, fontWeight: 900, opacity: active ? 0.9 : 1 }}>{count} 초대 시</p>
-      <p style={{ marginTop: 10, fontSize: 17, lineHeight: 1.25, fontWeight: 900 }}>{title}</p>
-      <p style={{ marginTop: 8, fontSize: 12, fontWeight: 800 }}>{active ? "활성화됨" : "아직 비활성화"}</p>
-    </button>
   );
 }
 

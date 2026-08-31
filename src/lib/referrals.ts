@@ -1,7 +1,10 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getFreePremiumUntil, grantFreePremiumDays } from "@/lib/premiumGrant";
 
 export const REFERRAL_EVENT_PATH = "/referral-event";
+// 친구 1명 초대(가입 성사)마다 초대한 사람에게 주는 무료 프리미엄 일수 (결제 없음).
+export const REFERRAL_REWARD_DAYS = 14;
 
 interface ReferralUser {
   id: string;
@@ -62,11 +65,12 @@ export async function registerReferralInvite(inviteeId: string, rawInviteCode: u
     return { applied: false, error: "초대코드가 올바르지 않습니다." };
   }
 
-  await prisma.$executeRawUnsafe(
+  const inserted = await prisma.$queryRawUnsafe<{ id: string }[]>(
     `
       INSERT INTO "ReferralInvite" ("id", "inviterId", "inviteeId", "inviteCode")
       VALUES ($1, $2, $3, $4)
       ON CONFLICT ("inviteeId") DO NOTHING
+      RETURNING "id"
     `,
     randomUUID(),
     inviter.id,
@@ -74,7 +78,17 @@ export async function registerReferralInvite(inviteeId: string, rawInviteCode: u
     inviteCode
   );
 
-  return { applied: true };
+  // 새 초대가 성사됐을 때만(중복 아님) 초대한 사람에게 2주 무료 프리미엄 지급.
+  if (inserted.length > 0) {
+    try {
+      await grantFreePremiumDays(inviter.id, REFERRAL_REWARD_DAYS, "referral");
+    } catch (error) {
+      // 보상 지급 실패가 가입 흐름을 막지 않도록 삼킨다 (초대 기록은 이미 남았다).
+      console.error("referral reward grant failed:", error);
+    }
+  }
+
+  return { applied: true, rewardedInviter: inserted.length > 0 };
 }
 
 export interface ReferralPair {
@@ -125,9 +139,13 @@ export async function getReferralSummary(userId: string) {
     userId
   );
 
+  const freePremiumUntil = await getFreePremiumUntil(userId);
+
   return {
     inviteCode: makeInviteCode(userId),
     invitedCount: invitees.length,
+    rewardDays: REFERRAL_REWARD_DAYS, // 초대 1명당 무료 프리미엄 일수
+    freePremiumUntil: freePremiumUntil ? freePremiumUntil.toISOString() : null,
     canClaimThreeMonths: invitees.length >= 5,
     canClaimSixMonths: invitees.length >= 10,
     invitees: invitees.map<ReferralInvitee>((invitee) => ({

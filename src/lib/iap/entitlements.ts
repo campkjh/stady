@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getFreePremiumUntil } from "@/lib/premiumGrant";
 import type { Platform, PlanId, SubStatus, VerifiedSubscription } from "./types";
 
 // Single source of truth for a user's premium access, granted by store receipts
@@ -139,6 +140,7 @@ export interface Entitlement {
   expiresAt: string | null;
   autoRenew: boolean;
   environment: string | null;
+  source: "iap" | "free" | null; // free = 결제 없이 받은 무료 프리미엄(리퍼럴 보상 등)
 }
 
 const INACTIVE: Entitlement = {
@@ -149,6 +151,7 @@ const INACTIVE: Entitlement = {
   expiresAt: null,
   autoRenew: false,
   environment: null,
+  source: null,
 };
 
 /** True while the user has any store subscription that is paid-through and not refunded. */
@@ -170,16 +173,33 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
   );
   const now = Date.now();
   const live = rows.find((r) => isRowLive(r, now));
-  if (!live) return INACTIVE;
-  return {
-    active: true,
-    planId: live.plan_id,
-    platform: live.platform,
-    status: live.status,
-    expiresAt: new Date(live.current_period_end).toISOString(),
-    autoRenew: live.auto_renew,
-    environment: live.environment,
-  };
+  if (live) {
+    return {
+      active: true,
+      planId: live.plan_id,
+      platform: live.platform,
+      status: live.status,
+      expiresAt: new Date(live.current_period_end).toISOString(),
+      autoRenew: live.auto_renew,
+      environment: live.environment,
+      source: "iap",
+    };
+  }
+  // 결제 구독이 없으면 무료 프리미엄(리퍼럴 보상 등)을 본다.
+  const freeUntil = await getFreePremiumUntil(userId);
+  if (freeUntil) {
+    return {
+      active: true,
+      planId: null,
+      platform: null,
+      status: "ACTIVE",
+      expiresAt: freeUntil.toISOString(),
+      autoRenew: false,
+      environment: null,
+      source: "free",
+    };
+  }
+  return INACTIVE;
 }
 
 /** Cheap boolean form for gating checks. */
