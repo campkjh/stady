@@ -632,8 +632,38 @@ export const TIER_THRESHOLDS: { tier: CommunityTier; min: number }[] = [
   { tier: "master", min: 1200 },
 ];
 
+// 관리자 수동 등급 조정용 가산점(경험치 보너스). 활동 점수에 그대로 더해지므로
+// 커뮤니티 뱃지(getUserTiers)와 마이페이지 진행도(getUserActivityScore)가 일관되게 반영된다.
+async function ensureScoreBonusTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityScoreBonus" (
+      "user_id" TEXT PRIMARY KEY REFERENCES "User"("id") ON DELETE CASCADE,
+      "bonus" INTEGER NOT NULL DEFAULT 0,
+      "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+export async function getScoreBonuses(userIds: (string | null | undefined)[]): Promise<Record<string, number>> {
+  const ids = [...new Set(userIds.filter((id): id is string => !!id))];
+  const out: Record<string, number> = {};
+  if (ids.length === 0) return out;
+  try {
+    await ensureScoreBonusTable();
+    const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
+    const rows = await prisma.$queryRawUnsafe<{ user_id: string; bonus: number }[]>(
+      `SELECT "user_id", "bonus" FROM "CommunityScoreBonus" WHERE "user_id" IN (${ph})`,
+      ...ids
+    );
+    for (const r of rows) out[r.user_id] = Number(r.bonus) || 0;
+  } catch (e) {
+    console.error("getScoreBonuses skipped:", e);
+  }
+  return out;
+}
+
 // 단일 사용자의 활동 점수(경험치). getUserTiers와 동일한 가중치
-// (글×10·댓글×3·받은공감×2·퀴즈응시×1·데일리정답×5).
+// (글×10·댓글×3·받은공감×2·퀴즈응시×1·데일리정답×5) + 관리자 가산점.
 export async function getUserActivityScore(userId: string): Promise<number> {
   if (!userId) return 0;
   await ensureCommunityTables();
@@ -655,6 +685,7 @@ export async function getUserActivityScore(userId: string): Promise<number> {
   } catch {
     // 데일리 테이블이 아직 없으면 무시.
   }
+  score += (await getScoreBonuses([userId]))[userId] ?? 0;
   return score;
 }
 
@@ -715,6 +746,9 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   } catch (e) {
     console.error("getUserTiers daily-quiz aggregate skipped:", e);
   }
+  // 관리자 가산점(수동 등급 조정)을 활동 점수에 더한다.
+  const bonuses = await getScoreBonuses(ids);
+  for (const id of ids) score[id] = (score[id] ?? 0) + (bonuses[id] ?? 0);
   const result: Record<string, CommunityTier> = {};
   for (const id of ids) result[id] = tierForScore(score[id]);
   return result;
