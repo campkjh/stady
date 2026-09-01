@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ensureIapTables } from "@/lib/iap/entitlements";
 import { getPlanById, resolvePlanPricing } from "@/lib/iap/plans";
+import { listActiveFreeGrants, type ActiveFreeGrant } from "@/lib/premiumGrant";
 import type { Platform } from "@/lib/iap/types";
 
 // 어드민 결제 조회 — 실제 결제 채널은 인앱결제(IAP) 둘뿐이라 그것만 모은다.
@@ -50,8 +51,10 @@ export interface AdminPaymentsResult {
     total: number; // 전체 구독(만료·환불 포함)
     googleActive: number; // 안드로이드(구글) 활성
     appleActive: number; // 앱스토어(애플) 활성
+    freeActive: number; // 무료 이용중(결제 없는 지급 — 친구초대·수동지급)
   };
   iap: AdminIapPayment[];
+  free: ActiveFreeGrant[]; // 무료 프리미엄 지급(결제 아님) — 개별 회수 가능
 }
 
 const PLAN_LABEL: Record<string, string> = { apple: "App Store", google: "Google Play" };
@@ -97,13 +100,16 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
   });
 
   const active = iap.filter((r) => r.active);
+  const free = await listActiveFreeGrants();
   return {
     summary: {
       active: active.length,
       total: iap.length,
       googleActive: active.filter((r) => r.platform === "google").length,
       appleActive: active.filter((r) => r.platform === "apple").length,
+      freeActive: free.length,
     },
     iap,
+    free,
   };
 }

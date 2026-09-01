@@ -20,9 +20,30 @@ interface IapPayment {
   canceledAt: string | null;
   createdAt: string;
 }
+interface FreeGrant {
+  userId: string;
+  email: string | null;
+  nickname: string | null;
+  source: string;
+  totalDays: number;
+  expiresAt: string;
+}
 interface PaymentsData {
-  summary: { active: number; total: number; googleActive: number; appleActive: number };
+  summary: { active: number; total: number; googleActive: number; appleActive: number; freeActive: number };
   iap: IapPayment[];
+  free: FreeGrant[];
+}
+
+// 무료 지급 출처 라벨 — 어떤 경로로 무료가 됐는지.
+function grantSourceLabel(src: string) {
+  switch (src) {
+    case "referral": return "친구초대(초대한 사람)";
+    case "referral_invitee": return "친구초대(초대받은 친구)";
+    case "referral_backfill": return "친구초대(소급 지급)";
+    case "admin":
+    case "admin_grant": return "수동 지급";
+    default: return src;
+  }
 }
 
 const ACCENT = "#3180F7";
@@ -77,13 +98,39 @@ const cardStyle: React.CSSProperties = {
 const thStyle: React.CSSProperties = { textAlign: "left", fontSize: 12, fontWeight: 700, color: MUTED, padding: "10px 12px", whiteSpace: "nowrap", borderBottom: `1px solid ${BORDER}` };
 const tdStyle: React.CSSProperties = { fontSize: 13, color: "var(--c-text-3c)", padding: "12px", borderBottom: `1px solid ${BORDER}`, verticalAlign: "middle" };
 
-type Filter = "all" | "google" | "apple";
+type Filter = "all" | "google" | "apple" | "free";
 
 export default function AdminPaymentsPage() {
   const [data, setData] = useState<PaymentsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [revoking, setRevoking] = useState<string | null>(null);
+
+  // 무료 지급 개별 회수 — 결제와 무관, PremiumGrant 삭제.
+  async function revokeFree(g: FreeGrant) {
+    if (revoking) return;
+    if (!confirm(`${g.nickname || g.email || "이 사용자"}의 무료 이용권을 회수할까요?\n(${grantSourceLabel(g.source)} · ${fmtDate(g.expiresAt)}까지)`)) return;
+    setRevoking(g.userId);
+    try {
+      const res = await fetch("/api/admin/premium-grant", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userId: g.userId }),
+      });
+      if (!res.ok) throw new Error("회수 실패");
+      setData((prev) =>
+        prev
+          ? { ...prev, free: prev.free.filter((f) => f.userId !== g.userId), summary: { ...prev.summary, freeActive: Math.max(0, prev.summary.freeActive - 1) } }
+          : prev
+      );
+    } catch {
+      alert("회수에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setRevoking(null);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/admin/payments", { credentials: "include" })
@@ -99,10 +146,10 @@ export default function AdminPaymentsPage() {
   const summaryCards = useMemo(() => {
     const s = data?.summary;
     return [
-      { label: "활성 구독 (전체)", value: s ? String(s.active) : "-" },
+      { label: "활성 구독 (결제)", value: s ? String(s.active) : "-" },
       { label: "안드로이드 활성", value: s ? String(s.googleActive) : "-" },
       { label: "앱스토어 활성", value: s ? String(s.appleActive) : "-" },
-      { label: "구독 전체 (만료 포함)", value: s ? String(s.total) : "-" },
+      { label: "무료 이용중 (지급)", value: s ? String(s.freeActive) : "-" },
     ];
   }, [data]);
 
@@ -113,10 +160,13 @@ export default function AdminPaymentsPage() {
   }, [data, filter]);
 
   const tabs: { key: Filter; label: string }[] = [
-    { key: "all", label: "전체" },
+    { key: "all", label: "전체 결제" },
     { key: "google", label: "안드로이드 (구글)" },
     { key: "apple", label: "앱스토어 (애플)" },
+    { key: "free", label: "무료 이용중" },
   ];
+  const tabCount = (key: Filter) =>
+    key === "all" ? data!.iap.length : key === "free" ? data!.free.length : data!.iap.filter((r) => r.platform === key).length;
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -153,17 +203,21 @@ export default function AdminPaymentsPage() {
                 }}
               >
                 {t.label}{" "}
-                <span style={{ opacity: 0.7 }}>
-                  {t.key === "all"
-                    ? data!.iap.length
-                    : data!.iap.filter((r) => r.platform === t.key).length}
-                </span>
+                <span style={{ opacity: 0.7 }}>{tabCount(t.key)}</span>
               </button>
             ))}
           </div>
 
+          {filter === "free" && (
+            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>
+              결제 없이 지급된 무료 프리미엄(친구초대·수동지급)입니다. 결제 건수에는 포함되지 않으며, 개별 회수할 수 있습니다.
+            </p>
+          )}
+
           <div style={{ ...cardStyle, padding: 0, overflowX: "auto" }}>
-            <IapTable rows={rows} />
+            {filter === "free"
+              ? <FreeGrantTable rows={data!.free} onRevoke={revokeFree} revoking={revoking} />
+              : <IapTable rows={rows} />}
           </div>
         </>
       )}
@@ -208,6 +262,49 @@ function IapTable({ rows }: { rows: IapPayment[] }) {
             <td style={tdStyle}>{fmtDate(r.currentPeriodEnd)}</td>
             <td style={tdStyle}>{r.autoRenew ? "ON" : "OFF"}</td>
             <td style={tdStyle}>{r.environment === "Sandbox" ? <StatusBadge text="Sandbox" tone="neutral" /> : "운영"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function FreeGrantTable({ rows, onRevoke, revoking }: { rows: FreeGrant[]; onRevoke: (g: FreeGrant) => void; revoking: string | null }) {
+  if (rows.length === 0) return <div style={{ padding: 48, textAlign: "center", color: MUTED, fontSize: 13.5 }}>무료 이용중인 사용자가 없습니다.</div>;
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+      <thead>
+        <tr>
+          <th style={thStyle}>상태</th>
+          <th style={thStyle}>사용자</th>
+          <th style={thStyle}>지급 경로</th>
+          <th style={thStyle}>누적 일수</th>
+          <th style={thStyle}>만료일</th>
+          <th style={{ ...thStyle, textAlign: "right" }}>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((g) => (
+          <tr key={g.userId}>
+            <td style={tdStyle}><StatusBadge text="무료" tone="neutral" /></td>
+            <td style={tdStyle}><User nickname={g.nickname} email={g.email} /></td>
+            <td style={tdStyle}>{grantSourceLabel(g.source)}</td>
+            <td style={tdStyle}>{g.totalDays > 0 ? `${g.totalDays}일` : "-"}</td>
+            <td style={tdStyle}>{fmtDate(g.expiresAt)}</td>
+            <td style={{ ...tdStyle, textAlign: "right" }}>
+              <button
+                type="button"
+                onClick={() => onRevoke(g)}
+                disabled={revoking === g.userId}
+                className="press"
+                style={{
+                  border: "1px solid #F1B4B4", borderRadius: 8, padding: "6px 12px", cursor: revoking === g.userId ? "default" : "pointer",
+                  fontSize: 12.5, fontWeight: 700, background: "#FDECEC", color: "#D63A3A", opacity: revoking === g.userId ? 0.6 : 1, whiteSpace: "nowrap",
+                }}
+              >
+                {revoking === g.userId ? "회수중…" : "회수"}
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>

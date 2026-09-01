@@ -65,6 +65,37 @@ export async function getPremiumGrantRaw(userId: string): Promise<Date | null> {
   return rows[0] ? new Date(rows[0].expires_at) : null;
 }
 
+export interface ActiveFreeGrant {
+  userId: string;
+  email: string | null;
+  nickname: string | null;
+  source: string;
+  totalDays: number;
+  expiresAt: string;
+}
+
+/** 현재 활성(만료 전)인 무료 프리미엄 지급 목록 — 어드민 조회/회수용. 만료 임박순. */
+export async function listActiveFreeGrants(): Promise<ActiveFreeGrant[]> {
+  await ensure();
+  const rows = await prisma.$queryRawUnsafe<{
+    user_id: string; email: string | null; nickname: string | null;
+    source: string; total_days: number; expires_at: Date;
+  }[]>(
+    `SELECT g."user_id", g."source", g."total_days", g."expires_at", u."email", u."nickname"
+     FROM "PremiumGrant" g LEFT JOIN "User" u ON u."id" = g."user_id"
+     WHERE g."expires_at" > now()
+     ORDER BY g."expires_at" ASC`
+  );
+  return rows.map((r) => ({
+    userId: r.user_id,
+    email: r.email,
+    nickname: r.nickname,
+    source: r.source,
+    totalDays: Number(r.total_days) || 0,
+    expiresAt: new Date(r.expires_at).toISOString(),
+  }));
+}
+
 /** 무료 프리미엄 회수(지급 취소). */
 export async function revokeFreePremium(userId: string): Promise<void> {
   await ensure();
