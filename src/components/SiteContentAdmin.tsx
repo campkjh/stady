@@ -21,14 +21,24 @@ interface Props {
   heading: string;
   titleLabel: string;
   bodyLabel: string;
-  withDate: boolean;
+  withDate?: boolean;
   withImages?: boolean;
   withPopup?: boolean;
+  // 단순 모드(공지): 표시날짜·정렬순서·노출·팝업 설정을 숨기고 자동 처리한다.
+  // 날짜=금일 자동, 정렬=항상 최신(맨 위), 노출=항상 켜짐, 팝업=맨 위(최신) 공지 1개만 자동.
+  simple?: boolean;
 }
 
 const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], popupEnabled: false, popupHideDays: 7 };
 
-export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages, withPopup }: Props) {
+// 금일 날짜 라벨(YYYY.MM.DD) — 단순 모드에서 표시날짜 자동 입력용.
+function todayLabel() {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
+}
+
+export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages, withPopup, simple }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...blank });
@@ -92,14 +102,16 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
         kind,
         title: form.title,
         body: form.body,
-        dateLabel: withDate ? form.dateLabel : null,
-        sortOrder: Number(form.sortOrder) || 0,
-        isActive: form.isActive,
+        // 단순 모드: 날짜=금일 자동(수정 시 기존 유지), 정렬=0(=항상 최신 맨 위), 노출=항상 켜짐.
+        dateLabel: simple ? (form.dateLabel.trim() || todayLabel()) : (withDate ? form.dateLabel : null),
+        sortOrder: simple ? 0 : (Number(form.sortOrder) || 0),
+        isActive: simple ? true : form.isActive,
         // 이미지를 다루는 화면(공지)에서만 키를 넣는다. FAQ 화면은 이미지 UI 자체가 없는데도
         // 예전엔 imageUrls: [] 를 항상 보내서, 서버가 그걸 "전량 교체"로 받아 붙어 있던
         // 이미지를 지웠다(지금은 이미지 붙은 항목이 없어 드러나지 않았을 뿐).
         ...(withImages ? { imageUrls: form.imageUrls } : {}),
-        ...(withPopup ? { popupEnabled: form.popupEnabled, popupHideDays: Number(form.popupHideDays) || 7 } : {}),
+        // 단순 모드는 팝업을 항상 켜둔다(실제 노출은 '맨 위=최신 1개'만, NoticePopup에서 자동 결정).
+        ...(simple ? { popupEnabled: true, popupHideDays: 7 } : withPopup ? { popupEnabled: form.popupEnabled, popupHideDays: Number(form.popupHideDays) || 7 } : {}),
       };
       const res = editingId
         ? await fetch(`/api/admin/site-content/${editingId}`, {
@@ -150,8 +162,13 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   };
   const label: React.CSSProperties = { display: "block", fontSize: 13, fontWeight: 600, color: "var(--c-text-2)", marginBottom: 6 };
 
+  // 단순 모드: 지금 첫 진입 팝업으로 뜨는 공지 = 노출 중인 것 중 맨 위(최신). 목록 정렬과 동일 기준.
+  const popupNotice = simple ? items.find((it) => it.isActive) ?? null : null;
+
   return (
-    <div style={{ padding: "24px 20px", maxWidth: 860, margin: "0 auto" }}>
+    <div className="sca-root" style={{ padding: "24px 20px", maxWidth: 860, margin: "0 auto" }}>
+      {/* 모바일: 어드민 본문(admin-content) 좌우 패딩(16px)을 상쇄해 좌우 여백을 최소화. */}
+      <style>{`@media (max-width: 768px){ .sca-root{ padding:16px 10px !important; margin-left:-16px !important; margin-right:-16px !important; max-width:none !important; } }`}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{heading}</h1>
         <button
@@ -200,24 +217,30 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: withDate ? "1fr 1fr 1fr" : "1fr 1fr", gap: 12, marginBottom: 14, alignItems: "end" }}>
-            {withDate && (
+          {simple ? (
+            <p style={{ fontSize: 12.5, color: "var(--c-text-4c)", margin: "0 0 14px", lineHeight: 1.6 }}>
+              날짜는 오늘 날짜로 자동 입력되고, 방금 올린 공지가 맨 위(=첫 진입 팝업)로 표시됩니다.
+            </p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: withDate ? "1fr 1fr 1fr" : "1fr 1fr", gap: 12, marginBottom: 14, alignItems: "end" }}>
+              {withDate && (
+                <div>
+                  <label style={label}>표시 날짜</label>
+                  <input style={input} value={form.dateLabel} onChange={(e) => setForm({ ...form, dateLabel: e.target.value })} placeholder="2026.04.01" />
+                </div>
+              )}
               <div>
-                <label style={label}>표시 날짜</label>
-                <input style={input} value={form.dateLabel} onChange={(e) => setForm({ ...form, dateLabel: e.target.value })} placeholder="2026.04.01" />
+                <label style={label}>정렬 순서(작을수록 위)</label>
+                <input type="number" style={input} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} />
               </div>
-            )}
-            <div>
-              <label style={label}>정렬 순서(작을수록 위)</label>
-              <input type="number" style={input} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} />
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--c-text-2)", paddingBottom: 8 }}>
+                <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+                노출
+              </label>
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--c-text-2)", paddingBottom: 8 }}>
-              <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
-              노출
-            </label>
-          </div>
+          )}
 
-          {withPopup && (
+          {withPopup && !simple && (
             <div style={{ marginBottom: 16, padding: "13px 15px", background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 10 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "var(--c-text-2)", cursor: "pointer" }}>
                 <input type="checkbox" checked={form.popupEnabled} onChange={(e) => setForm({ ...form, popupEnabled: e.target.checked })} />
@@ -247,6 +270,18 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
         </form>
       )}
 
+      {simple && !loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", marginBottom: 14, borderRadius: 12, background: "var(--c-brand-soft-6)", border: "1px solid var(--c-brand-soft-3, var(--c-border))" }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>🔔</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-brand-deep-5, var(--c-brand))" }}>지금 첫 진입 팝업으로 뜨는 공지</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-b)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {popupNotice ? popupNotice.title : "없음 (노출 중인 공지 없음)"}
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>불러오는 중…</p>
       ) : items.length === 0 ? (
@@ -272,11 +307,21 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
                     </div>
                   )}
                   <div style={{ fontSize: 11, color: "var(--c-text-5)", marginTop: 6, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span>순서 {it.sortOrder}</span>
-                    {withPopup && it.popupEnabled && (
-                      <span style={{ padding: "1px 7px", borderRadius: 999, background: "var(--c-brand-soft-6)", color: "var(--c-brand-deep-5)", fontWeight: 700, fontSize: 10.5 }}>
-                        팝업 · {it.popupHideDays ?? 7}일 안보기
-                      </span>
+                    {simple ? (
+                      popupNotice && popupNotice.id === it.id && (
+                        <span style={{ padding: "1px 8px", borderRadius: 999, background: "var(--c-brand)", color: "#fff", fontWeight: 800, fontSize: 10.5 }}>
+                          지금 팝업 공지
+                        </span>
+                      )
+                    ) : (
+                      <>
+                        <span>순서 {it.sortOrder}</span>
+                        {withPopup && it.popupEnabled && (
+                          <span style={{ padding: "1px 7px", borderRadius: 999, background: "var(--c-brand-soft-6)", color: "var(--c-brand-deep-5)", fontWeight: 700, fontSize: 10.5 }}>
+                            팝업 · {it.popupHideDays ?? 7}일 안보기
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

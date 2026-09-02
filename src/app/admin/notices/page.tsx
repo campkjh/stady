@@ -9,9 +9,8 @@ export default function AdminNoticesPage() {
       heading="공지사항 관리"
       titleLabel="제목"
       bodyLabel="내용"
-      withDate
       withImages
-      withPopup
+      simple
     />
   );
 }
