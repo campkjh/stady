@@ -69,7 +69,8 @@ export default function ProfilePage() {
       if (res.ok) {
         router.back();
       } else {
-        alert("저장에 실패했습니다.");
+        const d = await res.json().catch(() => ({}));
+        alert(d?.error || "저장에 실패했습니다.");
       }
     } catch {
       // ignore

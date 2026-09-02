@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { ensureUserStatusMessageColumn } from "@/lib/user-status";
+import { isNicknameTaken, nicknameKey, validateNickname } from "@/lib/nickname";
 
 interface StatusRow {
   statusMessage: string | null;
@@ -42,7 +43,18 @@ export async function PUT(request: NextRequest) {
     const { nickname, avatar, statusMessage } = await request.json();
 
     const data: Record<string, unknown> = {};
-    if (nickname !== undefined) data.nickname = nickname;
+    if (nickname !== undefined) {
+      // 닉네임 변경 시 유일성 강제(대소문자·공백 무시). 실제로 바뀔 때만 검사.
+      const changed = nicknameKey(nickname) !== nicknameKey(user.nickname);
+      if (changed) {
+        const v = validateNickname(nickname);
+        if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+        if (await isNicknameTaken(v.value, user.id)) {
+          return NextResponse.json({ error: "이미 사용 중인 닉네임이에요. 다른 이름을 입력해 주세요." }, { status: 409 });
+        }
+        data.nickname = v.value;
+      }
+    }
     if (avatar !== undefined) data.avatar = avatar;
 
     const updated = Object.keys(data).length > 0

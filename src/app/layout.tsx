@@ -5,6 +5,7 @@ import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
 import PageViewTracker from "@/components/PageViewTracker";
 import IapAutoRestore from "@/components/IapAutoRestore";
+import NicknameGate from "@/components/NicknameGate";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
@@ -73,6 +74,8 @@ export default function RootLayout({
         {/* 앱 실행 시 조용한 자동 구매복원 — 구글 검증 미구성 기간에 지급 안 된 안드
             결제분을, 사용자가 '구매 복원'을 누르지 않아도 앱만 켜면 살아나게 한다. */}
         <IapAutoRestore />
+        {/* 닉네임이 다른 사용자와 중복이면 접속 시 강제 변경 팝업(닫기 없음). 신규 중복도 여기서 잡힌다. */}
+        <NicknameGate />
         <NativeAuthProvider>
           {children}
         </NativeAuthProvider>
