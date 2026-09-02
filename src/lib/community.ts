@@ -611,9 +611,12 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
 // ── 활동 티어(리그) ──────────────────────────────────────────────
 // 출석 전용 테이블이 없어, 활동량(글·댓글·받은 공감·퀴즈 활동)으로 점수를 매겨
 // 6등급으로 환산한다. 인기글 등재는 공감 수에 자연히 반영된다.
-export type CommunityTier = "iron" | "silver" | "gold" | "emerald" | "diamond" | "master";
+export type CommunityTier =
+  | "iron" | "silver" | "gold" | "emerald" | "diamond" | "master" | "grandmaster" | "gongsin";
 
 export function tierForScore(score: number): CommunityTier {
+  if (score >= 4800) return "gongsin";
+  if (score >= 2400) return "grandmaster";
   if (score >= 1200) return "master";
   if (score >= 600) return "diamond";
   if (score >= 300) return "emerald";
@@ -630,6 +633,8 @@ export const TIER_THRESHOLDS: { tier: CommunityTier; min: number }[] = [
   { tier: "emerald", min: 300 },
   { tier: "diamond", min: 600 },
   { tier: "master", min: 1200 },
+  { tier: "grandmaster", min: 2400 },
+  { tier: "gongsin", min: 4800 },
 ];
 
 // 관리자 수동 등급 조정용 가산점(경험치 보너스). 활동 점수에 그대로 더해지므로

@@ -43,7 +43,7 @@ interface CommunityComment {
   replies: CommunityComment[];
 }
 
-const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master", "grandmaster", "gongsin"];
 // 댓글 정렬(백엔드 CommentSort 키와 일치).
 const COMMENT_SORTS = [
   { key: "newest", label: "최신순" },

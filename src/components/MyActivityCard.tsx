@@ -11,10 +11,10 @@ interface Activity {
   nextMin: number | null;
 }
 
-const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master", "grandmaster", "gongsin"];
 // 등급별 필요 경험치(서버 TIER_THRESHOLDS와 동일하게 유지할 것).
 const TIER_MIN: Record<string, number> = {
-  iron: 0, silver: 40, gold: 120, emerald: 300, diamond: 600, master: 1200,
+  iron: 0, silver: 40, gold: 120, emerald: 300, diamond: 600, master: 1200, grandmaster: 2400, gongsin: 4800,
 };
 // 경험치 가중치(서버 getUserActivityScore와 동일).
 // 아이콘은 공용 아이콘 세트(design/icon-set)에서 가져온 SVG.
@@ -32,6 +32,8 @@ const LABEL: Record<string, string> = {
   emerald: "에메랄드",
   diamond: "다이아",
   master: "마스터",
+  grandmaster: "그랜드마스터",
+  gongsin: "공신",
 };
 
 const CACHE_KEY = "me-activity";

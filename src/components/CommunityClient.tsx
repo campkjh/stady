@@ -81,7 +81,7 @@ interface CommunityPost {
   tags: CommunityTag[];
 }
 
-const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master"];
+const TIERS = ["iron", "silver", "gold", "emerald", "diamond", "master", "grandmaster", "gongsin"];
 function TierBadge({ tier }: { tier?: string }) {
   if (!tier || !TIERS.includes(tier)) return null;
   return (
