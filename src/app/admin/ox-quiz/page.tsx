@@ -491,7 +491,7 @@ export default function OxQuizManagement() {
 
       {/* Question Management Modal */}
       {selectedSet && (
-        <div style={{
+        <div className="jc-q-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(43,49,61,0.32)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
         }}>
@@ -500,7 +500,7 @@ export default function OxQuizManagement() {
             maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column",
           }}>
             {/* Modal Header */}
-            <div style={{
+            <div className="jc-q-head" style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "20px 24px", borderBottom: `1px solid ${JC.soft}`,
             }}>
@@ -524,7 +524,7 @@ export default function OxQuizManagement() {
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+            <div className="jc-q-body" style={{ padding: 24, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <p style={{ fontSize: 14, fontWeight: 500, color: JC.body }}>총 <b style={{ color: JC.accent, fontWeight: 700 }}>{questions.length}</b>개 문제</p>
                 <button
@@ -556,11 +556,11 @@ export default function OxQuizManagement() {
 
               {/* Add Question Form */}
               {showQuestionForm && (
-                <form onSubmit={handleAddQuestion} style={{
+                <form className="jc-q-form" onSubmit={handleAddQuestion} style={{
                   background: JC.soft, borderRadius: 13, padding: 20, marginBottom: 20,
                   border: "none",
                 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
+                  <div className="jc-q-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
                     <div>
                       <label style={labelStyle}>소분류(섹션)</label>
                       {useCustomSection ? (
@@ -623,7 +623,7 @@ export default function OxQuizManagement() {
                       required
                     />
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div className="jc-q-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                     <div>
                       <label style={labelStyle}>정답</label>
                       <select
@@ -639,6 +639,7 @@ export default function OxQuizManagement() {
                       <label style={labelStyle}>해설</label>
                       {/* 해설은 여러 줄이 보통이라 한 줄 input 대신 넉넉한 textarea. */}
                       <textarea
+                        className="jc-q-explain"
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
                         rows={5}
@@ -946,4 +947,14 @@ const JC_FOCUS_CSS = `
   .jc-admin input:focus,
   .jc-admin textarea:focus,
   .jc-admin select:focus { border-color: #3180F7 !important; }
+  /* 모바일 문제 관리 모달: 여백 축소, 2열 그리드(소분류/번호·정답/해설)를 1열로, 해설칸 확대.
+     인라인 style 이 기본값이라 !important 로 덮는다. 해설 16px 은 iOS 포커스 확대 방지. */
+  @media (max-width: 768px) {
+    .jc-admin .jc-q-overlay { padding: 6px !important; }
+    .jc-admin .jc-q-head { padding: 12px 14px !important; }
+    .jc-admin .jc-q-body { padding: 12px !important; }
+    .jc-admin .jc-q-form { padding: 12px !important; margin-bottom: 14px !important; }
+    .jc-admin .jc-q-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+    .jc-admin .jc-q-explain { min-height: 190px !important; font-size: 16px !important; }
+  }
 `;
