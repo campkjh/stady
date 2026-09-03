@@ -637,11 +637,13 @@ export default function OxQuizManagement() {
                     </div>
                     <div>
                       <label style={labelStyle}>해설</label>
-                      <input
-                        type="text"
+                      {/* 해설은 여러 줄이 보통이라 한 줄 input 대신 넉넉한 textarea. */}
+                      <textarea
                         value={questionData.explanation}
                         onChange={(e) => setQuestionData({ ...questionData, explanation: e.target.value })}
-                        style={inputStyle}
+                        rows={5}
+                        placeholder="해설 입력"
+                        style={{ ...inputStyle, resize: "vertical", minHeight: 130, lineHeight: 1.6 }}
                         onFocus={(e) => e.currentTarget.style.borderColor = "#3180F7"}
                         onBlur={(e) => e.currentTarget.style.borderColor = "var(--c-bg-muted-3)"}
                       />
@@ -757,8 +759,8 @@ export default function OxQuizManagement() {
                             <textarea
                               value={editQExplanation}
                               onChange={(e) => setEditQExplanation(e.target.value)}
-                              rows={2}
-                              style={{ ...inputStyle, resize: "vertical", marginBottom: 10 }}
+                              rows={5}
+                              style={{ ...inputStyle, resize: "vertical", minHeight: 130, lineHeight: 1.6, marginBottom: 10 }}
                               placeholder="해설 입력"
                             />
                             <label style={labelStyle}>기출 출처</label>
