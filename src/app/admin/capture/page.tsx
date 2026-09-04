@@ -77,7 +77,6 @@ export default function AdminCapturePage() {
             <img src="/icons/stady-logo.svg" alt="stady" className="cap-logo" />
             <p className="cap-kicker">스타디와 함께한 {data.year}년 {data.month}월</p>
             <p className="cap-total">{data.totalUsers.toLocaleString("ko-KR")}</p>
-            <p className="cap-total-sub">명의 학습자와 함께하고 있어요</p>
           </div>
 
           <section className="cap-sec">
@@ -126,7 +125,6 @@ export default function AdminCapturePage() {
           margin: 6px 0 0; font-size: 76px; line-height: 1; font-weight: 700; color: #3787FF;
           letter-spacing: -0.045em;
         }
-        .cap-total-sub { margin: 8px 0 0; font-size: 15px; font-weight: 500; color: #4E5968; }
         .cap-sec {
           padding: 0 2px;
           display: flex; flex-direction: column;
