@@ -35,19 +35,6 @@ export async function GET() {
        LIMIT ${MAX_PROFILES}`
     );
 
-    // 이번달 구독자(테스트 제외, 사람 기준 중복 제거)
-    const [subCount] = await prisma.$queryRawUnsafe<{ c: number }[]>(
-      `SELECT COUNT(DISTINCT s."user_id")::int AS c FROM "IapSubscription" s
-       WHERE s."environment" <> 'Sandbox'
-         AND date_trunc('month', COALESCE(s."purchased_at", s."created_at")) = date_trunc('month', now())`
-    );
-    const subProfiles = await prisma.$queryRawUnsafe<Profile[]>(
-      `SELECT DISTINCT ON (u."id") u."id", u."nickname", u."avatar"
-       FROM "IapSubscription" s JOIN "User" u ON u."id" = s."user_id"
-       WHERE s."environment" <> 'Sandbox'
-         AND date_trunc('month', COALESCE(s."purchased_at", s."created_at")) = date_trunc('month', now())
-       LIMIT ${MAX_PROFILES}`
-    );
 
     const now = new Date();
     return NextResponse.json({
@@ -55,7 +42,6 @@ export async function GET() {
       month: now.getMonth() + 1,
       totalUsers: totalUsers?.c ?? 0,
       newUsers: { count: newCount?.c ?? 0, profiles: newProfiles },
-      subscribers: { count: subCount?.c ?? 0, profiles: subProfiles },
     });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {

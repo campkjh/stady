@@ -12,7 +12,6 @@ interface CaptureData {
   month: number;
   totalUsers: number;
   newUsers: { count: number; profiles: Profile[] };
-  subscribers: { count: number; profiles: Profile[] };
 }
 
 // 쿨그레이 한 계열의 명도 변주 — 프로필 원 배경.
@@ -78,16 +77,6 @@ export default function AdminCapturePage() {
             <p className="cap-kicker">스타디와 함께한 {data.year}년 {data.month}월</p>
             <p className="cap-total">{data.totalUsers.toLocaleString("ko-KR")}</p>
           </div>
-
-          <section className="cap-sec">
-            <p className="cap-sec-title">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/capture/crown.svg" alt="" className="cap-ti" />
-              이번달에 구독해주신 회원님들
-              <span className="cap-count">{data.subscribers.count.toLocaleString("ko-KR")}명</span>
-            </p>
-            <Avatars profiles={data.subscribers.profiles} rows={3} />
-          </section>
 
           <section className="cap-sec cap-sec-fill">
             <p className="cap-sec-title">
