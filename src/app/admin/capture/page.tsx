@@ -74,7 +74,7 @@ export default function AdminCapturePage() {
         <div className="cap-inner">
           <div className="cap-head">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/capture/users.svg" alt="" className="cap-head-icon" />
+            <img src="/icons/stady-logo.svg" alt="stady" className="cap-logo" />
             <p className="cap-kicker">스타디와 함께한 {data.year}년 {data.month}월</p>
             <p className="cap-total">{data.totalUsers.toLocaleString("ko-KR")}</p>
             <p className="cap-total-sub">명의 학습자와 함께하고 있어요</p>
@@ -140,7 +140,8 @@ export default function AdminCapturePage() {
           display: flex; align-items: center; gap: 7px;
         }
         .cap-ti { width: 19px; height: 19px; flex-shrink: 0; display: block; }
-        .cap-head-icon { width: 30px; height: 30px; display: block; margin: 0 auto 6px; opacity: 0.9; }
+        /* 965x350 비율 로고 — 높이만 고정하고 폭은 비율대로. */
+        .cap-logo { height: 38px; width: auto; display: block; margin: 0 auto 10px; }
         .cap-count {
           margin-left: auto; flex-shrink: 0; font-size: 13px; font-weight: 600; color: #3787FF;
           background: #EAF2FF; border-radius: 999px; padding: 4px 12px;
