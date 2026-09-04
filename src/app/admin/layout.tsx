@@ -240,6 +240,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           {/* Back to app */}
+          <div style={{ padding: "8px 12px 0" }}>
+            <Link
+              href="/admin/capture"
+              onClick={() => setSidebarOpen(false)}
+              className="press"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "11px 16px",
+                borderRadius: 13,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#fff",
+                background: "#6C5CE0",
+                textDecoration: "none",
+                boxShadow: "none",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <span>캡쳐용 화면</span>
+            </Link>
+          </div>
+
           <div style={{ padding: "8px 12px" }}>
             <Link
               href="/"
@@ -322,10 +348,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           <Image src="/icons/stady-logo.svg" alt="Stady" width={60} height={20} unoptimized />
           <Link
-            href="/"
+            href="/admin/capture"
             className="press"
             style={{
               marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "7px 13px",
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#fff",
+              background: "#6C5CE0",
+              textDecoration: "none",
+              boxShadow: "none",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            캡쳐용
+          </Link>
+          <Link
+            href="/"
+            className="press"
+            style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
