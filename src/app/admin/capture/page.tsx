@@ -27,9 +27,12 @@ function initialOf(nickname: string) {
   return t ? Array.from(t)[0] : "?";
 }
 
-function Avatars({ profiles, rows }: { profiles: Profile[]; rows: number }) {
+function Avatars({ profiles, rows, fill }: { profiles: Profile[]; rows?: number; fill?: boolean }) {
   return (
-    <div className="cap-grid" style={{ ["--rows" as string]: String(rows) }}>
+    <div
+      className={fill ? "cap-grid cap-grid-fill" : "cap-grid"}
+      style={rows ? { ["--rows" as string]: String(rows) } : undefined}
+    >
       {profiles.map((p) => (
         <div key={p.id} className="cap-av" title={p.nickname} style={{ background: toneFor(p.id) }}>
           {p.avatar ? (
@@ -80,21 +83,21 @@ export default function AdminCapturePage() {
           <section className="cap-sec">
             <p className="cap-sec-title">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/capture/users.svg" alt="" className="cap-ti" />
-              이번달에 함께 해주신 유저님들
-              <span className="cap-count">{data.newUsers.count.toLocaleString("ko-KR")}명</span>
-            </p>
-            <Avatars profiles={data.newUsers.profiles} rows={5} />
-          </section>
-
-          <section className="cap-sec">
-            <p className="cap-sec-title">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/capture/crown.svg" alt="" className="cap-ti" />
               이번달에 구독해주신 회원님들
               <span className="cap-count">{data.subscribers.count.toLocaleString("ko-KR")}명</span>
             </p>
-            <Avatars profiles={data.subscribers.profiles} rows={2} />
+            <Avatars profiles={data.subscribers.profiles} rows={3} />
+          </section>
+
+          <section className="cap-sec cap-sec-fill">
+            <p className="cap-sec-title">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/capture/users.svg" alt="" className="cap-ti" />
+              이번달에 함께 해주신 유저님들
+              <span className="cap-count">{data.newUsers.count.toLocaleString("ko-KR")}명</span>
+            </p>
+            <Avatars profiles={data.newUsers.profiles} fill />
           </section>
 
         </div>
@@ -114,7 +117,7 @@ export default function AdminCapturePage() {
           background: rgba(25,31,40,0.08); color: #4E5968; font-size: 19px; line-height: 1;
         }
         .cap-inner {
-          width: 100%; max-width: 720px; max-height: 100%;
+          width: 100%; max-width: 720px; height: 100%;
           display: flex; flex-direction: column; gap: 12px; overflow: hidden;
         }
         .cap-head { text-align: center; flex-shrink: 0; }
@@ -125,9 +128,13 @@ export default function AdminCapturePage() {
         }
         .cap-total-sub { margin: 8px 0 0; font-size: 15px; font-weight: 500; color: #4E5968; }
         .cap-sec {
-          padding: 0 2px; margin-bottom: 4px;
-          flex-shrink: 1; min-height: 0; overflow: hidden;
+          padding: 0 2px;
+          display: flex; flex-direction: column;
+          flex: 0 0 auto; min-height: 0; overflow: hidden;
         }
+        /* 남는 세로 공간을 이 섹션이 전부 차지한다(아래가 비지 않게). */
+        .cap-sec-fill { flex: 1 1 auto; }
+        .cap-sec-fill .cap-sec-title { flex-shrink: 0; }
         .cap-sec-title {
           margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #191F28;
           display: flex; align-items: center; gap: 7px;
@@ -142,10 +149,11 @@ export default function AdminCapturePage() {
         .cap-grid {
           display: flex; flex-wrap: wrap; gap: 6px;
           /* 한 줄이 살짝 걸치게 두고 아래를 페이드 — 딱 잘린 느낌 대신 자연스럽게 사라진다. */
-          max-height: calc(var(--rows) * 44px + 14px); overflow: hidden;
+          max-height: calc(var(--rows) * 44px + 14px); overflow: hidden; align-content: flex-start;
           -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
           mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
         }
+        .cap-grid-fill { max-height: none; flex: 1 1 auto; min-height: 0; }
         .cap-av {
           width: 38px; height: 38px; border-radius: 999px; overflow: hidden;
           display: flex; align-items: center; justify-content: center;
