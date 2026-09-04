@@ -15,8 +15,8 @@ interface CaptureData {
   subscribers: { count: number; profiles: Profile[] };
 }
 
-// 브랜드 블루 한 계열의 명도 변주 — 프로필 원 배경.
-const TONES = ["#3787FF", "#5B9BFF", "#7FB1FF", "#2F6BE0", "#9AC3FF", "#1F5EDC"];
+// 쿨그레이 한 계열의 명도 변주 — 프로필 원 배경.
+const TONES = ["#8B95A1", "#A7B0BA", "#6B7684", "#C2C9D1", "#9AA4AF", "#7A848F"];
 function toneFor(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
