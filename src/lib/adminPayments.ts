@@ -45,6 +45,23 @@ export interface AdminIapPayment {
   createdAt: string;
 }
 
+// 전월 코호트 해지율 — "전월에 구독한 사람 대비 취소한 사람".
+export interface AdminChurn {
+  monthLabel: string; // 전월 (예: "2026.08")
+  newSubs: number; // 전월 신규 구독 수
+  canceled: number; // 그중 해지(환불·해지 확정 + 자동갱신 해제)
+  ratePct: number; // 해지 / 신규 × 100
+}
+
+// 정산 추정. 스토어 수수료율은 프로그램 가입 여부(애플 소규모 개발자/구글 첫 100만$)에
+// 따라 15% 또는 30% 라 서버는 총액만 주고, 화면에서 비율을 골라 환산한다.
+export interface AdminRevenue {
+  grossKrw: number; // 누적 결제액(환불·샌드박스 제외)
+  googleGrossKrw: number;
+  appleGrossKrw: number;
+  mrrKrw: number; // 활성 구독 월 환산(연간은 ÷12)
+}
+
 export interface AdminPaymentsResult {
   summary: {
     active: number; // 전체 활성 구독
@@ -56,6 +73,8 @@ export interface AdminPaymentsResult {
   };
   iap: AdminIapPayment[];
   free: ActiveFreeGrant[]; // 무료 프리미엄 지급(결제 아님) — 개별 회수 가능
+  churn: AdminChurn;
+  revenue: AdminRevenue;
 }
 
 const PLAN_LABEL: Record<string, string> = { apple: "App Store", google: "Google Play" };
@@ -102,6 +121,32 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
 
   const active = iap.filter((r) => r.active);
   const free = await listActiveFreeGrants();
+
+  // ── 통계는 테스트(Sandbox) 건을 제외한다. 실제 매출/해지가 아니다.
+  const real = iap.filter((r) => r.environment !== "Sandbox");
+  // 해지로 보는 기준: 환불·해지 확정이거나, 자동갱신을 꺼둔 상태(= 갱신 안 됨).
+  const isCanceledLike = (r: AdminIapPayment) =>
+    r.status === "REFUNDED" || r.status === "CANCELED" || !r.autoRenew;
+
+  // 전월 코호트: 구매일(없으면 생성일)이 지난달인 구독.
+  const nowDate = new Date();
+  const prevStart = new Date(nowDate.getFullYear(), nowDate.getMonth() - 1, 1);
+  const prevEnd = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+  const monthLabel = `${prevStart.getFullYear()}.${String(prevStart.getMonth() + 1).padStart(2, "0")}`;
+  const prevCohort = real.filter((r) => {
+    const t = new Date(r.purchasedAt ?? r.createdAt).getTime();
+    return t >= prevStart.getTime() && t < prevEnd.getTime();
+  });
+  const prevCanceled = prevCohort.filter(isCanceledLike).length;
+
+  // 정산: 환불 건은 수입이 아니므로 뺀다. 연간권은 월 환산해 MRR 에 반영.
+  const paid = real.filter((r) => r.status !== "REFUNDED");
+  const sum = (rows: AdminIapPayment[]) => rows.reduce((a, r) => a + (r.amountKrw ?? 0), 0);
+  const monthlyEquiv = (r: AdminIapPayment) => {
+    const plan = getPlanById(r.planId);
+    if (!plan) return 0;
+    return resolvePlanPricing(plan, r.platform).monthlyEquivalentKrw;
+  };
   return {
     summary: {
       active: active.length,
@@ -113,5 +158,17 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
     },
     iap,
     free,
+    churn: {
+      monthLabel,
+      newSubs: prevCohort.length,
+      canceled: prevCanceled,
+      ratePct: prevCohort.length ? Math.round((prevCanceled / prevCohort.length) * 1000) / 10 : 0,
+    },
+    revenue: {
+      grossKrw: sum(paid),
+      googleGrossKrw: sum(paid.filter((r) => r.platform === "google")),
+      appleGrossKrw: sum(paid.filter((r) => r.platform === "apple")),
+      mrrKrw: paid.filter((r) => r.active).reduce((a, r) => a + monthlyEquiv(r), 0),
+    },
   };
 }

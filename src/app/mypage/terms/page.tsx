@@ -4,6 +4,7 @@ import BackHeader from "@/components/BackHeader";
 const TERMS_ITEMS = [
   { label: "개인정보처리방침", href: "/mypage/terms/privacy" },
   { label: "서비스 이용약관", href: "/mypage/terms/service" },
+  { label: "환불 규정", href: "/mypage/terms/refund" },
   { label: "개인정보 제3자 제공 동의", href: "/mypage/terms/third-party" },
 ];
 

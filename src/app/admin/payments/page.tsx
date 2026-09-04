@@ -28,10 +28,14 @@ interface FreeGrant {
   totalDays: number;
   expiresAt: string;
 }
+interface Churn { monthLabel: string; newSubs: number; canceled: number; ratePct: number }
+interface Revenue { grossKrw: number; googleGrossKrw: number; appleGrossKrw: number; mrrKrw: number }
 interface PaymentsData {
   summary: { active: number; total: number; googleActive: number; appleActive: number; freeActive: number; refunded: number };
   iap: IapPayment[];
   free: FreeGrant[];
+  churn: Churn;
+  revenue: Revenue;
 }
 
 // 무료 지급 출처 라벨 — 어떤 경로로 무료가 됐는지.
@@ -106,6 +110,8 @@ export default function AdminPaymentsPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [revoking, setRevoking] = useState<string | null>(null);
+  // 스토어 수수료율 — 애플 소규모 개발자/구글 첫 100만$ 구간이면 15%, 아니면 30%.
+  const [feePct, setFeePct] = useState<15 | 30>(30);
 
   // 무료 지급 개별 회수 — 결제와 무관, PremiumGrant 삭제.
   async function revokeFree(g: FreeGrant) {
@@ -196,6 +202,66 @@ export default function AdminPaymentsPage() {
               </div>
             ))}
           </div>
+
+          {data?.churn && data?.revenue && (
+            <div style={{ ...cardStyle, marginBottom: 22 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 22 }}>
+                {/* 전월 해지율 */}
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 10 }}>
+                    전월({data.churn.monthLabel}) 구독 대비 해지
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontSize: 30, fontWeight: 800, color: data.churn.ratePct >= 30 ? "#D63A3A" : "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                      {data.churn.ratePct}%
+                    </span>
+                    <span style={{ fontSize: 13, color: MUTED, fontWeight: 600 }}>
+                      해지 {data.churn.canceled} / 신규 {data.churn.newSubs}건
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 11.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.6 }}>
+                    전월에 새로 구독한 사람 중 환불·해지했거나 자동갱신을 끈 비율입니다.
+                  </p>
+                </div>
+
+                {/* 정산 추정 */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-text-2)" }}>예상 정산금액 (안드로이드+애플)</span>
+                    <span style={{ display: "flex", gap: 4 }}>
+                      {([15, 30] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setFeePct(p)}
+                          style={{
+                            border: "none", borderRadius: 999, padding: "4px 10px", cursor: "pointer",
+                            fontSize: 11.5, fontWeight: 700,
+                            background: feePct === p ? "var(--c-brand-soft-6)" : "var(--c-bg-muted-3)",
+                            color: feePct === p ? ACCENT : "var(--c-text-3c)",
+                          }}
+                        >
+                          수수료 {p}%
+                        </button>
+                      ))}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                    {won(Math.round(data.revenue.grossKrw * (1 - feePct / 100)))}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: MUTED, marginTop: 8, lineHeight: 1.7 }}>
+                    총 결제액 {won(data.revenue.grossKrw)} (수수료 차감 전)<br />
+                    안드로이드 {won(data.revenue.googleGrossKrw)} · 앱스토어 {won(data.revenue.appleGrossKrw)}<br />
+                    월 환산 예상 수입(MRR) {won(data.revenue.mrrKrw)} · 정산 시 {won(Math.round(data.revenue.mrrKrw * (1 - feePct / 100)))}
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: 11.5, color: MUTED, margin: "16px 0 0", lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
+                환불·테스트(Sandbox) 건은 제외한 금액입니다. 표시가(부가세 포함) 기준이며, 실제 입금액은
+                스토어 수수료율·환율·세금 처리에 따라 달라질 수 있습니다.
+              </p>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
             {tabs.map((t) => (

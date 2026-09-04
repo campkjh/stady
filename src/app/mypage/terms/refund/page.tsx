@@ -39,6 +39,15 @@ export default function RefundPolicyPage() {
               </p>
             </div>
 
+            <div className="mt-3 rounded-xl p-4 text-[13px]" style={{ border: "1px solid var(--c-danger-line)", background: "var(--c-danger-soft)", color: "var(--c-danger-c)" }}>
+              <p className="font-semibold">환불 가능 시간 안내 (중요)</p>
+              <p className="mt-2" style={{ lineHeight: 1.7 }}>
+                유료 콘텐츠는 디지털 콘텐츠 특성상 <strong>이용을 개시한 시점부터 3시간이 경과하면 환불이 불가능</strong>합니다.
+                결제 후 콘텐츠(OX 퀴즈·모의고사·해설 등)를 한 번도 이용하지 않았거나, 이용 개시 후 3시간이
+                지나지 않은 경우에만 환불을 요청하실 수 있습니다.
+              </p>
+            </div>
+
             <table className={tableClass} style={tableStyle}>
               <thead>
                 <tr>
@@ -77,6 +86,11 @@ export default function RefundPolicyPage() {
                 </tr>
               </thead>
               <tbody>
+                <tr>
+                  <td className={`${tdClass} font-medium`} style={tdStyle}>이용 개시 후 3시간 경과</td>
+                  <td className={tdClass} style={tdStyle}>환불 불가</td>
+                  <td className={tdClass} style={tdStyle}>콘텐츠 이용으로 간주</td>
+                </tr>
                 <tr>
                   <td className={`${tdClass} font-medium`} style={tdStyle}>결제 후 7일 이내, 미이용</td>
                   <td className={tdClass} style={tdStyle}>전액 환불</td>
@@ -150,6 +164,7 @@ export default function RefundPolicyPage() {
             <p>다음의 경우에는 환불이 제한됩니다.</p>
             <ul className="mt-2 list-disc pl-5 space-y-1">
               <li>이벤트, 프로모션 등을 통해 무상으로 제공된 서비스 또는 콘텐츠</li>
+              <li>콘텐츠 이용을 개시한 시점부터 3시간이 경과한 경우</li>
               <li>유료 콘텐츠의 전부 또는 대부분(70% 이상)을 이용 완료한 경우</li>
               <li>이용자의 귀책사유(계정 공유, 부정 이용 등)로 인한 서비스 이용 불가</li>
               <li>회원자격 제한·정지 후 이에 대한 이의가 인정되지 않는 경우</li>
@@ -166,6 +181,8 @@ export default function RefundPolicyPage() {
             <p>
               2. 다만, 디지털 콘텐츠의 특성상 이용을 개시한 경우 또는 &quot;콘텐츠산업 진흥법&quot;에 따른 예외에 해당하는 경우
               청약철회가 제한될 수 있으며, 이 경우 회사는 해당 콘텐츠 구매 시 이를 사전 고지합니다.
+              회사는 그 기준을 <strong>이용 개시 후 3시간</strong>으로 정하여 본 약관을 통해 사전 고지하며,
+              해당 시간이 경과하면 환불 및 청약철회가 불가능합니다.
             </p>
           </section>
 
