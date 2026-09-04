@@ -59,11 +59,6 @@ export default function AdminCapturePage() {
       .catch((e) => setError(e instanceof Error ? e.message : "오류가 발생했습니다."));
   }, []);
 
-  // 이번달 가입자 중 구독 전환 비율.
-  const pct = data && data.newUsers.count > 0
-    ? Math.round((data.subscribers.count / data.newUsers.count) * 1000) / 10
-    : 0;
-
   return (
     <div className="cap-root">
       <button type="button" className="cap-close" onClick={() => router.back()} aria-label="닫기">×</button>
@@ -89,7 +84,7 @@ export default function AdminCapturePage() {
               이번달에 함께 해주신 유저님들
               <span className="cap-count">{data.newUsers.count.toLocaleString("ko-KR")}명</span>
             </p>
-            <Avatars profiles={data.newUsers.profiles} rows={4} />
+            <Avatars profiles={data.newUsers.profiles} rows={5} />
           </section>
 
           <section className="cap-sec">
@@ -100,17 +95,8 @@ export default function AdminCapturePage() {
               <span className="cap-count">{data.subscribers.count.toLocaleString("ko-KR")}명</span>
             </p>
             <Avatars profiles={data.subscribers.profiles} rows={2} />
-            {/* 이번달 가입자 대비 구독 전환 비율 */}
-            <div className="cap-bar">
-              <div className="cap-bar-fill" style={{ width: `${Math.max(pct, 2)}%` }} />
-            </div>
-            <div className="cap-bar-legend">
-              <span><i className="dot on" />구독 {pct}%</span>
-              <span className="muted"><i className="dot off" />미구독 {Math.round((100 - pct) * 10) / 10}%</span>
-            </div>
           </section>
 
-          <p className="cap-foot">stady</p>
         </div>
       )}
 
@@ -132,25 +118,25 @@ export default function AdminCapturePage() {
           display: flex; flex-direction: column; gap: 12px; overflow: hidden;
         }
         .cap-head { text-align: center; flex-shrink: 0; }
-        .cap-kicker { margin: 0; font-size: 14px; font-weight: 700; color: #6B7684; letter-spacing: -0.2px; }
+        .cap-kicker { margin: 0; font-size: 14px; font-weight: 500; color: #6B7684; letter-spacing: -0.2px; }
         .cap-total {
-          margin: 6px 0 0; font-size: 76px; line-height: 1; font-weight: 900; color: #3787FF;
+          margin: 6px 0 0; font-size: 76px; line-height: 1; font-weight: 700; color: #3787FF;
           letter-spacing: -0.045em;
         }
-        .cap-total-sub { margin: 8px 0 0; font-size: 15px; font-weight: 700; color: #4E5968; }
+        .cap-total-sub { margin: 8px 0 0; font-size: 15px; font-weight: 500; color: #4E5968; }
         .cap-sec {
           background: #FFFFFF; border: 1px solid #E5ECF7; border-radius: 20px;
           padding: 16px 14px; box-shadow: 0 2px 10px rgba(55,135,255,0.06);
           flex-shrink: 1; min-height: 0; overflow: hidden;
         }
         .cap-sec-title {
-          margin: 0 0 12px; font-size: 15px; font-weight: 800; color: #191F28;
+          margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #191F28;
           display: flex; align-items: center; gap: 7px;
         }
         .cap-ti { width: 19px; height: 19px; flex-shrink: 0; display: block; }
         .cap-head-icon { width: 30px; height: 30px; display: block; margin: 0 auto 6px; opacity: 0.9; }
         .cap-count {
-          margin-left: auto; flex-shrink: 0; font-size: 13px; font-weight: 800; color: #3787FF;
+          margin-left: auto; flex-shrink: 0; font-size: 13px; font-weight: 600; color: #3787FF;
           background: #EAF2FF; border-radius: 999px; padding: 4px 12px;
         }
         /* 지정한 줄 수까지만 보이고 나머지는 잘라낸다 — 스크롤이 생기지 않게. */
@@ -161,28 +147,10 @@ export default function AdminCapturePage() {
         .cap-av {
           width: 38px; height: 38px; border-radius: 999px; overflow: hidden;
           display: flex; align-items: center; justify-content: center;
-          color: #fff; font-size: 14.5px; font-weight: 800;
+          color: #fff; font-size: 14.5px; font-weight: 600;
           box-sizing: border-box; flex-shrink: 0;
         }
         .cap-av-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .cap-bar {
-          margin-top: 14px; height: 12px; border-radius: 999px; background: #EAF0F8; overflow: hidden;
-        }
-        .cap-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #3787FF, #1F5EDC); }
-        .cap-bar-legend {
-          display: flex; align-items: center; justify-content: space-between;
-          margin-top: 8px; font-size: 12.5px; font-weight: 800; color: #191F28;
-        }
-        .cap-bar-legend .muted { color: #8A909C; }
-        .cap-bar-legend .dot {
-          display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px;
-        }
-        .cap-bar-legend .dot.on { background: #3787FF; }
-        .cap-bar-legend .dot.off { background: #D3DAE4; }
-        .cap-foot {
-          text-align: center; margin: 0; font-size: 14px; font-weight: 800;
-          color: #A6AFBD; letter-spacing: 0.02em; flex-shrink: 0;
-        }
         @media (max-width: 520px) {
           .cap-total { font-size: 60px; }
           .cap-av { width: 34px; height: 34px; font-size: 13px; }
