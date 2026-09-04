@@ -103,7 +103,7 @@ export default function AdminCapturePage() {
       <style>{`
         .cap-root {
           position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 9999;
-          background: linear-gradient(170deg, #F7FAFF 0%, #EAF1FF 55%, #DDE9FF 100%);
+          background: #FFFFFF;
           overflow: hidden;
           display: flex; align-items: center; justify-content: center;
           padding: 20px 16px; box-sizing: border-box;
@@ -125,8 +125,7 @@ export default function AdminCapturePage() {
         }
         .cap-total-sub { margin: 8px 0 0; font-size: 15px; font-weight: 500; color: #4E5968; }
         .cap-sec {
-          background: #FFFFFF; border: 1px solid #E5ECF7; border-radius: 20px;
-          padding: 16px 14px; box-shadow: 0 2px 10px rgba(55,135,255,0.06);
+          padding: 0 2px; margin-bottom: 4px;
           flex-shrink: 1; min-height: 0; overflow: hidden;
         }
         .cap-sec-title {
@@ -142,7 +141,10 @@ export default function AdminCapturePage() {
         /* 지정한 줄 수까지만 보이고 나머지는 잘라낸다 — 스크롤이 생기지 않게. */
         .cap-grid {
           display: flex; flex-wrap: wrap; gap: 6px;
-          max-height: calc(var(--rows) * 44px - 6px); overflow: hidden;
+          /* 한 줄이 살짝 걸치게 두고 아래를 페이드 — 딱 잘린 느낌 대신 자연스럽게 사라진다. */
+          max-height: calc(var(--rows) * 44px + 14px); overflow: hidden;
+          -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
         }
         .cap-av {
           width: 38px; height: 38px; border-radius: 999px; overflow: hidden;
@@ -154,7 +156,7 @@ export default function AdminCapturePage() {
         @media (max-width: 520px) {
           .cap-total { font-size: 60px; }
           .cap-av { width: 34px; height: 34px; font-size: 13px; }
-          .cap-grid { max-height: calc(var(--rows) * 40px - 6px); }
+          .cap-grid { max-height: calc(var(--rows) * 40px + 12px); }
           .cap-sec-title { font-size: 14px; }
         }
         @media (max-height: 720px) {
