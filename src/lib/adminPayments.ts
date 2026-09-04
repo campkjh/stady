@@ -52,6 +52,7 @@ export interface AdminPaymentsResult {
     googleActive: number; // 안드로이드(구글) 활성
     appleActive: number; // 앱스토어(애플) 활성
     freeActive: number; // 무료 이용중(결제 없는 지급 — 친구초대·수동지급)
+    refunded: number; // 환불된 구독(스토어 웹훅으로 REFUNDED 기록)
   };
   iap: AdminIapPayment[];
   free: ActiveFreeGrant[]; // 무료 프리미엄 지급(결제 아님) — 개별 회수 가능
@@ -108,6 +109,7 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
       googleActive: active.filter((r) => r.platform === "google").length,
       appleActive: active.filter((r) => r.platform === "apple").length,
       freeActive: free.length,
+      refunded: iap.filter((r) => r.status === "REFUNDED").length,
     },
     iap,
     free,

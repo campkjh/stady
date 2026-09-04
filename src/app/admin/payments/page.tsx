@@ -29,7 +29,7 @@ interface FreeGrant {
   expiresAt: string;
 }
 interface PaymentsData {
-  summary: { active: number; total: number; googleActive: number; appleActive: number; freeActive: number };
+  summary: { active: number; total: number; googleActive: number; appleActive: number; freeActive: number; refunded: number };
   iap: IapPayment[];
   free: FreeGrant[];
 }
@@ -98,7 +98,7 @@ const cardStyle: React.CSSProperties = {
 const thStyle: React.CSSProperties = { textAlign: "left", fontSize: 12, fontWeight: 700, color: MUTED, padding: "10px 12px", whiteSpace: "nowrap", borderBottom: `1px solid ${BORDER}` };
 const tdStyle: React.CSSProperties = { fontSize: 13, color: "var(--c-text-3c)", padding: "12px", borderBottom: `1px solid ${BORDER}`, verticalAlign: "middle" };
 
-type Filter = "all" | "google" | "apple" | "free";
+type Filter = "all" | "google" | "apple" | "free" | "refunded";
 
 export default function AdminPaymentsPage() {
   const [data, setData] = useState<PaymentsData | null>(null);
@@ -150,12 +150,14 @@ export default function AdminPaymentsPage() {
       { label: "안드로이드 활성", value: s ? String(s.googleActive) : "-" },
       { label: "앱스토어 활성", value: s ? String(s.appleActive) : "-" },
       { label: "무료 이용중 (지급)", value: s ? String(s.freeActive) : "-" },
+      { label: "환불", value: s ? String(s.refunded) : "-" },
     ];
   }, [data]);
 
   const rows = useMemo(() => {
     const all = data?.iap ?? [];
     if (filter === "all") return all;
+    if (filter === "refunded") return all.filter((r) => r.status === "REFUNDED");
     return all.filter((r) => r.platform === filter);
   }, [data, filter]);
 
@@ -164,9 +166,16 @@ export default function AdminPaymentsPage() {
     { key: "google", label: "안드로이드 (구글)" },
     { key: "apple", label: "앱스토어 (애플)" },
     { key: "free", label: "무료 이용중" },
+    { key: "refunded", label: "환불" },
   ];
   const tabCount = (key: Filter) =>
-    key === "all" ? data!.iap.length : key === "free" ? data!.free.length : data!.iap.filter((r) => r.platform === key).length;
+    key === "all"
+      ? data!.iap.length
+      : key === "free"
+        ? data!.free.length
+        : key === "refunded"
+          ? data!.iap.filter((r) => r.status === "REFUNDED").length
+          : data!.iap.filter((r) => r.platform === key).length;
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -207,6 +216,12 @@ export default function AdminPaymentsPage() {
               </button>
             ))}
           </div>
+
+          {filter === "refunded" && (
+            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>
+              스토어(앱스토어·구글플레이)에서 환불 처리된 구독입니다. 환불 시점에 이용권은 즉시 해제됩니다.
+            </p>
+          )}
 
           {filter === "free" && (
             <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>

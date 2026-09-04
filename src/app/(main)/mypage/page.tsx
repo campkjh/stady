@@ -6,6 +6,7 @@ import LoginRequired from "@/components/LoginRequired";
 import MyActivityCard from "@/components/MyActivityCard";
 import StadyPrimeBanner from "@/components/StadyPrimeBanner";
 import { getTheme, setTheme, type ThemePreference } from "@/lib/theme";
+import { primeRemainingShort } from "@/lib/primeRemaining";
 
 interface Entitlement {
   active: boolean;
@@ -13,6 +14,7 @@ interface Entitlement {
   status: string | null;
   expiresAt: string | null;
   autoRenew: boolean;
+  source?: string | null;
 }
 
 const MENU_GROUP_1 = [
@@ -168,7 +170,8 @@ export default function MyPage() {
       {/* 스타디 프라임 배너 — 구독 중이면 버튼 없음(관리 링크), 미구독이면 글래스 '구독하기' 버튼 */}
       <div style={{ padding: "20px 20px 8px" }}>
         <Link href="/subscribe" className="press" style={{ display: "block", textDecoration: "none" }} aria-label={active ? "구독 관리" : "구독하기"}>
-          <StadyPrimeBanner cta={active ? undefined : "구독하기"} />
+          {/* 이용 중이면 남은 기간을, 아니면 구독하기 CTA를 배너 안 글래스 칩으로. */}
+          <StadyPrimeBanner cta={active ? primeRemainingShort(ent?.expiresAt, ent?.source) : "구독하기"} />
         </Link>
       </div>
 

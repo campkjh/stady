@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BackHeader from "@/components/BackHeader";
 import { useIap, detectPlatform } from "@/lib/iap/client";
 import type { PlanId } from "@/lib/iap/types";
+import { primeDaysLeft } from "@/lib/primeRemaining";
 
 // 스타디 프리미엄 — 페이지판.
 // 예전엔 마이페이지에서 팝업(SubscribePopup)으로 띄웠는데, 결제 흐름을 한 화면에서 차분히
@@ -324,6 +325,7 @@ function ActiveState({
   const isFree = entitlement.source === "free" || isKing;
   const planName = isFree ? "스타디 프라임" : plans.find((p) => p.id === entitlement.planId)?.name ?? "스타디 프라임";
   const canceled = entitlement.status === "CANCELED";
+  const daysLeft = primeDaysLeft(entitlement.expiresAt);
   return (
     <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
       <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--c-brand-soft-12)", display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
@@ -331,8 +333,16 @@ function ActiveState({
         <img src="/icons/premium/medal-gold.svg" alt="" style={{ width: 38, height: 38 }} />
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-b)" }}>{planName} 이용 중</div>
+      {/* 남은 기간. 만료일이 없는 건(답변왕 유지)은 기간 대신 유지 조건을 보여준다. */}
+      <div style={{ display: "inline-flex", alignItems: "center", padding: "5px 13px", borderRadius: 999, background: "var(--c-brand-soft-12)", color: "var(--c-brand-b)", fontSize: 13, fontWeight: 800, marginTop: 10 }}>
+        {daysLeft === null
+          ? (isKing ? "답변왕 유지 중 계속 이용" : "이용 중")
+          : daysLeft <= 0
+            ? "오늘 만료"
+            : `${daysLeft}일 남음`}
+      </div>
       {entitlement.expiresAt && (
-        <div style={{ fontSize: 13.5, color: "var(--c-text-3)", marginTop: 6 }}>
+        <div style={{ fontSize: 13.5, color: "var(--c-text-3)", marginTop: 8 }}>
           {canceled ? "이용 종료일" : entitlement.autoRenew ? "다음 갱신일" : "이용 종료일"} {fmtDate(entitlement.expiresAt)}
         </div>
       )}
