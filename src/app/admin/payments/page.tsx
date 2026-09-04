@@ -113,6 +113,8 @@ export default function AdminPaymentsPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   // 스토어 수수료율 — 애플 소규모 개발자/구글 첫 100만$ 구간이면 15%, 아니면 30%.
   const [feePct, setFeePct] = useState<15 | 30>(30);
+  // 정산 상세는 기본 접어두고, 접힌 상태에선 핵심 수치 2개만 나란히 보여준다.
+  const [revenueOpen, setRevenueOpen] = useState(false);
 
   // 무료 지급 개별 회수 — 결제와 무관, PremiumGrant 삭제.
   async function revokeFree(g: FreeGrant) {
@@ -225,42 +227,76 @@ export default function AdminPaymentsPage() {
                   </p>
                 </div>
 
-                {/* 정산 추정 */}
+                {/* 정산 추정 — 접고 펼치기 */}
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setRevenueOpen((v) => !v)}
+                    aria-expanded={revenueOpen}
+                    style={{
+                      width: "100%", border: "none", background: "none", padding: 0, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10,
+                    }}
+                  >
                     <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-text-2)" }}>예상 정산금액 (안드로이드+애플)</span>
-                    <span style={{ display: "flex", gap: 4 }}>
-                      {([15, 30] as const).map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setFeePct(p)}
-                          style={{
-                            border: "none", borderRadius: 999, padding: "4px 10px", cursor: "pointer",
-                            fontSize: 11.5, fontWeight: 700,
-                            background: feePct === p ? "var(--c-brand-soft-6)" : "var(--c-bg-muted-3)",
-                            color: feePct === p ? ACCENT : "var(--c-text-3c)",
-                          }}
-                        >
-                          수수료 {p}%
-                        </button>
-                      ))}
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: ACCENT }}>
+                      {revenueOpen ? "접기" : "자세히"}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        style={{ transform: revenueOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
+                        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </span>
+                  </button>
+
+                  {/* 접힌 상태: 핵심 수치 2개를 나란히 */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>정산 예상 (수수료 {feePct}%)</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                        {won(Math.round(data.revenue.grossKrw * (1 - feePct / 100)))}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>총 결제액 (차감 전)</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                        {won(data.revenue.grossKrw)}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 30, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
-                    {won(Math.round(data.revenue.grossKrw * (1 - feePct / 100)))}
-                  </div>
-                  <div style={{ fontSize: 12.5, color: MUTED, marginTop: 8, lineHeight: 1.7 }}>
-                    총 결제액 {won(data.revenue.grossKrw)} (수수료 차감 전)<br />
-                    안드로이드 {won(data.revenue.googleGrossKrw)} · 앱스토어 {won(data.revenue.appleGrossKrw)}<br />
-                    월 환산 예상 수입(MRR) {won(data.revenue.mrrKrw)} · 정산 시 {won(Math.round(data.revenue.mrrKrw * (1 - feePct / 100)))}
-                  </div>
+
+                  {revenueOpen && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+                        {([15, 30] as const).map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setFeePct(p)}
+                            style={{
+                              border: "none", borderRadius: 999, padding: "4px 10px", cursor: "pointer",
+                              fontSize: 11.5, fontWeight: 700,
+                              background: feePct === p ? "var(--c-brand-soft-6)" : "var(--c-bg-muted-3)",
+                              color: feePct === p ? ACCENT : "var(--c-text-3c)",
+                            }}
+                          >
+                            수수료 {p}%
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.7 }}>
+                        안드로이드 {won(data.revenue.googleGrossKrw)} · 앱스토어 {won(data.revenue.appleGrossKrw)}<br />
+                        월 환산 예상 수입(MRR) {won(data.revenue.mrrKrw)} · 정산 시 {won(Math.round(data.revenue.mrrKrw * (1 - feePct / 100)))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <p style={{ fontSize: 11.5, color: MUTED, margin: "16px 0 0", lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
-                환불·테스트(Sandbox) 건은 제외한 금액입니다. 표시가(부가세 포함) 기준이며, 실제 입금액은
-                스토어 수수료율·환율·세금 처리에 따라 달라질 수 있습니다.
-              </p>
+              {revenueOpen && (
+                <p style={{ fontSize: 11.5, color: MUTED, margin: "16px 0 0", lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
+                  환불·테스트(Sandbox) 건은 제외한 금액입니다. 표시가(부가세 포함) 기준이며, 실제 입금액은
+                  스토어 수수료율·환율·세금 처리에 따라 달라질 수 있습니다.
+                </p>
+              )}
             </div>
           )}
 
