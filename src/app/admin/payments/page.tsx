@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { primeDaysLeft } from "@/lib/primeRemaining";
 
 interface IapPayment {
   id: string;
@@ -350,6 +351,25 @@ function IapTable({ rows }: { rows: IapPayment[] }) {
   );
 }
 
+// 만료일 옆 남은 기간. 3일 이하는 임박 표시(빨강).
+function DaysLeft({ expiresAt }: { expiresAt: string }) {
+  const d = primeDaysLeft(expiresAt);
+  if (d === null) return null;
+  const soon = d <= 3;
+  return (
+    <span
+      style={{
+        marginLeft: 8, display: "inline-block", padding: "2px 8px", borderRadius: 999,
+        fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
+        background: soon ? "#FDECEC" : "#F2F4F6",
+        color: soon ? "#D63A3A" : "#8A909C",
+      }}
+    >
+      {d <= 0 ? "오늘 만료" : `${d}일 남음`}
+    </span>
+  );
+}
+
 function FreeGrantTable({ rows, onRevoke, revoking }: { rows: FreeGrant[]; onRevoke: (g: FreeGrant) => void; revoking: string | null }) {
   if (rows.length === 0) return <div style={{ padding: 48, textAlign: "center", color: MUTED, fontSize: 13.5 }}>무료 이용중인 사용자가 없습니다.</div>;
   return (
@@ -371,7 +391,10 @@ function FreeGrantTable({ rows, onRevoke, revoking }: { rows: FreeGrant[]; onRev
             <td style={tdStyle}><User nickname={g.nickname} email={g.email} /></td>
             <td style={tdStyle}>{grantSourceLabel(g.source)}</td>
             <td style={tdStyle}>{g.totalDays > 0 ? `${g.totalDays}일` : "-"}</td>
-            <td style={tdStyle}>{fmtDate(g.expiresAt)}</td>
+            <td style={tdStyle}>
+              <span>{fmtDate(g.expiresAt)}</span>
+              <DaysLeft expiresAt={g.expiresAt} />
+            </td>
             <td style={{ ...tdStyle, textAlign: "right" }}>
               <button
                 type="button"
