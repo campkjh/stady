@@ -5,6 +5,9 @@ import { getFreePremiumUntil, grantFreePremiumDays } from "@/lib/premiumGrant";
 export const REFERRAL_EVENT_PATH = "/referral-event";
 // 친구 1명 초대(가입 성사)마다 초대한 사람에게 주는 무료 프리미엄 일수 (결제 없음).
 export const REFERRAL_REWARD_DAYS = 14;
+// 초대코드를 '손으로' 입력할 수 있는 기간(가입 후 N일). 초대 링크를 안 타고 가입한 신규 사용자를
+// 구제하되, 기존 회원 전체가 서로 코드를 넣어 무료 이용권을 받는 것은 막기 위한 안전장치.
+export const REFERRAL_CODE_ENTRY_DAYS = 7;
 
 interface ReferralUser {
   id: string;
@@ -92,6 +95,37 @@ export async function registerReferralInvite(inviteeId: string, rawInviteCode: u
   return { applied: true, rewarded: inserted.length > 0 };
 }
 
+/** 이 계정이 지금 초대코드를 입력할 수 있는지(아직 적용 안 했고, 가입 후 허용 기간 이내). */
+export async function getCodeEntryEligibility(userId: string): Promise<{ canEnter: boolean; alreadyInvited: boolean }> {
+  await ensureReferralTable();
+  const invited = await prisma.$queryRawUnsafe<{ id: string }[]>(
+    `SELECT "id" FROM "ReferralInvite" WHERE "inviteeId" = $1 LIMIT 1`,
+    userId
+  );
+  const alreadyInvited = invited.length > 0;
+  const me = await prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } });
+  const withinWindow = me
+    ? (Date.now() - new Date(me.createdAt).getTime()) / 86_400_000 <= REFERRAL_CODE_ENTRY_DAYS
+    : false;
+  return { canEnter: !alreadyInvited && withinWindow, alreadyInvited };
+}
+
+/** 사용자가 직접 입력한 초대코드 적용. 실패 사유를 사람이 읽을 수 있게 돌려준다. */
+export async function applyReferralCode(userId: string, rawCode: unknown): Promise<{ ok: boolean; error?: string }> {
+  const code = normalizeInviteCode(typeof rawCode === "string" ? rawCode : "");
+  if (!code) return { ok: false, error: "초대코드를 입력해 주세요." };
+
+  const { alreadyInvited, canEnter } = await getCodeEntryEligibility(userId);
+  if (alreadyInvited) return { ok: false, error: "이미 초대코드가 적용된 계정이에요." };
+  if (!canEnter) {
+    return { ok: false, error: `초대코드는 가입 후 ${REFERRAL_CODE_ENTRY_DAYS}일 이내에만 입력할 수 있어요.` };
+  }
+
+  const result = await registerReferralInvite(userId, code);
+  if (!result.applied) return { ok: false, error: result.error ?? "초대코드가 올바르지 않습니다." };
+  return { ok: true };
+}
+
 export interface ReferralPair {
   id: string;
   invitedAt: Date;
@@ -141,9 +175,12 @@ export async function getReferralSummary(userId: string) {
   );
 
   const freePremiumUntil = await getFreePremiumUntil(userId);
+  const { canEnter, alreadyInvited } = await getCodeEntryEligibility(userId);
 
   return {
     inviteCode: makeInviteCode(userId),
+    canEnterCode: canEnter, // 초대코드 입력창을 띄울지
+    alreadyInvited, // 이미 누군가의 초대를 받은 계정인지
     invitedCount: invitees.length,
     rewardDays: REFERRAL_REWARD_DAYS, // 초대 1명당 무료 프리미엄 일수
     freePremiumUntil: freePremiumUntil ? freePremiumUntil.toISOString() : null,

@@ -27,6 +27,8 @@ interface ReferralPair {
 
 interface ReferralSummary {
   inviteCode: string;
+  canEnterCode?: boolean;
+  alreadyInvited?: boolean;
   invitedCount: number;
   rewardDays?: number;
   freePremiumUntil?: string | null;
@@ -49,6 +51,37 @@ export default function ReferralEventPage() {
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  // 초대코드 직접 입력(초대 링크를 타지 않고 가입한 경우)
+  const [codeInput, setCodeInput] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState("");
+  const [applied, setApplied] = useState(false);
+
+  async function applyCode() {
+    const code = codeInput.trim();
+    if (!code || applying) return;
+    setApplying(true);
+    setApplyError("");
+    try {
+      const res = await fetch("/api/referrals/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setApplyError(d?.error || "초대코드를 적용하지 못했어요.");
+        return;
+      }
+      setApplied(true);
+      setTimeout(() => window.location.reload(), 900);
+    } catch {
+      setApplyError("네트워크 오류예요. 다시 시도해 주세요.");
+    } finally {
+      setApplying(false);
+    }
+  }
   const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
@@ -124,6 +157,53 @@ export default function ReferralEventPage() {
             친구가 처음 가입할 때 이 초대코드를 입력하면 초대한 친구 목록에 자동으로 추가돼요.
           </p>
         </section>
+
+        {/* 초대코드 직접 입력 — 링크를 타지 않고 가입한 신규 사용자를 위한 경로 */}
+        {summary?.canEnterCode && (
+          <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
+            <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 700 }}>받은 초대코드 입력</p>
+            {applied ? (
+              <p style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: primary }}>
+                초대코드가 적용됐어요! 무료 이용권이 지급됩니다 🎁
+              </p>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <input
+                    value={codeInput}
+                    onChange={(e) => { setCodeInput(e.target.value); if (applyError) setApplyError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") applyCode(); }}
+                    placeholder="STADY..."
+                    autoCapitalize="characters"
+                    style={{
+                      flex: 1, height: 48, borderRadius: 14, border: `1.5px solid ${applyError ? "#E5484D" : "var(--c-border)"}`,
+                      background: "var(--c-bg-muted)", padding: "0 14px", fontSize: 16, fontWeight: 700,
+                      color: "var(--c-text)", outline: "none", boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCode}
+                    disabled={applying || !codeInput.trim()}
+                    style={{
+                      width: 86, border: "none", borderRadius: 14,
+                      background: codeInput.trim() ? primary : "var(--c-border-strong)",
+                      color: "#fff", fontSize: 14, fontWeight: 900, opacity: applying ? 0.6 : 1,
+                    }}
+                  >
+                    {applying ? "적용 중" : "적용"}
+                  </button>
+                </div>
+                {applyError && (
+                  <p style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: "#E5484D" }}>{applyError}</p>
+                )}
+                <p style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "var(--c-text-5)", lineHeight: 1.5 }}>
+                  친구에게 받은 초대코드를 넣으면 나와 친구 모두 무료 이용권을 받아요. 가입 후 7일 이내에만 입력할 수 있어요.
+                </p>
+              </>
+            )}
+          </section>
+        )}
 
         {/* 현재 프라임(무료 프리미엄) 상태 — 상세 혜택 안내는 위 이미지가 담당 */}
         {summary?.freePremiumUntil && (
