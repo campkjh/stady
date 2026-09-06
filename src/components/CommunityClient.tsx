@@ -901,8 +901,28 @@ function CategoryChips({
   stacked?: boolean;
 }) {
   const items = [{ id: "", name: "전체", icon: "cg-all" }, ...groups.map((g) => ({ id: g.id, name: g.name, icon: groupIcon(g.name) }))];
+  // 가로로 더 볼 게 남았을 때만 우측을 페이드한다(끝까지 밀면 마지막 탭이 흐려지지 않게).
+  const railRef = useRef<HTMLElement | null>(null);
+  const [atEnd, setAtEnd] = useState(false);
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const update = () => setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [items.length]);
+
   return (
-    <nav className={`tabrail${stacked ? " is-stacked" : ""}`} aria-label="커뮤니티 카테고리">
+    <nav
+      ref={railRef}
+      className={`tabrail${stacked ? " is-stacked" : ""}${atEnd ? " is-end" : ""}`}
+      aria-label="커뮤니티 카테고리"
+    >
       {items.map((it) => {
         const on = selectedGroupId === it.id;
         return (
@@ -1490,6 +1510,12 @@ function CommunityStyles() {
       .community-mobile-filters {
         flex: 1;
         min-width: 0;
+      }
+      /* 헤더 탭이 더 남아 있으면 우측을 그라데이션으로 흐려 '더 있음'을 보여준다.
+         끝까지 스크롤하면(is-end) 마스크를 걷어 마지막 탭이 또렷하게 보이게 한다. */
+      .community-topbar .tabrail:not(.is-end) {
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent 100%);
+        mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent 100%);
       }
       /* 모바일에선 헤더 한 줄이 곧 탭 줄이다 — 제목은 숨기고 탭 + 검색 아이콘만 남긴다. */
       .community-title-wrap { display: none; }
