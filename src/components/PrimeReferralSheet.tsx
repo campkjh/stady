@@ -89,7 +89,10 @@ export default function PrimeReferralSheet() {
         }
         .prs {
           width: 100%; max-width: 520px;
-          background: var(--c-bg);
+          /* 배너 이미지에서 뽑은 연한 라벤더-블루 톤(#dbe0f0 · #9bafda · #dbd7fc)에 맞춘 배경.
+             배너가 밝은 이미지라 다크모드에서도 이 시트는 밝게 유지하고, 글자·버튼 색을
+             테마 변수 대신 고정값으로 둬서 다크에서 글씨가 사라지지 않게 한다. */
+          background: linear-gradient(165deg, #F4F7FE 0%, #DFE7F9 50%, #E4E0FC 100%);
           border-radius: 20px 20px 0 0;
           padding: 14px 14px calc(10px + env(safe-area-inset-bottom, 0px));
           box-sizing: border-box;
@@ -119,8 +122,8 @@ export default function PrimeReferralSheet() {
           flex: 1; height: 48px; border: none; border-radius: 14px;
           font-size: 14.5px; font-weight: 800; cursor: pointer;
         }
-        .prs-week { background: var(--c-bg-soft); color: var(--c-text-3); }
-        .prs-close { background: var(--c-brand); color: #fff; }
+        .prs-week { background: rgba(255,255,255,0.72); color: #4E5968; }
+        .prs-close { background: #3787FF; color: #fff; }
         @media (max-width: 420px) {
           .prs-glass { right: 11px; bottom: 11px; padding: 8px 13px; font-size: 12.5px; }
         }
