@@ -4,7 +4,7 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
-import PrimeReferralBanner from "@/components/PrimeReferralBanner";
+import PrimeReferralSheet from "@/components/PrimeReferralSheet";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
@@ -473,10 +473,20 @@ export default function CommunityClient() {
   );
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
+      {/* 커뮤니티 진입 시 하단에서 올라오는 친구초대 시트(일주일 동안 안보기 지원) */}
+      <PrimeReferralSheet />
       <header ref={topbarRef} className={`community-topbar${compactHeader ? " is-compact" : ""}`}>
         <div className="community-topbar-inner">
-          <div>
+          <div className="community-title-wrap">
             <h1 className="community-title">커뮤니티</h1>
+          </div>
+          {/* 모바일: 제목 줄 아래 따로 있던 카테고리 탭을 헤더 한 줄로 합친다(세로 공간 절약). */}
+          <div className="community-mobile-filters">
+            <CategoryChips
+              groups={groups}
+              selectedGroupId={selectedGroupId}
+              onSelect={(id) => setSelectedGroupId(id)}
+            />
           </div>
           {/* 넓은 화면: 아이콘 버튼 대신 헤더에 검색창을 그대로 편다. */}
           <div className="community-search-inline">
@@ -525,13 +535,6 @@ export default function CommunityClient() {
             style={searchStyle}
           />
         )}
-        <div className="community-mobile-filters">
-          <CategoryChips
-            groups={groups}
-            selectedGroupId={selectedGroupId}
-            onSelect={(id) => setSelectedGroupId(id)}
-          />
-        </div>
       </header>
 
       <div className="community-layout">
@@ -552,9 +555,6 @@ export default function CommunityClient() {
               {message}
             </div>
           )}
-
-          {/* 주간 인기글 위: 스타디 프라임 친구초대 배너 (메인 피드에서만) */}
-          {!selectedGroupId && !query.trim() && <PrimeReferralBanner />}
 
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
@@ -1419,6 +1419,8 @@ function CommunityStyles() {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+        /* grid 자식이라 min-width:auto 면 내용(탭 레일) 때문에 헤더가 화면 밖으로 넘친다. */
+        min-width: 0;
         max-width: 1120px;
         width: 100%;
         margin: 0 auto;
@@ -1486,12 +1488,11 @@ function CommunityStyles() {
         font-weight: 700;
       }
       .community-mobile-filters {
-        display: grid;
-        gap: 8px;
-        max-width: 1120px;
-        width: 100%;
-        margin: 0 auto;
+        flex: 1;
+        min-width: 0;
       }
+      /* 모바일에선 헤더 한 줄이 곧 탭 줄이다 — 제목은 숨기고 탭 + 검색 아이콘만 남긴다. */
+      .community-title-wrap { display: none; }
       .community-layout {
         display: grid;
         gap: 14px;
@@ -2172,6 +2173,7 @@ function CommunityStyles() {
         .community-mobile-filters {
           display: none;
         }
+        .community-title-wrap { display: block; }
         /* 넓은 화면에선 검색 아이콘 버튼 대신 펼쳐진 검색창을 쓴다. */
         .community-search-inline {
           display: flex;
