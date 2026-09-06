@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
 import PrimeReferralSheet from "@/components/PrimeReferralSheet";
+import StoryHighlights from "@/components/StoryHighlights";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import AnswerKingBadge from "@/components/AnswerKingBadge";
@@ -555,6 +556,9 @@ export default function CommunityClient() {
               {message}
             </div>
           )}
+
+          {/* 주간 인기글 위: 스타디 사용 후기 하이라이트(인스타 스토리형) */}
+          {!selectedGroupId && !query.trim() && <StoryHighlights />}
 
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
