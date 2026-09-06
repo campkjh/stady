@@ -61,6 +61,10 @@ export default function CommunityComposeModal({
   const [gifResults, setGifResults] = useState<GifResult[]>([]);
   const [gifLoading, setGifLoading] = useState(false);
   const [gifConfigured, setGifConfigured] = useState(true);
+  // 투표 / 블라인드 — 예전엔 안 쓰이는 작성 페이지에만 있어서 모달로 쓰면 만들 수 없었다.
+  const [pollOn, setPollOn] = useState(false);
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [isBlinded, setIsBlinded] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -195,14 +199,20 @@ export default function CommunityComposeModal({
     setGifOpen(false);
     setGifQuery("");
     setMessage("");
+    setPollOn(false);
+    setPollOptions(["", ""]);
+    setIsBlinded(false);
   }
 
-  const canPost = !!content.trim() && !posting && !uploading;
+  const filledPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
+  const canPost =
+    !!content.trim() && !posting && !uploading && (!pollOn || filledPollOptions.length >= 2);
   const selectedGroup = groups.find((g) => g.id === groupId);
 
   async function submit() {
     if (!canPost) return;
     if (!groupId) { setPickerOpen(true); setMessage("커뮤니티(주제)를 선택해주세요."); return; }
+    if (pollOn && filledPollOptions.length < 2) { setMessage("투표 항목을 2개 이상 입력해주세요."); return; }
     setPosting(true);
     setMessage("");
     try {
@@ -216,9 +226,9 @@ export default function CommunityComposeModal({
           content: content.trim(),
           tagIds: [],
           imageUrls: images.map((i) => i.url),
-          type: "normal",
-          isBlinded: false,
-          pollOptions: [],
+          type: pollOn ? "poll" : "normal",
+          isBlinded,
+          pollOptions: pollOn ? filledPollOptions : [],
         }),
       });
       const data = await res.json();
@@ -304,7 +314,34 @@ export default function CommunityComposeModal({
               </div>
             )}
 
-            {/* 첨부 아이콘 줄 — 사진 · GIF */}
+            {/* 투표 항목 (2~4개) */}
+            {pollOn && (
+              <div className="cmp-poll">
+                {pollOptions.map((opt, i) => (
+                  <div key={i} className="cmp-poll-row">
+                    <input
+                      className="cmp-poll-input"
+                      value={opt}
+                      maxLength={40}
+                      placeholder={`항목 ${i + 1}`}
+                      onChange={(e) => setPollOptions((cur) => cur.map((v, idx) => (idx === i ? e.target.value : v)))}
+                    />
+                    {pollOptions.length > 2 && (
+                      <button type="button" className="cmp-poll-x" aria-label="항목 삭제"
+                        onClick={() => setPollOptions((cur) => cur.filter((_, idx) => idx !== i))}>×</button>
+                    )}
+                  </div>
+                ))}
+                {pollOptions.length < 4 && (
+                  <button type="button" className="cmp-poll-add" onClick={() => setPollOptions((cur) => [...cur, ""])}>
+                    + 항목 추가
+                  </button>
+                )}
+                <p className="cmp-poll-hint">2~4개 항목을 입력하세요. 1인 1표로 투표됩니다.</p>
+              </div>
+            )}
+
+            {/* 첨부 아이콘 줄 — 사진 · GIF · 투표 · 블라인드 */}
             <div className="cmp-attach">
               <button type="button" className="cmp-attach-btn" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="사진">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -313,6 +350,22 @@ export default function CommunityComposeModal({
               {gifEnabled && (
                 <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => { setGifOpen(true); setMessage(""); }} aria-label="GIF">GIF</button>
               )}
+              <button
+                type="button"
+                className={`cmp-chip${pollOn ? " is-on" : ""}`}
+                onClick={() => { setPollOn((v) => !v); setMessage(""); }}
+                aria-pressed={pollOn}
+              >
+                투표
+              </button>
+              <button
+                type="button"
+                className={`cmp-chip${isBlinded ? " is-on" : ""}`}
+                onClick={() => setIsBlinded((v) => !v)}
+                aria-pressed={isBlinded}
+              >
+                블라인드
+              </button>
             </div>
             <input ref={fileRef} type="file" accept="image/*" multiple onChange={onPickImages} style={{ display: "none" }} />
           </div>
@@ -443,6 +496,15 @@ function ComposeStyles() {
       .cmp-attach-btn:disabled { opacity: 0.5; }
       .cmp-attach-btn img { width: 25px; height: 25px; display: block; filter: brightness(0.72); }
       .cmp-gif { font-size: 12px; font-weight: 800; color: var(--c-text-4); border: 2px solid var(--c-text-4) !important; border-radius: 7px; width: 30px; height: 21px; opacity: 0.7; }
+      /* 투표 · 블라인드 토글 칩 */
+      .cmp-chip { border: 1px solid var(--c-border); background: none; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      .cmp-chip.is-on { background: var(--c-brand-soft-6); border-color: transparent; color: var(--c-brand); }
+      .cmp-poll { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+      .cmp-poll-row { display: flex; align-items: center; gap: 8px; }
+      .cmp-poll-input { flex: 1; height: 40px; border-radius: 10px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 12px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
+      .cmp-poll-x { width: 28px; height: 28px; border: none; background: none; color: var(--c-text-5); font-size: 18px; cursor: pointer; flex-shrink: 0; }
+      .cmp-poll-add { align-self: flex-start; border: none; background: none; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--c-brand); cursor: pointer; }
+      .cmp-poll-hint { margin: 0; font-size: 12px; color: var(--c-text-5); font-weight: 500; }
       .cmp-add-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
       .cmp-add-avatar { width: 26px; height: 26px; border-radius: 999px; overflow: hidden; background: var(--c-bg-muted); color: var(--c-text-4); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-left: 7px; }
       .cmp-add-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
