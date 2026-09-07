@@ -52,17 +52,31 @@ export default function DailyQuizCard() {
   const [prefOptions, setPrefOptions] = useState<{ id: string; name: string; count: number }[]>([]);
   const [prefSelected, setPrefSelected] = useState<string[]>([]);
   const [prefSaving, setPrefSaving] = useState(false);
+  const [prefError, setPrefError] = useState(false);
 
-  async function openPref() {
-    setPrefOpen(true);
+  // 과목 목록·선택값 로드. 카드가 뜰 때 미리 한 번 받아 두고(시트를 열자마자 목록이 보이게),
+  // 시트를 열 때 한 번 더 갱신한다. 실패하면 시트 안에 "다시 시도"를 띄운다.
+  const loadPref = useCallback(async () => {
+    setPrefError(false);
     try {
-      const res = await fetch("/api/daily-quiz/preferences", { credentials: "include" });
+      const res = await fetch("/api/daily-quiz/preferences", { credentials: "include", cache: "no-store" });
       const data = await res.json();
-      setPrefOptions(Array.isArray(data?.options) ? data.options : []);
+      const opts = Array.isArray(data?.options) ? data.options : [];
+      setPrefOptions(opts);
       setPrefSelected(Array.isArray(data?.selected) ? data.selected : []);
+      if (opts.length === 0) setPrefError(true);
     } catch {
-      /* 목록을 못 받아도 시트는 열려 있는다 — 다시 열면 재시도 */
+      setPrefError(true);
     }
+  }, []);
+
+  useEffect(() => {
+    loadPref();
+  }, [loadPref]);
+
+  function openPref() {
+    setPrefOpen(true);
+    loadPref();
   }
 
   async function savePref(next: string[]) {
@@ -349,8 +363,12 @@ export default function DailyQuizCard() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%", maxWidth: 520,
-              background: "var(--c-bg-elevated)",
+              // 높이에 vh 를 쓰지 않는다. 안드로이드 WebView 는 vh 가 0/엉뚱한 값으로 잡히는 일이 있어
+              // (웹뷰 높이 측정 문제) 목록만 높이 0 으로 사라지고 제목·버튼만 남았다.
+              // 오버레이(top/bottom:0)의 % 와 플렉스 컬럼으로만 높이를 정한다.
+              width: "100%", maxWidth: 520, maxHeight: "88%", boxSizing: "border-box",
+              display: "flex", flexDirection: "column",
+              background: "var(--c-bg-elevated, var(--c-bg))",
               borderTopLeftRadius: 20, borderTopRightRadius: 20,
               padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
             }}
@@ -365,14 +383,21 @@ export default function DailyQuizCard() {
             <div
               style={{
                 display: "flex", flexDirection: "column", gap: 8,
-                maxHeight: "52vh", overflowY: "auto",
+                flex: "1 1 auto", minHeight: 0, overflowY: "auto",
                 WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
               }}
             >
               {prefOptions.length === 0 ? (
-                <p style={{ fontSize: 14, color: "var(--c-text-5)", textAlign: "center", padding: "16px 0" }}>
-                  불러오는 중이에요.
-                </p>
+                prefError ? (
+                  <div style={{ textAlign: "center", padding: "14px 0" }}>
+                    <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--c-text-5)" }}>과목 목록을 불러오지 못했어요.</p>
+                    <button type="button" onClick={loadPref} className="press" style={{ height: 40, padding: "0 16px", borderRadius: 10, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2)", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>다시 시도</button>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 14, color: "var(--c-text-5)", textAlign: "center", padding: "16px 0" }}>
+                    불러오는 중이에요.
+                  </p>
+                )
               ) : (
                 prefOptions.map((opt) => {
                   const on = prefSelected.includes(opt.id);
@@ -413,7 +438,7 @@ export default function DailyQuizCard() {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => savePref([])}
