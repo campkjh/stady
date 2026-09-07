@@ -1109,6 +1109,35 @@ label {
   transform: scale(0.85);
 }
 
+/* 홈 헤더 스타디 프라임 버튼 — 미구독은 그라데이션 알약('프라임 구독'),
+   구독중이면 강조를 낮춘 연한 브랜드 톤('구독중'). */
+.home-prime-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #3AC8E0 0%, #3787FF 55%, #6A5BFF 100%);
+  box-shadow: 0 4px 12px rgba(55, 135, 255, 0.28);
+  -webkit-tap-highlight-color: transparent;
+}
+.home-prime-btn[data-on] {
+  background: var(--c-brand-soft-6);
+  color: var(--c-brand-deep);
+  box-shadow: none;
+}
+.home-prime-btn:active {
+  transform: scale(0.96);
+}
+
 /* 답변왕 뱃지 — 왕관 + "답변왕"(빨강→주황/인디언옐로우 그라데이션이 반짝이는 글자). */
 .answer-king-badge {
   display: inline-flex;
