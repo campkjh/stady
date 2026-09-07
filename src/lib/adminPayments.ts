@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureIapTables } from "@/lib/iap/entitlements";
 import { getPlanById, resolvePlanPricing } from "@/lib/iap/plans";
 import { listActiveFreeGrants, type ActiveFreeGrant } from "@/lib/premiumGrant";
+import { listAnswerKingUsers } from "@/lib/community";
 import type { Platform } from "@/lib/iap/types";
 
 // 어드민 결제 조회 — 실제 결제 채널은 인앱결제(IAP) 둘뿐이라 그것만 모은다.
@@ -28,6 +29,7 @@ interface IapJoinRow {
 
 export interface AdminIapPayment {
   id: string;
+  userId: string;
   email: string | null;
   nickname: string | null;
   platform: Platform;
@@ -101,6 +103,7 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
     const pricing = plan ? resolvePlanPricing(plan, r.platform) : null;
     return {
       id: r.id,
+      userId: r.user_id,
       email: r.email,
       nickname: r.nickname,
       platform: r.platform,
@@ -120,7 +123,19 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
   });
 
   const active = iap.filter((r) => r.active);
-  const free = await listActiveFreeGrants();
+  const grants = await listActiveFreeGrants();
+  // 답변왕은 저장된 지급이 아니라 라이브 판정이라 PremiumGrant 에 없다. 결제·지급이 없는
+  // 답변왕만 '무료 이용중'에 얹는다(자격 우선순위: 결제 → 지급 → 답변왕). 회수 불가(조건 유지 동안 지속).
+  const covered = new Set<string>([...grants.map((g) => g.userId), ...iap.filter((r) => r.active).map((r) => r.userId)]);
+  let kings: ActiveFreeGrant[] = [];
+  try {
+    kings = (await listAnswerKingUsers())
+      .filter((k) => !covered.has(k.userId))
+      .map((k) => ({ userId: k.userId, email: k.email, nickname: k.nickname, source: "answer_king", totalDays: 0, expiresAt: null, note: `주간 댓글 ${k.commentCount}개` }));
+  } catch (e) {
+    console.error("answer king free rows skipped:", e);
+  }
+  const free: ActiveFreeGrant[] = [...grants, ...kings];
 
   // ── 통계는 테스트(Sandbox) 건을 제외한다. 실제 매출/해지가 아니다.
   const real = iap.filter((r) => r.environment !== "Sandbox");

@@ -71,7 +71,8 @@ export interface ActiveFreeGrant {
   nickname: string | null;
   source: string;
   totalDays: number;
-  expiresAt: string;
+  expiresAt: string | null; // null = 만료일 없음(답변왕처럼 조건 유지 동안 지속)
+  note?: string; // 부가 설명(예: 주간 댓글 수)
 }
 
 /** 현재 활성(만료 전)인 무료 프리미엄 지급 목록 — 어드민 조회/회수용. 만료 임박순. */

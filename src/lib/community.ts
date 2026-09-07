@@ -796,6 +796,22 @@ export async function getActivityKings(userIds: (string | null | undefined)[]): 
   return new Set(Object.entries(xp).filter(([, v]) => v >= ACTIVITY_KING_WEEKLY_XP).map(([id]) => id));
 }
 
+// 현재 답변왕 전원(어드민 '무료 이용중' 표시용). 유저 필터 없이 같은 기준으로 집계한다.
+export async function listAnswerKingUsers(): Promise<{ userId: string; email: string | null; nickname: string | null; commentCount: number }[]> {
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{ user_id: string; email: string | null; nickname: string | null; c: bigint }[]>(
+    `SELECT k."user_id", u."email", u."nickname", k.c
+     FROM (
+       SELECT "user_id", COUNT(*)::bigint AS c FROM "CommunityComment"
+       WHERE "is_active" = true AND "created_at" >= now() - interval '7 days'
+         AND length(regexp_replace("content", '\\s', '', 'g')) >= ${ANSWER_KING_MIN_CHARS}
+       GROUP BY "user_id" HAVING COUNT(*) >= ${ANSWER_KING_WEEKLY_COMMENTS}
+     ) k LEFT JOIN "User" u ON u."id" = k."user_id"
+     ORDER BY k.c DESC`
+  );
+  return rows.map((r) => ({ userId: r.user_id, email: r.email, nickname: r.nickname, commentCount: Number(r.c) }));
+}
+
 export interface CommunityKings {
   answer: Set<string>;
   pick: Set<string>;

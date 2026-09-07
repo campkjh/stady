@@ -27,7 +27,8 @@ interface FreeGrant {
   nickname: string | null;
   source: string;
   totalDays: number;
-  expiresAt: string;
+  expiresAt: string | null; // null = 만료일 없음(답변왕)
+  note?: string;
 }
 interface Churn { monthLabel: string; newSubs: number; canceled: number; ratePct: number }
 interface Revenue { grossKrw: number; googleGrossKrw: number; appleGrossKrw: number; mrrKrw: number }
@@ -47,6 +48,7 @@ function grantSourceLabel(src: string) {
     case "referral_backfill": return "친구초대(소급 지급)";
     case "admin":
     case "admin_grant": return "수동 지급";
+    case "answer_king": return "답변왕 유지 중";
     default: return src;
   }
 }
@@ -425,13 +427,25 @@ function FreeGrantTable({ rows, onRevoke, revoking }: { rows: FreeGrant[]; onRev
           <tr key={g.userId}>
             <td style={tdStyle}><StatusBadge text="무료" tone="neutral" /></td>
             <td style={tdStyle}><User nickname={g.nickname} email={g.email} /></td>
-            <td style={tdStyle}>{grantSourceLabel(g.source)}</td>
+            <td style={tdStyle}>
+              {grantSourceLabel(g.source)}
+              {g.note && <span style={{ marginLeft: 6, fontSize: 11.5, color: MUTED }}>{g.note}</span>}
+            </td>
             <td style={tdStyle}>{g.totalDays > 0 ? `${g.totalDays}일` : "-"}</td>
             <td style={tdStyle}>
-              <span>{fmtDate(g.expiresAt)}</span>
-              <DaysLeft expiresAt={g.expiresAt} />
+              {g.expiresAt ? (
+                <>
+                  <span>{fmtDate(g.expiresAt)}</span>
+                  <DaysLeft expiresAt={g.expiresAt} />
+                </>
+              ) : (
+                <span style={{ color: MUTED }}>조건 유지 동안</span>
+              )}
             </td>
             <td style={{ ...tdStyle, textAlign: "right" }}>
+              {g.source === "answer_king" ? (
+                <span style={{ fontSize: 12, color: MUTED }}>자동 해제</span>
+              ) : (
               <button
                 type="button"
                 onClick={() => onRevoke(g)}
@@ -444,6 +458,7 @@ function FreeGrantTable({ rows, onRevoke, revoking }: { rows: FreeGrant[]; onRev
               >
                 {revoking === g.userId ? "회수중…" : "회수"}
               </button>
+              )}
             </td>
           </tr>
         ))}
