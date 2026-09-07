@@ -606,14 +606,27 @@ export default function CommunityClient() {
 
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
-              <h2 className="weekly-popular-title">
-                <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4 }} />
-                주간 인기글
-                {/* 내 글 / 내 댓글 필터 — 누르면 아래 목록이 내 것만 남고, 다시 누르면 해제 */}
-                <span className="wp-filters">
-                  <button type="button" className={`wp-chip${mineFilter === "posts" ? " is-on" : ""}`} aria-pressed={mineFilter === "posts"} onClick={() => toggleMineFilter("posts")}>내가 쓴 글</button>
-                  <button type="button" className={`wp-chip${mineFilter === "comments" ? " is-on" : ""}`} aria-pressed={mineFilter === "comments"} onClick={() => toggleMineFilter("comments")}>내가 쓴 댓글</button>
-                </span>
+              <h2 className="weekly-popular-title" role="tablist" aria-label="게시글 보기">
+                {/* 텍스트 탭 — 버튼 느낌 없이 글자만. 선택된 항목은 검정, 나머지는 회색. */}
+                {([
+                  { key: "", label: "주간 인기글" },
+                  { key: "posts", label: "내가 쓴 글" },
+                  { key: "comments", label: "내가 쓴 댓글" },
+                ] as const).map((t) => {
+                  const on = mineFilter === t.key;
+                  return (
+                    <button
+                      key={t.key || "weekly"}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      className={`wp-tab${on ? " is-on" : ""}`}
+                      onClick={() => (t.key ? toggleMineFilter(t.key) : setMineFilter(""))}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
               </h2>
               {!mineFilter && (
               <>
@@ -1650,22 +1663,25 @@ function CommunityStyles() {
         font-weight: 700;
         color: var(--c-text);
         display: flex;
-        align-items: center;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
       }
-      .wp-filters { margin-left: auto; display: inline-flex; gap: 6px; }
-      .wp-chip {
-        border: 1px solid var(--c-border);
+      .wp-tab {
+        border: none;
         background: none;
-        border-radius: 999px;
-        padding: 4px 10px;
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--c-text-4);
+        padding: 0;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        color: var(--c-text-5);
         cursor: pointer;
         white-space: nowrap;
         -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s ease;
       }
-      .wp-chip.is-on { background: var(--c-brand-soft-6); border-color: transparent; color: var(--c-brand); }
+      .wp-tab.is-on { color: var(--c-text); }
+
       .weekly-popular-viewport {
         position: relative;
       }
