@@ -345,7 +345,7 @@ export default function CommunityComposeModal({
             <div className="cmp-attach">
               <button type="button" className="cmp-attach-btn" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="사진">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/community/compose-image.svg" alt="" />
+                <img src="/icons/toss/picture.svg" alt="" />
               </button>
               {gifEnabled && (
                 <button type="button" className="cmp-attach-btn cmp-gif" onClick={() => { setGifOpen(true); setMessage(""); }} aria-label="GIF">GIF</button>
@@ -494,7 +494,7 @@ function ComposeStyles() {
       .cmp-attach { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
       .cmp-attach-btn { border: none; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
       .cmp-attach-btn:disabled { opacity: 0.5; }
-      .cmp-attach-btn img { width: 25px; height: 25px; display: block; filter: brightness(0.72); }
+      .cmp-attach-btn img { width: 25px; height: 25px; display: block; }
       .cmp-gif { font-size: 12px; font-weight: 800; color: var(--c-text-4); border: 2px solid var(--c-text-4) !important; border-radius: 7px; width: 30px; height: 21px; opacity: 0.7; }
       /* 투표 · 블라인드 토글 칩 */
       .cmp-chip { border: 1px solid var(--c-border); background: none; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent; }
