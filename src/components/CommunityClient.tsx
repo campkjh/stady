@@ -276,14 +276,32 @@ export default function CommunityClient() {
   useEffect(() => {
     const bar = topbarRef.current;
     if (!bar) return;
-    bar.querySelectorAll<HTMLElement>(".tabrail-item").forEach((item) => {
-      const label = item.querySelector<HTMLElement>(".tabrail-label");
-      if (!label) return;
-      // 라벨 레이아웃 폰트는 이제 12.5px 고정(축소는 transform: scale 로만) →
-      // scrollWidth 가 곧 접힘 상태의 라벨 폭이라 비율 보정이 필요 없다.
-      const w = Math.ceil(label.scrollWidth);
-      item.style.setProperty("--cw", `${38 + w + 12}px`);
-    });
+    // 라벨 폭은 화면 밖 프로브로 잰다. 레일이 숨겨진 상태(넓은 화면·회전 직후 등)에서
+    // scrollWidth 를 재면 0 이 되어 --cw 가 50px 로 굳고, 라벨이 옆 항목 위로 넘쳐
+    // "전체 [아이콘] 자유 [아이콘]…" 처럼 겹쳐 보였다. 프로브는 표시 여부와 무관하다.
+    const measure = () => {
+      const probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:12.5px;pointer-events:none;";
+      document.body.appendChild(probe);
+      bar.querySelectorAll<HTMLElement>(".tabrail-item").forEach((item) => {
+        const label = item.querySelector<HTMLElement>(".tabrail-label");
+        if (!label) return;
+        const cs = getComputedStyle(label);
+        probe.style.fontFamily = cs.fontFamily;
+        probe.style.fontWeight = cs.fontWeight;
+        probe.style.letterSpacing = cs.letterSpacing;
+        probe.textContent = label.textContent || "";
+        // 라벨 레이아웃 폰트는 12.5px 고정(축소는 transform: scale 로만) → 잰 폭이 곧 접힘 폭.
+        const w = Math.ceil(probe.getBoundingClientRect().width) || Math.ceil(label.scrollWidth);
+        if (w > 0) item.style.setProperty("--cw", `${38 + w + 12}px`);
+      });
+      probe.remove();
+    };
+    measure();
+    // 웹폰트가 늦게 오면 폭이 달라진다 → 로드 후 한 번 더. 회전·창 크기 변경 후에도 다시 잰다.
+    try { document.fonts?.ready.then(measure).catch(() => {}); } catch { /* ignore */ }
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   }, [groups]);
 
   useEffect(() => {
