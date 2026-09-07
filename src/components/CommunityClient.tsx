@@ -129,14 +129,8 @@ export default function CommunityClient() {
   const [message, setMessage] = useState("");
   // 주간 인기글 옆 '내 글 / 내 댓글' 필터. 전체 탭·검색 없음일 때만 보인다.
   // 글 상세로 갔다가 돌아와도 필터가 유지되도록 sessionStorage 에 두고 복원한다(스크롤 복원과 같은 방식).
-  const [mineFilter, setMineFilterState] = useState<"" | "posts" | "comments">(() => {
-    try {
-      const v = sessionStorage.getItem("community-mine-filter");
-      return v === "posts" || v === "comments" ? v : "";
-    } catch {
-      return "";
-    }
-  });
+  // 초기값은 서버와 같게 "" 로 두고 마운트 후 복원한다(초기화 함수에서 sessionStorage 를 읽으면 하이드레이션 불일치).
+  const [mineFilter, setMineFilterState] = useState<"" | "posts" | "comments">("");
   const setMineFilter = (v: "" | "posts" | "comments") => {
     setMineFilterState(v);
     try {
@@ -287,9 +281,14 @@ export default function CommunityClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId, query]);
 
-  // 상세에서 돌아와 필터가 복원된 경우, 필터에 필요한 데이터를 다시 받는다.
+  // 상세에서 돌아온 경우 저장해 둔 필터를 복원하고, 필요한 데이터를 다시 받는다.
   useEffect(() => {
-    if (mineFilter) ensureMineData(mineFilter);
+    let v: string | null = null;
+    try { v = sessionStorage.getItem("community-mine-filter"); } catch { /* ignore */ }
+    if (v === "posts" || v === "comments") {
+      setMineFilterState(v);
+      ensureMineData(v);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -968,7 +967,7 @@ export default function CommunityClient() {
         <CommentModal
           post={commentModalPost}
           onClose={() => setCommentModalPost(null)}
-          onCommentAdded={() => bumpCommentCount(commentModalPost.id, 1)}
+          onCountChange={(delta) => bumpCommentCount(commentModalPost.id, delta)}
         />
       )}
     </main>
@@ -1232,7 +1231,47 @@ function countComments(list: FeedComment[]): number {
   return list.reduce((sum, c) => sum + 1 + countComments(c.replies || []), 0);
 }
 
-function CommentRow({ c, depth = 0 }: { c: FeedComment; depth?: number }) {
+function CommentRow({
+  c,
+  depth = 0,
+  meId,
+  onEdit,
+  onDelete,
+}: {
+  c: FeedComment;
+  depth?: number;
+  meId: string | null;
+  onEdit: (id: string, content: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const mine = !!meId && c.userId === meId;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(c.content);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function saveEdit() {
+    const next = draft.trim();
+    if (!next || busy) return;
+    setBusy(true);
+    try {
+      await onEdit(c.id, next);
+      setEditing(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function doDelete() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onDelete(c.id);
+    } finally {
+      setBusy(false);
+      setConfirmDel(false);
+    }
+  }
+
   return (
     <div style={{ paddingLeft: depth ? 14 : 0, marginTop: depth ? 10 : 0 }}>
       <div style={{ display: "flex", gap: 8 }}>
@@ -1248,12 +1287,45 @@ function CommentRow({ c, depth = 0 }: { c: FeedComment; depth?: number }) {
           <div className="ccs-item">
             <span className="ccs-name">{c.nickname}</span>
             <span className="ccs-time">{formatRelativeTime(c.createdAt)}</span>
+            {mine && !editing && !confirmDel && (
+              <span className="ccs-actions">
+                <button type="button" className="ccs-action" onClick={() => { setDraft(c.content); setEditing(true); }}>수정</button>
+                <span className="ccs-action-dot">·</span>
+                <button type="button" className="ccs-action" onClick={() => setConfirmDel(true)}>삭제</button>
+              </span>
+            )}
           </div>
-          <p className="ccs-content">{c.content}</p>
+          {editing ? (
+            <div className="ccs-editbox">
+              <textarea
+                className="ccs-edit"
+                value={draft}
+                rows={2}
+                onChange={(e) => setDraft(e.target.value)}
+                onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 160) + "px"; }}
+                aria-label="댓글 수정"
+                autoFocus
+              />
+              <div className="ccs-editbtns">
+                <button type="button" className="ccs-action" onClick={() => setEditing(false)} disabled={busy}>취소</button>
+                <button type="button" className="ccs-action is-primary" onClick={saveEdit} disabled={busy || !draft.trim()}>{busy ? "저장 중…" : "저장"}</button>
+              </div>
+            </div>
+          ) : (
+            <p className="ccs-content">{c.content}</p>
+          )}
+          {confirmDel && (
+            // 인앱 확인 — 안드로이드 WebView 는 window.confirm 이 동작하지 않는다.
+            <div className="ccs-confirm">
+              <span>댓글을 삭제할까요?</span>
+              <button type="button" className="ccs-action" onClick={() => setConfirmDel(false)} disabled={busy}>취소</button>
+              <button type="button" className="ccs-action is-danger" onClick={doDelete} disabled={busy}>{busy ? "삭제 중…" : "삭제"}</button>
+            </div>
+          )}
         </div>
       </div>
       {(c.replies || []).map((r) => (
-        <CommentRow key={r.id} c={r} depth={depth + 1} />
+        <CommentRow key={r.id} c={r} depth={depth + 1} meId={meId} onEdit={onEdit} onDelete={onDelete} />
       ))}
     </div>
   );
@@ -1263,11 +1335,11 @@ function CommentRow({ c, depth = 0 }: { c: FeedComment; depth?: number }) {
 function CommentModal({
   post,
   onClose,
-  onCommentAdded,
+  onCountChange,
 }: {
   post: CommunityPost;
   onClose: () => void;
-  onCommentAdded: () => void;
+  onCountChange: (delta: number) => void; // 카드의 댓글 수 갱신(+1 등록, -1 삭제)
 }) {
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1275,6 +1347,40 @@ function CommentModal({
   const [posting, setPosting] = useState(false);
   const [msg, setMsg] = useState("");
   const [sort, setSort] = useState<CommentSortKey>("popular");
+  const [meId, setMeId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // 내 댓글에만 수정·삭제를 보이기 위해 내 id 를 받는다.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setMeId(d?.user?.id ?? null); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  async function editComment(id: string, content: string) {
+    setMsg("");
+    const res = await fetch(`/api/community/comments/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setMsg(data.error || "댓글을 수정하지 못했습니다."); throw new Error("edit failed"); }
+    await load();
+  }
+
+  async function deleteComment(id: string) {
+    setMsg("");
+    const res = await fetch(`/api/community/comments/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setMsg(data.error || "댓글을 삭제하지 못했습니다."); return; }
+    onCountChange(-1);
+    await load();
+  }
 
   async function load(s: CommentSortKey = sort) {
     try {
@@ -1317,7 +1423,8 @@ function CommentModal({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "댓글을 저장하지 못했습니다.");
       setText("");
-      onCommentAdded();
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      onCountChange(1);
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "댓글을 저장하지 못했습니다.");
@@ -1360,18 +1467,26 @@ function CommentModal({
           {loading ? (
             <p className="ccs-empty">불러오는 중이에요.</p>
           ) : comments.length === 0 ? (
-            <p className="ccs-empty">첫 댓글을 남겨보세요.</p>
+            <div className="ccs-empty ccs-empty-sleep">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/toss/sleeping.svg" alt="" width={44} height={44} />
+              <p>댓글이 자고있나봐요<br />깨워주세요!</p>
+            </div>
           ) : (
-            comments.map((c) => <CommentRow key={c.id} c={c} />)
+            comments.map((c) => <CommentRow key={c.id} c={c} meId={meId} onEdit={editComment} onDelete={deleteComment} />)
           )}
         </div>
         {msg && <p className="ccs-msg">{msg}</p>}
         <div className="ccs-compose">
-          <input
+          {/* 글자가 너비를 넘으면 줄바꿈되며 높이가 늘어난다(최대 120px, 그 뒤는 스크롤). Enter=등록, Shift+Enter=줄바꿈 */}
+          <textarea
+            ref={inputRef}
             value={text}
+            rows={1}
             onChange={(e) => setText(e.target.value)}
+            onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 submit();
               }
@@ -2133,7 +2248,7 @@ function CommunityStyles() {
       /* ── 목록 댓글 모달(바텀시트) ── */
       .community-comment-modal {
         position: fixed;
-        inset: 0;
+        top: 0; right: 0; bottom: 0; left: 0; /* inset 단축은 구형 안드로이드 WebView 가 모른다 */
         z-index: 95;
         background: rgba(15, 23, 42, 0.42);
         display: flex;
@@ -2144,7 +2259,9 @@ function CommunityStyles() {
       .community-comment-sheet {
         width: 100%;
         max-width: 620px;
-        max-height: 82vh;
+        /* 기본 높이 화면의 절반. vh 대신 오버레이(top/bottom:0) 기준 % — 안드로이드 WebView vh 오계산 회피 */
+        height: 50%;
+        max-height: 88%;
         display: flex;
         flex-direction: column;
         background: var(--c-bg);
@@ -2156,7 +2273,7 @@ function CommunityStyles() {
       }
       @media (min-width: 720px) {
         .community-comment-modal { align-items: center; }
-        .community-comment-sheet { border-radius: 20px; max-height: 74vh; }
+        .community-comment-sheet { border-radius: 20px; height: auto; min-height: 50%; max-height: 74%; }
       }
       .ccs-head {
         display: flex;
@@ -2200,6 +2317,9 @@ function CommunityStyles() {
         flex-direction: column;
         gap: 14px;
       }
+      .ccs-empty-sleep { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .ccs-empty-sleep img { display: block; }
+      .ccs-empty-sleep p { margin: 0; font-size: 14px; font-weight: 600; color: var(--c-text-4); line-height: 1.5; text-align: center; }
       .ccs-empty {
         margin: 0;
         padding: 28px 0;
@@ -2265,8 +2385,30 @@ function CommunityStyles() {
         font-size: 13px;
         font-weight: 600;
       }
+      .ccs-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+      .ccs-action {
+        border: none; background: none; padding: 0; font-size: 12px; font-weight: 600;
+        color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent;
+      }
+      .ccs-action:disabled { opacity: 0.5; cursor: default; }
+      .ccs-action.is-primary { color: var(--c-brand); font-weight: 800; }
+      .ccs-action.is-danger { color: #D63A3A; font-weight: 800; }
+      .ccs-action-dot { font-size: 12px; color: var(--c-text-5); }
+      .ccs-editbox { margin-top: 6px; }
+      .ccs-edit {
+        width: 100%; box-sizing: border-box; min-height: 60px; max-height: 160px; resize: none;
+        border: 1px solid var(--c-brand); border-radius: 10px; padding: 9px 12px;
+        font-size: 16px; line-height: 1.45; color: var(--c-text); background: var(--c-bg); outline: none;
+      }
+      .ccs-editbtns { display: flex; justify-content: flex-end; gap: 14px; margin-top: 6px; }
+      .ccs-confirm {
+        margin-top: 8px; display: flex; align-items: center; gap: 12px;
+        padding: 8px 12px; border-radius: 10px; background: var(--c-bg-muted); font-size: 12.5px; color: var(--c-text-3);
+      }
+      .ccs-confirm span { flex: 1; }
       .ccs-compose {
         display: flex;
+        align-items: flex-end;
         gap: 8px;
         padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         border-top: 1px solid var(--c-bg-muted-6);
@@ -2275,14 +2417,20 @@ function CommunityStyles() {
       .ccs-input {
         flex: 1;
         min-width: 0;
-        height: 44px;
+        min-height: 44px;
+        max-height: 120px;
+        box-sizing: border-box;
         border: 1px solid var(--c-border);
         border-radius: 12px;
-        padding: 0 14px;
+        padding: 11px 14px;
         font-size: 16px;
+        line-height: 1.4;
+        font-family: inherit;
         color: var(--c-text);
         background: var(--c-bg);
         outline: none;
+        resize: none;
+        overflow-y: auto;
       }
       .ccs-input:focus { border-color: var(--c-brand); }
       .ccs-submit {

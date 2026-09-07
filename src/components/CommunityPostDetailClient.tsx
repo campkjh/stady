@@ -923,7 +923,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
               <div style={{ display: "grid", gap: 10 }}>
                 {comments.length === 0 ? (
-                  <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 14 }}>첫 댓글을 남겨보세요.</p>
+                  <div style={{ textAlign: "center" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icons/toss/sleeping.svg" alt="" width={44} height={44} style={{ display: "block", margin: "0 auto 8px" }} />
+                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>댓글이 자고있나봐요<br />깨워주세요!</p>
+                  </div>
                 ) : (
                   comments.map((item) => (
                     <CommentItem

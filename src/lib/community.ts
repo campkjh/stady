@@ -1766,6 +1766,34 @@ export async function adminDeleteCommunityComment(id: string) {
   await prisma.$executeRawUnsafe(`DELETE FROM "CommunityComment" WHERE "id" = $1`, id);
 }
 
+// 본인 댓글 수정/삭제(관리자는 남의 것도). 삭제는 is_active=false 소프트 삭제 —
+// 집계·목록 모두 is_active 기준이라 즉시 사라지고, 답글은 트리에서 최상위로 올라온다.
+async function assertCommentOwner(id: string, userId: string, isAdmin: boolean) {
+  const rows = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+    `SELECT "user_id" FROM "CommunityComment" WHERE "id" = $1 AND "is_active" = true LIMIT 1`,
+    id
+  );
+  if (rows.length === 0) throw new Error("CommunityCommentNotFound");
+  if (!isAdmin && rows[0].user_id !== userId) throw new Error("CommunityForbidden");
+}
+export async function updateOwnCommunityComment(id: string, userId: string, content: string, isAdmin = false) {
+  await ensureCommunityTables();
+  await assertCommentOwner(id, userId, isAdmin);
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityComment" SET "content" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $2`,
+    content,
+    id
+  );
+}
+export async function deleteOwnCommunityComment(id: string, userId: string, isAdmin = false) {
+  await ensureCommunityTables();
+  await assertCommentOwner(id, userId, isAdmin);
+  await prisma.$executeRawUnsafe(
+    `UPDATE "CommunityComment" SET "is_active" = false, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $1`,
+    id
+  );
+}
+
 /* --------------------------- Reactions (6 types) --------------------------- */
 
 // 게시글 공감 집계 + 내 공감.
