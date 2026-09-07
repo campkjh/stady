@@ -76,8 +76,17 @@ export default function PrimeReviews() {
           border: none; background: none; padding: 0; margin: 0; cursor: pointer;
           flex-shrink: 0; -webkit-tap-highlight-color: transparent; display: block;
         }
+        /* 말풍선 비율이 제각각이라(짧은 건 폭 670px, 긴 건 100px) 그대로 두면 띠가 들쭉날쭉하다.
+           높이는 고정하고 폭만 일정 범위로 묶은 뒤 cover 로 채운다(글 시작 부분이 보이게 왼쪽 기준). */
         .pr-item img {
-          height: 116px; width: auto; display: block; border-radius: 12px;
+          height: 124px;
+          width: auto;
+          min-width: 150px;
+          max-width: 240px;
+          object-fit: cover;
+          object-position: left center;
+          display: block;
+          border-radius: 12px;
         }
         .pv-dim {
           position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 3400;

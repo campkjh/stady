@@ -75,17 +75,16 @@ export default function SubscribePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-bg)", display: "flex", flexDirection: "column" }}>
-      <BackHeader title="스타디 프라임" />
+      {/* 제목 텍스트 없이 뒤로가기만 — 아래 워드마크 로고가 제목 역할을 한다. */}
+      <BackHeader title="" />
 
       <div style={{ flex: 1, padding: "8px 20px 0", maxWidth: 480, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
         {/* 헤더 */}
         <div style={{ textAlign: "center", padding: "26px 0 6px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* SVG 는 배경이 투명이라 다크에서 타일이 사라진다 → 앱 아이콘 본래의 흰 타일을 명시(두 테마 동일). */}
-          <img src="/icons/stady-app-icon.svg" alt="스타디" style={{ width: 72, height: 72, borderRadius: 20, display: "block", margin: "0 auto 12px", background: "#fff", boxShadow: "0 6px 18px rgba(49,130,246,0.18)" }} />
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "var(--c-text-b)", letterSpacing: "-0.5px" }}>
-            <span style={{ color: "var(--c-brand-b)" }}>스타디</span> 프라임
-          </h1>
+          {/* 워드마크 로고가 곧 제목 역할을 한다(별도 '스타디 프라임' 텍스트 없음).
+              654x240 비율이라 높이만 고정하고 폭은 비율대로 둔다. */}
+          <img src="/icons/stady-logo-3d.webp" alt="스타디 프라임" style={{ height: 52, width: "auto", display: "block", margin: "0 auto" }} />
           <p style={{ margin: "8px 0 0", fontSize: 14.5, color: "var(--c-text-4b)", fontWeight: 500 }}>
             1등급을 위한 학습자료를 제한 없이
           </p>
