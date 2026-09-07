@@ -39,8 +39,6 @@ export default function PrimeReviews() {
 
   return (
     <section className="pr" aria-label="실제 사용 후기">
-      <p className="pr-title">실제 사용 후기</p>
-
       <div className="pr-rail">
         {/* 같은 묶음을 두 벌 이어 붙이고 -50% 로 이동시켜 이음매 없이 반복한다. */}
         <div className={`pr-track${open ? " is-paused" : ""}`}>
@@ -57,7 +55,6 @@ export default function PrimeReviews() {
 
       <style>{`
         .pr { margin: 22px 0 4px; }
-        .pr-title { margin: 0 0 10px; font-size: 13px; font-weight: 800; color: var(--c-text-4b); letter-spacing: -0.2px; }
         /* 화면 폭을 넘어 흐르도록 좌우 여백을 상쇄하고, 양끝은 페이드로 부드럽게. */
         .pr-rail {
           overflow: hidden;
@@ -81,7 +78,6 @@ export default function PrimeReviews() {
         }
         .pr-item img {
           height: 116px; width: auto; display: block; border-radius: 12px;
-          border: 1px solid var(--c-bg-muted-3); background: var(--c-bg);
         }
         .pv-dim {
           position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 3400;
