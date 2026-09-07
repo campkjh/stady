@@ -1125,8 +1125,9 @@ label {
   color: #fff;
   cursor: pointer;
   white-space: nowrap;
-  background: linear-gradient(135deg, #3AC8E0 0%, #3787FF 55%, #6A5BFF 100%);
-  box-shadow: 0 4px 12px rgba(55, 135, 255, 0.28);
+  /* 한 단계 연한 톤. 더 연하게 가면 흰 글씨 대비가 2.5:1 아래로 떨어져 흐려 보인다. */
+  background: linear-gradient(135deg, #5FD0E4 0%, #4A93FF 55%, #7E71F2 100%);
+  box-shadow: 0 3px 10px rgba(74, 147, 255, 0.22);
   -webkit-tap-highlight-color: transparent;
 }
 .home-prime-btn[data-on] {
