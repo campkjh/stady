@@ -128,7 +128,22 @@ export default function CommunityClient() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [message, setMessage] = useState("");
   // 주간 인기글 옆 '내 글 / 내 댓글' 필터. 전체 탭·검색 없음일 때만 보인다.
-  const [mineFilter, setMineFilter] = useState<"" | "posts" | "comments">("");
+  // 글 상세로 갔다가 돌아와도 필터가 유지되도록 sessionStorage 에 두고 복원한다(스크롤 복원과 같은 방식).
+  const [mineFilter, setMineFilterState] = useState<"" | "posts" | "comments">(() => {
+    try {
+      const v = sessionStorage.getItem("community-mine-filter");
+      return v === "posts" || v === "comments" ? v : "";
+    } catch {
+      return "";
+    }
+  });
+  const setMineFilter = (v: "" | "posts" | "comments") => {
+    setMineFilterState(v);
+    try {
+      if (v) sessionStorage.setItem("community-mine-filter", v);
+      else sessionStorage.removeItem("community-mine-filter");
+    } catch { /* ignore */ }
+  };
   const [meId, setMeId] = useState<string | null>(null);
   const [meLoaded, setMeLoaded] = useState(false);
   // 내가 댓글 단 글 id → 내 최신 댓글 내용(카드 미리보기에 내 댓글을 보여준다).
@@ -272,6 +287,12 @@ export default function CommunityClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId, query]);
 
+  // 상세에서 돌아와 필터가 복원된 경우, 필터에 필요한 데이터를 다시 받는다.
+  useEffect(() => {
+    if (mineFilter) ensureMineData(mineFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 접혔을 때 항목 너비(아이콘 30 + 여백 + 라벨). 라벨 길이가 제각각이라 실제로 재서 넣는다.
   useEffect(() => {
     const bar = topbarRef.current;
@@ -375,6 +396,11 @@ export default function CommunityClient() {
     const turnOff = mineFilter === next;
     setMineFilter(turnOff ? "" : next);
     if (turnOff) return;
+    await ensureMineData(next);
+  }
+
+  // 필터에 필요한 데이터(내 id, 내 댓글 글 목록)를 없을 때만 받는다.
+  async function ensureMineData(next: "posts" | "comments") {
     if (!meLoaded) {
       try {
         const r = await fetch("/api/auth/me", { credentials: "include" });
