@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface AdminUser {
   id: string;
   email: string;
   nickname: string;
-  avatar: string | null;
   role: string;
   signupSource: string | null;
   phone: string | null;
   signupDevice: string | null;
   signupIp: string | null;
-  signupUserAgent: string | null;
   lastLoginAt: string | null;
   lastLoginDevice: string | null;
-  lastLoginIp: string | null;
-  lastLoginUserAgent: string | null;
   createdAt: string;
   attemptCount: number;
   inquiryCount: number;
@@ -49,51 +45,77 @@ function fallback(value: string | null | undefined) {
   return value?.trim() || "미수집";
 }
 
+const PAGE_SIZE = 50;
+
 export default function AdminUsersPage() {
+  // 예전엔 7천 명 전체를 한 번에 받아 브라우저에서 걸렀다(6.5MB/9초, 표 행 7천 개 렌더).
+  // 지금은 50건씩 받고 검색은 서버가 한다. '더 보기'로 이어 붙인다.
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({ total: 0, admins: 0, joinedToday: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [grantUser, setGrantUser] = useState<AdminUser | null>(null); // 프리미엄 지급 모달 대상
 
+  // 타이핑마다 요청하지 않도록 300ms 디바운스
   useEffect(() => {
-    fetch("/api/admin/users", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => setUsers(data.users || []))
-      .catch(() => setUsers([]))
-      .finally(() => setLoading(false));
+    const t = setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const fetchPage = useCallback(async (q: string, p: number) => {
+    const sp = new URLSearchParams({ q, page: String(p), limit: String(PAGE_SIZE) });
+    const res = await fetch(`/api/admin/users?${sp.toString()}`, { credentials: "include" });
+    if (!res.ok) throw new Error("load failed");
+    return res.json() as Promise<{ users: AdminUser[]; total: number; stats: { total: number; admins: number; joinedToday: number } }>;
   }, []);
 
-  const filteredUsers = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    if (!keyword) return users;
-    return users.filter((user) =>
-      [user.nickname, user.email, user.phone, user.signupSource, user.signupDevice, user.lastLoginDevice]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(keyword))
-    );
-  }, [query, users]);
-
-  const stats = useMemo(() => {
-    const todayKey = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Seoul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-    return {
-      total: users.length,
-      admins: users.filter((user) => user.role === "admin").length,
-      joinedToday: users.filter((user) => {
-        const key = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "Asia/Seoul",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(new Date(user.createdAt));
-        return key === todayKey;
-      }).length,
+  // 검색어가 바뀌면 1페이지부터 다시
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setPage(1);
+    fetchPage(debouncedQuery, 1)
+      .then((data) => {
+        if (!alive) return;
+        setUsers(data.users || []);
+        setTotal(data.total || 0);
+        if (data.stats) setStats(data.stats);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setUsers([]);
+        setTotal(0);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
     };
-  }, [users]);
+  }, [debouncedQuery, fetchPage]);
+
+  async function loadMore() {
+    if (loadingMore || users.length >= total) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const data = await fetchPage(debouncedQuery, next);
+      setUsers((cur) => [...cur, ...(data.users || [])]);
+      setTotal(data.total || 0);
+      setPage(next);
+    } catch {
+      /* 다시 누르면 재시도 */
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const filteredUsers = users; // 검색은 서버에서 끝났다 — 아래 렌더는 그대로 쓴다.
+  const hasMore = users.length < total;
 
   if (loading) {
     return (
@@ -139,7 +161,7 @@ export default function AdminUsersPage() {
       <div style={cardStyle}>
         <div style={{ padding: "18px 20px", borderBottom: `1px solid ${JC.soft}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: JC.title }}>회원 리스트</h2>
-          <span style={{ fontSize: 12, color: JC.accent, fontWeight: 700 }}>{filteredUsers.length}명</span>
+          <span style={{ fontSize: 12, color: JC.accent, fontWeight: 700 }}>{total.toLocaleString("ko-KR")}명</span>
         </div>
 
         {filteredUsers.length === 0 ? (
@@ -209,6 +231,18 @@ export default function AdminUsersPage() {
                 ))}
               </tbody>
             </table>
+            {hasMore && (
+              <div style={{ padding: 14, borderTop: `1px solid ${JC.soft}`, textAlign: "center" }}>
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  style={{ border: `1px solid ${JC.soft}`, borderRadius: 10, background: "var(--c-bg)", color: JC.accent, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: loadingMore ? "default" : "pointer", opacity: loadingMore ? 0.6 : 1 }}
+                >
+                  {loadingMore ? "불러오는 중…" : `더 보기 (${users.length.toLocaleString("ko-KR")} / ${total.toLocaleString("ko-KR")})`}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
