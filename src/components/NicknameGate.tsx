@@ -75,6 +75,7 @@ export default function NicknameGate() {
 
   const overlay = (
     <div
+      data-gate="nickname"
       style={{
         position: "fixed",
         top: 0,

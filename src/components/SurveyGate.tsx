@@ -60,6 +60,7 @@ export default function SurveyGate() {
 
   return (
     <div
+      data-gate="survey"
       style={{
         position: "fixed",
         inset: 0,

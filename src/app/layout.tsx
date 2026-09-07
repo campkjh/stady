@@ -6,6 +6,7 @@ import ThemeBoot from "@/components/ThemeBoot";
 import PageViewTracker from "@/components/PageViewTracker";
 import IapAutoRestore from "@/components/IapAutoRestore";
 import NicknameGate from "@/components/NicknameGate";
+import InviteCodeGate from "@/components/InviteCodeGate";
 import ReferralApply from "@/components/ReferralApply";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
@@ -77,6 +78,8 @@ export default function RootLayout({
         <IapAutoRestore />
         {/* 닉네임이 다른 사용자와 중복이면 접속 시 강제 변경 팝업(닫기 없음). 신규 중복도 여기서 잡힌다. */}
         <NicknameGate />
+        {/* 가입 직후 초대코드 입력 자리 — 링크를 브라우저에서 열고 앱에서 가입하면 코드가 유실된다. */}
+        <InviteCodeGate />
         {/* 초대 링크로 들어와 가입한 경우, 저장된 초대코드를 서버에 보내 초대를 등록(한 번). */}
         <ReferralApply />
         <NativeAuthProvider>
