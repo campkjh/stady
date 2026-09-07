@@ -70,8 +70,8 @@ function ThemeRow() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/mp-theme.svg" alt="" style={{ height: 30, width: "auto", maxWidth: 34 }} />
       </span>
-      <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "var(--c-text-b)" }}>화면 테마</span>
-      <div role="radiogroup" aria-label="화면 테마" style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: "var(--c-bg-muted-2)" }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600, color: "var(--c-text-b)", whiteSpace: "nowrap" }}>화면 테마</span>
+      <div role="radiogroup" aria-label="화면 테마" style={{ display: "flex", gap: 2, padding: 3, borderRadius: 11, background: "var(--c-bg-muted-2)", flexShrink: 0 }}>
         {THEME_OPTIONS.map((opt) => {
           const on = pref === opt.value;
           return (
@@ -223,7 +223,7 @@ export default function MyPage() {
         @media (min-width: 744px) {
           .mp-layout {
             display: grid;
-            grid-template-columns: minmax(280px, 34%) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 24px;
             align-items: start;
             padding: 16px 24px 32px;
