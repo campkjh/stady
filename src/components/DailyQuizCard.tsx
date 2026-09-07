@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
 
 const CACHE_KEY = "daily-quiz";
@@ -330,8 +331,11 @@ export default function DailyQuizCard() {
         )}
       </div>
 
-      {/* 과목 설정 시트 — 고른 과목에서만 오늘의 문제가 나온다(아무것도 안 고르면 전체) */}
-      {prefOpen && (
+      {/* 과목 설정 시트 — 고른 과목에서만 오늘의 문제가 나온다(아무것도 안 고르면 전체)
+          반드시 document.body 포털로 띄운다. 카드(overflow:hidden) 안에서 fixed 로 두면 조상에
+          transform/animation 이 하나라도 있는 순간 fixed 가 그 조상 기준이 되어 시트가 카드 안에
+          갇힌다 — 갤럭시(안드로이드 WebView)에서 "과목 목록이 안 뜨고 안 바뀐다"던 원인. */}
+      {prefOpen && typeof document !== "undefined" && createPortal(
         <div
           onClick={() => !prefSaving && setPrefOpen(false)}
           style={{
@@ -438,7 +442,8 @@ export default function DailyQuizCard() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );

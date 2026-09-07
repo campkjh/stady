@@ -812,6 +812,47 @@ export async function listAnswerKingUsers(): Promise<{ userId: string; email: st
   return rows.map((r) => ({ userId: r.user_id, email: r.email, nickname: r.nickname, commentCount: Number(r.c) }));
 }
 
+// 내가 쓴 댓글 목록(마이페이지). 삭제된 댓글은 제외, 글이 삭제·블라인드돼도 어느 글이었는지는 보여준다.
+export interface MyComment {
+  id: string;
+  postId: string;
+  postTitle: string;
+  groupName: string | null;
+  postActive: boolean;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+}
+export async function listMyComments(userId: string, limit = 200): Promise<MyComment[]> {
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{
+    id: string; post_id: string; post_title: string; group_name: string | null; post_active: boolean;
+    content: string; created_at: Date; like_count: bigint;
+  }[]>(
+    `SELECT c."id", c."post_id", p."title" AS post_title, g."name" AS group_name, p."is_active" AS post_active,
+            c."content", c."created_at",
+            (SELECT COUNT(*) FROM "CommunityCommentLike" l WHERE l."comment_id" = c."id")::bigint AS like_count
+     FROM "CommunityComment" c
+     JOIN "CommunityPost" p ON p."id" = c."post_id"
+     LEFT JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id"
+     WHERE c."user_id" = $1 AND c."is_active" = true
+     ORDER BY c."created_at" DESC
+     LIMIT $2`,
+    userId,
+    limit
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    postId: r.post_id,
+    postTitle: r.post_title,
+    groupName: r.group_name,
+    postActive: Boolean(r.post_active),
+    content: r.content,
+    createdAt: new Date(r.created_at).toISOString(),
+    likeCount: Number(r.like_count),
+  }));
+}
+
 export interface CommunityKings {
   answer: Set<string>;
   pick: Set<string>;

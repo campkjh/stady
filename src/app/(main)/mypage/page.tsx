@@ -18,7 +18,7 @@ interface Entitlement {
 }
 
 const MENU_GROUP_1 = [
-  { label: "내가쓴글", href: "/mypage/my-posts", icon: "/icons/mp-education.svg" },
+  { label: "내 글·댓글", href: "/mypage/my-posts", icon: "/icons/mp-education.svg" },
   { label: "결제로그", href: "/mypage/payments", icon: "/icons/mp-account.svg" },
   { label: "친구초대", href: "/referral-event", icon: "/icons/mp-friend.svg" },
 ];
@@ -149,6 +149,9 @@ export default function MyPage() {
 
   return (
     <div style={{ background: "var(--c-bg)", minHeight: "100vh", paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      {/* 태블릿(744px+)은 2단: 왼쪽 프로필·경험치, 오른쪽 배너·메뉴. 모바일은 그대로 한 줄 흐름. */}
+      <div className="mp-layout">
+      <div className="mp-left">
       {/* Profile settings */}
       <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
         <span style={iconBox}>
@@ -164,7 +167,10 @@ export default function MyPage() {
       {/* 내 경험치 + 뱃지 현황 */}
       <MyActivityCard />
 
-      <div style={dividerStyle} />
+      <div style={dividerStyle} className="mp-left-end" />
+      </div>
+
+      <div className="mp-right">
 
       {/* 프리미엄 = 스타디 프라임 배너(티어 뱃지 아래). 구독하기 버튼 없음. 미구독은 기존 구독 유도 */}
       {/* 스타디 프라임 배너 — 구독 중이면 버튼 없음(관리 링크), 미구독이면 글래스 '구독하기' 버튼 */}
@@ -210,6 +216,33 @@ export default function MyPage() {
           버전 {process.env.APP_VERSION} · {(process.env.BUILD_DATE || "").replace(/-/g, ".")} 업데이트
         </p>
       </div>
+      </div>
+      </div>
+
+      <style>{`
+        @media (min-width: 744px) {
+          .mp-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 34%) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+            padding: 16px 24px 32px;
+            max-width: 1180px;
+            margin: 0 auto;
+          }
+          .mp-left, .mp-right {
+            border-radius: 20px;
+            border: 1px solid var(--c-bg-muted-6);
+            background: var(--c-bg);
+            overflow: hidden;
+          }
+          .mp-left {
+            position: sticky;
+            top: calc(env(safe-area-inset-top, 0px) + 16px);
+          }
+          .mp-left-end { display: none; }
+        }
+      `}</style>
     </div>
   );
 }
