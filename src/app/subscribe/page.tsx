@@ -5,6 +5,7 @@ import BackHeader from "@/components/BackHeader";
 import { useIap, detectPlatform } from "@/lib/iap/client";
 import type { PlanId } from "@/lib/iap/types";
 import { primeDaysLeft } from "@/lib/primeRemaining";
+import PrimeReviews from "@/components/PrimeReviews";
 
 // 스타디 프리미엄 — 페이지판.
 // 예전엔 마이페이지에서 팝업(SubscribePopup)으로 띄웠는데, 결제 흐름을 한 화면에서 차분히
@@ -137,6 +138,9 @@ export default function SubscribePage() {
               </div>
               <BenefitStyles />
             </div>
+
+            {/* 실제 사용 후기 — 2열로 쌓아 보여준다 */}
+            <PrimeReviews />
           </>
         )}
       </div>
