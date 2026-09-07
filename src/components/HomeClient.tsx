@@ -499,11 +499,25 @@ export default function HomeClient({
               관리자
             </button>
           )}
-          <button type="button" onClick={() => router.push("/search")} className="search-btn" aria-label="검색">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          {/* 스타디 프라임 — 미구독은 '구독하기', 구독중이면 '구독중'(그라데이션 알약). */}
+          <button
+            type="button"
+            onClick={() => router.push("/subscribe")}
+            className="press home-prime-btn"
+            aria-label={isPremiumUser ? "스타디 프라임 구독중" : "스타디 프라임 구독하기"}
+            data-on={isPremiumUser ? "1" : undefined}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              {isPremiumUser ? (
+                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <>
+                  <rect x="5" y="10.5" width="14" height="9.5" rx="2.4" stroke="currentColor" strokeWidth="1.9" />
+                  <path d="M8.4 10.5V8a3.6 3.6 0 1 1 7.2 0v2.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                </>
+              )}
             </svg>
+            {isPremiumUser ? "구독중" : "프라임 구독"}
           </button>
         </div>
       </div>

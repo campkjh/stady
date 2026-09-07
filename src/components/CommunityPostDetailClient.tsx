@@ -163,6 +163,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  // 어떤 계정으로 쓰는지 보이도록 댓글 입력 위에 내 프로필을 띄운다.
+  const [me, setMe] = useState<{ nickname: string; avatar: string | null } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -233,10 +235,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       .then((d) => {
         setCurrentUserId(d?.user?.id ?? null);
         setIsAdmin(d?.user?.role === "admin");
+        setMe(d?.user ? { nickname: d.user.nickname ?? "나", avatar: d.user.avatar ?? null } : null);
       })
       .catch(() => {
         setCurrentUserId(null);
         setIsAdmin(false);
+        setMe(null);
       });
   }, []);
 
@@ -866,6 +870,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 style={{ justifySelf: "start", margin: "-6px 0 -8px" }}
               />
               <form onSubmit={submitComment} style={{ display: "grid", gap: 10 }}>
+                {me && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <MiniAvatar nickname={me.nickname} avatar={me.avatar} size={26} />
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--c-text-2c)" }}>{me.nickname}</span>
+                    <span style={{ fontSize: 12, color: "var(--c-text-5)" }}>(으)로 작성</span>
+                  </div>
+                )}
                 <textarea
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}

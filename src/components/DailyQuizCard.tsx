@@ -335,7 +335,9 @@ export default function DailyQuizCard() {
         <div
           onClick={() => !prefSaving && setPrefOpen(false)}
           style={{
-            position: "fixed", inset: 0, zIndex: 400,
+            // 구형 안드로이드 웹뷰는 inset 단축을 모른다 — 오버레이가 화면을 못 덮어
+            // 과목 목록이 가려지고 스크롤도 먹지 않았다(NoticePopup 과 같은 규칙).
+            position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 400,
             background: "rgba(15,23,42,0.5)",
             display: "flex", alignItems: "flex-end", justifyContent: "center",
           }}
@@ -353,10 +355,16 @@ export default function DailyQuizCard() {
               데일리 퀴즈 과목
             </p>
             <p style={{ margin: "6px 0 16px", fontSize: 13, color: "var(--c-text-5)", lineHeight: 1.5 }}>
-              고른 과목에서만 오늘의 문제가 나와요. 아무것도 고르지 않으면 전체에서 나옵니다.
+              원하는 과목을 눌러 고른 뒤 <b>저장</b>을 눌러주세요. 여러 개 고를 수 있어요.
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "46vh", overflowY: "auto" }}>
+            <div
+              style={{
+                display: "flex", flexDirection: "column", gap: 8,
+                maxHeight: "52vh", overflowY: "auto",
+                WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+              }}
+            >
               {prefOptions.length === 0 ? (
                 <p style={{ fontSize: 14, color: "var(--c-text-5)", textAlign: "center", padding: "16px 0" }}>
                   불러오는 중이에요.
@@ -413,7 +421,7 @@ export default function DailyQuizCard() {
                   cursor: prefSaving ? "default" : "pointer",
                 }}
               >
-                전체로
+                전체 과목
               </button>
               <button
                 type="button"
