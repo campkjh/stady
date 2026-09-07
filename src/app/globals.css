@@ -1137,6 +1137,14 @@ label {
 .home-prime-btn:active {
   transform: scale(0.96);
 }
+/* 버튼 안 스타디 마크(밝은 3D 이미지) — 그라데이션 위에서도 보이게 흰 테두리 없이 그대로. */
+.home-prime-mark {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
 
 /* 답변왕 뱃지 — 왕관 + "답변왕"(빨강→주황/인디언옐로우 그라데이션이 반짝이는 글자). */
 .answer-king-badge {
