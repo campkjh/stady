@@ -103,13 +103,13 @@ export default function InviteCodeGate() {
       <div className="icg" role="dialog" aria-label="초대코드 입력">
         {done ? (
           <>
-            <div className="icg-emoji">🎁</div>
+            <img className="icg-icon" src="/icons/toss/gift.svg" alt="" />
             <h2 className="icg-title">초대코드가 적용됐어요!</h2>
             <p className="icg-desc">나와 친구 모두 스타디 프라임 2주 무료 이용권을 받았어요.</p>
           </>
         ) : (
           <>
-            <div className="icg-emoji">🎁</div>
+            <img className="icg-icon" src="/icons/toss/gift.svg" alt="" />
             <h2 className="icg-title">초대코드가 있나요?</h2>
             <p className="icg-desc">
               친구에게 받은 초대코드를 넣으면 <b>나와 친구 모두</b> 프라임 2주 무료 이용권을 받아요.
@@ -145,7 +145,7 @@ export default function InviteCodeGate() {
           padding: 24px 20px calc(16px + env(safe-area-inset-bottom, 0px));
           box-sizing: border-box; text-align: center;
         }
-        .icg-emoji { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .icg-icon { width: 44px; height: 44px; display: block; margin: 0 auto 10px; }
         .icg-title { margin: 0 0 8px; font-size: 19px; font-weight: 800; color: var(--c-text-b); }
         .icg-desc { margin: 0 0 16px; font-size: 13.5px; line-height: 1.6; color: var(--c-text-2d); }
         .icg-input {

@@ -223,7 +223,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
               fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap",
             }}
           >
-            {mode === "write" ? "✏️ 쓰기" : "🖌️ 그리기"}
+            {mode === "write" ? <><img src="/icons/toss/pencil.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />쓰기</> : <><img src="/icons/toss/signature.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />그리기</>}
           </button>
         </div>
         <textarea

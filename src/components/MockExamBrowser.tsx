@@ -178,7 +178,7 @@ export default function MockExamBrowser({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" style={locked ? { filter: "grayscale(0.4) brightness(0.92)" } : undefined} />
                       ) : (
-                        <span className="mx-thumb-empty">📄</span>
+                        <span className="mx-thumb-empty"><img src="/icons/toss/file.svg" alt="" style={{ width: 28, height: 28 }} /></span>
                       )}
                       {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
                       {locked && (

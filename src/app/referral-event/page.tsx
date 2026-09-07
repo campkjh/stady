@@ -164,7 +164,7 @@ export default function ReferralEventPage() {
             <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 700 }}>받은 초대코드 입력</p>
             {applied ? (
               <p style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: primary }}>
-                초대코드가 적용됐어요! 무료 이용권이 지급됩니다 🎁
+                초대코드가 적용됐어요! 무료 이용권이 지급됩니다 <img src="/icons/toss/gift.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block" }} />
               </p>
             ) : (
               <>
@@ -208,7 +208,7 @@ export default function ReferralEventPage() {
         {/* 현재 프라임(무료 프리미엄) 상태 — 상세 혜택 안내는 위 이미지가 담당 */}
         {summary?.freePremiumUntil && (
           <div style={{ marginTop: 12, padding: "13px 16px", borderRadius: 14, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13.5, fontWeight: 800, textAlign: "center" }}>
-            🎁 현재 프라임 이용 중 · {fmtDay(summary.freePremiumUntil)}까지
+            <img src="/icons/toss/gift.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block", marginRight: 4 }} />현재 프라임 이용 중 · {fmtDay(summary.freePremiumUntil)}까지
           </div>
         )}
 

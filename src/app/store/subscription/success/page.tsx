@@ -80,7 +80,7 @@ export default function SubscriptionSuccessPage() {
 
         {status === "done" && (
           <>
-            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}>✓</div>
+            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}><img src="/icons/toss/check-circle.svg" alt="" style={{ width: 30, height: 30 }} /></div>
             <h1 style={titleStyle}>월정액 패키지 구독 완료!</h1>
             <p style={descStyle}>
               이제 월정액 혜택을 이용할 수 있어요.

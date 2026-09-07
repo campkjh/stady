@@ -102,7 +102,7 @@ export default function NicknameGate() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ fontSize: 34, lineHeight: 1, marginBottom: 12 }}>✏️</div>
+        <img src="/icons/toss/pencil.svg" alt="" style={{ width: 40, height: 40, display: "block", marginBottom: 12 }} />
         <h2 style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 900, color: "var(--c-text-b)" }}>
           닉네임을 바꿔주세요
         </h2>

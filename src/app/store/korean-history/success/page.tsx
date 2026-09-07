@@ -59,7 +59,7 @@ export default function PaymentSuccessPage() {
 
         {status === "done" && (
           <>
-            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}>✓</div>
+            <div style={{ ...badgeStyle, background: "var(--c-success-soft-3)", color: "var(--c-success-e)" }}><img src="/icons/toss/check-circle.svg" alt="" style={{ width: 30, height: 30 }} /></div>
             <h1 style={titleStyle}>결제가 완료되었어요!</h1>
             <p style={descStyle}>이제 2026 한국사 문제집을 다운로드할 수 있어요.</p>
             <a href={DOWNLOAD_PATH} style={{ ...primaryButtonStyle, textDecoration: "none", display: "block", textAlign: "center" }}>

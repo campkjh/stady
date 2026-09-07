@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import BackHeader from "@/components/BackHeader";
 
 const CATEGORIES = [
-  { value: "문의", icon: "💬", label: "문의" },
-  { value: "신고", icon: "🚨", label: "신고" },
-  { value: "건의", icon: "💡", label: "건의" },
-  { value: "기타", icon: "📝", label: "기타" },
+  { value: "문의", icon: "/icons/toss/chat.svg", label: "문의" },
+  { value: "신고", icon: "/icons/toss/siren.svg", label: "신고" },
+  { value: "건의", icon: "/icons/toss/bulb.svg", label: "건의" },
+  { value: "기타", icon: "/icons/toss/document.svg", label: "기타" },
 ];
 
 export default function CustomerCenterPage() {
@@ -142,7 +142,7 @@ export default function CustomerCenterPage() {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  <span>{c.icon}</span> {c.label}
+                  <span><img src={c.icon} alt="" style={{ width: 22, height: 22, display: "block" }} /></span> {c.label}
                 </button>
               ))}
             </div>
@@ -258,7 +258,7 @@ export default function CustomerCenterPage() {
           zIndex: 9999,
           animation: "fadeInUp 0.3s ease",
         }}>
-          문의가 접수되었습니다 ✓
+          문의가 접수되었습니다 <img src="/icons/toss/check-circle.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block", marginLeft: 4 }} />
         </div>
       )}
 

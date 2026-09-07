@@ -351,9 +351,9 @@ function ActiveState({
         </div>
       )}
       {isKing ? (
-        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>답변왕 유지 중 무료 이용권이에요 👑</p>
+        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>답변왕 유지 중 무료 이용권이에요 <img src="/icons/toss/crown.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} /></p>
       ) : isFree ? (
-        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>친구 초대로 받은 무료 이용권이에요 🎁</p>
+        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>친구 초대로 받은 무료 이용권이에요 <img src="/icons/toss/gift.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} /></p>
       ) : null}
       <div style={{ marginTop: 18, background: "var(--c-bg-soft)", borderRadius: 14, padding: "14px 16px", textAlign: "left" }}>
         {BENEFITS.map((b) => (

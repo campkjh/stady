@@ -88,7 +88,7 @@ export default function SurveyGate() {
           스타디, 어떻게 쓰고 계신가요?
         </h2>
         <p style={{ fontSize: 13.5, color: "var(--c-text-4b)", margin: "8px 0 0", fontWeight: 500 }}>
-          처음 한 번만 여쭤봐요. 더 나은 스타디를 만드는 데 큰 힘이 됩니다 🙏
+          처음 한 번만 여쭤봐요. 더 나은 스타디를 만드는 데 큰 힘이 됩니다 <img src="/icons/toss/folded-hands.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} />
         </p>
 
         {/* 만족도 */}

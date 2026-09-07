@@ -102,7 +102,7 @@ export default function NoticeReactions({ postId }: { postId: string }) {
           fontSize: 13, fontWeight: 700,
         }}
       >
-        <span style={{ fontSize: 14 }}>{liked ? "❤️" : "🤍"}</span>
+        <img src={liked ? "/icons/toss/heart-red.svg" : "/icons/toss/heart-grey.svg"} alt="" style={{ width: 15, height: 15 }} />
         공감 {likeCount}
       </button>
       <button
@@ -116,7 +116,7 @@ export default function NoticeReactions({ postId }: { postId: string }) {
           fontSize: 13, fontWeight: 700,
         }}
       >
-        💬 댓글 {commentCount}
+        <img src="/icons/toss/chat.svg" alt="" style={{ width: 15, height: 15 }} />댓글 {commentCount}
       </button>
       <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--c-text-4c)", fontWeight: 600 }}>
         {needLogin ? "로그인이 필요해요" : "커뮤니티에서 의견을 남겨보세요"}

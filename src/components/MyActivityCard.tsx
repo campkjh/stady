@@ -106,7 +106,7 @@ export default function MyActivityCard() {
             />
           </div>
           <div style={{ fontSize: 12, color: "var(--c-text-4b)", marginTop: 6, textAlign: "right", fontWeight: 500 }}>
-            {nextTier ? `다음 등급(${LABEL[nextTier]})까지 ${remain.toLocaleString()} XP` : "최고 등급 달성 🎉"}
+            {nextTier ? `다음 등급(${LABEL[nextTier]})까지 ${remain.toLocaleString()} XP` : <>최고 등급 달성 <img src="/icons/toss/party.svg" alt="" style={{ width: 14, height: 14, verticalAlign: "middle", display: "inline-block" }} /></>}
           </div>
         </div>
 

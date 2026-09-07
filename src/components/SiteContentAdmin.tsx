@@ -272,7 +272,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
 
       {simple && !loading && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", marginBottom: 14, borderRadius: 12, background: "var(--c-brand-soft-6)", border: "1px solid var(--c-brand-soft-3, var(--c-border))" }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>🔔</span>
+          <img src="/icons/toss/alarm.svg" alt="" style={{ width: 22, height: 22, flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-brand-deep-5, var(--c-brand))" }}>지금 첫 진입 팝업으로 뜨는 공지</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-b)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
