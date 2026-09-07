@@ -48,10 +48,12 @@ export default function SubscribePage() {
   const annual = plans.find((p) => p.id === "suneung_annual");
   const active = entitlement?.active;
 
-  async function handleBuy() {
+  // planId 를 직접 받는다 — 카드를 눌러 바로 결제할 때 setSelected 가 반영되기 전이라
+  // selected 를 읽으면 직전 플랜으로 결제될 수 있다.
+  async function handleBuy(planId: PlanId = selected) {
     setError(null);
     try {
-      await purchase(selected);
+      await purchase(planId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -95,30 +97,11 @@ export default function SubscribePage() {
           <ActiveState entitlement={entitlement!} plans={plans} />
         ) : (
           <>
-            {/* 좌 월간 / 우 수능 선택 */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
-              {monthly && (
-                <PlanCard
-                  plan={monthly}
-                  selected={selected === "monthly"}
-                  onSelect={() => setSelected("monthly")}
-                  subLabel="1개월 구독 · 매월 결제"
-                />
-              )}
-              {annual && (
-                <PlanCard
-                  plan={annual}
-                  selected={selected === "suneung_annual"}
-                  onSelect={() => setSelected("suneung_annual")}
-                  subLabel={`1년 구독 · 월 ${won(annual.monthlyEquivalentKrw)}원 꼴`}
-                  badge={annual.discountPct ? `${annual.discountPct}% 할인` : "가장 저렴"}
-                  highlight={savePerMonth > 0 ? `월 ${won(savePerMonth)}원 아껴요` : undefined}
-                />
-              )}
-            </div>
+            {/* 실제 사용 후기 — 혜택 위에서 우→좌로 흐르는 캐러셀 */}
+            <PrimeReviews />
 
             {/* 공통 혜택 */}
-            <div style={{ marginTop: 26 }}>
+            <div style={{ marginTop: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "var(--c-text-4b)", marginBottom: 12, letterSpacing: "-0.2px" }}>
                 두 플랜 모두 이런 혜택을 드려요
               </div>
@@ -138,9 +121,6 @@ export default function SubscribePage() {
               </div>
               <BenefitStyles />
             </div>
-
-            {/* 실제 사용 후기 — 2열로 쌓아 보여준다 */}
-            <PrimeReviews />
           </>
         )}
       </div>
@@ -160,15 +140,36 @@ export default function SubscribePage() {
             </button>
           ) : (
             <>
-              {/* 로그인 전에는 결제를 시작하지 않는다(구독권은 계정에 붙는다) —
-                  버튼 문구부터 로그인임을 알려 결제 후 에러가 나지 않게 한다. */}
-              <button type="button" onClick={handleBuy} disabled={busy} className="press" style={ctaStyle("#3182F6", "#fff", busy)}>
-                {busy
-                  ? "처리 중…"
-                  : !authenticated
-                    ? "로그인하고 구독 시작하기"
-                    : `${plans.find((p) => p.id === selected)?.name ?? "구독"} 시작하기`}
-              </button>
+              {/* 플랜을 푸터에 띄운다 — 카드를 누르면 그 플랜으로 바로 시작(스토어 결제창이 최종 확인).
+                  로그인 전에는 결제를 시작하지 않는다(구독권은 계정에 붙는다). */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {monthly && (
+                  <PlanCard
+                    plan={monthly}
+                    selected={selected === "monthly"}
+                    onSelect={() => { setSelected("monthly"); if (!busy) handleBuy("monthly"); }}
+                    subLabel="1개월 구독 · 매월 결제"
+                  />
+                )}
+                {annual && (
+                  <PlanCard
+                    plan={annual}
+                    selected={selected === "suneung_annual"}
+                    onSelect={() => { setSelected("suneung_annual"); if (!busy) handleBuy("suneung_annual"); }}
+                    subLabel={`1년 구독 · 월 ${won(annual.monthlyEquivalentKrw)}원 꼴`}
+                    badge={annual.discountPct ? `${annual.discountPct}% 할인` : "가장 저렴"}
+                    highlight={savePerMonth > 0 ? `월 ${won(savePerMonth)}원 아껴요` : undefined}
+                  />
+                )}
+              </div>
+              {busy && (
+                <p style={{ fontSize: 12.5, color: "var(--c-text-4b)", textAlign: "center", margin: "9px 0 0", fontWeight: 700 }}>처리 중…</p>
+              )}
+              {!busy && !authenticated && (
+                <p style={{ fontSize: 12.5, color: "var(--c-text-4b)", textAlign: "center", margin: "9px 0 0", fontWeight: 600 }}>
+                  플랜을 누르면 로그인 후 구독이 시작돼요
+                </p>
+              )}
               {inApp && (
                 <button
                   type="button"
