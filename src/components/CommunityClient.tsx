@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
 import PrimeReferralSheet from "@/components/PrimeReferralSheet";
-import StoryHighlights from "@/components/StoryHighlights";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
@@ -59,6 +58,7 @@ interface Liker {
 
 interface CommunityPost {
   id: string;
+  userId?: string | null; // 작성자 id(API mapPost 가 내려준다) — 내 글 필터용
   nickname: string;
   avatar?: string | null;
   likers?: Liker[];
@@ -127,6 +127,12 @@ export default function CommunityClient() {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [message, setMessage] = useState("");
+  // 주간 인기글 옆 '내 글 / 내 댓글' 필터. 전체 탭·검색 없음일 때만 보인다.
+  const [mineFilter, setMineFilter] = useState<"" | "posts" | "comments">("");
+  const [meId, setMeId] = useState<string | null>(null);
+  const [meLoaded, setMeLoaded] = useState(false);
+  // 내가 댓글 단 글 id → 내 최신 댓글 내용(카드 미리보기에 내 댓글을 보여준다).
+  const [myCommentByPost, setMyCommentByPost] = useState<Map<string, string> | null>(null);
   // 캐시가 있으면 로딩 표시 안 함(데이터 변동 시에만 갱신).
   const [loading, setLoading] = useState(() => !clientCache.has(postsKey("", "")));
   const [topbarHeight, setTopbarHeight] = useState(0);
@@ -347,6 +353,34 @@ export default function CommunityClient() {
     }
   }
 
+  async function toggleMineFilter(next: "posts" | "comments") {
+    const turnOff = mineFilter === next;
+    setMineFilter(turnOff ? "" : next);
+    if (turnOff) return;
+    if (!meLoaded) {
+      try {
+        const r = await fetch("/api/auth/me", { credentials: "include" });
+        const d = r.ok ? await r.json() : null;
+        setMeId(d?.user?.id ?? null);
+      } catch {
+        setMeId(null);
+      } finally {
+        setMeLoaded(true);
+      }
+    }
+    if (next === "comments" && myCommentByPost === null) {
+      try {
+        const r = await fetch("/api/me/comments", { credentials: "include" });
+        const d = r.ok ? await r.json() : { comments: [] };
+        const m = new Map<string, string>();
+        for (const c of d.comments || []) if (!m.has(c.postId)) m.set(c.postId, c.content); // 최신순이라 첫 것이 최신
+        setMyCommentByPost(m);
+      } catch {
+        setMyCommentByPost(new Map());
+      }
+    }
+  }
+
   async function loadPosts() {
     const key = postsKey(selectedGroupId, query);
     // 캐시가 있으면 즉시 표시하고 로딩을 띄우지 않는다(백그라운드 재검증).
@@ -386,6 +420,17 @@ export default function CommunityClient() {
       // 주간 인기글은 보조 섹션이라 실패해도 조용히 무시한다.
     }
   }
+
+  // 필터는 전체 탭·검색 없음일 때만 유효(칩이 그때만 보이므로).
+  const activeMineFilter = !selectedGroupId && !query.trim() ? mineFilter : "";
+  const visiblePosts: CommunityPost[] =
+    activeMineFilter === "posts"
+      ? posts.filter((p) => !!meId && p.userId === meId)
+      : activeMineFilter === "comments"
+        ? posts
+            .filter((p) => !!myCommentByPost && myCommentByPost.has(p.id))
+            .map((p) => ({ ...p, topComment: { id: "mine-" + p.id, nickname: "내 댓글", content: myCommentByPost!.get(p.id) || "", likeCount: 0, pinned: false } }))
+        : posts;
 
   function openPost(postId: string) {
     // 넓은 화면에서는 페이지를 갈아엎지 않고 우측 패널로 연다 — 목록 자리를 지킨 채
@@ -559,15 +604,19 @@ export default function CommunityClient() {
             </div>
           )}
 
-          {/* 주간 인기글 위: 스타디 사용 후기 하이라이트(인스타 스토리형) */}
-          {!selectedGroupId && !query.trim() && <StoryHighlights />}
-
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
             <section className="weekly-popular" aria-label="주간 인기글">
               <h2 className="weekly-popular-title">
                 <img src="/icons/medal.svg" alt="" width={18} height={18} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4 }} />
                 주간 인기글
+                {/* 내 글 / 내 댓글 필터 — 누르면 아래 목록이 내 것만 남고, 다시 누르면 해제 */}
+                <span className="wp-filters">
+                  <button type="button" className={`wp-chip${mineFilter === "posts" ? " is-on" : ""}`} aria-pressed={mineFilter === "posts"} onClick={() => toggleMineFilter("posts")}>내가 쓴 글</button>
+                  <button type="button" className={`wp-chip${mineFilter === "comments" ? " is-on" : ""}`} aria-pressed={mineFilter === "comments"} onClick={() => toggleMineFilter("comments")}>내가 쓴 댓글</button>
+                </span>
               </h2>
+              {!mineFilter && (
+              <>
               <div className="weekly-popular-viewport">
                 <div className="weekly-popular-track" ref={weeklyTrackRef} onScroll={handleWeeklyScroll}>
                 {weeklyPosts.map((post, index) => (
@@ -610,6 +659,8 @@ export default function CommunityClient() {
                   ))}
                 </div>
               )}
+              </>
+              )}
             </section>
           )}
 
@@ -619,12 +670,20 @@ export default function CommunityClient() {
                 <SkeletonPost />
                 <SkeletonPost />
               </>
-            ) : posts.length === 0 ? (
+            ) : visiblePosts.length === 0 ? (
               <div style={emptyPanelStyle}>
-                <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14, fontWeight: 500 }}>아직 게시글이 없습니다.</p>
+                <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14, fontWeight: 500 }}>
+                  {activeMineFilter && meLoaded && !meId
+                    ? "로그인하면 내 글과 댓글을 모아볼 수 있어요."
+                    : activeMineFilter === "posts"
+                      ? "내가 쓴 글이 아직 없어요."
+                      : activeMineFilter === "comments"
+                        ? (myCommentByPost === null ? "불러오는 중이에요." : "댓글을 남긴 글이 아직 없어요.")
+                        : "아직 게시글이 없습니다."}
+                </p>
               </div>
             ) : (
-              posts.map((post, postIndex) => (
+              visiblePosts.map((post, postIndex) => (
                 <article
                   key={post.id}
                   className="community-post-card"
@@ -1590,7 +1649,23 @@ function CommunityStyles() {
         font-size: 15px;
         font-weight: 700;
         color: var(--c-text);
+        display: flex;
+        align-items: center;
       }
+      .wp-filters { margin-left: auto; display: inline-flex; gap: 6px; }
+      .wp-chip {
+        border: 1px solid var(--c-border);
+        background: none;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--c-text-4);
+        cursor: pointer;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .wp-chip.is-on { background: var(--c-brand-soft-6); border-color: transparent; color: var(--c-brand); }
       .weekly-popular-viewport {
         position: relative;
       }
