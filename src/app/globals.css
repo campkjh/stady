@@ -1181,6 +1181,13 @@ label {
   color: transparent;
   animation: answerKingShimmer 2.4s ease-in-out infinite;
 }
+/* 채택왕(골드) / 활동왕(그린) — 같은 반짝임, 색만 다르다. */
+.king-badge--pick .answer-king-text {
+  background-image: linear-gradient(110deg, #d98a00 0%, #f5b528 28%, #ffe58a 50%, #f5b528 72%, #d98a00 100%);
+}
+.king-badge--activity .answer-king-text {
+  background-image: linear-gradient(110deg, #159a4a 0%, #2ec46a 28%, #a9f0c1 50%, #2ec46a 72%, #159a4a 100%);
+}
 @keyframes answerKingShimmer {
   0% {
     background-position: 0% 0;

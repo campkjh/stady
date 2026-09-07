@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
-import AnswerKingBadge from "@/components/AnswerKingBadge";
+import KingBadges from "@/components/KingBadges";
 import NudgeBubble from "@/components/NudgeBubble";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
@@ -36,6 +36,8 @@ interface CommunityComment {
   avatar?: string | null;
   authorTier?: string;
   authorIsAnswerKing?: boolean;
+  authorIsPickKing?: boolean;
+  authorIsActivityKing?: boolean;
   content: string;
   createdAt: string;
   likeCount: number;
@@ -116,6 +118,8 @@ interface CommunityPostDetail {
   avatar?: string | null;
   authorTier?: string;
   authorIsAnswerKing?: boolean;
+  authorIsPickKing?: boolean;
+  authorIsActivityKing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -721,7 +725,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   </h2>
                   <div style={{ margin: "10px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
                     <MiniAvatar nickname={post.nickname} avatar={post.avatar} size={34} />
-                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /> · 조회 {post.viewCount ?? 0}</p>
+                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} activity={post.authorIsActivityKing} /> · 조회 {post.viewCount ?? 0}</p>
                   </div>
                   <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
@@ -1189,7 +1193,7 @@ function CommentItem({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={28} />
-          <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><AnswerKingBadge show={comment.authorIsAnswerKing} /></strong>
+          <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><KingBadges answer={comment.authorIsAnswerKing} pick={comment.authorIsPickKing} activity={comment.authorIsActivityKing} /></strong>
         </span>
         <span style={{ color: "var(--c-text-4c)", fontSize: 12, flexShrink: 0 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
       </div>

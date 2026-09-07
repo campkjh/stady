@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, getAdminUserIds } from "@/lib/auth";
-import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getAnswerKings, mapTag, toNumber, type CommunityTier } from "@/lib/community";
+import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getCommunityKings, mapTag, toNumber, type CommunityTier, type CommunityKings } from "@/lib/community";
 
 function mapPost(
   post: Awaited<ReturnType<typeof getCommunityPosts>>[number],
   tiers: Record<string, CommunityTier>,
   adminIds: Set<string>,
-  answerKings: Set<string>
+  kings: CommunityKings
 ) {
   return {
     id: post.id,
@@ -15,7 +15,9 @@ function mapPost(
     avatar: post.user_id && post.has_avatar ? `/api/community/avatar/${post.user_id}` : null,
     authorTier: post.user_id ? tiers[post.user_id] ?? "iron" : "iron",
     authorIsAdmin: post.user_id ? adminIds.has(post.user_id) : false,
-    authorIsAnswerKing: post.user_id ? answerKings.has(post.user_id) : false,
+    authorIsAnswerKing: post.user_id ? kings.answer.has(post.user_id) : false,
+    authorIsPickKing: post.user_id ? kings.pick.has(post.user_id) : false,
+    authorIsActivityKing: post.user_id ? kings.activity.has(post.user_id) : false,
     groupId: post.group_id,
     groupName: post.group_name,
     groupSlug: post.group_slug,
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
       });
       const popTiers = await getUserTiers(popular.map((p) => p.user_id));
       const popAdmins = await getAdminUserIds(popular.map((p) => p.user_id));
-      const popKings = await getAnswerKings(popular.map((p) => p.user_id));
+      const popKings = await getCommunityKings(popular.map((p) => p.user_id));
       return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers, popAdmins, popKings)) });
     }
     const posts = await getCommunityPosts({
@@ -67,8 +69,8 @@ export async function GET(request: NextRequest) {
     });
     const tiers = await getUserTiers(posts.map((p) => p.user_id));
     const adminIds = await getAdminUserIds(posts.map((p) => p.user_id));
-    const answerKings = await getAnswerKings(posts.map((p) => p.user_id));
-    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds, answerKings)) });
+    const kings = await getCommunityKings(posts.map((p) => p.user_id));
+    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds, kings)) });
   } catch (error) {
     console.error("Community posts GET error:", error);
     return NextResponse.json({ error: "게시글을 불러오지 못했습니다." }, { status: 500 });

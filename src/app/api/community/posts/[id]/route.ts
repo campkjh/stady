@@ -10,7 +10,8 @@ import {
   updateCommunityPollOptions,
   incrementCommunityPostView,
   getUserTiers,
-  getAnswerKings,
+  getCommunityKings,
+  type CommunityKings,
   mapTag,
   toNumber,
   type CommunityTier,
@@ -34,7 +35,7 @@ async function authorizePostMutation(id: string) {
   return { ok: true as const };
 }
 
-function mapComment(comment: CommunityCommentNode, tiers: Record<string, CommunityTier>, kings: Set<string>): unknown {
+function mapComment(comment: CommunityCommentNode, tiers: Record<string, CommunityTier>, kings: CommunityKings): unknown {
   return {
     id: comment.id,
     postId: comment.post_id,
@@ -43,7 +44,9 @@ function mapComment(comment: CommunityCommentNode, tiers: Record<string, Communi
     nickname: comment.nickname || "익명",
     avatar: comment.user_id && comment.has_avatar ? `/api/community/avatar/${comment.user_id}` : null,
     authorTier: comment.user_id ? tiers[comment.user_id] ?? "iron" : "iron",
-    authorIsAnswerKing: comment.user_id ? kings.has(comment.user_id) : false,
+    authorIsAnswerKing: comment.user_id ? kings.answer.has(comment.user_id) : false,
+    authorIsPickKing: comment.user_id ? kings.pick.has(comment.user_id) : false,
+    authorIsActivityKing: comment.user_id ? kings.activity.has(comment.user_id) : false,
     content: comment.content,
     isActive: comment.is_active,
     createdAt: comment.created_at,
@@ -92,7 +95,7 @@ export async function GET(
     collectCommentUserIds(detail.comments, commentUserIds);
     const allUserIds = [detail.post.user_id, ...commentUserIds];
     const tiers = await getUserTiers(allUserIds);
-    const answerKings = await getAnswerKings(allUserIds);
+    const kings = await getCommunityKings(allUserIds);
 
     return NextResponse.json({
       post: {
@@ -101,7 +104,9 @@ export async function GET(
         nickname: detail.post.nickname || "익명",
         avatar: detail.post.user_id && detail.post.has_avatar ? `/api/community/avatar/${detail.post.user_id}` : null,
         authorTier: detail.post.user_id ? tiers[detail.post.user_id] ?? "iron" : "iron",
-        authorIsAnswerKing: detail.post.user_id ? answerKings.has(detail.post.user_id) : false,
+        authorIsAnswerKing: detail.post.user_id ? kings.answer.has(detail.post.user_id) : false,
+        authorIsPickKing: detail.post.user_id ? kings.pick.has(detail.post.user_id) : false,
+        authorIsActivityKing: detail.post.user_id ? kings.activity.has(detail.post.user_id) : false,
         groupId: detail.post.group_id,
         groupName: detail.post.group_name,
         groupSlug: detail.post.group_slug,
@@ -123,7 +128,7 @@ export async function GET(
         tags: detail.post.tags.map(mapTag),
         pinnedCommentId: detail.post.pinned_comment_id ?? null,
       },
-      comments: detail.comments.map((comment) => mapComment(comment, tiers, answerKings)),
+      comments: detail.comments.map((comment) => mapComment(comment, tiers, kings)),
     });
   } catch (error) {
     console.error("Community post detail GET error:", error);

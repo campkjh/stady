@@ -8,7 +8,7 @@ import PrimeReferralSheet from "@/components/PrimeReferralSheet";
 import StoryHighlights from "@/components/StoryHighlights";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
-import AnswerKingBadge from "@/components/AnswerKingBadge";
+import KingBadges from "@/components/KingBadges";
 import NudgeBubble from "@/components/NudgeBubble";
 import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
@@ -65,6 +65,8 @@ interface CommunityPost {
   authorTier?: string;
   authorIsAdmin?: boolean;
   authorIsAnswerKing?: boolean;
+  authorIsPickKing?: boolean;
+  authorIsActivityKing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -651,7 +653,7 @@ export default function CommunityClient() {
                       )}
                     </div>
                     <div>
-                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><AnswerKingBadge show={post.authorIsAnswerKing} /></p>
+                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} activity={post.authorIsActivityKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</p>
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
