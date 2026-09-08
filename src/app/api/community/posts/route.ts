@@ -17,7 +17,6 @@ function mapPost(
     authorIsAdmin: post.user_id ? adminIds.has(post.user_id) : false,
     authorIsAnswerKing: post.user_id ? kings.answer.has(post.user_id) : false,
     authorIsPickKing: post.user_id ? kings.pick.has(post.user_id) : false,
-    authorIsActivityKing: post.user_id ? kings.activity.has(post.user_id) : false,
     groupId: post.group_id,
     groupName: post.group_name,
     groupSlug: post.group_slug,

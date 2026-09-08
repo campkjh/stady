@@ -695,14 +695,12 @@ export async function getUserActivityScore(userId: string): Promise<number> {
 }
 
 // ───────────────────────── 주간 왕 뱃지 ─────────────────────────
-// 세 뱃지 모두 "최근 7일" 롤링 윈도우로 매번 라이브 판정한다(조건에서 벗어나면 즉시 사라진다).
-//   답변왕: 활성 댓글 40개 이상. 공백 제거 후 ANSWER_KING_MIN_CHARS 자 미만의 짧은 댓글은 세지 않는다.
+// 두 뱃지 모두 "최근 7일" 롤링 윈도우로 매번 라이브 판정한다(조건에서 벗어나면 즉시 사라진다).
+//   답변왕: 활성 댓글 15개 이상. 공백 제거 후 ANSWER_KING_MIN_CHARS 자 미만의 짧은 댓글은 세지 않는다.
 //   채택왕: 내 댓글이 글 작성자에게 고정(채택)된 글이 5개 이상. 내 글에 내 댓글을 고정한 건 제외.
-//   활동왕: 주간 획득 경험치 100 이상(글×10·댓글×3·받은공감×2·퀴즈응시×1·데일리정답×5, 관리자 가산점 제외).
-export const ANSWER_KING_WEEKLY_COMMENTS = 40;
+export const ANSWER_KING_WEEKLY_COMMENTS = 15;
 export const ANSWER_KING_MIN_CHARS = 15;
 export const PICK_KING_WEEKLY_PINS = 5;
-export const ACTIVITY_KING_WEEKLY_XP = 100;
 
 function uniqIds(userIds: (string | null | undefined)[]): string[] {
   return [...new Set(userIds.filter((id): id is string => !!id))];
@@ -753,47 +751,6 @@ export async function getPickKings(userIds: (string | null | undefined)[]): Prom
     ...ids
   );
   return new Set(rows.map((r) => r.id));
-}
-
-// 활동왕: 최근 7일간 획득한 경험치가 ACTIVITY_KING_WEEKLY_XP 이상.
-// 가중치는 getUserTiers/getUserActivityScore 와 동일하되 기간만 7일로 자르고, 관리자 가산점은 뺀다.
-export async function getWeeklyActivityXp(userIds: (string | null | undefined)[]): Promise<Record<string, number>> {
-  const ids = uniqIds(userIds);
-  const xp: Record<string, number> = {};
-  if (ids.length === 0) return xp;
-  await ensureCommunityTables();
-  const ph = ids.map((_, i) => `$${i + 1}`).join(", ");
-  for (const id of ids) xp[id] = 0;
-  const apply = (rows: { id: string; c: bigint | number }[], weight: number) => {
-    for (const r of rows) if (xp[r.id] != null) xp[r.id] += Number(r.c) * weight;
-  };
-  const W = "now() - interval '7 days'";
-  const [posts, comments, likes, attempts] = await Promise.all([
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPost" WHERE "user_id" IN (${ph}) AND "is_active" = true AND "created_at" >= ${W} GROUP BY "user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityComment" WHERE "user_id" IN (${ph}) AND "is_active" = true AND "created_at" >= ${W} GROUP BY "user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT p."user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPostLike" l JOIN "CommunityPost" p ON p."id" = l."post_id" WHERE p."user_id" IN (${ph}) AND l."created_at" >= ${W} GROUP BY p."user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "userId" AS id, COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" IN (${ph}) AND "completedAt" >= ${W} GROUP BY "userId"`, ...ids),
-  ]);
-  apply(posts, 10);
-  apply(comments, 3);
-  apply(likes, 2);
-  apply(attempts, 1);
-  try {
-    await ensureDailyQuizTable();
-    const daily = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
-      `SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "DailyQuizAnswer" WHERE "user_id" IN (${ph}) AND "is_correct" = true AND "created_at" >= ${W} GROUP BY "user_id"`,
-      ...ids
-    );
-    apply(daily, 5);
-  } catch {
-    // 데일리 테이블이 아직 없으면 무시.
-  }
-  return xp;
-}
-
-export async function getActivityKings(userIds: (string | null | undefined)[]): Promise<Set<string>> {
-  const xp = await getWeeklyActivityXp(userIds);
-  return new Set(Object.entries(xp).filter(([, v]) => v >= ACTIVITY_KING_WEEKLY_XP).map(([id]) => id));
 }
 
 // 현재 답변왕 전원(어드민 '무료 이용중' 표시용). 유저 필터 없이 같은 기준으로 집계한다.
@@ -856,18 +813,16 @@ export async function listMyComments(userId: string, limit = 200): Promise<MyCom
 export interface CommunityKings {
   answer: Set<string>;
   pick: Set<string>;
-  activity: Set<string>;
 }
 
-// 세 뱃지를 한 번에. 어느 하나가 실패해도 나머지는 살린다.
+// 두 뱃지를 한 번에. 어느 하나가 실패해도 나머지는 살린다.
 export async function getCommunityKings(userIds: (string | null | undefined)[]): Promise<CommunityKings> {
   const safe = (p: Promise<Set<string>>) => p.catch((e) => { console.error("getCommunityKings partial failure:", e); return new Set<string>(); });
-  const [answer, pick, activity] = await Promise.all([
+  const [answer, pick] = await Promise.all([
     safe(getAnswerKings(userIds)),
     safe(getPickKings(userIds)),
-    safe(getActivityKings(userIds)),
   ]);
-  return { answer, pick, activity };
+  return { answer, pick };
 }
 
 export async function getUserTiers(userIds: (string | null | undefined)[]): Promise<Record<string, CommunityTier>> {

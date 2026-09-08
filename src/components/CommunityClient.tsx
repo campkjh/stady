@@ -66,7 +66,6 @@ interface CommunityPost {
   authorIsAdmin?: boolean;
   authorIsAnswerKing?: boolean;
   authorIsPickKing?: boolean;
-  authorIsActivityKing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -768,7 +767,7 @@ export default function CommunityClient() {
                       )}
                     </div>
                     <div>
-                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} activity={post.authorIsActivityKing} /></p>
+                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</p>
                     </div>
                     <span className="community-group-badge">{post.groupName}</span>
