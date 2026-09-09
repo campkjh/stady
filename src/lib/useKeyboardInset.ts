@@ -18,7 +18,18 @@ import { useCallback, useSyncExternalStore, type RefObject } from "react";
  */
 const IGNORE_BELOW_PX = 80; // 주소창 여닫힘 같은 자잘한 차이는 키보드로 치지 않는다.
 
+/**
+ * iOS(WKWebView·사파리)는 키보드가 뜨면 position:fixed 요소를 알아서 키보드 위로 올려준다.
+ * 그런데 그 이동이 getBoundingClientRect 에도 visualViewport.offsetTop 에도 안 잡혀서,
+ * 여기서 또 올리면 두 번 올라가 시트가 화면 위로 잘려 나간다(2026-09-09 아이폰 제보).
+ * 실제로 안 올려주는 건 안드로이드뿐이라 그쪽에서만 보정한다.
+ */
+function needsManualLift(): boolean {
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
+
 function readInset(el: HTMLElement | null): number {
+  if (!needsManualLift()) return 0;
   const vv = typeof window === "undefined" ? null : window.visualViewport;
   if (!vv || !el) return 0; // 구형 WebView(미지원)·마운트 전이면 기존 동작 그대로
   const overlayBottom = el.getBoundingClientRect().bottom; // 고정 요소 기준 화면 아래
