@@ -8,6 +8,7 @@ import PrimeReferralSheet from "@/components/PrimeReferralSheet";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import NudgeBubble from "@/components/NudgeBubble";
 import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
@@ -1348,6 +1349,9 @@ function CommentModal({
   const [sort, setSort] = useState<CommentSortKey>("popular");
   const [meId, setMeId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // 안드로이드 WebView 는 키보드가 떠도 fixed 기준 화면을 줄이지 않아 입력창이 키보드 뒤로 숨는다.
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const keyboardInset = useKeyboardInset(true, overlayRef);
 
   // 내 댓글에만 수정·삭제를 보이기 위해 내 id 를 받는다.
   useEffect(() => {
@@ -1435,8 +1439,15 @@ function CommentModal({
   const total = countComments(comments);
 
   return (
-    <div className="community-comment-modal" onClick={onClose}>
-      <div className="community-comment-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="댓글">
+    <div ref={overlayRef} className="community-comment-modal" style={{ paddingBottom: keyboardInset }} onClick={onClose}>
+      {/* 키보드가 뜨면 남은 영역을 꽉 채운다 — 50% 로 두면 입력창이 시트 밖으로 밀려 잘린다. */}
+      <div
+        className="community-comment-sheet"
+        style={keyboardInset > 0 ? { height: "100%" } : undefined}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="댓글"
+      >
         <div className="ccs-head">
           <div style={{ minWidth: 0 }}>
             <p className="ccs-title">댓글 {total}</p>
@@ -2248,6 +2259,7 @@ function CommunityStyles() {
       .community-comment-modal {
         position: fixed;
         top: 0; right: 0; bottom: 0; left: 0; /* inset 단축은 구형 안드로이드 WebView 가 모른다 */
+        box-sizing: border-box; /* 키보드 높이를 padding-bottom 으로 받으므로 필요 */
         z-index: 95;
         background: rgba(15, 23, 42, 0.42);
         display: flex;
@@ -2306,8 +2318,9 @@ function CommunityStyles() {
         -webkit-tap-highlight-color: transparent;
       }
       .ccs-list {
-        flex: 1;
-        min-height: 80px;
+        flex: 1 1 auto;
+        /* 0 까지 줄어들 수 있어야 좁은 화면에서 입력창이 밀려나지 않는다. */
+        min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;

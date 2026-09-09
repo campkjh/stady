@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import QuizMemoPad, { type MemoPadHandle } from "@/components/QuizMemoPad";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
@@ -81,6 +82,9 @@ export default function OxQuizSolvePage() {
   // 퀴즈 노트(나만 보는 메모, 저장 시 해당 문제가 책갈피에 추가됨). 끄면 버튼 숨김.
   const [noteEnabled, setNoteEnabled] = useState(true);
   const [noteOpen, setNoteOpen] = useState(false);
+  // 메모 시트가 열려 있을 때만 키보드 높이를 잰다(그만큼 시트를 띄운다).
+  const noteOverlayRef = useRef<HTMLDivElement>(null);
+  const noteKeyboardInset = useKeyboardInset(noteOpen, noteOverlayRef);
   const [noteText, setNoteText] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   const [showNoteLossConfirm, setShowNoteLossConfirm] = useState(false);
@@ -1226,11 +1230,25 @@ export default function OxQuizSolvePage() {
 
       {/* 퀴즈 노트 시트: 내 사고과정/연결 지식 메모(나만 보임, 저장 시 책갈피 추가) */}
       {noteOpen && currentQuestion && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 320, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,0.5)" }} onClick={() => setNoteOpen(false)} />
+        // inset 단축은 구형 안드로이드 WebView 가 모른다 → top/right/bottom/left 로 쓴다.
+        // paddingBottom: 키보드가 덮은 높이. 이만큼 비워야 시트가 키보드 위로 올라온다.
+        <div ref={noteOverlayRef} style={{
+          position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 320,
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+          paddingBottom: noteKeyboardInset, boxSizing: "border-box",
+        }}>
+          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(15,23,42,0.5)" }} onClick={() => setNoteOpen(false)} />
           <div style={{
             position: "relative", width: "100%", maxWidth: 720, background: "var(--c-bg)",
-            borderRadius: "20px 20px 0 0", padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
+            borderRadius: "20px 20px 0 0",
+            padding: noteKeyboardInset > 0
+              ? "18px 18px 16px"
+              : "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
+            boxSizing: "border-box",
+            // 남는 높이가 모자라면(작은 화면 + 키보드) 시트 안에서 스크롤되게 — 예전엔 스크롤이
+            // 아예 없어서 가려진 메모지를 끌어올릴 방법이 없었다.
+            maxHeight: "100%", overflowY: "auto",
+            WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
             boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
           }}>
             <QuizMemoPad
