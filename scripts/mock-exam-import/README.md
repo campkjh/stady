@@ -20,23 +20,34 @@
 - ImageIO 가 WebP **쓰기**를 지원하지 않는다(읽기만). JPEG q0.85 를 쓴다.
 
 ## 순서
+
+회차마다 바뀌는 값은 **환경변수**로 넘긴다(아무것도 안 주면 2026학년도 7월 학력평가 설정).
 ```bash
 cd scripts/mock-exam-import
 SDK=$(xcrun --sdk macosx --show-sdk-path)
 xcrun swiftc -O -sdk "$SDK" render.swift  -o render
 xcrun swiftc -O -sdk "$SDK" pdfinfo.swift -o pdfinfo
 
+R=2026-09                     # 회차 슬러그(파일·Blob 경로에 쓴다)
+export DL=~/Downloads/모의고사  # PDF 폴더
+export PREFIX="2026년 9월"      # 이 접두로 시작하는 PDF 만 고른다
+export MANIFEST=manifest-$R.json PAGES=pages-$R UPLOADED=uploaded-$R.json
+export BLOB_PREFIX=mock-exams/$R
+
 node build-manifest.mjs   # 파일명 → 과목 매칭. 짝 안 맞으면 여기서 걸린다
-./render-all.sh           # PDF → pages/{과목}/{problem|solution}/pNNN.jpg
-node upload.mjs           # Blob 업로드(mock-exams/{회차}/…). 멱등, 중단 후 재실행 가능
-node register.mjs --dry   # 등록 계획 확인
-node register.mjs         # MockExam / MockExamImage / MockExamMeta 삽입
+./render-all.sh           # PDF → $PAGES/{과목}/{problem|solution}/pNNN.jpg
+node upload.mjs           # Blob 업로드($BLOB_PREFIX/…). 멱등, 중단 후 재실행 가능
+
+YEAR=2026 MONTH=9 TITLE="2027학년도 9월 모의평가" SORT_BASE=54 node register.mjs --dry
+YEAR=2026 MONTH=9 TITLE="2027학년도 9월 모의평가" SORT_BASE=54 node register.mjs
 ```
 
-`build-manifest.mjs` 의 `SUBJECT`/`LABEL`/`ORDER` 는 `src/lib/examSubjects.ts` 와 **id 가 일치해야** 한다.
-`register.mjs` 의 `YEAR`/`MONTH`/`TITLE`/`SORT_BASE` 를 회차에 맞게 바꿔서 쓴다.
-`upload.mjs` 의 경로 접두(`mock-exams/2026-07`)도 회차마다 바꿀 것 — `problems/` 는
-문제집·공지 이미지와 섞여 있어 나중에 구분이 안 된다.
+- `build-manifest.mjs` 의 `SUBJECT`/`LABEL`/`ORDER` 는 `src/lib/examSubjects.ts` 와 **id 가 일치해야** 한다.
+  회차마다 파일명이 달라진다 — `물리학1`/`물리학` 처럼 별칭을 SUBJECT 에 추가하면 된다.
+- `TITLE` 은 **시험지 표지의 공식 명칭**을 따른다. 학력평가는 시행 학년도(2026년 5·7월 → "2026학년도"),
+  평가원 모의평가는 수능 학년도(2026년 6·9월 → "2027학년도")로 표기가 갈린다. PDF 1쪽 머리글로 확인할 것.
+- `SORT_BASE` = 기존 최대 sort_order + 1. 목록은 sort_order 오름차순이라 **나중 회차가 뒤에 붙는다**.
+- `BLOB_PREFIX` 를 회차마다 바꿀 것 — `problems/` 는 문제집·공지 이미지와 섞여 구분이 안 된다.
 
 ⚠️ 로컬 `.env.local` 의 DATABASE_URL 은 **프로덕션 Neon** 이다. register.mjs 는 실제 서비스에 쓴다.
 

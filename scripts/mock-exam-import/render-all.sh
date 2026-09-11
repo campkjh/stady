@@ -3,11 +3,12 @@
 # 판형별로 목표 해상도를 달리해 물리 해상도(DPI)를 비슷하게 맞춘다:
 #   A3(841x1190pt) → 2200px  ≈133DPI, A4(595x841pt) → 1560px ≈133DPI
 cd "$(dirname "$0")"
-DL="/Users/jeonghunjeonghun-a.../Downloads"
-OUT=pages
+DL="${DL:-/Users/jeonghunjeonghun-a.../Downloads}"
+MANIFEST="${MANIFEST:-manifest.json}"
+OUT="${PAGES:-pages}"
 mkdir -p "$OUT"
 node -e '
-const m=require("./manifest.json");
+const m=require("./" + (process.env.MANIFEST || "manifest.json"));
 for(const e of m){ console.log([e.subject,"problem",e.problem].join("\t")); if(e.solution) console.log([e.subject,"solution",e.solution].join("\t")); }
 ' | while IFS=$'\t' read -r subj sect file; do
   src="$DL/$file"

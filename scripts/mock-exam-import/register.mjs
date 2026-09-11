@@ -5,14 +5,15 @@ import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 
 const dry = process.argv.includes("--dry");
-const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const uploaded = JSON.parse(readFileSync("uploaded.json", "utf8"));
+const manifest = JSON.parse(readFileSync(process.env.MANIFEST || "manifest.json", "utf8"));
+const uploaded = JSON.parse(readFileSync(process.env.UPLOADED || "uploaded.json", "utf8"));
 const prisma = new PrismaClient();
 
-const YEAR = 2026, MONTH = 7;
-const TITLE = "2026학년도 7월 학력평가";
-// 기존 3건이 sort_order 0~2 를 쓰고 있으므로 그 뒤에 과목 순서대로 붙인다.
-const SORT_BASE = 3;
+// 회차 정보(환경변수로 덮어쓴다). TITLE 은 시험지 표지의 공식 명칭을 따른다.
+const YEAR = Number(process.env.YEAR || 2026), MONTH = Number(process.env.MONTH || 7);
+const TITLE = process.env.TITLE || "2026학년도 7월 학력평가";
+// 기존 항목 뒤에 과목 순서대로 붙인다(목록 정렬 = sort_order).
+const SORT_BASE = Number(process.env.SORT_BASE || 3);
 
 const existing = await prisma.$queryRawUnsafe(
   `SELECT e."id", e."title", e."subtitle", m."subject"

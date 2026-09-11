@@ -1,5 +1,12 @@
 import { readdirSync, writeFileSync } from "node:fs";
-const DL = "/Users/jeonghunjeonghun-a.../Downloads";
+
+// 회차마다 바뀌는 값은 환경변수로 받는다(기본값 = 2026학년도 7월 학력평가 때 쓰던 설정).
+//   DL     : PDF 가 있는 폴더
+//   PREFIX : 파일명 접두(이 접두로 시작하는 PDF 만 고른다)
+//   OUT    : 결과 매니페스트 경로
+const DL = process.env.DL || "/Users/jeonghunjeonghun-a.../Downloads";
+const PREFIX = process.env.PREFIX || "2026년 7월";
+const OUT = process.env.MANIFEST || "manifest.json";
 
 // 파일명 → 과목 id (examSubjects.ts 의 SUBJECT_GROUPS 와 일치해야 함)
 const SUBJECT = {
@@ -14,6 +21,10 @@ const SUBJECT = {
   "화학1": "sci-chem1", "화학2": "sci-chem2",
   "생명과학1": "sci-bio1", "생명과학2": "sci-bio2",
   "지구과학1": "sci-earth1", "지구과학2": "sci-earth2",
+  // 회차에 따라 Ⅰ과목에 숫자를 안 붙인 파일명도 온다(2026년 5월·9월).
+  "물리학": "sci-physics1", "화학": "sci-chem1",
+  "생명과학": "sci-bio1", "지구과학": "sci-earth1",
+  "사회·문화": "soc-culture",
 };
 // 표시용 라벨(앱 과목 label 과 동일하게)
 const LABEL = {
@@ -33,11 +44,11 @@ const ORDER = ["kor-hwajak","kor-eonmae","math-prob","math-calc","math-geo","eng
 
 // ⚠️ macOS 파일명은 NFD(자모 분해)라 NFC 리터럴과 직접 비교하면 절대 안 맞는다.
 const raw = readdirSync(DL);
-const files = raw.filter((f) => f.normalize("NFC").startsWith("2026년 7월") && f.endsWith(".pdf"));
+const files = raw.filter((f) => f.normalize("NFC").startsWith(PREFIX) && f.endsWith(".pdf"));
 const exams = {};
 for (const f of files) {
   // "2026년 7월 [시행 ]<과목>[ 해설].pdf" — 공백/'시행' 표기가 들쭉날쭉해서 정규화 후 매칭
-  const base = f.normalize("NFC").replace(/\.pdf$/, "").replace(/^2026년 7월\s*/, "").replace(/^시행\s*/, "").trim();
+  const base = f.normalize("NFC").replace(/\.pdf$/, "").replace(new RegExp("^" + PREFIX + "\\s*"), "").replace(/^시행\s*/, "").trim();
   const isSolution = /해설\s*$/.test(base);
   const subjectName = base.replace(/\s*해설\s*$/, "").trim();
   const id = SUBJECT[subjectName];
@@ -47,10 +58,10 @@ for (const f of files) {
 }
 const list = ORDER.filter((id) => exams[id]).map((id, i) => ({ ...exams[id], sortOrder: i }));
 const missing = list.filter((e) => !e.problem || !e.solution);
-console.log(`과목 ${list.length}개 / 파일 ${files.length}개`);
+console.log(`[${PREFIX}] 과목 ${list.length}개 / 파일 ${files.length}개 → ${OUT}`);
 if (missing.length) { console.log("\n!! 짝이 안 맞는 과목:"); missing.forEach(m=>console.log("  ", m.label, "문제:", !!m.problem, "해설:", !!m.solution)); }
 const unmatched = ORDER.filter(id=>!exams[id]);
 if (unmatched.length) console.log("파일 없는 과목:", unmatched.join(", "));
-writeFileSync("manifest.json", JSON.stringify(list, null, 1));
+writeFileSync(OUT, JSON.stringify(list, null, 1));
 console.log("\n순서:");
 list.forEach((e)=>console.log(` ${String(e.sortOrder).padStart(2)} ${e.label.padEnd(12)} ${e.subject}`));
