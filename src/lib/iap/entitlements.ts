@@ -188,7 +188,6 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
   );
   const now = Date.now();
   const live = rows.find((r) => isRowLive(r, now));
-  const queuedFree = live ? await getFreePremiumUntil(userId) : null;
   if (live) {
     return {
       active: true,
@@ -199,11 +198,9 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
       autoRenew: live.auto_renew,
       environment: live.environment,
       source: "iap",
-      // 결제 중이라 무료 이용권은 자격 판정에 안 나타난다. "구독 끝나면 이어서 쓸 무료 기간"으로 알려준다.
-      queuedFreeUntil:
-        queuedFree && queuedFree.getTime() > new Date(live.current_period_end).getTime()
-          ? queuedFree.toISOString()
-          : null,
+      // 게이팅 경로(isPremium)가 매번 부르는 함수라 여기서 무료 이용권까지 조회하지 않는다.
+      // 구독 화면은 아래 getEntitlementWithQueuedFree 를 쓴다.
+      queuedFreeUntil: null,
     };
   }
   // 결제 구독이 없으면 무료 프리미엄(리퍼럴 보상 등)을 본다.
@@ -236,6 +233,18 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
     };
   }
   return INACTIVE;
+}
+
+/**
+ * 구독 화면용 — 결제 중이라 가려져 있는 무료 이용권(초대 보상 등)을 함께 싣는다.
+ * 조회가 한 번 더 들어가므로 게이팅에는 쓰지 말 것.
+ */
+export async function getEntitlementWithQueuedFree(userId: string): Promise<Entitlement> {
+  const ent = await getActiveEntitlement(userId);
+  if (ent.source !== "iap" || !ent.expiresAt) return ent;
+  const freeUntil = await getFreePremiumUntil(userId);
+  if (!freeUntil || freeUntil.getTime() <= new Date(ent.expiresAt).getTime()) return ent;
+  return { ...ent, queuedFreeUntil: freeUntil.toISOString() };
 }
 
 /** Cheap boolean form for gating checks. */

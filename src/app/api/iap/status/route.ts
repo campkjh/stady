@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getActiveEntitlement } from "@/lib/iap/entitlements";
+import { getEntitlementWithQueuedFree } from "@/lib/iap/entitlements";
 import { IAP_PLAN_LIST } from "@/lib/iap/plans";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export async function GET() {
   }
 
   try {
-    const entitlement = await getActiveEntitlement(user.id);
+    const entitlement = await getEntitlementWithQueuedFree(user.id);
     return NextResponse.json({ authenticated: true, entitlement, plans });
   } catch (error) {
     console.error("iap status: entitlement lookup failed:", error);
