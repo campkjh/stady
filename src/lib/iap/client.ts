@@ -236,6 +236,7 @@ export interface EntitlementView {
   autoRenew: boolean;
   environment: string | null;
   source?: "iap" | "free" | "answer_king" | null; // free=무료 프리미엄(리퍼럴·수동), answer_king=답변왕 유지 중
+  queuedFreeUntil?: string | null; // 결제 구독이 끝난 뒤 이어서 쓸 무료 기간(친구 초대 보상 등)
 }
 
 /**

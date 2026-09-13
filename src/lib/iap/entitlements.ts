@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getFreePremiumUntil } from "@/lib/premiumGrant";
+import { getFreePremiumUntil, getLivePaidEnd, shiftFreeGrantAfterPaidChange } from "@/lib/premiumGrant";
 import { isAnswerKing } from "@/lib/community";
 import type { Platform, PlanId, SubStatus, VerifiedSubscription } from "./types";
 
@@ -88,6 +88,10 @@ export async function upsertVerifiedSubscription(
   const canceledAt = v.status === "CANCELED" || v.status === "REFUNDED" ? new Date() : null;
   const id = existing[0]?.id ?? randomUUID();
 
+  // 갱신 전 결제 종료 시각. 쓰기 뒤에 무료 이용권(리퍼럴 보상 등)을 새 종료 시각 뒤로 다시 밀기 위해
+  // 반드시 **쓰기 전에** 읽어 둔다. 안 밀면 월 자동갱신 때마다 보상이 유료 기간에 묻혀 소멸한다.
+  const prevPaidEnd = await getLivePaidEnd(resolvedUser);
+
   await prisma.$executeRawUnsafe(
     `
       INSERT INTO "IapSubscription"
@@ -125,6 +129,13 @@ export async function upsertVerifiedSubscription(
     JSON.stringify(v.raw ?? null)
   );
 
+  // 결제 기간이 늘거나(갱신) 줄면(환불·해지) 무료 이용권도 따라 옮긴다. 실패해도 결제 저장은 성공으로 둔다.
+  try {
+    await shiftFreeGrantAfterPaidChange(resolvedUser, prevPaidEnd);
+  } catch (e) {
+    console.error("shiftFreeGrantAfterPaidChange skipped:", e);
+  }
+
   const rows = await prisma.$queryRawUnsafe<IapSubscriptionRow[]>(
     `SELECT * FROM "IapSubscription" WHERE "platform" = $1 AND "original_id" = $2 LIMIT 1`,
     v.platform,
@@ -142,6 +153,8 @@ export interface Entitlement {
   autoRenew: boolean;
   environment: string | null;
   source: "iap" | "free" | "answer_king" | null; // free=무료 프리미엄(리퍼럴·수동), answer_king=답변왕 유지 중
+  /** 결제 구독이 끝난 뒤 이어서 쓸 무료 이용권 만료일(대기 중일 때만). 결제 중엔 무료가 안 보이므로 따로 알려준다. */
+  queuedFreeUntil: string | null;
 }
 
 const INACTIVE: Entitlement = {
@@ -153,6 +166,7 @@ const INACTIVE: Entitlement = {
   autoRenew: false,
   environment: null,
   source: null,
+  queuedFreeUntil: null,
 };
 
 /** True while the user has any store subscription that is paid-through and not refunded. */
@@ -174,6 +188,7 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
   );
   const now = Date.now();
   const live = rows.find((r) => isRowLive(r, now));
+  const queuedFree = live ? await getFreePremiumUntil(userId) : null;
   if (live) {
     return {
       active: true,
@@ -184,6 +199,11 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
       autoRenew: live.auto_renew,
       environment: live.environment,
       source: "iap",
+      // 결제 중이라 무료 이용권은 자격 판정에 안 나타난다. "구독 끝나면 이어서 쓸 무료 기간"으로 알려준다.
+      queuedFreeUntil:
+        queuedFree && queuedFree.getTime() > new Date(live.current_period_end).getTime()
+          ? queuedFree.toISOString()
+          : null,
     };
   }
   // 결제 구독이 없으면 무료 프리미엄(리퍼럴 보상 등)을 본다.
@@ -198,6 +218,7 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
       autoRenew: false,
       environment: null,
       source: "free",
+      queuedFreeUntil: null,
     };
   }
   // 답변왕을 '유지하는 동안' 프리미엄 유지 — 만료일 없음(유지 여부를 매번 라이브로 판정).
@@ -211,6 +232,7 @@ export async function getActiveEntitlement(userId: string): Promise<Entitlement>
       autoRenew: false,
       environment: null,
       source: "answer_king",
+      queuedFreeUntil: null,
     };
   }
   return INACTIVE;

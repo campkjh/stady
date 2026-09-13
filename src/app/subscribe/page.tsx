@@ -330,6 +330,11 @@ function ActiveState({
   const planName = isFree ? "스타디 프라임" : plans.find((p) => p.id === entitlement.planId)?.name ?? "스타디 프라임";
   const canceled = entitlement.status === "CANCELED";
   const daysLeft = primeDaysLeft(entitlement.expiresAt);
+  // 결제 종료일과 무료 만료일의 차이 = 뒤에 붙어 기다리는 무료 일수.
+  const queuedFreeDays =
+    entitlement.queuedFreeUntil && entitlement.expiresAt
+      ? Math.max(0, Math.ceil((new Date(entitlement.queuedFreeUntil).getTime() - new Date(entitlement.expiresAt).getTime()) / 86400000))
+      : null;
   return (
     <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
       <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--c-brand-soft-12)", display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
@@ -349,6 +354,12 @@ function ActiveState({
         <div style={{ fontSize: 13.5, color: "var(--c-text-3)", marginTop: 8 }}>
           {canceled ? "이용 종료일" : entitlement.autoRenew ? "다음 갱신일" : "이용 종료일"} {fmtDate(entitlement.expiresAt)}
         </div>
+      )}
+      {/* 결제 중에 받은 초대 보상은 구독이 끝난 뒤부터 이어진다 — 안 보이면 "적용이 안 됐다"고 오해한다. */}
+      {queuedFreeDays !== null && queuedFreeDays > 0 && (
+        <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>
+          구독이 끝나면 무료 {queuedFreeDays}일이 이어서 적용돼요 <img src="/icons/toss/gift.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} />
+        </p>
       )}
       {isKing ? (
         <p style={{ fontSize: 12.5, color: "var(--c-brand-b)", fontWeight: 700, marginTop: 8 }}>답변왕 유지 중 무료 이용권이에요 <img src="/icons/toss/crown.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} /></p>
