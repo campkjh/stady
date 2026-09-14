@@ -2,8 +2,38 @@ import { prisma } from "@/lib/prisma";
 import { ensureIapTables } from "@/lib/iap/entitlements";
 import { getPlanById, resolvePlanPricing } from "@/lib/iap/plans";
 import { listActiveFreeGrants, type ActiveFreeGrant } from "@/lib/premiumGrant";
+import { MASTER_ADMIN_EMAIL } from "@/lib/auth";
 import { listAnswerKingUsers } from "@/lib/community";
 import type { Platform } from "@/lib/iap/types";
+
+// ── 내 몫 정산(배분) ────────────────────────────────────────────────
+// 전체 어드민이 아니라 **이 계정에서만** 보인다. 다른 어드민에게는 응답에 담기지도 않는다.
+// 어드민은 ADMIN_EMAILS 로 2명인데, 정산은 마스터 계정 한 명만 본다.
+export const OWNER_SETTLEMENT_EMAIL = MASTER_ADMIN_EMAIL;
+// 스토어 수수료율. 안드로이드(구글 플레이) 15%, 애플 앱스토어 30%.
+export const STORE_FEE_PCT: Record<Platform, number> = { google: 15, apple: 30 };
+// 스토어 수수료를 뗀 정산액에서 내가 받는 비율.
+export const OWNER_SHARE_PCT = 8;
+
+export interface SettlementMonth {
+  month: string; // "2026.09" (결제일 KST 기준)
+  googleGrossKrw: number;
+  appleGrossKrw: number;
+  grossKrw: number;
+  storeFeeKrw: number;
+  netKrw: number; // 스토어 수수료 차감 후
+  shareKrw: number; // 그중 내 몫
+  count: number;
+}
+
+export interface OwnerSettlement {
+  sharePct: number;
+  feePct: Record<Platform, number>;
+  months: SettlementMonth[]; // 최근 달이 위
+  totalGrossKrw: number;
+  totalNetKrw: number;
+  totalShareKrw: number;
+}
 
 // 어드민 결제 조회 — 실제 결제 채널은 인앱결제(IAP) 둘뿐이라 그것만 모은다.
 //  · IapSubscription : 애플(앱스토어)/구글(안드로이드) 인앱결제 프리미엄 구독
@@ -77,6 +107,8 @@ export interface AdminPaymentsResult {
   free: ActiveFreeGrant[]; // 무료 프리미엄 지급(결제 아님) — 개별 회수 가능
   churn: AdminChurn;
   revenue: AdminRevenue;
+  /** 내 몫 정산(월별). OWNER_SETTLEMENT_EMAIL 계정이 볼 때만 채워진다. */
+  settlement: OwnerSettlement | null;
 }
 
 const PLAN_LABEL: Record<string, string> = { apple: "App Store", google: "Google Play" };
@@ -87,7 +119,55 @@ function iapIsActive(row: IapJoinRow, now: number): boolean {
   return new Date(row.current_period_end).getTime() > now;
 }
 
-export async function getAdminPayments(): Promise<AdminPaymentsResult> {
+function buildOwnerSettlement(paid: AdminIapPayment[]): OwnerSettlement {
+  // 결제일(없으면 생성일) KST 기준으로 달을 가른다.
+  const monthKey = (r: AdminIapPayment) => {
+    const k = new Date(new Date(r.purchasedAt ?? r.createdAt).getTime() + 9 * 60 * 60 * 1000);
+    return `${k.getUTCFullYear()}.${String(k.getUTCMonth() + 1).padStart(2, "0")}`;
+  };
+  const byMonth = new Map<string, AdminIapPayment[]>();
+  for (const r of paid) {
+    const key = monthKey(r);
+    const list = byMonth.get(key);
+    if (list) list.push(r);
+    else byMonth.set(key, [r]);
+  }
+  const months = [...byMonth.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1)) // 최근 달이 위
+    .map(([month, rows]) => {
+      const sumOf = (p: Platform) =>
+        rows.filter((r) => r.platform === p).reduce((a, r) => a + (r.amountKrw ?? 0), 0);
+      const googleGrossKrw = sumOf("google");
+      const appleGrossKrw = sumOf("apple");
+      const grossKrw = googleGrossKrw + appleGrossKrw;
+      // 수수료는 플랫폼마다 다르므로 각각 뗀 뒤 합친다(전체에 한 요율을 곱하면 틀린다).
+      const netKrw = Math.round(
+        googleGrossKrw * (1 - STORE_FEE_PCT.google / 100) + appleGrossKrw * (1 - STORE_FEE_PCT.apple / 100)
+      );
+      return {
+        month,
+        googleGrossKrw,
+        appleGrossKrw,
+        grossKrw,
+        storeFeeKrw: grossKrw - netKrw,
+        netKrw,
+        shareKrw: Math.round((netKrw * OWNER_SHARE_PCT) / 100),
+        count: rows.length,
+      };
+    });
+  return {
+    sharePct: OWNER_SHARE_PCT,
+    feePct: STORE_FEE_PCT,
+    months,
+    totalGrossKrw: months.reduce((a, m) => a + m.grossKrw, 0),
+    totalNetKrw: months.reduce((a, m) => a + m.netKrw, 0),
+    totalShareKrw: months.reduce((a, m) => a + m.shareKrw, 0),
+  };
+}
+
+export async function getAdminPayments(
+  options: { ownerSettlement?: boolean } = {}
+): Promise<AdminPaymentsResult> {
   await ensureIapTables();
 
   const iapRows = await prisma.$queryRawUnsafe<IapJoinRow[]>(
@@ -179,6 +259,7 @@ export async function getAdminPayments(): Promise<AdminPaymentsResult> {
       canceled: prevCanceled,
       ratePct: prevCohort.length ? Math.round((prevCanceled / prevCohort.length) * 1000) / 10 : 0,
     },
+    settlement: options.ownerSettlement ? buildOwnerSettlement(paid) : null,
     revenue: {
       grossKrw: sum(paid),
       googleGrossKrw: sum(paid.filter((r) => r.platform === "google")),

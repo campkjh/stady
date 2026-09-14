@@ -32,12 +32,21 @@ interface FreeGrant {
 }
 interface Churn { monthLabel: string; newSubs: number; canceled: number; ratePct: number }
 interface Revenue { grossKrw: number; googleGrossKrw: number; appleGrossKrw: number; mrrKrw: number }
+interface SettlementMonth {
+  month: string; googleGrossKrw: number; appleGrossKrw: number; grossKrw: number;
+  storeFeeKrw: number; netKrw: number; shareKrw: number; count: number;
+}
+interface Settlement {
+  sharePct: number; feePct: { google: number; apple: number };
+  months: SettlementMonth[]; totalGrossKrw: number; totalNetKrw: number; totalShareKrw: number;
+}
 interface PaymentsData {
   summary: { active: number; total: number; googleActive: number; appleActive: number; freeActive: number; refunded: number };
   iap: IapPayment[];
   free: FreeGrant[];
   churn: Churn;
   revenue: Revenue;
+  settlement: Settlement | null; // 내 계정에서만 내려온다
 }
 
 // 무료 지급 출처 라벨 — 어떤 경로로 무료가 됐는지.
@@ -299,6 +308,76 @@ export default function AdminPaymentsPage() {
                   스토어 수수료율·환율·세금 처리에 따라 달라질 수 있습니다.
                 </p>
               )}
+
+          {/* 내 몫 정산 — 이 계정에서만 내려오는 데이터라 다른 어드민에겐 아예 안 보인다. */}
+          {data?.settlement && data.settlement.months.length > 0 && (
+            <div style={{ ...cardStyle, marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-text-2)" }}>
+                  내 정산 ({data.settlement.sharePct}%) · 월별
+                </span>
+                <span style={{ fontSize: 11.5, color: MUTED, fontWeight: 600 }}>
+                  스토어 수수료 안드로이드 {data.settlement.feePct.google}% · 애플 {data.settlement.feePct.apple}% 차감 후
+                </span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginTop: 14 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>이번 달 내 몫</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: ACCENT, letterSpacing: "-0.02em" }}>
+                    {won(data.settlement.months[0].shareKrw)}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{data.settlement.months[0].month}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>누적 내 몫</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                    {won(data.settlement.totalShareKrw)}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>정산액 {won(data.settlement.totalNetKrw)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>월 평균</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                    {won(Math.round(data.settlement.totalShareKrw / data.settlement.months.length))}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{data.settlement.months.length}개월 기준</div>
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto", marginTop: 16 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>월</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>결제</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>총 결제액</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>스토어 수수료</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>정산액</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>내 몫 {data.settlement.sharePct}%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.settlement.months.map((m) => (
+                      <tr key={m.month}>
+                        <td style={{ ...tdStyle, fontWeight: 700 }}>{m.month}</td>
+                        <td style={{ ...tdStyle, textAlign: "right", color: MUTED }}>{m.count}건</td>
+                        <td style={{ ...tdStyle, textAlign: "right" }}>{won(m.grossKrw)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right", color: MUTED }}>-{won(m.storeFeeKrw)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right" }}>{won(m.netKrw)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 800, color: ACCENT }}>{won(m.shareKrw)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p style={{ fontSize: 11.5, color: MUTED, margin: "14px 0 0", lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
+                결제일(KST) 기준으로 묶은 금액입니다. 환불·테스트(Sandbox) 건은 빠져 있고, 표시가(부가세 포함)에서
+                스토어 수수료만 뗀 값이라 실제 입금액은 부가세·환율·세금 처리에 따라 달라질 수 있습니다.
+              </p>
+            </div>
+          )}
             </div>
           )}
 

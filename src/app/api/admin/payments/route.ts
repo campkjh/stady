@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { getAdminPayments } from "@/lib/adminPayments";
+import { getAdminPayments, OWNER_SETTLEMENT_EMAIL } from "@/lib/adminPayments";
 
 export const dynamic = "force-dynamic";
 
 // 어드민: 결제/구독 전체 조회 (IAP 프리미엄 + 토스 단건 + 토스 정기).
 export async function GET() {
   try {
-    await requireAdmin();
-    const data = await getAdminPayments();
+    const admin = await requireAdmin();
+    // 내 몫 정산은 요청자가 그 계정일 때만 계산해서 내려보낸다(다른 어드민 응답엔 아예 없음).
+    const data = await getAdminPayments({
+      ownerSettlement: (admin.email ?? "").toLowerCase() === OWNER_SETTLEMENT_EMAIL,
+    });
     return NextResponse.json(data);
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Unauthorized") {
