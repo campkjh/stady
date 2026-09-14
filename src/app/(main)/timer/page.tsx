@@ -64,8 +64,8 @@ interface WeeklyRankRow { userId: string; nickname: string; avatar: string | nul
 interface WeeklyAward { weekStart: string; rank: number; days: number }
 
 const TIMER_TABS = [
-  { key: "rooms" as const, label: "스타디룸", icon: "/icons/timer-status.png" },
-  { key: "ranking" as const, label: "투데이랭킹", icon: "/icons/timer-ranking.png" },
+  { key: "rooms" as const, label: "스타디룸", icon: "/icons/toss/users-two.svg" },
+  { key: "ranking" as const, label: "투데이랭킹", icon: "/icons/toss/medal-rank.svg" },
 ];
 const OFFLINE_FILL = "var(--c-border)";
 const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
@@ -398,13 +398,15 @@ export default function TimerPage() {
           aria-label="친구"
           className="press"
           style={{
-            marginLeft: "auto", position: "relative", width: 38, height: 38, borderRadius: 999,
-            border: "none", background: "var(--c-bg-muted)", cursor: "pointer",
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            marginLeft: "auto", position: "relative", height: 38, borderRadius: 999,
+            border: "none", background: "var(--c-brand-soft-6)", cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 5, padding: "0 13px 0 9px",
+            color: "var(--c-brand-deep)", fontSize: 13.5, fontWeight: 800,
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/timer-friends.png" alt="" style={{ width: 24, height: 24, objectFit: "contain", display: "block" }} />
+          <img src="/icons/toss/kid.svg" alt="" style={{ width: 22, height: 22, display: "block" }} />
+          친구 +
           {incomingRequests.length > 0 && (
             <span style={{
               position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, padding: "0 5px",

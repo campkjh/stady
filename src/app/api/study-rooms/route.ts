@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       description: String((body as { description?: unknown }).description ?? "").trim() || null,
       icon: String((body as { icon?: unknown }).icon ?? "edu"),
       color: String((body as { color?: unknown }).color ?? "blue"),
+      requireApproval: (body as { requireApproval?: unknown }).requireApproval === true,
     });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {

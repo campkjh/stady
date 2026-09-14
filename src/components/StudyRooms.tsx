@@ -16,6 +16,7 @@ const COLOR_KEYS = Object.keys(COLORS);
 export interface RoomCard {
   id: string; name: string; description: string | null; icon: string; color: string;
   ownerId: string; memberCount: number; studyingCount: number; joined: boolean; isOwner: boolean;
+  requireApproval: boolean; pending: boolean; pendingCount: number;
 }
 interface RoomMember {
   userId: string; nickname: string; avatar: string | null;
@@ -66,9 +67,9 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
       {rooms === null ? (
         <p style={{ fontSize: 13, color: "var(--c-text-4c)", textAlign: "center", padding: "28px 0" }}>불러오는 중이에요.</p>
       ) : rooms.length === 0 ? (
-        <div style={{ padding: "32px 20px", borderRadius: 16, background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)", textAlign: "center" }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-3)", marginBottom: 4 }}>아직 스타디룸이 없어요</p>
-          <p style={{ fontSize: 12, color: "var(--c-text-4c)" }}>첫 번째 방을 만들어보세요</p>
+        <div style={{ padding: "38px 20px", textAlign: "center" }}>
+          <p style={{ fontSize: 15.5, fontWeight: 800, color: "var(--c-text-2)", marginBottom: 5 }}>스타디룸이 텅텅</p>
+          <p style={{ fontSize: 12.5, color: "var(--c-text-4c)", fontWeight: 600 }}>첫 번째 방을 만들어보세요</p>
         </div>
       ) : (
         <div className="sr-grid">
@@ -78,9 +79,13 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/icons/room/${ICONS.includes(r.icon as never) ? r.icon : "edu"}.svg`} alt="" />
                 {r.studyingCount > 0 && <span className="sr-live">{r.studyingCount}</span>}
+                {r.isOwner && r.pendingCount > 0 && <span className="sr-wait">{r.pendingCount}</span>}
               </span>
-              <span className="sr-name">{r.name}</span>
-              <span className="sr-sub">{r.memberCount}명</span>
+              <span className="sr-name">
+                {r.requireApproval && <span className="sr-lock" aria-hidden="true">🔒</span>}
+                {r.name}
+              </span>
+              <span className="sr-sub">{r.pending ? "승인 대기" : r.memberCount + "명"}</span>
             </button>
           ))}
         </div>
@@ -115,6 +120,13 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .sr-sub { font-size: 11px; color: var(--c-text-4c); font-weight: 600; margin-top: -4px; }
+        /* 승인 대기 인원(방장에게만) — 공부 중 배지와 구분되게 왼쪽 위에 주황으로 */
+        .sr-wait {
+          position: absolute; top: -4px; left: -4px; min-width: 20px; height: 20px; padding: 0 5px;
+          border-radius: 999px; background: #F59E0B; color: #fff; font-size: 11px; font-weight: 800;
+          display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--c-bg);
+        }
+        .sr-lock { font-size: 10px; margin-right: 2px; }
       `}</style>
     </section>
   );
@@ -126,6 +138,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
   const [desc, setDesc] = useState("");
   const [icon, setIcon] = useState<string>("edu");
   const [color, setColor] = useState<string>("blue");
+  const [approval, setApproval] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -139,7 +152,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: n, description: desc.trim(), icon, color }),
+        body: JSON.stringify({ name: n, description: desc.trim(), icon, color, requireApproval: approval }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "만들지 못했습니다.");
@@ -241,6 +254,34 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           ))}
         </div>
 
+        {/* 승인제: 켜면 방장이 수락해야 들어올 수 있다 */}
+        <button
+          type="button"
+          onClick={() => setApproval((v) => !v)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
+            padding: "12px 14px", borderRadius: 13, cursor: "pointer", textAlign: "left",
+            border: approval ? "1.5px solid var(--c-brand)" : "1px solid var(--c-border)",
+            background: approval ? "var(--c-brand-soft-3)" : "var(--c-bg)",
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 13.5, fontWeight: 800, color: "var(--c-text-b)" }}>승인 스타디룸</span>
+            <span style={{ display: "block", fontSize: 11.5, color: "var(--c-text-4b)", marginTop: 2 }}>
+              방장이 수락해야 들어올 수 있어요
+            </span>
+          </span>
+          <span style={{
+            width: 44, height: 26, borderRadius: 999, flexShrink: 0, position: "relative",
+            background: approval ? "var(--c-brand)" : "var(--c-bg-muted-3)", transition: "background 0.15s",
+          }}>
+            <span style={{
+              position: "absolute", top: 3, left: approval ? 21 : 3, width: 20, height: 20, borderRadius: 999,
+              background: "#fff", transition: "left 0.15s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+            }} />
+          </span>
+        </button>
+
         {msg && <p style={{ fontSize: 12.5, color: "#E5484D", fontWeight: 700, marginBottom: 8 }}>{msg}</p>}
         <button
           type="button"
@@ -262,7 +303,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
 
 /** 방 상세 — 멤버와 지금 공부 중인 사람. */
 function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: () => void; onChanged: () => void }) {
-  const [room, setRoom] = useState<(RoomCard & { members: RoomMember[] }) | null>(null);
+  const [room, setRoom] = useState<(RoomCard & { members: RoomMember[]; pendingMembers: { userId: string; nickname: string; avatar: string | null }[] }) | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
@@ -274,7 +315,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
 
   useEffect(() => { load(); }, [load]);
 
-  async function act(action: "join" | "leave" | "close") {
+  async function act(action: "join" | "leave" | "close" | "accept" | "reject", userId?: string) {
     if (busy) return;
     setBusy(true);
     try {
@@ -282,7 +323,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, userId }),
       });
       onChanged();
       if (action === "close") onClose();
@@ -322,7 +363,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 16.5, fontWeight: 900, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{room.name}</p>
                 <p style={{ fontSize: 12.5, color: "var(--c-text-4b)", fontWeight: 600, marginTop: 2 }}>
-                  {room.memberCount}명 · 지금 {room.studyingCount}명 공부 중
+                  {room.memberCount}명 · 지금 {room.studyingCount}명 공부 중{room.requireApproval ? " · 승인제" : ""}
                 </p>
               </div>
             </div>
@@ -333,7 +374,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <button
                 type="button"
-                onClick={() => act(room.joined ? "leave" : "join")}
+                onClick={() => act(room.joined || room.pending ? "leave" : "join")}
                 disabled={busy}
                 style={{
                   flex: 1, height: 46, borderRadius: 12, cursor: busy ? "default" : "pointer", fontSize: 14.5, fontWeight: 800,
@@ -342,7 +383,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                   color: room.joined ? "var(--c-text-3)" : "#fff",
                 }}
               >
-                {room.joined ? "나가기" : "입장하기"}
+                {room.joined ? "나가기" : room.pending ? "승인 대기 중 · 취소" : room.requireApproval ? "입장 신청하기" : "입장하기"}
               </button>
               {room.isOwner && (
                 <button
@@ -358,6 +399,35 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                 </button>
               )}
             </div>
+
+            {/* 방장에게만 보이는 승인 대기 목록 */}
+            {room.isOwner && room.pendingMembers.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 12.5, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>
+                  승인 대기 {room.pendingMembers.length}명
+                </p>
+                <div style={{ borderRadius: 14, border: "1px solid var(--c-bg-muted)", overflow: "hidden" }}>
+                  {room.pendingMembers.map((p, i) => (
+                    <div key={p.userId} style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
+                      borderBottom: i === room.pendingMembers.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
+                    }}>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {p.nickname}
+                      </span>
+                      <button type="button" disabled={busy} onClick={() => act("accept", p.userId)}
+                        style={{ border: "none", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-brand)", color: "#fff", fontSize: 12.5, fontWeight: 800 }}>
+                        수락
+                      </button>
+                      <button type="button" disabled={busy} onClick={() => act("reject", p.userId)}
+                        style={{ border: "1px solid var(--c-border)", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-bg)", color: "var(--c-text-4)", fontSize: 12.5, fontWeight: 700 }}>
+                        거절
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={{ borderRadius: 14, border: "1px solid var(--c-bg-muted)", overflow: "hidden" }}>
               {room.members.map((m, i) => (

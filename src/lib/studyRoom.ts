@@ -22,17 +22,23 @@ async function ensure() {
       "icon" TEXT NOT NULL DEFAULT 'edu',
       "color" TEXT NOT NULL DEFAULT 'blue',
       "is_active" BOOLEAN NOT NULL DEFAULT true,
+      "require_approval" BOOLEAN NOT NULL DEFAULT false,
       "created_at" TIMESTAMP(3) NOT NULL DEFAULT now()
     )
   `);
+  // 이미 만들어진 테이블 보강(조회는 늘 컬럼을 명시하므로 Neon 캐시플랜 문제 없음).
+  await prisma.$executeRawUnsafe(`ALTER TABLE "StudyRoom" ADD COLUMN IF NOT EXISTS "require_approval" BOOLEAN NOT NULL DEFAULT false`);
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "StudyRoomMember" (
       "room_id" TEXT NOT NULL REFERENCES "StudyRoom"("id") ON DELETE CASCADE,
       "user_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
       "joined_at" TIMESTAMP(3) NOT NULL DEFAULT now(),
+      "status" TEXT NOT NULL DEFAULT 'joined',
       PRIMARY KEY ("room_id", "user_id")
     )
   `);
+  // status: joined(입장 완료) | pending(승인 대기). 승인제 방에서만 pending 이 생긴다.
+  await prisma.$executeRawUnsafe(`ALTER TABLE "StudyRoomMember" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'joined'`);
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "StudyRoomMember_user_idx" ON "StudyRoomMember" ("user_id")`
   );
@@ -50,20 +56,29 @@ export interface StudyRoomCard {
   studyingCount: number;
   joined: boolean;
   isOwner: boolean;
+  requireApproval: boolean;
+  /** 내가 승인 대기 중인가 */
+  pending: boolean;
+  /** 방장이 볼 대기 인원 수 */
+  pendingCount: number;
 }
 
 export async function listStudyRooms(meId: string | null): Promise<StudyRoomCard[]> {
   await ensure();
   const rows = await prisma.$queryRawUnsafe<{
     id: string; name: string; description: string | null; icon: string; color: string;
-    owner_id: string; member_count: bigint; studying_count: bigint; joined: boolean;
+    owner_id: string; member_count: bigint; studying_count: bigint; pending_count: bigint;
+    joined: boolean; pending: boolean; require_approval: boolean;
   }[]>(
     `SELECT r."id", r."name", r."description", r."icon", r."color", r."owner_id",
-            (SELECT COUNT(*) FROM "StudyRoomMember" m WHERE m."room_id" = r."id")::bigint AS member_count,
+            r."require_approval",
+            (SELECT COUNT(*) FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."status" = 'joined')::bigint AS member_count,
             (SELECT COUNT(*) FROM "StudyRoomMember" m
               JOIN "StudySession" s ON s."userId" = m."user_id" AND s."endedAt" IS NULL
-              WHERE m."room_id" = r."id")::bigint AS studying_count,
-            EXISTS (SELECT 1 FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."user_id" = $1) AS joined
+              WHERE m."room_id" = r."id" AND m."status" = 'joined')::bigint AS studying_count,
+            (SELECT COUNT(*) FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."status" = 'pending')::bigint AS pending_count,
+            EXISTS (SELECT 1 FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."user_id" = $1 AND m."status" = 'joined') AS joined,
+            EXISTS (SELECT 1 FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."user_id" = $1 AND m."status" = 'pending') AS pending
      FROM "StudyRoom" r
      WHERE r."is_active" = true
      ORDER BY studying_count DESC, member_count DESC, r."created_at" DESC`,
@@ -80,19 +95,22 @@ export async function listStudyRooms(meId: string | null): Promise<StudyRoomCard
     studyingCount: Number(r.studying_count),
     joined: !!r.joined,
     isOwner: !!meId && r.owner_id === meId,
+    requireApproval: !!r.require_approval,
+    pending: !!r.pending,
+    pendingCount: Number(r.pending_count),
   }));
 }
 
 export async function createStudyRoom(input: {
-  ownerId: string; name: string; description?: string | null; icon?: string; color?: string;
+  ownerId: string; name: string; description?: string | null; icon?: string; color?: string; requireApproval?: boolean;
 }): Promise<string> {
   await ensure();
   const id = randomUUID();
   const icon = (ROOM_ICONS as readonly string[]).includes(input.icon ?? "") ? input.icon! : "edu";
   const color = (ROOM_COLORS as readonly string[]).includes(input.color ?? "") ? input.color! : "blue";
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "StudyRoom" ("id","owner_id","name","description","icon","color") VALUES ($1,$2,$3,$4,$5,$6)`,
-    id, input.ownerId, input.name.slice(0, 20), (input.description ?? "").slice(0, 60) || null, icon, color
+    `INSERT INTO "StudyRoom" ("id","owner_id","name","description","icon","color","require_approval") VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+    id, input.ownerId, input.name.slice(0, 20), (input.description ?? "").slice(0, 60) || null, icon, color, !!input.requireApproval
   );
   // 만든 사람은 자동으로 들어간다.
   await prisma.$executeRawUnsafe(
@@ -102,12 +120,45 @@ export async function createStudyRoom(input: {
   return id;
 }
 
-export async function joinStudyRoom(roomId: string, userId: string): Promise<void> {
+/** 입장. 승인제 방이면 바로 들어가지 않고 승인 대기(pending)로 남는다. */
+export async function joinStudyRoom(roomId: string, userId: string): Promise<"joined" | "pending"> {
   await ensure();
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "StudyRoomMember" ("room_id","user_id") VALUES ($1,$2) ON CONFLICT DO NOTHING`,
-    roomId, userId
+  const rows = await prisma.$queryRawUnsafe<{ require_approval: boolean; owner_id: string }[]>(
+    `SELECT "require_approval","owner_id" FROM "StudyRoom" WHERE "id" = $1 LIMIT 1`,
+    roomId
   );
+  const room = rows[0];
+  // 방장은 승인제라도 자기 방에 그냥 있는다.
+  const status = room && room.require_approval && room.owner_id !== userId ? "pending" : "joined";
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "StudyRoomMember" ("room_id","user_id","status") VALUES ($1,$2,$3)
+     ON CONFLICT ("room_id","user_id") DO NOTHING`,
+    roomId, userId, status
+  );
+  return status;
+}
+
+/** 방장이 대기자를 수락/거절한다. */
+export async function decideMember(
+  roomId: string, ownerId: string, targetUserId: string, accept: boolean
+): Promise<boolean> {
+  await ensure();
+  const rows = await prisma.$queryRawUnsafe<{ owner_id: string }[]>(
+    `SELECT "owner_id" FROM "StudyRoom" WHERE "id" = $1 LIMIT 1`, roomId
+  );
+  if (!rows[0] || rows[0].owner_id !== ownerId) return false;
+  if (accept) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "StudyRoomMember" SET "status" = 'joined' WHERE "room_id" = $1 AND "user_id" = $2`,
+      roomId, targetUserId
+    );
+  } else {
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "StudyRoomMember" WHERE "room_id" = $1 AND "user_id" = $2 AND "status" = 'pending'`,
+      roomId, targetUserId
+    );
+  }
+  return true;
 }
 
 export async function leaveStudyRoom(roomId: string, userId: string): Promise<void> {
@@ -130,6 +181,8 @@ export async function closeStudyRoom(roomId: string, userId: string): Promise<bo
 
 export interface StudyRoomDetail extends StudyRoomCard {
   members: { userId: string; nickname: string; avatar: string | null; studying: boolean; elapsedSeconds: number; todaySeconds: number }[];
+  /** 승인 대기자(방장에게만 의미가 있다) */
+  pendingMembers: { userId: string; nickname: string; avatar: string | null }[];
 }
 
 export async function getStudyRoom(roomId: string, meId: string | null): Promise<StudyRoomDetail | null> {
@@ -138,9 +191,9 @@ export async function getStudyRoom(roomId: string, meId: string | null): Promise
   const card = list.find((r) => r.id === roomId);
   if (!card) return null;
   const members = await prisma.$queryRawUnsafe<{
-    user_id: string; nickname: string; avatar: string | null; started_at: Date | null; today_seconds: bigint;
+    user_id: string; nickname: string; avatar: string | null; started_at: Date | null; today_seconds: bigint; status: string;
   }[]>(
-    `SELECT m."user_id", u."nickname", u."avatar",
+    `SELECT m."user_id", u."nickname", u."avatar", m."status",
             (SELECT s."startedAt" FROM "StudySession" s
               WHERE s."userId" = m."user_id" AND s."endedAt" IS NULL ORDER BY s."startedAt" DESC LIMIT 1) AS started_at,
             (SELECT COALESCE(SUM(CASE WHEN s."endedAt" IS NOT NULL THEN s."totalSeconds"
@@ -156,7 +209,10 @@ export async function getStudyRoom(roomId: string, meId: string | null): Promise
   );
   return {
     ...card,
-    members: members.map((m) => ({
+    pendingMembers: members
+      .filter((m) => m.status === "pending")
+      .map((m) => ({ userId: m.user_id, nickname: m.nickname, avatar: m.avatar })),
+    members: members.filter((m) => m.status === "joined").map((m) => ({
       userId: m.user_id,
       nickname: m.nickname,
       avatar: m.avatar,
