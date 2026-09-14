@@ -27,7 +27,7 @@ export function FlameChip({ totalSeconds, size = 13 }: { totalSeconds: number; s
   );
 }
 
-/** 뱃지 탭 맨 위에 놓는 8단계 등급 카드(현재 등급 + 다음 등급까지 진행도 + 전체 단계). */
+/** 주간옵시디언 탭 맨 위 8단계 등급 카드(지금 등급 + 다음 등급까지 진행도 + 전체 단계). */
 export default function TimerFlameBadge({ totalSeconds }: { totalSeconds: number }) {
   const tier = flameTierFor(totalSeconds);
   const next = flameNext(totalSeconds);
@@ -53,7 +53,7 @@ export default function TimerFlameBadge({ totalSeconds }: { totalSeconds: number
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: tier.color }}>{tier.name}</div>
           <div style={{ fontSize: 12.5, color: "var(--c-text-4b)", fontWeight: 600, marginTop: 2 }}>
-            누적 공부 {hours(totalSeconds)}
+            이번 주 {hours(totalSeconds)} · 월요일에 초기화
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function TimerFlameBadge({ totalSeconds }: { totalSeconds: number
         {FLAME_TIERS.map((t) => {
           const reached = totalSeconds >= t.minSeconds;
           return (
-            <div key={t.id} style={{ textAlign: "center" }} title={`${t.name} · 누적 ${hours(t.minSeconds)}`}>
+            <div key={t.id} style={{ textAlign: "center" }} title={`${t.name} · 이번 주 ${hours(t.minSeconds)} 이상`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={t.icon}

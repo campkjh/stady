@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FlameChip } from "@/components/TimerFlameBadge";
+import TimerFlameBadge, { FlameChip } from "@/components/TimerFlameBadge";
 import StudyRooms from "@/components/StudyRooms";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
@@ -549,6 +549,8 @@ export default function TimerPage() {
           </div>
         ) : activeTab === "ranking" ? (
           <div key="ranking" className="timer-tab-panel">
+            {/* 지금 내 불꽃 등급 — 이번 주 공부시간 기준 */}
+            <TimerFlameBadge totalSeconds={myWeeklySeconds} />
             <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--c-bg-muted)", marginBottom: 12 }}>
               {([["today", "오늘"], ["week", "이번 주"]] as const).map(([key, label]) => (
                 <button
