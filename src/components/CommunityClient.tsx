@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
 import PrimeReferralSheet from "@/components/PrimeReferralSheet";
+import IntroBanner from "@/components/IntroBanner";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
@@ -565,6 +566,12 @@ export default function CommunityClient() {
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
       {/* 커뮤니티 진입 시 하단에서 올라오는 친구초대 시트(일주일 동안 안보기 지원) */}
+      {/* 첫 진입 배너(X = 3일 동안 안 보기) — 초대 시트보다 위에 뜬다 */}
+      <IntroBanner
+        image="/banners/community-activity.jpg"
+        alt="활동왕에게 스타디 프라임 7일 제공"
+        storageKey="community_intro_hidden_until"
+      />
       <PrimeReferralSheet />
       <header ref={topbarRef} className={`community-topbar${compactHeader ? " is-compact" : ""}`}>
         <div className="community-topbar-inner">

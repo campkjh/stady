@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import SurveyGate from "@/components/SurveyGate";
 import NoticePopup from "@/components/NoticePopup";
+import IntroBannerCarousel from "@/components/IntroBannerCarousel";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
@@ -466,6 +467,14 @@ export default function HomeClient({
       <SurveyGate />
       {/* 진입 시 첫 공지 팝업(7일동안 안보기 / 닫기) */}
       <NoticePopup />
+      {/* 앱 첫 진입 배너 — 2초마다 넘어가는 슬라이드(X = 3일 동안 안 보기) */}
+      <IntroBannerCarousel
+        storageKey="app_intro_hidden_until"
+        slides={[
+          { image: "/banners/obsidian-rank.jpg", alt: "옵시디언 랭킹 3위 이내 달성 시 스타디 프라임 일주일 무료" },
+          { image: "/banners/community-activity.jpg", alt: "활동왕에게 스타디 프라임 7일 제공" },
+        ]}
+      />
       {/* Header */}
       <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "calc(20px + env(safe-area-inset-top, 0px)) 10px 12px" }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

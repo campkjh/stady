@@ -113,7 +113,8 @@ export default function NoticePopup() {
 
   const overlay = (
     <div
-      style={{
+      data-gate="notice"
+        style={{
         position: "fixed",
         top: 0,
         right: 0,

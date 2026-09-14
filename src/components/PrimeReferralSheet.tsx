@@ -34,7 +34,11 @@ export default function PrimeReferralSheet() {
     }
     if (hidden) return;
     // 진입 직후 화면이 자리를 잡은 뒤 올라오게 한다.
-    const t = setTimeout(() => setOpen(true), 450);
+    // 첫 진입 배너가 떠 있으면 겹치니 이번 진입에는 건너뛴다(다음에 다시 기회가 온다).
+    const t = setTimeout(() => {
+      if (document.querySelector('[data-gate="intro-banner"]')) return;
+      setOpen(true);
+    }, 450);
     return () => clearTimeout(t);
   }, []);
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import TimerFlameBadge, { FlameChip } from "@/components/TimerFlameBadge";
 import StudyRooms from "@/components/StudyRooms";
-import ObsidianIntroBanner from "@/components/ObsidianIntroBanner";
+import IntroBanner from "@/components/IntroBanner";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 import { clientCache } from "@/lib/clientCache";
@@ -391,7 +391,11 @@ export default function TimerPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
       {/* 첫 진입 배너(X = 3일 동안 안 보기) */}
-      <ObsidianIntroBanner />
+      <IntroBanner
+        image="/banners/obsidian-rank.jpg"
+        alt="옵시디언 랭킹 3위 이내 달성 시 스타디 프라임 일주일 무료"
+        storageKey="obsidian_intro_hidden_until"
+      />
       {/* Title */}
       <header style={{ padding: "calc(20px + env(safe-area-inset-top, 0px)) 20px 16px", display: "flex", alignItems: "center", gap: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>옵시디언</h1>
