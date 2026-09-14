@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/billing", "schedule": "0 18 * * *" }
+    {
+      "path": "/api/cron/billing",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-study-award",
+      "schedule": "10 15 * * 0"
+    }
   ]
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureUserStatusMessageColumn } from "@/lib/user-status";
+import { closeExpiredCheckSessions } from "@/lib/studyTimer";
 
 interface ActiveRow {
   userId: string;
@@ -48,6 +49,9 @@ export async function GET() {
     // 세션이 죽어 "앱을 나갔다 오면 시간이 안 재지는" 버그가 됐다.
     // 이제는 하루(24h) 넘게 핑이 없는, 정말 버려진 세션만 마지막 핑 시점으로 종료.
     const staleCutoff = new Date(now - 24 * 60 * 60 * 1000);
+
+    // 1-a) 확인 퀴즈(OX)를 3시간 넘게 안 푼 세션은 기한 시점으로 종료한다.
+    await closeExpiredCheckSessions();
 
     // 1) 버려진 active 세션을 단일 UPDATE로 일괄 종료.
     await prisma.$executeRaw`

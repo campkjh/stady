@@ -58,6 +58,7 @@ function grantSourceLabel(src: string) {
     case "admin":
     case "admin_grant": return "수동 지급";
     case "answer_king": return "답변왕 유지 중";
+    case "weekly_rank": return "주간 공부 랭킹 보상";
     default: return src;
   }
 }

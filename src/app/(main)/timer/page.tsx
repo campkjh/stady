@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import TimerFlameBadge, { FlameChip } from "@/components/TimerFlameBadge";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 import { clientCache } from "@/lib/clientCache";
@@ -57,6 +58,9 @@ const PRIMARY_SOFT = "var(--c-brand-soft)";
 const PRIMARY_SOFTER = "var(--c-brand-soft-8)";
 const ACCENT_BG = "var(--c-brand-line-4)";
 const TEXT_MUTED = "var(--c-text-4c)";
+
+interface WeeklyRankRow { userId: string; nickname: string; avatar: string | null; seconds: number; totalSeconds: number; isMe: boolean }
+interface WeeklyAward { weekStart: string; rank: number; days: number }
 
 const TIMER_TABS = [
   { key: "status" as const, label: "공부현황", icon: "/icons/timer-status.png" },
@@ -171,6 +175,9 @@ export default function TimerPage() {
   const [friendAddMessage, setFriendAddMessage] = useState("");
   const [friendAddLoading, setFriendAddLoading] = useState(false);
   const [myStats, setMyStats] = useState<TimerStats | null>(null);
+  // 주간 랭킹(월요일 시작, KST) — 1~3위는 다음 주 월요일에 프라임 7일을 받는다.
+  const [rankScope, setRankScope] = useState<"today" | "week">("today");
+  const [weekly, setWeekly] = useState<{ ranking: WeeklyRankRow[]; awards: WeeklyAward[]; awardRanks: number; awardDays: number } | null>(null);
   const [analysis, setAnalysis] = useState<TimerAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
@@ -413,6 +420,16 @@ export default function TimerPage() {
       });
   }, [users]);
 
+  useEffect(() => {
+    if (activeTab !== "ranking") return;
+    let alive = true;
+    fetch("/api/timer/weekly", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setWeekly(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [activeTab, rankScope]);
+
   const todayRanking = useMemo(
     () => [...users].filter((u) => u.todayTotalSeconds > 0).sort((a, b) => b.todayTotalSeconds - a.todayTotalSeconds),
     [users]
@@ -627,6 +644,29 @@ export default function TimerPage() {
           </div>
         ) : activeTab === "ranking" ? (
           <div key="ranking" className="timer-tab-panel">
+            <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--c-bg-muted)", marginBottom: 12 }}>
+              {([["today", "오늘"], ["week", "이번 주"]] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRankScope(key)}
+                  style={{
+                    flex: 1, height: 34, border: "none", borderRadius: 9, cursor: "pointer",
+                    fontSize: 13.5, fontWeight: 700,
+                    background: rankScope === key ? "var(--c-bg)" : "transparent",
+                    color: rankScope === key ? "var(--c-text)" : "var(--c-text-4)",
+                    boxShadow: rankScope === key ? "0 1px 4px rgba(15,23,42,0.08)" : "none",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {rankScope === "week" ? (
+              <WeeklyRanking data={weekly} />
+            ) : (
+            <>
             <p style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 16 }}>
               누적 기록 <span style={{ color: PRIMARY, fontWeight: 700 }}>{todayRanking.length}명</span>
             </p>
@@ -650,6 +690,8 @@ export default function TimerPage() {
                   <RankingRow key={timerUserRenderKey(u)} user={u} rank={i + 1} isLast={i === todayRanking.length - 1} onOpen={() => setSelectedUser(u)} />
                 ))}
               </div>
+            )}
+            </>
             )}
           </div>
         ) : activeTab === "friends" ? (
@@ -736,6 +778,7 @@ export default function TimerPage() {
         ) : (
           activeTab === "badges" ? (
           <div key="badges" className="timer-tab-panel">
+            <TimerFlameBadge totalSeconds={myStats?.totalStudySeconds ?? 0} />
             <BadgeCollection stats={myStats} todaySeconds={myTodayTotalNow} />
           </div>
           ) : (
@@ -1273,6 +1316,62 @@ const modalSecondaryButtonStyle = {
   fontSize: 15,
   fontWeight: 700,
 };
+
+// 주간 랭킹. 1~3위는 다음 주 월요일 새벽 크론이 프라임 7일을 자동 지급한다.
+function WeeklyRanking({ data }: { data: { ranking: WeeklyRankRow[]; awards: WeeklyAward[]; awardRanks: number; awardDays: number } | null }) {
+  if (!data) return <p style={{ fontSize: 13, color: TEXT_MUTED, padding: "24px 0", textAlign: "center" }}>불러오는 중이에요.</p>;
+  const { ranking, awardRanks, awardDays } = data;
+  const fmt = (sec: number) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+  };
+  return (
+    <>
+      <div style={{ padding: "11px 14px", borderRadius: 14, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, marginBottom: 12 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 800, color: PRIMARY_DARK, lineHeight: 1.6 }}>
+          이번 주 {awardRanks}위 안에 들면 다음 주에 스타디 프라임 {awardDays}일을 드려요
+        </p>
+        <p style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3 }}>월요일 0시에 새로 시작해요 · 이미 구독 중이면 구독이 끝난 뒤로 이어져요</p>
+      </div>
+      {data.awards.length > 0 && (
+        <p style={{ fontSize: 12, color: PRIMARY, fontWeight: 700, marginBottom: 10 }}>
+          받은 보상 {data.awards.length}회 · 최근 {data.awards[0].weekStart} 주 {data.awards[0].rank}위
+        </p>
+      )}
+      {ranking.length === 0 ? (
+        <div style={{ padding: "32px 20px", borderRadius: 16, background: "var(--c-bg-soft)", border: "1px solid var(--c-bg-muted)", textAlign: "center" }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--c-text-3)" }}>이번 주 기록이 아직 없어요</p>
+        </div>
+      ) : (
+        <div style={{ borderRadius: 16, border: "1px solid var(--c-bg-muted)", overflow: "hidden", background: "var(--c-bg)" }}>
+          {ranking.map((u, i) => {
+            const rank = i + 1;
+            const rankColor = rank === 1 ? "#F59E0B" : rank === 2 ? "#94A3B8" : rank === 3 ? "#CD7F32" : "#D1D5DB";
+            return (
+              <div key={u.userId} style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                borderBottom: i === ranking.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
+                background: u.isMe ? PRIMARY_SOFTER : "var(--c-bg)",
+              }}>
+                <span style={{ width: 26, textAlign: "center", fontSize: 15, fontWeight: 900, color: rankColor }}>{rank}</span>
+                <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {u.nickname}
+                  </span>
+                  <FlameChip totalSeconds={u.totalSeconds} size={12} />
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 800, color: rank <= awardRanks ? PRIMARY : "var(--c-text-3)", whiteSpace: "nowrap" }}>
+                  {fmt(u.seconds)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
 
 function RankingRow({ user, rank, isLast, onOpen }: { user: TimerUser; rank: number; isLast: boolean; onOpen?: () => void }) {
   const [elapsed, setElapsed] = useState(user.activeElapsedSeconds);
