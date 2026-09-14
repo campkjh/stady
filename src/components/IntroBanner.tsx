@@ -31,8 +31,19 @@ export default function IntroBanner({
       until = 0;
     }
     if (until > Date.now()) return;
+    // 다른 게이트(옵시디언 인트로 스플래시·공지 팝업 등)가 떠 있으면 닫힐 때까지 기다렸다 뜬다.
     // 이펙트 본문에서 바로 setState 하지 않는다(React Compiler 가 막는다) — 콜백으로 넘긴다.
-    const t = setTimeout(() => setOpen(true), 0);
+    let tries = 0;
+    let t: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (!document.querySelector("[data-gate]")) {
+        setOpen(true);
+        return;
+      }
+      if (++tries < 100) t = setTimeout(tick, 800); // 최대 80초 대기
+    };
+    // 첫 검사를 한 박자 늦춘다 — 같은 프레임에 뜨는 스플래시가 아직 DOM 에 없을 수 있다.
+    t = setTimeout(tick, 900);
     return () => clearTimeout(t);
   }, [storageKey]);
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import TimerFlameBadge, { FlameChip } from "@/components/TimerFlameBadge";
 import StudyRooms from "@/components/StudyRooms";
 import IntroBanner from "@/components/IntroBanner";
+import ObsidianIntroSplash from "@/components/ObsidianIntroSplash";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 import { clientCache } from "@/lib/clientCache";
@@ -390,6 +391,8 @@ export default function TimerPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
+      {/* 첫 진입: 어두워지며 크리스탈 영상이 뜨는 스플래시(기기당 1회) → 닫히면 아래 배너 */}
+      <ObsidianIntroSplash />
       {/* 첫 진입 배너(X = 3일 동안 안 보기) */}
       <IntroBanner
         image="/banners/obsidian-rank.jpg"
