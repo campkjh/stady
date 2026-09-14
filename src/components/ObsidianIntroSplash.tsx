@@ -7,12 +7,26 @@ import { createPortal } from "react-dom";
 // 서서히 밝아지며 떠오르고, 그 위에 보라 그라데이션 타이틀이 올라온다.
 // 영상이 끝나거나(7초) 아무 데나 누르면 닫히고, 한 기기에서 한 번만 나온다.
 //
-// ⚠️ 자동재생 전제: muted + playsInline 이어야 웹뷰/사파리가 막지 않는다.
+// ⚠️ 자동재생: 소리까지 내는 게 목표라 먼저 음소거 없이 play() 를 시도하고,
+//    브라우저가 막으면(사용자 제스처 없는 소리 재생 금지) 음소거로 되돌려 다시 튼다.
 //    그래도 막히는 기기가 있어서 poster 를 깔아두고, 재생 여부와 무관하게
 //    HOLD_MS 뒤 자동으로 닫는다(영상이 안 나와도 앱이 멈추지 않게).
 const SEEN_KEY = "obsidian_intro_splash_v1";
 const HOLD_MS = 7600; // 영상 7초 + 여운
 const FADE_MS = 700;
+
+// 소리 있는 재생을 먼저 시도하고, 막히면 음소거로 재생한다.
+function playWithSound(v: HTMLVideoElement | null) {
+  if (!v) return;
+  v.muted = false;
+  v.volume = 1;
+  v.play().catch(() => {
+    v.muted = true;
+    v.play().catch(() => {
+      /* 그래도 막히면 poster 가 대신 보인다 */
+    });
+  });
+}
 
 export default function ObsidianIntroSplash() {
   const [open, setOpen] = useState(false);
@@ -54,9 +68,7 @@ export default function ObsidianIntroSplash() {
 
   useEffect(() => {
     if (!open) return;
-    videoRef.current?.play().catch(() => {
-      /* 자동재생 차단 — poster 가 대신 보인다 */
-    });
+    playWithSound(videoRef.current);
   }, [open]);
 
   if (!open || typeof document === "undefined") return null;
@@ -73,19 +85,20 @@ export default function ObsidianIntroSplash() {
         className="obsplash-video"
         src="/intro/obsidian-intro.mp4"
         poster="/intro/obsidian-intro-poster.jpg"
-        muted
         playsInline
         autoPlay
         preload="auto"
         onEnded={close}
         // 마운트 직후의 play() 는 아직 로드 전이라 거절될 수 있다 — 재생 가능해지면 한 번 더.
         onCanPlay={(e) => {
-          const v = e.currentTarget;
-          if (v.paused) v.play().catch(() => {});
+          if (e.currentTarget.paused) playWithSound(e.currentTarget);
         }}
       />
       <div className="obsplash-veil" />
-      <p className="obsplash-title">시간을 기록하는 옵시디언</p>
+      <div className="obsplash-copy">
+        <span className="obsplash-glow" aria-hidden="true" />
+        <p className="obsplash-title">시간을 기록하는 옵시디언</p>
+      </div>
       <button type="button" className="obsplash-skip" onClick={close}>
         건너뛰기
       </button>
@@ -132,25 +145,47 @@ export default function ObsidianIntroSplash() {
           animation: obsplash-fade 1600ms ease 900ms both;
           pointer-events: none;
         }
-        .obsplash-title {
+        .obsplash-copy {
           position: absolute;
           left: 24px;
           right: 24px;
           bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+          animation: obsplash-title 1500ms cubic-bezier(0.16, 1, 0.3, 1) 1600ms both;
+        }
+        /* 글자 뒤 보라 번짐 — 글자 자체에 filter 를 걸면 일부 웹뷰에서
+           background-clip:text 가 깨져 글자가 통째로 안 보인다. 그래서 층을 나눈다. */
+        .obsplash-glow {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 78%;
+          height: 150%;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(60% 50% at 50% 50%, rgba(103, 55, 232, 0.55) 0%, rgba(103, 55, 232, 0) 72%);
+          pointer-events: none;
+        }
+        .obsplash-title {
+          position: relative;
           margin: 0;
           text-align: center;
           font-size: clamp(21px, 6.2vw, 30px);
           font-weight: 800;
           line-height: 1.35;
-          background: linear-gradient(104deg, #f3ecff 0%, #c9b4ff 26%, #8e6bff 52%, #c9b4ff 74%, #f3ecff 100%);
-          background-size: 220% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          filter: drop-shadow(0 6px 26px rgba(103, 55, 232, 0.55));
-          animation:
-            obsplash-title 1500ms cubic-bezier(0.16, 1, 0.3, 1) 1750ms both,
-            obsplash-shine 5200ms ease-in-out 3200ms infinite;
+          letter-spacing: -0.01em;
+          /* 기본값은 단색 — 그라데이션(background-clip:text)을 못 그리는 웹뷰에서도
+             글자가 투명해지지 않게 한다. 지원하면 아래 @supports 가 덮어쓴다. */
+          color: #ece2ff;
+        }
+        @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+          .obsplash-title {
+            background: linear-gradient(104deg, #f3ecff 0%, #c9b4ff 26%, #8e6bff 52%, #c9b4ff 74%, #f3ecff 100%);
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            animation: obsplash-shine 5200ms ease-in-out 3000ms infinite;
+          }
         }
         .obsplash-skip {
           position: absolute;
@@ -197,13 +232,11 @@ export default function ObsidianIntroSplash() {
         @keyframes obsplash-title {
           from {
             opacity: 0;
-            transform: translateY(16px);
-            letter-spacing: 0.2em;
+            transform: translateY(18px) scale(0.98);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
-            letter-spacing: -0.01em;
+            transform: translateY(0) scale(1);
           }
         }
         @keyframes obsplash-shine {
@@ -219,6 +252,7 @@ export default function ObsidianIntroSplash() {
           .obsplash,
           .obsplash-video,
           .obsplash-veil,
+          .obsplash-copy,
           .obsplash-title,
           .obsplash-skip {
             animation-duration: 1ms;
