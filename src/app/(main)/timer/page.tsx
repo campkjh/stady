@@ -497,76 +497,43 @@ export default function TimerPage() {
 
       <div style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
-      {/* Icon Tabs */}
-      <div style={{
-        padding: "16px 12px 12px",
-        display: "flex",
-        gap: 4,
-        overflowX: "auto",
-        scrollbarWidth: "none",
-      }}>
+      {/* 탭 바 — 아이콘 + 라벨, 선택된 쪽에 밑줄 */}
+      <div style={{ display: "flex", padding: "0 20px", gap: 22, borderBottom: "1px solid var(--c-bg-muted)" }}>
         {TIMER_TABS.map((tab) => {
           const isActive = activeTab === tab.key;
-          const requestBadge = 0; // 친구 요청 배지는 헤더 아이콘으로 옮겼다
           return (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
               style={{
-                flex: 1,
-                minWidth: 64,
-                flexShrink: 0,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-                padding: "4px 0",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
+                position: "relative", display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "13px 2px", background: "none", border: "none", cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
-              <div style={{ position: "relative", width: 60, height: 60 }}>
-                <img
-                  src={tab.icon}
-                  alt=""
-                  style={{ width: 60, height: 60, objectFit: "contain", display: "block" }}
-                />
-                {requestBadge > 0 && (
-                  <span style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    minWidth: 18,
-                    height: 18,
-                    padding: "0 5px",
-                    borderRadius: 9,
-                    background: "var(--c-danger-b)",
-                    color: "#fff",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
-                    {requestBadge}
-                  </span>
-                )}
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={tab.icon}
+                alt=""
+                style={{ width: 20, height: 20, objectFit: "contain", display: "block", opacity: isActive ? 1 : 0.45 }}
+              />
               <span style={{
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: isActive ? 800 : 600,
                 color: isActive ? "var(--c-text-c)" : "var(--c-text-4c)",
+                whiteSpace: "nowrap",
               }}>
                 {tab.label}
               </span>
+              <span style={{
+                position: "absolute", left: 0, right: 0, bottom: -1, height: 2.5, borderRadius: 2,
+                background: isActive ? PRIMARY : "transparent",
+              }} />
             </button>
           );
         })}
       </div>
-
-      <div style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
       {/* Tab content */}
       <div style={{ padding: "20px 20px 40px" }}>
