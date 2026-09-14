@@ -11,7 +11,8 @@ import { createPortal } from "react-dom";
 //    브라우저가 막으면(사용자 제스처 없는 소리 재생 금지) 음소거로 되돌려 다시 튼다.
 //    그래도 막히는 기기가 있어서 poster 를 깔아두고, 재생 여부와 무관하게
 //    HOLD_MS 뒤 자동으로 닫는다(영상이 안 나와도 앱이 멈추지 않게).
-const SEEN_KEY = "obsidian_intro_splash_v1";
+// 연출을 고칠 때마다 뒤 번호를 올린다 — 이미 본 사람에게도 한 번 더 나온다.
+const SEEN_KEY = "obsidian_intro_splash_v2";
 const HOLD_MS = 7600; // 영상 7초 + 여운
 const FADE_MS = 700;
 
