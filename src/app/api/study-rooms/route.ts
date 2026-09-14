@@ -28,6 +28,11 @@ export async function POST(request: NextRequest) {
       icon: String((body as { icon?: unknown }).icon ?? "edu"),
       color: String((body as { color?: unknown }).color ?? "blue"),
       requireApproval: (body as { requireApproval?: unknown }).requireApproval === true,
+      // 이미지는 우리 업로드(/api/community/uploads)가 돌려준 blob URL 만 받는다.
+      imageUrl: (() => {
+        const u = String((body as { imageUrl?: unknown }).imageUrl ?? "").trim();
+        return /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//.test(u) ? u : null;
+      })(),
     });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {

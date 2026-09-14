@@ -28,6 +28,8 @@ async function ensure() {
   `);
   // 이미 만들어진 테이블 보강(조회는 늘 컬럼을 명시하므로 Neon 캐시플랜 문제 없음).
   await prisma.$executeRawUnsafe(`ALTER TABLE "StudyRoom" ADD COLUMN IF NOT EXISTS "require_approval" BOOLEAN NOT NULL DEFAULT false`);
+  // 프리셋 아이콘 대신 직접 올린 이미지를 쓸 수 있다(있으면 아이콘보다 우선).
+  await prisma.$executeRawUnsafe(`ALTER TABLE "StudyRoom" ADD COLUMN IF NOT EXISTS "image_url" TEXT`);
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "StudyRoomMember" (
       "room_id" TEXT NOT NULL REFERENCES "StudyRoom"("id") ON DELETE CASCADE,
@@ -56,6 +58,8 @@ export interface StudyRoomCard {
   studyingCount: number;
   joined: boolean;
   isOwner: boolean;
+  /** 직접 올린 방 이미지(없으면 icon/color 프리셋을 쓴다) */
+  imageUrl: string | null;
   requireApproval: boolean;
   /** 내가 승인 대기 중인가 */
   pending: boolean;
@@ -67,10 +71,10 @@ export async function listStudyRooms(meId: string | null): Promise<StudyRoomCard
   await ensure();
   const rows = await prisma.$queryRawUnsafe<{
     id: string; name: string; description: string | null; icon: string; color: string;
-    owner_id: string; member_count: bigint; studying_count: bigint; pending_count: bigint;
+    owner_id: string; image_url: string | null; member_count: bigint; studying_count: bigint; pending_count: bigint;
     joined: boolean; pending: boolean; require_approval: boolean;
   }[]>(
-    `SELECT r."id", r."name", r."description", r."icon", r."color", r."owner_id",
+    `SELECT r."id", r."name", r."description", r."icon", r."color", r."owner_id", r."image_url",
             r."require_approval",
             (SELECT COUNT(*) FROM "StudyRoomMember" m WHERE m."room_id" = r."id" AND m."status" = 'joined')::bigint AS member_count,
             (SELECT COUNT(*) FROM "StudyRoomMember" m
@@ -95,6 +99,7 @@ export async function listStudyRooms(meId: string | null): Promise<StudyRoomCard
     studyingCount: Number(r.studying_count),
     joined: !!r.joined,
     isOwner: !!meId && r.owner_id === meId,
+    imageUrl: r.image_url,
     requireApproval: !!r.require_approval,
     pending: !!r.pending,
     pendingCount: Number(r.pending_count),
@@ -102,15 +107,16 @@ export async function listStudyRooms(meId: string | null): Promise<StudyRoomCard
 }
 
 export async function createStudyRoom(input: {
-  ownerId: string; name: string; description?: string | null; icon?: string; color?: string; requireApproval?: boolean;
+  ownerId: string; name: string; description?: string | null; icon?: string; color?: string; requireApproval?: boolean; imageUrl?: string | null;
 }): Promise<string> {
   await ensure();
   const id = randomUUID();
   const icon = (ROOM_ICONS as readonly string[]).includes(input.icon ?? "") ? input.icon! : "edu";
   const color = (ROOM_COLORS as readonly string[]).includes(input.color ?? "") ? input.color! : "blue";
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "StudyRoom" ("id","owner_id","name","description","icon","color","require_approval") VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-    id, input.ownerId, input.name.slice(0, 20), (input.description ?? "").slice(0, 60) || null, icon, color, !!input.requireApproval
+    `INSERT INTO "StudyRoom" ("id","owner_id","name","description","icon","color","require_approval","image_url") VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    id, input.ownerId, input.name.slice(0, 20), (input.description ?? "").slice(0, 60) || null, icon, color,
+    !!input.requireApproval, input.imageUrl ?? null
   );
   // 만든 사람은 자동으로 들어간다.
   await prisma.$executeRawUnsafe(

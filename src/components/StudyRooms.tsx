@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 import { createPortal } from "react-dom";
 
 // 스타디룸 — 애플 홈 화면(앱 서랍)처럼 늘어놓는 공부방.
@@ -16,7 +17,7 @@ const COLOR_KEYS = Object.keys(COLORS);
 export interface RoomCard {
   id: string; name: string; description: string | null; icon: string; color: string;
   ownerId: string; memberCount: number; studyingCount: number; joined: boolean; isOwner: boolean;
-  requireApproval: boolean; pending: boolean; pendingCount: number;
+  requireApproval: boolean; pending: boolean; pendingCount: number; imageUrl: string | null;
 }
 interface RoomMember {
   userId: string; nickname: string; avatar: string | null;
@@ -75,9 +76,13 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
         <div className="sr-grid">
           {rooms.map((r) => (
             <button key={r.id} type="button" className="sr-cell press" onClick={() => setOpenRoomId(r.id)}>
-              <span className="sr-tile" style={{ background: COLORS[r.color] ?? COLORS.blue }}>
+              <span className="sr-tile" style={{ background: r.imageUrl ? "var(--c-bg-muted)" : COLORS[r.color] ?? COLORS.blue }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/icons/room/${ICONS.includes(r.icon as never) ? r.icon : "edu"}.svg`} alt="" />
+                <img
+                  src={r.imageUrl ?? `/icons/room/${ICONS.includes(r.icon as never) ? r.icon : "edu"}.svg`}
+                  alt=""
+                  className={r.imageUrl ? "sr-photo" : undefined}
+                />
                 {r.studyingCount > 0 && <span className="sr-live">{r.studyingCount}</span>}
                 {r.isOwner && r.pendingCount > 0 && <span className="sr-wait">{r.pendingCount}</span>}
               </span>
@@ -109,6 +114,8 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
           box-shadow: 0 4px 12px rgba(15,23,42,0.08);
         }
         .sr-tile img { width: 54%; height: 54%; object-fit: contain; display: block; }
+        /* 직접 올린 사진은 타일을 꽉 채운다 */
+        .sr-tile img.sr-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 23%; }
         .sr-live {
           position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px;
           border-radius: 999px; background: #22C55E; color: #fff; font-size: 11px; font-weight: 800;
@@ -139,8 +146,33 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
   const [icon, setIcon] = useState<string>("edu");
   const [color, setColor] = useState<string>("blue");
   const [approval, setApproval] = useState(false);
+  // 직접 올린 방 이미지(있으면 프리셋 아이콘 대신 이 사진을 쓴다).
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+
+  function pickImage(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setMsg("");
+    uploadCommunityImage(file)
+      .then((up) => {
+        revokeUploadPreview(preview);
+        setImageUrl(up.url);
+        setPreview(up.previewUrl);
+      })
+      .catch((e) => setMsg(e instanceof Error ? e.message : "이미지를 올리지 못했습니다."))
+      .finally(() => setUploading(false));
+  }
+
+  function clearImage() {
+    revokeUploadPreview(preview);
+    setImageUrl(null);
+    setPreview(null);
+  }
 
   async function submit() {
     const n = name.trim();
@@ -152,7 +184,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: n, description: desc.trim(), icon, color, requireApproval: approval }),
+        body: JSON.stringify({ name: n, description: desc.trim(), icon, color, requireApproval: approval, imageUrl }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "만들지 못했습니다.");
@@ -190,9 +222,15 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <span style={{ width: 64, height: 64, borderRadius: 16, background: COLORS[color], display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{
+            width: 64, height: 64, borderRadius: 16, flexShrink: 0, overflow: "hidden",
+            background: preview ? "var(--c-bg-muted)" : COLORS[color],
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/icons/room/${icon}.svg`} alt="" width={34} height={34} style={{ display: "block" }} />
+            {preview
+              ? <img src={preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              : <img src={`/icons/room/${icon}.svg`} alt="" width={34} height={34} style={{ display: "block" }} />}
           </span>
           <input
             value={name}
@@ -219,7 +257,44 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           }}
         />
 
-        <p style={{ fontSize: 12, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>아이콘</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ""; }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            style={{
+              flex: 1, height: 44, borderRadius: 12, cursor: uploading ? "default" : "pointer",
+              border: "1px solid var(--c-border)", background: "var(--c-bg)",
+              color: "var(--c-text-2)", fontSize: 13.5, fontWeight: 800,
+            }}
+          >
+            {uploading ? "올리는 중…" : preview ? "사진 바꾸기" : "사진으로 만들기"}
+          </button>
+          {preview && (
+            <button
+              type="button"
+              onClick={clearImage}
+              style={{
+                height: 44, padding: "0 14px", borderRadius: 12, cursor: "pointer",
+                border: "1px solid var(--c-border)", background: "var(--c-bg)",
+                color: "var(--c-text-4)", fontSize: 13, fontWeight: 700,
+              }}
+            >
+              사진 빼기
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 12, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>
+          아이콘{preview ? " (사진을 쓰면 아이콘은 안 보여요)" : ""}
+        </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginBottom: 14 }}>
           {ICONS.map((k) => (
             <button
@@ -356,9 +431,15 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <span style={{ width: 52, height: 52, borderRadius: 14, background: COLORS[room.color] ?? COLORS.blue, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{
+                width: 52, height: 52, borderRadius: 14, flexShrink: 0, overflow: "hidden",
+                background: room.imageUrl ? "var(--c-bg-muted)" : COLORS[room.color] ?? COLORS.blue,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+              }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/icons/room/${room.icon}.svg`} alt="" width={28} height={28} style={{ display: "block" }} />
+                {room.imageUrl
+                  ? <img src={room.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  : <img src={`/icons/room/${room.icon}.svg`} alt="" width={28} height={28} style={{ display: "block" }} />}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 16.5, fontWeight: 900, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{room.name}</p>
