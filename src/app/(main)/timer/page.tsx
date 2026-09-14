@@ -400,9 +400,9 @@ export default function TimerPage() {
           className="press"
           style={{
             marginLeft: "auto", position: "relative", height: 38, borderRadius: 999,
-            border: "none", background: "var(--c-brand-soft-6)", cursor: "pointer",
+            border: "none", background: "var(--c-timer-soft)", cursor: "pointer",
             display: "inline-flex", alignItems: "center", gap: 5, padding: "0 13px 0 9px",
-            color: "var(--c-brand-deep)", fontSize: 13.5, fontWeight: 800,
+            color: "var(--c-timer-deep)", fontSize: 13.5, fontWeight: 800,
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -667,7 +667,7 @@ export default function TimerPage() {
                   }}
                   placeholder="아이디, 이메일 또는 닉네임"
                   autoCapitalize="none"
-                  style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 12, border: "1px solid var(--c-brand-line-3)", background: "var(--c-bg)", padding: "0 12px", color: "var(--c-text)", fontSize: 14, fontWeight: 700, outline: "none" }}
+                  style={{ flex: 1, minWidth: 0, height: 42, borderRadius: 12, border: "1px solid var(--c-timer-line)", background: "var(--c-bg)", padding: "0 12px", color: "var(--c-text)", fontSize: 14, fontWeight: 700, outline: "none" }}
                 />
                 <button
                   type="button"
@@ -737,8 +737,8 @@ export default function TimerPage() {
 
       <style>{`
         @keyframes litPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(55,135,255,0.45); }
-          50% { box-shadow: 0 0 0 10px rgba(55,135,255,0); }
+          0%, 100% { box-shadow: 0 0 0 0 var(--c-timer-glow); }
+          50% { box-shadow: 0 0 0 10px transparent; }
         }
         @keyframes dotPulse {
           0%, 100% { transform: scale(1); opacity: 1; }
@@ -807,36 +807,40 @@ function TimerControlButton({ isRunning, onClick, compact = false }: { isRunning
         width: size,
         height: size,
         borderRadius: "50%",
-        background: isRunning ? "var(--c-inverse)" : PRIMARY,
+        // 단색 원판이 밋밋해서 그라데이션 + 색 그림자 + 위쪽 유리 하이라이트(inset)를 겹쳤다.
+        background: isRunning ? "var(--c-inverse)" : "var(--c-timer-grad)",
         border: "none",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: compact
-          ? isRunning ? "0 8px 16px rgba(17,24,39,0.16)" : "0 8px 16px rgba(55,135,255,0.25)"
-          : isRunning ? "0 16px 34px rgba(17,24,39,0.18)" : "0 16px 34px rgba(55,135,255,0.32)",
+        boxShadow: isRunning
+          ? (compact ? "0 8px 16px rgba(17,24,39,0.16)" : "0 14px 30px rgba(17,24,39,0.18)")
+          : compact
+            ? "0 6px 14px var(--c-timer-glow-soft), inset 0 1px 0 rgba(255,255,255,0.3)"
+            : [
+                "0 10px 22px var(--c-timer-glow)",
+                "0 2px 6px var(--c-timer-glow-soft)",
+                "0 0 0 6px var(--c-timer-ring)", // 은은한 바깥 링
+                "inset 0 1.5px 0 rgba(255,255,255,0.34)",
+                "inset 0 -3px 8px rgba(0,0,0,0.12)",
+              ].join(", "),
+        transition: "box-shadow 0.2s ease, background 0.2s ease",
       }}
     >
       {isRunning ? (
         <svg width={compact ? 12 : 19} height={compact ? 12 : 19} viewBox="0 0 24 24" fill="#fff">
-          <rect x="6" y="5" width="4" height="14" rx="1"/>
-          <rect x="14" y="5" width="4" height="14" rx="1"/>
+          <rect x="6" y="5" width="4" height="14" rx="2"/>
+          <rect x="14" y="5" width="4" height="14" rx="2"/>
         </svg>
       ) : (
-        <svg width={compact ? 13 : 20} height={compact ? 13 : 20} viewBox="0 0 24 24" fill="#fff" style={{ marginLeft: compact ? 2 : 3 }}>
-          <polygon points="7,4 20,12 7,20" />
+        // 꼭짓점을 둥글린 삼각형(획을 같은 색으로 덧대 모서리를 굴린다)
+        <svg width={compact ? 13 : 21} height={compact ? 13 : 21} viewBox="0 0 24 24" fill="#fff"
+          stroke="#fff" strokeWidth={compact ? 2.5 : 3.2} strokeLinejoin="round"
+          style={{ marginLeft: compact ? 2 : 3 }}>
+          <polygon points="8.5,6 18.5,12 8.5,18" />
         </svg>
       )}
     </button>
-  );
-}
-
-function AnalysisStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ minHeight: 72, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, padding: 12 }}>
-      <p style={{ fontSize: 11, color: "var(--c-brand-deep-6)", fontWeight: 700 }}>{label}</p>
-      <p style={{ marginTop: 7, fontSize: 15, color: "var(--c-text)", fontWeight: 700, lineHeight: 1.2 }}>{value}</p>
-    </div>
   );
 }
 
@@ -929,7 +933,7 @@ function UserCard({ user, onOpen, onStatusClick }: { user: TimerUser; onOpen: ()
         <div style={{
           position: "absolute", inset: 0, borderRadius: "50%",
           background: lit
-            ? "linear-gradient(135deg, var(--c-brand-line-4) 0%, var(--c-brand-soft) 100%)"
+            ? "linear-gradient(135deg, var(--c-timer-line) 0%, var(--c-timer-soft) 100%)"
             : "var(--c-bg-muted)",
           border: user.isMe
             ? `2.5px solid ${PRIMARY}`

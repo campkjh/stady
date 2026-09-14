@@ -171,6 +171,10 @@
   --c-timer-softer: #F6F3FF;
   --c-timer-line: #DED4FB;
   --c-timer-bg: #FBFAFF;
+  --c-timer-grad: linear-gradient(140deg, #8E6BFF 0%, #6737E8 55%, #4E23C6 100%);
+  --c-timer-glow: rgba(103, 55, 232, 0.34);
+  --c-timer-glow-soft: rgba(103, 55, 232, 0.2);
+  --c-timer-ring: rgba(103, 55, 232, 0.16);
   --c-brand: #3787FF;
   --c-brand-b: #3182F6;
   --c-brand-deep: #1F5EDC;
@@ -368,6 +372,10 @@
   --c-timer-softer: #201B33;
   --c-timer-line: #3B3161;
   --c-timer-bg: #18161F;
+  --c-timer-grad: linear-gradient(140deg, #BCA6FF 0%, #9376FF 55%, #7250E8 100%);
+  --c-timer-glow: rgba(160, 132, 255, 0.3);
+  --c-timer-glow-soft: rgba(160, 132, 255, 0.18);
+  --c-timer-ring: rgba(160, 132, 255, 0.2);
   --c-brand: #4A93FF;
   --c-brand-b: #4A93FF;
   --c-brand-deep: #7FB0FF;

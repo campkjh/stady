@@ -4,7 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// 타이머 화면은 보라 톤이라, 그 화면에 있을 때는 하단 네비 강조색도 보라로 맞춘다.
 const ACTIVE_COLOR = "var(--c-brand)";
+const TIMER_ACTIVE_COLOR = "var(--c-timer)";
 const INACTIVE_COLOR = "var(--c-text-2)";
 const COMMUNITY_VISITED_KEY = "stady_community_visited";
 const COMMUNITY_SEEN_KEY = "stady_community_seen_at";
@@ -157,6 +159,8 @@ export default function BottomNav() {
     setBounce((b) => ({ href, n: b.n + 1 }));
   }
 
+  const activeColor = pathname.startsWith("/timer") ? TIMER_ACTIVE_COLOR : ACTIVE_COLOR;
+
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
@@ -247,10 +251,10 @@ export default function BottomNav() {
                     />
                   )}
                   <NavIcon on={bounce.href === "/community"} n={bounce.n}><svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M13.2578 16.9901C12.8778 17.2098 12.4467 17.3253 12.0078 17.3251C11.569 17.3259 11.1377 17.2106 10.7578 16.9911L4.34277 13.2871V17.1891C4.34277 17.5461 4.53277 17.8761 4.84277 18.0541L11.5078 21.9031C11.8178 22.0811 12.1978 22.0811 12.5078 21.9031L19.1728 18.0531C19.4828 17.8761 19.6728 17.5461 19.6728 17.1891V13.2871L13.2578 16.9901Z" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
-                    <path fillRule="evenodd" clipRule="evenodd" d="M23.0529 7.87195L12.5069 1.78195C12.3548 1.69447 12.1823 1.64844 12.0069 1.64844C11.8314 1.64844 11.659 1.69447 11.5069 1.78195L0.96187 7.87195C0.809863 7.95972 0.683636 8.08596 0.595876 8.23797C0.508116 8.38999 0.461914 8.56242 0.461914 8.73795C0.461914 8.91348 0.508116 9.08591 0.595876 9.23793C0.683636 9.38994 0.809863 9.51618 0.96187 9.60395L11.5089 15.6919C11.6608 15.7799 11.8333 15.8262 12.0089 15.8262C12.1844 15.8262 12.3569 15.7799 12.5089 15.6919L20.9069 10.8439V15.1329H22.4069V9.97695L23.0549 9.60295C23.2069 9.51518 23.3331 9.38894 23.4209 9.23693C23.5086 9.08491 23.5548 8.91248 23.5548 8.73695C23.5548 8.56142 23.5086 8.38899 23.4209 8.23697C23.3331 8.08496 23.2069 7.95872 23.0549 7.87095" fill={isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
+                    <path fillRule="evenodd" clipRule="evenodd" d="M13.2578 16.9901C12.8778 17.2098 12.4467 17.3253 12.0078 17.3251C11.569 17.3259 11.1377 17.2106 10.7578 16.9911L4.34277 13.2871V17.1891C4.34277 17.5461 4.53277 17.8761 4.84277 18.0541L11.5078 21.9031C11.8178 22.0811 12.1978 22.0811 12.5078 21.9031L19.1728 18.0531C19.4828 17.8761 19.6728 17.5461 19.6728 17.1891V13.2871L13.2578 16.9901Z" fill={isActive("/community") ? activeColor : INACTIVE_COLOR}/>
+                    <path fillRule="evenodd" clipRule="evenodd" d="M23.0529 7.87195L12.5069 1.78195C12.3548 1.69447 12.1823 1.64844 12.0069 1.64844C11.8314 1.64844 11.659 1.69447 11.5069 1.78195L0.96187 7.87195C0.809863 7.95972 0.683636 8.08596 0.595876 8.23797C0.508116 8.38999 0.461914 8.56242 0.461914 8.73795C0.461914 8.91348 0.508116 9.08591 0.595876 9.23793C0.683636 9.38994 0.809863 9.51618 0.96187 9.60395L11.5089 15.6919C11.6608 15.7799 11.8333 15.8262 12.0089 15.8262C12.1844 15.8262 12.3569 15.7799 12.5089 15.6919L20.9069 10.8439V15.1329H22.4069V9.97695L23.0549 9.60295C23.2069 9.51518 23.3331 9.38894 23.4209 9.23693C23.5086 9.08491 23.5548 8.91248 23.5548 8.73695C23.5548 8.56142 23.5086 8.38899 23.4209 8.23697C23.3331 8.08496 23.2069 7.95872 23.0549 7.87095" fill={isActive("/community") ? activeColor : INACTIVE_COLOR}/>
                   </svg></NavIcon>
-                  <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/community") ? ACTIVE_COLOR : INACTIVE_COLOR }}>커뮤니티</span>
+                  <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/community") ? activeColor : INACTIVE_COLOR }}>커뮤니티</span>
                 </Link>
               </li>
               <li>
@@ -268,10 +272,10 @@ export default function BottomNav() {
                   }}
                 >
                   <NavIcon on={bounce.href === "/timer"} n={bounce.n}><svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                    <path d="M19.999 5.99885C20.223 7.61185 20.05 8.72985 18.82 8.72985C17.031 8.72985 17.031 4.85285 14.01 2.73385C10.99 0.514851 8.86502 1.01885 8.75202 1.12085C11.213 3.03785 9.87102 6.10785 8.19302 6.91485C6.62702 7.72185 4.81802 6.63685 5.71302 4.21685C3.35202 6.26285 1.99902 8.72685 1.99902 12.0009C1.99902 17.5069 6.51502 22.0009 11.996 22.0009C17.999 22.0009 21.999 17.0009 21.999 12.0009C21.999 10.0009 21.471 8.00085 20 5.99985L19.999 5.99885ZM11.996 20.9329C9.77702 20.9329 8.06202 19.2179 8.06202 16.9989C8.06202 13.7719 11.996 11.5529 11.996 11.5529C11.996 11.5529 15.93 13.7719 15.93 16.9989C15.93 19.1159 14.215 20.9329 11.996 20.9329Z" fill={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
-                    <path opacity="0.5" d="M11.9999 11.5537C11.9999 11.5537 8.06592 13.7727 8.06592 16.9997C8.06592 19.2187 9.78092 20.9337 11.9999 20.9337C14.2189 20.9337 15.9339 19.1187 15.9339 16.9997C15.9339 13.7727 11.9999 11.5537 11.9999 11.5537Z" fill={isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR}/>
+                    <path d="M19.999 5.99885C20.223 7.61185 20.05 8.72985 18.82 8.72985C17.031 8.72985 17.031 4.85285 14.01 2.73385C10.99 0.514851 8.86502 1.01885 8.75202 1.12085C11.213 3.03785 9.87102 6.10785 8.19302 6.91485C6.62702 7.72185 4.81802 6.63685 5.71302 4.21685C3.35202 6.26285 1.99902 8.72685 1.99902 12.0009C1.99902 17.5069 6.51502 22.0009 11.996 22.0009C17.999 22.0009 21.999 17.0009 21.999 12.0009C21.999 10.0009 21.471 8.00085 20 5.99985L19.999 5.99885ZM11.996 20.9329C9.77702 20.9329 8.06202 19.2179 8.06202 16.9989C8.06202 13.7719 11.996 11.5529 11.996 11.5529C11.996 11.5529 15.93 13.7719 15.93 16.9989C15.93 19.1159 14.215 20.9329 11.996 20.9329Z" fill={isActive("/timer") ? activeColor : INACTIVE_COLOR}/>
+                    <path opacity="0.5" d="M11.9999 11.5537C11.9999 11.5537 8.06592 13.7727 8.06592 16.9997C8.06592 19.2187 9.78092 20.9337 11.9999 20.9337C14.2189 20.9337 15.9339 19.1187 15.9339 16.9997C15.9339 13.7727 11.9999 11.5537 11.9999 11.5537Z" fill={isActive("/timer") ? activeColor : INACTIVE_COLOR}/>
                   </svg></NavIcon>
-                  <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/timer") ? ACTIVE_COLOR : INACTIVE_COLOR }}>타이머</span>
+                  <span className="main-nav-label" style={{ fontSize: 10, fontWeight: 500, color: isActive("/timer") ? activeColor : INACTIVE_COLOR }}>타이머</span>
                 </Link>
               </li>
               </>
@@ -290,11 +294,11 @@ export default function BottomNav() {
                   opacity: isActive(tab.href) ? 1 : 0.44,
                 }}
               >
-                <NavIcon on={bounce.href === tab.href} n={bounce.n}>{tab.icon(isActive(tab.href) ? ACTIVE_COLOR : INACTIVE_COLOR)}</NavIcon>
+                <NavIcon on={bounce.href === tab.href} n={bounce.n}>{tab.icon(isActive(tab.href) ? activeColor : INACTIVE_COLOR)}</NavIcon>
                 <span className="main-nav-label" style={{
                   fontSize: 10,
                   fontWeight: 500,
-                  color: isActive(tab.href) ? ACTIVE_COLOR : INACTIVE_COLOR,
+                  color: isActive(tab.href) ? activeColor : INACTIVE_COLOR,
                 }}>
                   {tab.label}
                 </span>
