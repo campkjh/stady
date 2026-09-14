@@ -453,6 +453,8 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
             )}
 
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {/* 방장은 나가기가 없다 — 닫기만 할 수 있다(멤버 0명 유령 방 방지) */}
+              {!room.isOwner && (
               <button
                 type="button"
                 onClick={() => act(room.joined || room.pending ? "leave" : "join")}
@@ -466,13 +468,14 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
               >
                 {room.joined ? "나가기" : room.pending ? "승인 대기 중 · 취소" : room.requireApproval ? "입장 신청하기" : "입장하기"}
               </button>
+              )}
               {room.isOwner && (
                 <button
                   type="button"
                   onClick={() => act("close")}
                   disabled={busy}
                   style={{
-                    height: 46, padding: "0 16px", borderRadius: 12, border: "1px solid #F1B4B4",
+                    flex: 1, height: 46, padding: "0 16px", borderRadius: 12, border: "1px solid #F1B4B4",
                     background: "#FDECEC", color: "#D63A3A", fontSize: 14, fontWeight: 800, cursor: busy ? "default" : "pointer",
                   }}
                 >

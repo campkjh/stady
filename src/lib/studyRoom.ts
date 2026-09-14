@@ -167,10 +167,17 @@ export async function decideMember(
   return true;
 }
 
+/**
+ * 방 나가기. **방장은 못 나간다** — 나가면 멤버 0명인 채로 목록에 남아 유령 방이 된다.
+ * 방장은 '방 닫기'(closeStudyRoom)로만 정리한다.
+ */
 export async function leaveStudyRoom(roomId: string, userId: string): Promise<void> {
   await ensure();
   await prisma.$executeRawUnsafe(
-    `DELETE FROM "StudyRoomMember" WHERE "room_id" = $1 AND "user_id" = $2`,
+    `DELETE FROM "StudyRoomMember" m
+     USING "StudyRoom" r
+     WHERE m."room_id" = $1 AND m."user_id" = $2
+       AND r."id" = m."room_id" AND r."owner_id" <> $2`,
     roomId, userId
   );
 }
