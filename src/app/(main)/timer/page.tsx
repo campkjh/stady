@@ -53,19 +53,20 @@ interface TimerAnalysis {
   };
 }
 
-const PRIMARY = "var(--c-brand)";
-const PRIMARY_DARK = "var(--c-brand-deep)";
-const PRIMARY_SOFT = "var(--c-brand-soft)";
-const PRIMARY_SOFTER = "var(--c-brand-soft-8)";
-const ACCENT_BG = "var(--c-brand-line-4)";
+// 타이머 화면은 앱의 파란 브랜드 대신 옅은 보라 톤을 쓴다(globals.css --c-timer-*).
+const PRIMARY = "var(--c-timer)";
+const PRIMARY_DARK = "var(--c-timer-deep)";
+const PRIMARY_SOFT = "var(--c-timer-soft)";
+const PRIMARY_SOFTER = "var(--c-timer-softer)";
+const ACCENT_BG = "var(--c-timer-line)";
 const TEXT_MUTED = "var(--c-text-4c)";
 
 interface WeeklyRankRow { userId: string; nickname: string; avatar: string | null; seconds: number; totalSeconds: number; isMe: boolean }
 interface WeeklyAward { weekStart: string; rank: number; days: number }
 
 const TIMER_TABS = [
-  { key: "rooms" as const, label: "스타디룸", icon: "/icons/toss/users-two.svg" },
-  { key: "ranking" as const, label: "투데이랭킹", icon: "/icons/toss/medal-rank.svg" },
+  { key: "rooms" as const, label: "스타디룸", icon: "/icons/toss/room-wizard.svg" },
+  { key: "ranking" as const, label: "주간옵시디언", icon: "/icons/toss/obsidian.svg" },
 ];
 const OFFLINE_FILL = "var(--c-border)";
 const DEFAULT_STUDYING_AVATAR = "/timer/default-studying.png";
@@ -116,7 +117,7 @@ export default function TimerPage() {
   const [friendAddLoading, setFriendAddLoading] = useState(false);
   const [myStats, setMyStats] = useState<TimerStats | null>(null);
   // 주간 랭킹(월요일 시작, KST) — 1~3위는 다음 주 월요일에 프라임 7일을 받는다.
-  const [rankScope, setRankScope] = useState<"today" | "week">("today");
+  const [rankScope, setRankScope] = useState<"today" | "week">("week");
   // 친구는 탭에서 빼고 헤더 아이콘으로 연다.
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [weekly, setWeekly] = useState<{ ranking: WeeklyRankRow[]; awards: WeeklyAward[]; awardRanks: number; awardDays: number } | null>(null);
@@ -387,7 +388,7 @@ export default function TimerPage() {
   if (isLoggedIn === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
       {/* Title */}
       <header style={{ padding: "calc(20px + env(safe-area-inset-top, 0px)) 20px 16px", display: "flex", alignItems: "center", gap: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>타이머</h1>

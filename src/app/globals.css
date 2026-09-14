@@ -164,6 +164,13 @@
   --c-text-5g: #C8D6EE;
   --c-text-5h: #C9D3DF;
   /* 브랜드·상태 */
+  /* 타이머 화면 전용 보라 톤 — 다른 화면의 파란 브랜드와 구분한다(스타디룸·랭킹 포함) */
+  --c-timer: #6737E8;
+  --c-timer-deep: #4B21C0;
+  --c-timer-soft: #EFEAFE;
+  --c-timer-softer: #F6F3FF;
+  --c-timer-line: #DED4FB;
+  --c-timer-bg: #FBFAFF;
   --c-brand: #3787FF;
   --c-brand-b: #3182F6;
   --c-brand-deep: #1F5EDC;
@@ -355,6 +362,12 @@
   --c-text-5g: #5F7699;
   --c-text-5h: #5F646E;
   /* 브랜드·상태 */
+  --c-timer: #A084FF;
+  --c-timer-deep: #C9B6FF;
+  --c-timer-soft: #272040;
+  --c-timer-softer: #201B33;
+  --c-timer-line: #3B3161;
+  --c-timer-bg: #18161F;
   --c-brand: #4A93FF;
   --c-brand-b: #4A93FF;
   --c-brand-deep: #7FB0FF;

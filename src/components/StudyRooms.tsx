@@ -47,7 +47,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <p style={{ fontSize: 13, color: "var(--c-text-4c)", fontWeight: 600 }}>
-          스타디룸 <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{rooms?.length ?? 0}</span>개
+          스타디룸 <span style={{ color: "var(--c-timer)", fontWeight: 800 }}>{rooms?.length ?? 0}</span>개
         </p>
         {canWrite && (
           <button
@@ -56,7 +56,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
             className="press"
             style={{
               border: "none", borderRadius: 999, padding: "8px 14px", cursor: "pointer",
-              background: "var(--c-brand)", color: "#fff", fontSize: 13, fontWeight: 800,
+              background: "var(--c-timer)", color: "#fff", fontSize: 13, fontWeight: 800,
             }}
           >
             스타디룸 생성
@@ -228,7 +228,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
               onClick={() => setIcon(k)}
               style={{
                 aspectRatio: "1/1", borderRadius: 13, cursor: "pointer",
-                border: icon === k ? "2px solid var(--c-brand)" : "1px solid var(--c-border)",
+                border: icon === k ? "2px solid var(--c-timer)" : "1px solid var(--c-border)",
                 background: "var(--c-bg)", display: "inline-flex", alignItems: "center", justifyContent: "center",
               }}
             >
@@ -248,7 +248,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
               aria-label={`색 ${k}`}
               style={{
                 width: 34, height: 34, borderRadius: 999, cursor: "pointer", background: COLORS[k],
-                border: color === k ? "2.5px solid var(--c-brand)" : "1px solid var(--c-border)",
+                border: color === k ? "2.5px solid var(--c-timer)" : "1px solid var(--c-border)",
               }}
             />
           ))}
@@ -261,8 +261,8 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           style={{
             width: "100%", display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
             padding: "12px 14px", borderRadius: 13, cursor: "pointer", textAlign: "left",
-            border: approval ? "1.5px solid var(--c-brand)" : "1px solid var(--c-border)",
-            background: approval ? "var(--c-brand-soft-3)" : "var(--c-bg)",
+            border: approval ? "1.5px solid var(--c-timer)" : "1px solid var(--c-border)",
+            background: approval ? "var(--c-timer-soft)" : "var(--c-bg)",
           }}
         >
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -273,7 +273,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           </span>
           <span style={{
             width: 44, height: 26, borderRadius: 999, flexShrink: 0, position: "relative",
-            background: approval ? "var(--c-brand)" : "var(--c-bg-muted-3)", transition: "background 0.15s",
+            background: approval ? "var(--c-timer)" : "var(--c-bg-muted-3)", transition: "background 0.15s",
           }}>
             <span style={{
               position: "absolute", top: 3, left: approval ? 21 : 3, width: 20, height: 20, borderRadius: 999,
@@ -288,7 +288,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           onClick={submit}
           disabled={busy || !name.trim()}
           style={{
-            width: "100%", height: 50, border: "none", borderRadius: 13, background: "var(--c-brand)",
+            width: "100%", height: 50, border: "none", borderRadius: 13, background: "var(--c-timer)",
             color: "#fff", fontSize: 15.5, fontWeight: 900,
             cursor: busy || !name.trim() ? "default" : "pointer", opacity: busy || !name.trim() ? 0.55 : 1,
           }}
@@ -379,7 +379,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                 style={{
                   flex: 1, height: 46, borderRadius: 12, cursor: busy ? "default" : "pointer", fontSize: 14.5, fontWeight: 800,
                   border: room.joined ? "1px solid var(--c-border)" : "none",
-                  background: room.joined ? "var(--c-bg)" : "var(--c-brand)",
+                  background: room.joined ? "var(--c-bg)" : "var(--c-timer)",
                   color: room.joined ? "var(--c-text-3)" : "#fff",
                 }}
               >
@@ -416,7 +416,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                         {p.nickname}
                       </span>
                       <button type="button" disabled={busy} onClick={() => act("accept", p.userId)}
-                        style={{ border: "none", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-brand)", color: "#fff", fontSize: 12.5, fontWeight: 800 }}>
+                        style={{ border: "none", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-timer)", color: "#fff", fontSize: 12.5, fontWeight: 800 }}>
                         수락
                       </button>
                       <button type="button" disabled={busy} onClick={() => act("reject", p.userId)}
@@ -442,7 +442,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                   <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.nickname}
                   </span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: m.studying ? "var(--c-brand)" : "var(--c-text-4c)", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: m.studying ? "var(--c-timer)" : "var(--c-text-4c)", whiteSpace: "nowrap" }}>
                     {m.studying ? `공부 중 ${fmt(m.elapsedSeconds)}` : `오늘 ${fmt(m.todaySeconds)}`}
                   </span>
                 </div>
