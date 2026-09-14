@@ -16,7 +16,8 @@ const SEEN_KEY = "obsidian_intro_splash_v2";
 // 마스터 계정은 연출을 계속 확인해야 해서 1회 제한 없이 매번 본다.
 const OWNER_EMAIL = "campkjh@nate.com";
 const OWNER_FLAG_KEY = "obsidian_splash_owner"; // "1|<확인시각>" — 12시간 캐시
-const HOLD_MS = 7600; // 영상 7초 + 여운
+const HOLD_MS = 9000; // 영상이 아예 재생 안 될 때를 위한 안전망
+const OUTRO_MS = 1800; // 영상이 끝난 뒤 글자만 남기는 마무리
 const FADE_MS = 700;
 
 // 로그인한 계정이 마스터인지 — 본 적 있는 사람에게만 확인하고, 답은 12시간 캐시해서
@@ -64,6 +65,9 @@ export default function ObsidianIntroSplash() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  // 영상이 끝나면(또는 iOS 전체화면 재생이 끝나면) 영상을 걷고 글자만 남긴다.
+  const [outro, setOutro] = useState(false);
+  const outroRef = useRef(false);
   const closedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -103,16 +107,36 @@ export default function ObsidianIntroSplash() {
     setTimeout(() => setOpen(false), FADE_MS);
   }, []);
 
+  // iOS 는 인라인 재생이 막혀 있으면 영상을 네이티브 전체화면 플레이어로 띄우는데,
+  // 그 화면은 HTML 위에 그려져서 타이틀·건너뛰기가 가려진다. 그래서 재생이 끝나면
+  // 영상을 걷고 글자만 남는 마무리 장면을 한 번 더 보여준다.
+  const endVideo = useCallback(() => {
+    if (outroRef.current || closedRef.current) return;
+    outroRef.current = true;
+    setOutro(true);
+    setTimeout(close, OUTRO_MS);
+  }, [close]);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open || outro) return;
     const t = setTimeout(close, HOLD_MS);
     return () => clearTimeout(t);
-  }, [open, close]);
+  }, [open, outro, close]);
 
   useEffect(() => {
     if (!open) return;
     playWithSound(videoRef.current);
   }, [open]);
+
+  // iOS 네이티브 전체화면에서 빠져나온 순간도 '영상 끝'으로 본다(React 프롭엔 없는 이벤트).
+  useEffect(() => {
+    if (!open) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const onEndFs = () => endVideo();
+    v.addEventListener("webkitendfullscreen", onEndFs);
+    return () => v.removeEventListener("webkitendfullscreen", onEndFs);
+  }, [open, endVideo]);
 
   // 애니메이션이 안 도는 웹뷰에서도 글자·건너뛰기가 반드시 보이게 하는 안전장치.
   // (CSS 애니메이션이 정상이면 애니메이션 값이 이겨서 연출 그대로 나온다)
@@ -126,7 +150,7 @@ export default function ObsidianIntroSplash() {
 
   return createPortal(
     <div
-      className={`obsplash${closing ? " is-closing" : ""}`}
+      className={`obsplash${closing ? " is-closing" : ""}${outro ? " is-outro" : ""}`}
       data-gate="obsidian-splash"
       onClick={close}
       role="presentation"
@@ -137,9 +161,14 @@ export default function ObsidianIntroSplash() {
         src="/intro/obsidian-intro.mp4"
         poster="/intro/obsidian-intro-poster.jpg"
         playsInline
+        // 구형 iOS 웹뷰용 레거시 속성 — 이게 있어야 인라인 재생을 시도한다.
+        // (네이티브가 allowsInlineMediaPlayback 을 꺼두면 그래도 전체화면으로 뜬다)
+        {...{ "webkit-playsinline": "true", "x5-playsinline": "true" }}
+        disablePictureInPicture
+        controls={false}
         autoPlay
         preload="auto"
-        onEnded={close}
+        onEnded={endVideo}
         // 마운트 직후의 play() 는 아직 로드 전이라 거절될 수 있다 — 재생 가능해지면 한 번 더.
         onCanPlay={(e) => {
           if (e.currentTarget.paused) playWithSound(e.currentTarget);
@@ -177,6 +206,26 @@ export default function ObsidianIntroSplash() {
         }
         .obsplash.is-closing {
           opacity: 0;
+        }
+        /* 영상이 끝난 뒤(또는 iOS 전체화면 재생이 끝난 뒤) — 영상은 걷히고 글자만 남는다 */
+        .obsplash.is-outro .obsplash-video {
+          /* 애니메이션(fill: both)이 계속 opacity 를 잡고 있어서 먼저 떼어낸다 */
+          animation: none;
+          opacity: 0;
+          transition: opacity 700ms ease;
+        }
+        .obsplash.is-outro .obsplash-veil {
+          animation: none;
+          opacity: 1;
+          background-color: rgba(5, 1, 15, 0.92);
+          transition: background-color 700ms ease;
+        }
+        .obsplash.is-outro .obsplash-copy {
+          bottom: 50%;
+          transform: translateZ(0) translateY(50%) scale(1.06);
+          transition: bottom 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+          animation: none;
+          opacity: 1;
         }
         .obsplash-video {
           position: absolute;
