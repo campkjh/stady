@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export interface IntroSlide {
@@ -11,9 +11,13 @@ export interface IntroSlide {
 // 앱 첫 진입 배너 — 딤 위 가운데에서 여러 장이 2초마다 넘어간다(손으로 밀어서도 넘길 수 있다).
 // 우상단 X 를 누르면 hideDays 동안 다시 안 뜬다. 배경을 누르면 이번만 닫힌다.
 //
-// 공지 팝업 등 다른 [data-gate] 가 떠 있으면 그게 닫힐 때까지 기다렸다 뜬다(겹침 방지).
-// WebView 규칙: document.body 포털 / inset 단축 금지 / 등장 애니메이션 없음.
+// ⚠️ 스크롤 스냅 + scrollTo({behavior:"smooth"}) 로 만들면 WebView 에서 스냅과 부드러운 스크롤이
+// 서로 싸워 "움찔거리기만 하고 안 넘어가는" 증상이 난다. 그래서 스크롤 대신 **transform 으로만**
+// 넘긴다(트랙을 -index*100% 만큼 밀고 transition 으로 애니메이션). 스와이프는 터치 좌표로 직접 판정.
+//
+// 다른 [data-gate](공지 팝업 등)가 떠 있으면 닫힐 때까지 기다렸다 뜬다(겹침 방지).
 const AUTO_MS = 2000;
+const SWIPE_PX = 40;
 
 export default function IntroBannerCarousel({
   slides,
@@ -26,9 +30,9 @@ export default function IntroBannerCarousel({
 }) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const startX = useRef<number | null>(null);
+  const dragging = useRef(false);
 
-  // 다른 팝업이 사라질 때까지 기다렸다가 연다.
   useEffect(() => {
     let until = 0;
     try {
@@ -39,39 +43,41 @@ export default function IntroBannerCarousel({
     if (until > Date.now()) return;
 
     let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
-      // 공지 팝업·닉네임 게이트 등이 떠 있으면 다음 기회에.
       if (!document.querySelector("[data-gate]")) {
         setOpen(true);
         return;
       }
       if (++tries < 100) timer = setTimeout(tick, 1200); // 최대 2분 대기
     };
-    let timer = setTimeout(tick, 400);
+    timer = setTimeout(tick, 400);
     return () => clearTimeout(timer);
   }, [storageKey]);
 
-  // 2초마다 다음 장으로(마지막 다음은 처음으로).
+  // 2초마다 다음 장(마지막 다음은 처음). 손으로 미는 중에는 멈춘다.
   useEffect(() => {
     if (!open || slides.length < 2) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % slides.length), AUTO_MS);
+    const t = setInterval(() => {
+      if (dragging.current) return;
+      setIndex((i) => (i + 1) % slides.length);
+    }, AUTO_MS);
     return () => clearInterval(t);
   }, [open, slides.length]);
 
-  // index 가 바뀌면 트랙을 그 장으로 스크롤(손으로 민 경우는 onScroll 이 index 를 맞춘다).
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const left = el.clientWidth * index;
-    if (Math.abs(el.scrollLeft - left) > 4) el.scrollTo({ left, behavior: "smooth" });
-  }, [index, open]);
-
-  const onScroll = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
-    setIndex((prev) => (prev === i ? prev : i));
-  }, []);
+  function onTouchStart(e: React.TouchEvent) {
+    startX.current = e.touches[0]?.clientX ?? null;
+    dragging.current = true;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const from = startX.current;
+    dragging.current = false;
+    startX.current = null;
+    if (from == null || slides.length < 2) return;
+    const dx = (e.changedTouches[0]?.clientX ?? from) - from;
+    if (Math.abs(dx) < SWIPE_PX) return;
+    setIndex((i) => (dx < 0 ? (i + 1) % slides.length : (i - 1 + slides.length) % slides.length));
+  }
 
   function closeForDays() {
     try {
@@ -97,34 +103,41 @@ export default function IntroBannerCarousel({
     >
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 340 }}>
         <div
-          ref={trackRef}
-          onScroll={onScroll}
-          className="ibc-track"
-          style={{
-            display: "flex", overflowX: "auto", scrollSnapType: "x mandatory",
-            borderRadius: 32, WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-          }}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          style={{ overflow: "hidden", borderRadius: 32, touchAction: "pan-y" }}
         >
-          {slides.map((s) => (
-            <div key={s.image} style={{ flex: "0 0 100%", scrollSnapAlign: "center" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.image} alt={s.alt} style={{ width: "100%", height: "auto", display: "block", borderRadius: 32 }} />
-            </div>
-          ))}
+          <div
+            style={{
+              display: "flex",
+              transform: `translateX(-${index * 100}%)`,
+              transition: "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+          >
+            {slides.map((s) => (
+              <div key={s.image} style={{ flex: "0 0 100%", minWidth: "100%" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.image} alt={s.alt} style={{ width: "100%", height: "auto", display: "block" }} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {slides.length > 1 && (
           <div style={{
             position: "absolute", left: 0, right: 0, bottom: 12,
-            display: "flex", justifyContent: "center", gap: 6, pointerEvents: "none",
+            display: "flex", justifyContent: "center", gap: 6,
           }}>
             {slides.map((s, i) => (
-              <span
+              <button
                 key={s.image}
+                type="button"
+                aria-label={`${i + 1}번째 배너`}
+                onClick={() => setIndex(i)}
                 style={{
-                  width: i === index ? 18 : 6, height: 6, borderRadius: 999,
+                  width: i === index ? 18 : 6, height: 6, borderRadius: 999, border: "none", padding: 0,
                   background: i === index ? "#fff" : "rgba(255,255,255,0.55)",
-                  transition: "width 0.2s ease",
+                  transition: "width 0.2s ease", cursor: "pointer",
                 }}
               />
             ))}
@@ -149,7 +162,6 @@ export default function IntroBannerCarousel({
           </svg>
         </button>
       </div>
-      <style>{`.ibc-track::-webkit-scrollbar { display: none; } .ibc-track { scrollbar-width: none; }`}</style>
     </div>,
     document.body
   );

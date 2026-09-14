@@ -472,7 +472,7 @@ export default function HomeClient({
         storageKey="app_intro_hidden_until"
         slides={[
           { image: "/banners/obsidian-rank.jpg", alt: "옵시디언 랭킹 3위 이내 달성 시 스타디 프라임 일주일 무료" },
-          { image: "/banners/community-activity.jpg", alt: "활동왕에게 스타디 프라임 7일 제공" },
+          { image: "/banners/community-activity.jpg", alt: "답변왕에게 스타디 프라임 7일 제공" },
         ]}
       />
       {/* Header */}

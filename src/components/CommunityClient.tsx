@@ -569,7 +569,7 @@ export default function CommunityClient() {
       {/* 첫 진입 배너(X = 3일 동안 안 보기) — 초대 시트보다 위에 뜬다 */}
       <IntroBanner
         image="/banners/community-activity.jpg"
-        alt="활동왕에게 스타디 프라임 7일 제공"
+        alt="답변왕에게 스타디 프라임 7일 제공"
         storageKey="community_intro_hidden_until"
       />
       <PrimeReferralSheet />
