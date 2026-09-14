@@ -469,10 +469,10 @@ export default function HomeClient({
       <NoticePopup />
       {/* 앱 첫 진입 배너 — 2초마다 넘어가는 슬라이드(X = 3일 동안 안 보기) */}
       <IntroBannerCarousel
-        storageKey="app_intro_hidden_until"
+        storageKey="app_intro_v2_hidden_until"
         slides={[
           { image: "/banners/obsidian-rank.jpg", alt: "옵시디언 랭킹 3위 이내 달성 시 스타디 프라임 일주일 무료" },
-          { image: "/banners/community-activity.jpg", alt: "답변왕에게 스타디 프라임 7일 제공" },
+          { image: "/banners/community-answer-king.jpg", alt: "답변왕에게 스타디 프라임 7일 제공" },
         ]}
       />
       {/* Header */}
