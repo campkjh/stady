@@ -391,7 +391,7 @@ export default function TimerPage() {
     <div style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
       {/* Title */}
       <header style={{ padding: "calc(20px + env(safe-area-inset-top, 0px)) 20px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>타이머</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)" }}>옵시디언</h1>
         {/* 친구는 탭이 아니라 헤더 아이콘으로 — 탭 자리는 스타디룸·랭킹만 쓴다. */}
         <button
           type="button"
