@@ -13,8 +13,39 @@ import { createPortal } from "react-dom";
 //    HOLD_MS 뒤 자동으로 닫는다(영상이 안 나와도 앱이 멈추지 않게).
 // 연출을 고칠 때마다 뒤 번호를 올린다 — 이미 본 사람에게도 한 번 더 나온다.
 const SEEN_KEY = "obsidian_intro_splash_v2";
+// 마스터 계정은 연출을 계속 확인해야 해서 1회 제한 없이 매번 본다.
+const OWNER_EMAIL = "campkjh@nate.com";
+const OWNER_FLAG_KEY = "obsidian_splash_owner"; // "1|<확인시각>" — 12시간 캐시
 const HOLD_MS = 7600; // 영상 7초 + 여운
 const FADE_MS = 700;
+
+// 로그인한 계정이 마스터인지 — 본 적 있는 사람에게만 확인하고, 답은 12시간 캐시해서
+// 일반 사용자가 타이머에 들어올 때마다 /api/auth/me 를 두드리지 않게 한다.
+async function isOwnerAccount(): Promise<boolean> {
+  const OWNER_TTL_MS = 12 * 60 * 60 * 1000;
+  try {
+    const raw = localStorage.getItem(OWNER_FLAG_KEY);
+    if (raw) {
+      const [flag, at] = raw.split("|");
+      if (Date.now() - Number(at) < OWNER_TTL_MS) return flag === "1";
+    }
+  } catch {
+    /* 저장소를 못 읽으면 그냥 물어본다 */
+  }
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const data = res.ok ? await res.json() : null;
+    const owner = data?.user?.email === OWNER_EMAIL;
+    try {
+      localStorage.setItem(OWNER_FLAG_KEY, `${owner ? 1 : 0}|${Date.now()}`);
+    } catch {
+      /* 캐시 못 해도 동작엔 지장 없다 */
+    }
+    return owner;
+  } catch {
+    return false;
+  }
+}
 
 // 소리 있는 재생을 먼저 시도하고, 막히면 음소거로 재생한다.
 function playWithSound(v: HTMLVideoElement | null) {
@@ -42,11 +73,21 @@ export default function ObsidianIntroSplash() {
     } catch {
       seen = "1";
     }
-    if (seen) return;
     // 공지 팝업 같은 다른 게이트가 떠 있으면 양보한다(첫 진입 배너는 스플래시 뒤에 서니 제외).
-    if (document.querySelector('[data-gate]:not([data-gate="intro-banner"])')) return;
-    const t = setTimeout(() => setOpen(true), 0);
-    return () => clearTimeout(t);
+    const blocked = () => !!document.querySelector('[data-gate]:not([data-gate="intro-banner"])');
+    if (!seen) {
+      if (blocked()) return;
+      const t = setTimeout(() => setOpen(true), 0);
+      return () => clearTimeout(t);
+    }
+    // 이미 본 기기 — 마스터 계정이면 매번 다시 보여준다.
+    let alive = true;
+    isOwnerAccount().then((owner) => {
+      if (alive && owner && !blocked()) setOpen(true);
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const close = useCallback(() => {
