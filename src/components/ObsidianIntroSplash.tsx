@@ -63,6 +63,7 @@ function playWithSound(v: HTMLVideoElement | null) {
 export default function ObsidianIntroSplash() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const closedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -113,6 +114,14 @@ export default function ObsidianIntroSplash() {
     playWithSound(videoRef.current);
   }, [open]);
 
+  // 애니메이션이 안 도는 웹뷰에서도 글자·건너뛰기가 반드시 보이게 하는 안전장치.
+  // (CSS 애니메이션이 정상이면 애니메이션 값이 이겨서 연출 그대로 나온다)
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => setRevealed(true), 900);
+    return () => clearTimeout(t);
+  }, [open]);
+
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
@@ -137,11 +146,16 @@ export default function ObsidianIntroSplash() {
         }}
       />
       <div className="obsplash-veil" />
-      <div className="obsplash-copy">
+      <div className="obsplash-copy" style={revealed ? { opacity: 1 } : undefined}>
         <span className="obsplash-glow" aria-hidden="true" />
         <p className="obsplash-title">시간을 기록하는 옵시디언</p>
       </div>
-      <button type="button" className="obsplash-skip" onClick={close}>
+      <button
+        type="button"
+        className="obsplash-skip"
+        onClick={close}
+        style={revealed ? { opacity: 1 } : undefined}
+      >
         건너뛰기
       </button>
 
@@ -172,7 +186,8 @@ export default function ObsidianIntroSplash() {
           height: 100%;
           transform: translate(-50%, -50%);
           object-fit: cover;
-          animation: obsplash-rise 2400ms cubic-bezier(0.16, 1, 0.3, 1) 850ms both;
+          z-index: 0;
+          animation: obsplash-rise 2400ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
         }
         /* 정사각 영상이 화면 위아래로 잘려 보이지 않게 가장자리를 어둠으로 녹인다 */
         .obsplash-veil {
@@ -184,7 +199,8 @@ export default function ObsidianIntroSplash() {
           background:
             radial-gradient(120% 62% at 50% 42%, rgba(5, 1, 15, 0) 38%, rgba(5, 1, 15, 0.72) 78%, #05010f 100%),
             linear-gradient(180deg, rgba(5, 1, 15, 0.55) 0%, rgba(5, 1, 15, 0) 26%, rgba(5, 1, 15, 0.2) 62%, rgba(5, 1, 15, 0.92) 100%);
-          animation: obsplash-fade 1600ms ease 900ms both;
+          z-index: 1;
+          animation: obsplash-fade 1600ms ease 700ms both;
           pointer-events: none;
         }
         .obsplash-copy {
@@ -192,7 +208,10 @@ export default function ObsidianIntroSplash() {
           left: 24px;
           right: 24px;
           bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-          animation: obsplash-title 1500ms cubic-bezier(0.16, 1, 0.3, 1) 1600ms both;
+          z-index: 2;
+          /* 영상이 별도 레이어로 합성되는 웹뷰에서 글자가 뒤로 숨지 않게 층을 띄운다 */
+          transform: translateZ(0);
+          animation: obsplash-title 1200ms cubic-bezier(0.16, 1, 0.3, 1) 600ms both;
         }
         /* 글자 뒤 보라 번짐 — 글자 자체에 filter 를 걸면 일부 웹뷰에서
            background-clip:text 가 깨져 글자가 통째로 안 보인다. 그래서 층을 나눈다. */
@@ -233,15 +252,17 @@ export default function ObsidianIntroSplash() {
           position: absolute;
           right: 16px;
           top: calc(14px + env(safe-area-inset-top, 0px));
-          padding: 7px 14px;
+          z-index: 3;
+          transform: translateZ(0);
+          padding: 9px 16px;
           border: none;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.12);
-          color: rgba(255, 255, 255, 0.82);
-          font-size: 13px;
+          background: rgba(255, 255, 255, 0.2);
+          color: #fff;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
-          animation: obsplash-fade 900ms ease 2600ms both;
+          animation: obsplash-fade 700ms ease 800ms both;
         }
         @keyframes obsplash-dim {
           from {
@@ -274,11 +295,11 @@ export default function ObsidianIntroSplash() {
         @keyframes obsplash-title {
           from {
             opacity: 0;
-            transform: translateY(18px) scale(0.98);
+            transform: translateZ(0) translateY(18px) scale(0.98);
           }
           to {
             opacity: 1;
-            transform: translateY(0) scale(1);
+            transform: translateZ(0) translateY(0) scale(1);
           }
         }
         @keyframes obsplash-shine {
