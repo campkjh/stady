@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { getCommunityKings } from "@/lib/community";
 
 // 스타디룸 — 같이 공부하는 방. 커뮤니티 글쓰기처럼 만들고, 홈 화면 앱 서랍처럼 늘어놓는다.
 // StudySession 은 손대지 않는다(방과 무관하게 타이머는 그대로 돈다).
@@ -192,10 +193,31 @@ export async function closeStudyRoom(roomId: string, userId: string): Promise<bo
   return n > 0;
 }
 
+export interface StudyRoomMemberView {
+  userId: string;
+  nickname: string;
+  /** 프로필 사진 — base64 원본 대신 짧은 URL 로 내린다(목록 payload 가 수 MB 가 되는 걸 막는다) */
+  avatar: string | null;
+  studying: boolean;
+  elapsedSeconds: number;
+  todaySeconds: number;
+  /** 이번 주(월요일 KST 기준) 누적 — 불꽃 등급 뱃지용 */
+  weekSeconds: number;
+  answerKing: boolean;
+  pickKing: boolean;
+}
+
 export interface StudyRoomDetail extends StudyRoomCard {
-  members: { userId: string; nickname: string; avatar: string | null; studying: boolean; elapsedSeconds: number; todaySeconds: number }[];
+  members: StudyRoomMemberView[];
   /** 승인 대기자(방장에게만 의미가 있다) */
   pendingMembers: { userId: string; nickname: string; avatar: string | null }[];
+}
+
+// User.avatar 는 카톡 가입자의 경우 base64 data URI 라 그대로 실어 보내면 응답이 수 MB 가 된다.
+// 커뮤니티와 같은 방식으로 짧은 URL 만 내려보낸다.
+function avatarUrl(userId: string, avatar: string | null): string | null {
+  if (!avatar) return null;
+  return avatar.startsWith("data:") ? `/api/community/avatar/${userId}` : avatar;
 }
 
 export async function getStudyRoom(roomId: string, meId: string | null): Promise<StudyRoomDetail | null> {
@@ -204,7 +226,7 @@ export async function getStudyRoom(roomId: string, meId: string | null): Promise
   const card = list.find((r) => r.id === roomId);
   if (!card) return null;
   const members = await prisma.$queryRawUnsafe<{
-    user_id: string; nickname: string; avatar: string | null; started_at: Date | null; today_seconds: bigint; status: string;
+    user_id: string; nickname: string; avatar: string | null; started_at: Date | null; today_seconds: bigint; week_seconds: bigint; status: string;
   }[]>(
     `SELECT m."user_id", u."nickname", u."avatar", m."status",
             (SELECT s."startedAt" FROM "StudySession" s
@@ -213,25 +235,37 @@ export async function getStudyRoom(roomId: string, meId: string | null): Promise
                                       ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - s."startedAt")))) END), 0)
              FROM "StudySession" s
              WHERE s."userId" = m."user_id"
-               AND s."startedAt" >= date_trunc('day', (now() + interval '9 hours')) - interval '9 hours')::bigint AS today_seconds
+               AND s."startedAt" >= date_trunc('day', (now() + interval '9 hours')) - interval '9 hours')::bigint AS today_seconds,
+            (SELECT COALESCE(SUM(CASE WHEN s."endedAt" IS NOT NULL THEN s."totalSeconds"
+                                      ELSE GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - s."startedAt")))) END), 0)
+             FROM "StudySession" s
+             WHERE s."userId" = m."user_id"
+               -- 불꽃 등급은 이번 주(월요일 0시 KST)부터의 누적
+               AND s."startedAt" >= date_trunc('week', (now() + interval '9 hours')) - interval '9 hours')::bigint AS week_seconds
      FROM "StudyRoomMember" m JOIN "User" u ON u."id" = m."user_id"
      WHERE m."room_id" = $1
      ORDER BY started_at DESC NULLS LAST, m."joined_at" ASC
      LIMIT 100`,
     roomId
   );
+  const joined = members.filter((m) => m.status === "joined");
+  // 커뮤니티 왕 뱃지(답변왕·채택왕)는 최근 7일 라이브 판정 — 방 인원만 물어본다.
+  const kings = await getCommunityKings(joined.map((m) => m.user_id)).catch(() => ({ answer: new Set<string>(), pick: new Set<string>() }));
   return {
     ...card,
     pendingMembers: members
       .filter((m) => m.status === "pending")
-      .map((m) => ({ userId: m.user_id, nickname: m.nickname, avatar: m.avatar })),
-    members: members.filter((m) => m.status === "joined").map((m) => ({
+      .map((m) => ({ userId: m.user_id, nickname: m.nickname, avatar: avatarUrl(m.user_id, m.avatar) })),
+    members: joined.map((m) => ({
       userId: m.user_id,
       nickname: m.nickname,
-      avatar: m.avatar,
+      avatar: avatarUrl(m.user_id, m.avatar),
       studying: !!m.started_at,
       elapsedSeconds: m.started_at ? Math.max(0, Math.floor((Date.now() - new Date(m.started_at).getTime()) / 1000)) : 0,
       todaySeconds: Number(m.today_seconds),
+      weekSeconds: Number(m.week_seconds),
+      answerKing: kings.answer.has(m.user_id),
+      pickKing: kings.pick.has(m.user_id),
     })),
   };
 }

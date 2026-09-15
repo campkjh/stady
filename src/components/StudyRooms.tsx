@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 import { createPortal } from "react-dom";
+import KingBadges from "@/components/KingBadges";
+import { FlameChip } from "@/components/TimerFlameBadge";
 
 // 스타디룸 — 애플 홈 화면(앱 서랍)처럼 늘어놓는 공부방.
 // 모바일 3열, 태블릿(744px+) 5열. 만들기는 커뮤니티 글쓰기처럼 모달에서 한다.
@@ -22,6 +24,29 @@ export interface RoomCard {
 interface RoomMember {
   userId: string; nickname: string; avatar: string | null;
   studying: boolean; elapsedSeconds: number; todaySeconds: number;
+  weekSeconds: number; answerKing: boolean; pickKing: boolean;
+}
+
+// 프로필 사진 — 없으면 닉네임 첫 글자를 쓴다. 공부 중이면 초록 링을 두른다.
+function MemberAvatar({ nickname, avatar, studying, size = 34 }: { nickname: string; avatar: string | null; studying?: boolean; size?: number }) {
+  return (
+    <span
+      style={{
+        width: size, height: size, flexShrink: 0, borderRadius: "50%", overflow: "hidden",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        background: "var(--c-timer-soft)", color: "var(--c-timer-deep)",
+        fontSize: size * 0.42, fontWeight: 800,
+        boxShadow: studying ? "0 0 0 2px var(--c-bg), 0 0 0 4px #22C55E" : "none",
+      }}
+    >
+      {avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} referrerPolicy="no-referrer" />
+      ) : (
+        nickname.slice(0, 1)
+      )}
+    </span>
+  );
 }
 
 const fmt = (sec: number) => {
@@ -496,6 +521,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                       display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
                       borderBottom: i === room.pendingMembers.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
                     }}>
+                      <MemberAvatar nickname={p.nickname} avatar={p.avatar} size={28} />
                       <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {p.nickname}
                       </span>
@@ -519,13 +545,19 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                   display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
                   borderBottom: i === room.members.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
                 }}>
-                  <span style={{
-                    width: 8, height: 8, borderRadius: 999, flexShrink: 0,
-                    background: m.studying ? "#22C55E" : "var(--c-bg-muted-3)",
-                  }} />
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {m.nickname}
-                  </span>
+                  <MemberAvatar nickname={m.nickname} avatar={m.avatar} studying={m.studying} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {m.nickname}
+                      </span>
+                      <KingBadges answer={m.answerKing} pick={m.pickKing} />
+                    </div>
+                    {/* 이번 주 누적 기준 불꽃 등급 */}
+                    <div style={{ marginTop: 3 }}>
+                      <FlameChip totalSeconds={m.weekSeconds} size={12} />
+                    </div>
+                  </div>
                   <span style={{ fontSize: 12.5, fontWeight: 700, color: m.studying ? "var(--c-timer)" : "var(--c-text-4c)", whiteSpace: "nowrap" }}>
                     {m.studying ? `공부 중 ${fmt(m.elapsedSeconds)}` : `오늘 ${fmt(m.todaySeconds)}`}
                   </span>
