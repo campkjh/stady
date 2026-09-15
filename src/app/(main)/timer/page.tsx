@@ -430,8 +430,13 @@ export default function TimerPage() {
         </button>
       </header>
 
+      {/* 태블릿: 왼쪽 절반은 타이머(세로 정가운데), 오른쪽 절반은 스타디룸·주간옵시디언.
+          폰에서는 .tmr-split 이 그냥 블록이라 예전 그대로 위아래로 쌓인다. */}
+      <div className="tmr-split">
+      <div className="tmr-left">
+
       {/* Main timer row: clock on left, bubble + play on right */}
-      <div style={{
+      <div className="tmr-clockrow" style={{
         padding: "0 20px",
         display: "flex",
         alignItems: "center",
@@ -439,7 +444,7 @@ export default function TimerPage() {
         gap: 16,
         marginBottom: 14,
       }}>
-        <p style={{
+        <p className="tmr-clock" style={{
           fontSize: 40,
           fontWeight: 700,
           color: "var(--c-text-c)",
@@ -451,9 +456,9 @@ export default function TimerPage() {
         }}>
           <LiveTodayTotal baseSeconds={myTodayBase} startAt={isRunning ? myStartAtRef.current : null} />
         </p>
-        <div style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
+        <div className="tmr-playwrap" style={{ position: "relative", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
           {!isRunning && (
-            <div style={{
+            <div className="tmr-bubble" style={{
               position: "absolute",
               right: 56,
               top: -10,
@@ -476,7 +481,7 @@ export default function TimerPage() {
       </div>
 
       {/* 내 불꽃 등급 — 이번 주 공부시간 기준이고 월요일에 초기화된다 */}
-      <div style={{ padding: "0 20px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="tmr-flameline" style={{ padding: "0 20px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
         <FlameChip totalSeconds={myWeeklySeconds} size={15} />
         <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 600 }}>
           이번 주 {formatTime(myWeeklySeconds)} · 월요일에 초기화돼요
@@ -485,7 +490,7 @@ export default function TimerPage() {
 
       {/* 투데이 랭킹 1~3위 — 타이머 바로 밑에 이름만 간단히 */}
       {todayRanking.length > 0 && (
-        <div style={{ padding: "0 20px", display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", marginBottom: 18 }}>
+        <div className="tmr-top3" style={{ padding: "0 20px", display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", marginBottom: 18 }}>
           {todayRanking.slice(0, 3).map((u, i) => (
             <button
               key={timerUserRenderKey(u)}
@@ -506,7 +511,10 @@ export default function TimerPage() {
         </div>
       )}
 
-      <div style={{ height: 1, background: "var(--c-bg-muted)" }} />
+      </div>
+
+      <div className="tmr-right">
+      <div className="tmr-divider" style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
       {/* 탭 바 — 아이콘 + 라벨, 선택된 쪽에 밑줄 */}
       <div style={{ display: "flex", padding: "0 20px", gap: 22, borderBottom: "1px solid var(--c-bg-muted)" }}>
@@ -612,6 +620,8 @@ export default function TimerPage() {
             )}
           </div>
         ) : null}
+      </div>
+      </div>
       </div>
 
       {selectedUser && (
@@ -763,6 +773,68 @@ export default function TimerPage() {
         .timer-tab-panel {
           animation: tabPanelIn 0.36s cubic-bezier(0.16, 1, 0.3, 1);
           transform-origin: top center;
+        }
+
+        /* 태블릿 2단 — 왼쪽 절반은 아이폰 타이머처럼 시간과 재생 버튼이 세로로 쌓여
+           칸 정가운데에 놓이고, 오른쪽 절반이 스타디룸·주간옵시디언 UI 를 가진다. */
+        @media (min-width: 744px) {
+          .tmr-split {
+            display: flex;
+            align-items: stretch;
+            min-height: calc(100vh - 150px);
+          }
+          .tmr-left {
+            width: 50%;
+            flex: 0 0 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 26px;
+            padding: 24px 12px 40px;
+            border-right: 1px solid var(--c-bg-muted);
+            box-sizing: border-box;
+          }
+          .tmr-right {
+            width: 50%;
+            flex: 1 1 50%;
+            min-width: 0;
+          }
+          .tmr-clockrow {
+            flex-direction: column;
+            justify-content: center !important;
+            gap: 46px !important;
+            margin-bottom: 0 !important;
+            width: 100%;
+          }
+          .tmr-clock {
+            font-size: 62px !important;
+            letter-spacing: -2px !important;
+          }
+          .tmr-playwrap {
+            justify-content: center !important;
+            padding-right: 0 !important;
+          }
+          /* 말풍선은 버튼 오른쪽이 아니라 위쪽 가운데로 */
+          .tmr-bubble {
+            right: auto !important;
+            left: 50% !important;
+            top: -42px !important;
+            transform: translateX(-50%);
+          }
+          .tmr-flameline,
+          .tmr-top3 {
+            margin-bottom: 0 !important;
+            justify-content: center;
+            width: 100%;
+          }
+          .tmr-top3 {
+            flex-wrap: wrap;
+            overflow-x: visible !important;
+          }
+          .tmr-divider {
+            display: none;
+          }
         }
       `}</style>
     </div>
