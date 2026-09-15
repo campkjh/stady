@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 // 화면 진입 배너 — 딤 위에 이미지 한 장, 우상단 X.
-// X 를 누르면 hideDays 동안 다시 안 뜬다(닫은 시각 + 기간을 저장해 만료로 판단).
-// 배경을 누르면 이번만 닫힌다.
+// X 든 딤(배경)이든, 닫으면 hideDays 동안 다시 안 뜬다
+// (닫은 시각 + 기간을 저장해 만료로 판단). 딤으로 닫았을 때만 계속 다시 뜨던 걸 맞춘 것.
 //
 // WebView 규칙: document.body 포털 / inset 단축 금지 / 등장 애니메이션 없음(NoticePopup 과 동일).
 // data-gate 를 달아 두면 다른 시트(PrimeReferralSheet 등)가 겹쳐 뜨지 않는다.
@@ -61,7 +61,7 @@ export default function IntroBanner({
   return createPortal(
     <div
       data-gate="intro-banner"
-      onClick={() => setOpen(false)}
+      onClick={closeForDays}
       style={{
         position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 2500,
         background: "rgba(15,23,42,0.62)",

@@ -696,9 +696,9 @@ export async function getUserActivityScore(userId: string): Promise<number> {
 
 // ───────────────────────── 주간 왕 뱃지 ─────────────────────────
 // 두 뱃지 모두 "최근 7일" 롤링 윈도우로 매번 라이브 판정한다(조건에서 벗어나면 즉시 사라진다).
-//   답변왕: 활성 댓글 15개 이상. 공백 제거 후 ANSWER_KING_MIN_CHARS 자 미만의 짧은 댓글은 세지 않는다.
+//   답변왕: 활성 댓글 10개 이상. 공백 제거 후 ANSWER_KING_MIN_CHARS 자 미만의 짧은 댓글은 세지 않는다.
 //   채택왕: 내 댓글이 글 작성자에게 고정(채택)된 글이 5개 이상. 내 글에 내 댓글을 고정한 건 제외.
-export const ANSWER_KING_WEEKLY_COMMENTS = 15;
+export const ANSWER_KING_WEEKLY_COMMENTS = 10;
 export const ANSWER_KING_MIN_CHARS = 15;
 export const PICK_KING_WEEKLY_PINS = 5;
 

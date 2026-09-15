@@ -29,6 +29,7 @@ interface Notice {
 //   3) inset 단축 대신 top/right/bottom/left: 구형 웹뷰는 inset 을 모른다.
 //   4) 카드에 overflow:hidden + border-radius + box-shadow 조합을 쓰지 않음:
 //      구형 안드로이드 웹뷰에서 이 조합이 통째로 안 그려지는 사례가 있다.
+const DIM_HIDE_DAYS = 3; // 딤으로 닫았을 때 쉬는 기간
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ver = (n: Notice) => n.popupVersion ?? 0;
 const hideKey = (n: Notice) => `notice_popup_hidden_until_${n.id}_${ver(n)}`;
@@ -86,9 +87,16 @@ export default function NoticePopup() {
 
   const hideDays = notice?.popupHideDays && notice.popupHideDays > 0 ? Math.round(notice.popupHideDays) : 7;
 
+  // 딤(배경)으로 닫아도 며칠은 다시 안 뜬다 — 예전엔 세션에만 표시해서 앱을 다시 켤 때마다
+  // 같은 팝업이 계속 떴다. 명시적으로 "N일 동안 안보기" 를 누르면 설정값(hideDays)만큼,
+  // 딤으로 닫으면 DIM_HIDE_DAYS 만큼 쉬어 간다.
   function closeSession() {
     try {
-      if (notice) sessionStorage.setItem(sessKey(notice), "1");
+      if (notice) {
+        sessionStorage.setItem(sessKey(notice), "1");
+        const days = Math.min(DIM_HIDE_DAYS, hideDays);
+        localStorage.setItem(hideKey(notice), String(Date.now() + days * DAY_MS));
+      }
     } catch {
       /* ignore */
     }

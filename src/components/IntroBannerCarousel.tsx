@@ -9,7 +9,7 @@ export interface IntroSlide {
 }
 
 // 앱 첫 진입 배너 — 딤 위 가운데에서 여러 장이 2초마다 넘어간다(손으로 밀어서도 넘길 수 있다).
-// 우상단 X 를 누르면 hideDays 동안 다시 안 뜬다. 배경을 누르면 이번만 닫힌다.
+// X 든 딤(배경)이든, 닫으면 hideDays 동안 다시 안 뜬다.
 //
 // ⚠️ 스크롤 스냅 + scrollTo({behavior:"smooth"}) 로 만들면 WebView 에서 스냅과 부드러운 스크롤이
 // 서로 싸워 "움찔거리기만 하고 안 넘어가는" 증상이 난다. 그래서 스크롤 대신 **transform 으로만**
@@ -93,7 +93,7 @@ export default function IntroBannerCarousel({
   return createPortal(
     <div
       data-gate="intro-banner"
-      onClick={() => setOpen(false)}
+      onClick={closeForDays}
       style={{
         position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 2500,
         background: "rgba(15,23,42,0.62)",
