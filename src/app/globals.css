@@ -170,7 +170,9 @@
   --c-timer-soft: #EFEAFE;
   --c-timer-softer: #F6F3FF;
   --c-timer-line: #DED4FB;
-  --c-timer-bg: #FBFAFF;
+  /* 화면 바탕은 흰색 — 연보라 기 도는 미색(#FBFAFF)이 흰 카드와 붙으면
+     누렇게 뜬 것처럼 보여서 걷어냈다. 보라 톤은 버튼·탭·칩에만 남긴다. */
+  --c-timer-bg: #FFFFFF;
   --c-timer-grad: linear-gradient(140deg, #8E6BFF 0%, #6737E8 55%, #4E23C6 100%);
   --c-timer-glow: rgba(103, 55, 232, 0.34);
   --c-timer-glow-soft: rgba(103, 55, 232, 0.2);
