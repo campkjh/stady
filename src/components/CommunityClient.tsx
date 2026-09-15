@@ -1447,7 +1447,7 @@ function CommentModal({
 
   return (
     <div ref={overlayRef} className="community-comment-modal" style={{ paddingBottom: keyboardInset }} onClick={onClose}>
-      {/* 키보드가 뜨면 남은 영역을 꽉 채운다 — 50% 로 두면 입력창이 시트 밖으로 밀려 잘린다. */}
+      {/* 키보드가 뜨면 남은 영역을 꽉 채운다 — 고정 높이로 두면 입력창이 시트 밖으로 밀려 잘린다. */}
       <div
         className="community-comment-sheet"
         style={keyboardInset > 0 ? { height: "100%" } : undefined}
@@ -2277,8 +2277,9 @@ function CommunityStyles() {
       .community-comment-sheet {
         width: 100%;
         max-width: 620px;
-        /* 기본 높이 화면의 절반. vh 대신 오버레이(top/bottom:0) 기준 % — 안드로이드 WebView vh 오계산 회피 */
-        height: 50%;
+        /* 기본 높이는 화면의 70% — 절반이면 댓글이 서너 개만 보여 너무 좁았다.
+           vh 대신 오버레이(top/bottom:0) 기준 % — 안드로이드 WebView vh 오계산 회피 */
+        height: 70%;
         max-height: 88%;
         display: flex;
         flex-direction: column;
