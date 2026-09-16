@@ -390,7 +390,7 @@ export default function TimerPage() {
   if (isLoggedIn === false) return <LoginRequired />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
+    <div className="tmr-page" style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
       {/* 첫 진입: 어두워지며 크리스탈 영상이 뜨는 스플래시(기기당 1회) → 닫히면 아래 배너 */}
       <ObsidianIntroSplash />
       {/* 첫 진입 배너(X = 3일 동안 안 보기) */}
@@ -778,10 +778,22 @@ export default function TimerPage() {
         /* 태블릿 2단 — 왼쪽 절반은 아이폰 타이머처럼 시간과 재생 버튼이 세로로 쌓여
            칸 정가운데에 놓이고, 오른쪽 절반이 스타디룸·주간옵시디언 UI 를 가진다. */
         @media (min-width: 744px) {
+          /* 태블릿에서는 페이지가 통째로 스크롤되지 않는다 — 화면 높이에 딱 맞춰 놓고
+             왼쪽(타이머) 칸은 고정, 오른쪽(스타디룸·주간옵시디언) 칸만 스크롤한다.
+             빼는 값은 레이아웃 래퍼의 하단 패딩(122px + 세이프영역)과 같다. */
+          .tmr-page {
+            min-height: 0 !important;
+            height: calc(100vh - 122px - env(safe-area-inset-bottom, 0px));
+            height: calc(100dvh - 122px - env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+          }
           .tmr-split {
             display: flex;
             align-items: stretch;
-            min-height: calc(100vh - 150px);
+            flex: 1 1 auto;
+            min-height: 0;
           }
           .tmr-left {
             width: 50%;
@@ -795,10 +807,15 @@ export default function TimerPage() {
             border-right: 1px solid var(--c-bg-muted);
             box-sizing: border-box;
           }
+          .tmr-left {
+            overflow: hidden;
+          }
           .tmr-right {
             width: 50%;
             flex: 1 1 50%;
             min-width: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
           }
           .tmr-clockrow {
             flex-direction: column;
