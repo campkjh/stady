@@ -13,6 +13,9 @@ import { createPortal } from "react-dom";
 //    HOLD_MS 뒤 자동으로 닫는다(영상이 안 나와도 앱이 멈추지 않게).
 // 연출을 고칠 때마다 뒤 번호를 올린다 — 이미 본 사람에게도 한 번 더 나온다.
 const SEEN_KEY = "obsidian_intro_splash_v2";
+// 저장소가 초기화되는 웹뷰(앱을 껐다 켜면 localStorage 가 비는 경우)를 대비해 쿠키로도 남긴다.
+// 둘 중 하나라도 남아 있으면 다시 띄우지 않는다 — 스플래시가 매번 떠서 검은 화면처럼 보이던 신고 대응.
+const SEEN_COOKIE = "stady_obs_intro_v2";
 // 마스터 계정은 연출을 계속 확인해야 해서 1회 제한 없이 매번 본다.
 const OWNER_EMAIL = "campkjh@nate.com";
 const OWNER_FLAG_KEY = "obsidian_splash_owner"; // "1|<확인시각>" — 12시간 캐시
@@ -48,6 +51,36 @@ async function isOwnerAccount(): Promise<boolean> {
   }
 }
 
+function markSeen() {
+  try {
+    localStorage.setItem(SEEN_KEY, "1");
+  } catch {
+    /* 무시 */
+  }
+  try {
+    document.cookie = `${SEEN_COOKIE}=1; max-age=${60 * 60 * 24 * 365}; path=/; samesite=lax`;
+  } catch {
+    /* 무시 */
+  }
+}
+
+function hasSeen(): boolean {
+  try {
+    if (localStorage.getItem(SEEN_KEY)) return true;
+  } catch {
+    // 저장소를 아예 못 읽는 환경이면 쿠키만 본다(못 읽으면 아래에서 false).
+  }
+  try {
+    return document.cookie.includes(`${SEEN_COOKIE}=1`);
+  } catch {
+    return false;
+  }
+}
+
+// 재생을 못 하는 기기(자동재생 차단·코덱·네트워크)에서 새까만 화면이 오래 떠 있지 않도록,
+// 이 시간 안에 실제로 프레임이 흐르지 않으면 바로 마무리 장면(글자)으로 넘어간다.
+const PLAY_WATCHDOG_MS = 4000;
+
 // 소리 있는 재생을 먼저 시도하고, 막히면 음소거로 재생한다.
 function playWithSound(v: HTMLVideoElement | null) {
   if (!v) return;
@@ -68,21 +101,27 @@ export default function ObsidianIntroSplash() {
   // 영상이 끝나면(또는 iOS 전체화면 재생이 끝나면) 영상을 걷고 글자만 남긴다.
   const [outro, setOutro] = useState(false);
   const outroRef = useRef(false);
+  const playedRef = useRef(false); // 영상이 실제로 흐르기 시작했는지
   const closedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    let seen = "1"; // 저장소를 못 읽으면 안 띄우는 쪽이 안전하다
+    // mp4 를 못 트는 웹뷰면 아예 띄우지 않는다(검은 화면만 보이는 사고 방지).
     try {
-      seen = localStorage.getItem(SEEN_KEY) || "";
+      if (!document.createElement("video").canPlayType("video/mp4")) return;
     } catch {
-      seen = "1";
+      return;
     }
+    const seen = hasSeen();
     // 공지 팝업 같은 다른 게이트가 떠 있으면 양보한다(첫 진입 배너는 스플래시 뒤에 서니 제외).
     const blocked = () => !!document.querySelector('[data-gate]:not([data-gate="intro-banner"])');
     if (!seen) {
       if (blocked()) return;
-      const t = setTimeout(() => setOpen(true), 0);
+      // 닫을 때가 아니라 '열 때' 기록한다 — 중간에 앱이 죽거나 저장이 늦어도 다시 뜨지 않는다.
+      const t = setTimeout(() => {
+        markSeen();
+        setOpen(true);
+      }, 0);
       return () => clearTimeout(t);
     }
     // 이미 본 기기 — 마스터 계정이면 매번 다시 보여준다.
@@ -98,10 +137,26 @@ export default function ObsidianIntroSplash() {
   const close = useCallback(() => {
     if (closedRef.current) return;
     closedRef.current = true;
+    markSeen();
+    // 영상이 네이티브 전체화면으로 승격됐으면 반드시 빠져나온다. 안 그러면 웹뷰가 검은
+    // 비디오 화면을 그대로 띄워둔 채 남는다(갤럭시에서 '계속 검은 화면' 신고).
+    const v = videoRef.current as (HTMLVideoElement & {
+      webkitExitFullscreen?: () => void;
+    }) | null;
     try {
-      localStorage.setItem(SEEN_KEY, "1");
+      v?.webkitExitFullscreen?.();
+      if (document.fullscreenElement) document.exitFullscreen?.();
     } catch {
-      /* 저장 못 해도 이번 진입에선 닫힌다 */
+      /* 무시 */
+    }
+    try {
+      if (v) {
+        v.pause();
+        v.removeAttribute("src");
+        v.load(); // 디코더·표면 해제
+      }
+    } catch {
+      /* 무시 */
     }
     setClosing(true);
     setTimeout(() => setOpen(false), FADE_MS);
@@ -128,6 +183,16 @@ export default function ObsidianIntroSplash() {
     playWithSound(videoRef.current);
   }, [open]);
 
+  // 자동재생이 막히거나 영상을 못 받는 기기에서 까만 화면이 오래 남지 않게 한다.
+  // 한 번이라도 실제로 재생이 시작되면(onPlaying/onTimeUpdate) 감시를 끈다.
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => {
+      if (!playedRef.current) endVideo(); // 프레임이 안 흘렀다 → 글자 장면으로
+    }, PLAY_WATCHDOG_MS);
+    return () => clearTimeout(t);
+  }, [open, endVideo]);
+
   // iOS 네이티브 전체화면에서 빠져나온 순간도 '영상 끝'으로 본다(React 프롭엔 없는 이벤트).
   useEffect(() => {
     if (!open) return;
@@ -142,7 +207,7 @@ export default function ObsidianIntroSplash() {
   // (CSS 애니메이션이 정상이면 애니메이션 값이 이겨서 연출 그대로 나온다)
   useEffect(() => {
     if (!open) return;
-    const t = setTimeout(() => setRevealed(true), 900);
+    const t = setTimeout(() => setRevealed(true), 700);
     return () => clearTimeout(t);
   }, [open]);
 
@@ -155,9 +220,14 @@ export default function ObsidianIntroSplash() {
       onClick={close}
       role="presentation"
     >
+      {/* 영상이 뜨기 전(로딩·자동재생 차단)에도 첫 프레임 이미지가 즉시 깔린다 —
+          까만 화면만 보이던 시간을 없앤다. 8KB 라 바로 뜬다. */}
+      <div className="obsplash-poster" aria-hidden="true" style={revealed ? { opacity: 1 } : undefined} />
       <video
         ref={videoRef}
         className="obsplash-video"
+        // 애니메이션이 안 도는 웹뷰 보정 — 정상일 땐 애니메이션 값이 이겨서 연출 그대로다.
+        style={revealed ? { opacity: 1 } : undefined}
         src="/intro/obsidian-intro.mp4"
         poster="/intro/obsidian-intro-poster.jpg"
         playsInline
@@ -169,6 +239,9 @@ export default function ObsidianIntroSplash() {
         autoPlay
         preload="auto"
         onEnded={endVideo}
+        onError={endVideo}
+        onPlaying={() => { playedRef.current = true; }}
+        onTimeUpdate={(e) => { if (e.currentTarget.currentTime > 0.1) playedRef.current = true; }}
         // 마운트 직후의 play() 는 아직 로드 전이라 거절될 수 있다 — 재생 가능해지면 한 번 더.
         onCanPlay={(e) => {
           if (e.currentTarget.paused) playWithSound(e.currentTarget);
@@ -226,6 +299,22 @@ export default function ObsidianIntroSplash() {
           transition: bottom 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
           animation: none;
           opacity: 1;
+        }
+        .obsplash-poster {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 0;
+          background: url("/intro/obsidian-intro-poster.jpg") center / cover no-repeat;
+          animation: obsplash-fade 900ms ease 400ms both;
+          pointer-events: none;
+        }
+        .obsplash.is-outro .obsplash-poster {
+          opacity: 0;
+          animation: none;
+          transition: opacity 700ms ease;
         }
         .obsplash-video {
           position: absolute;
@@ -362,6 +451,7 @@ export default function ObsidianIntroSplash() {
         }
         @media (prefers-reduced-motion: reduce) {
           .obsplash,
+          .obsplash-poster,
           .obsplash-video,
           .obsplash-veil,
           .obsplash-copy,
