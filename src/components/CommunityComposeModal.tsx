@@ -64,6 +64,9 @@ export default function CommunityComposeModal({
   // 투표 / 블라인드 — 예전엔 안 쓰이는 작성 페이지에만 있어서 모달로 쓰면 만들 수 없었다.
   const [pollOn, setPollOn] = useState(false);
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  // OX 퀴즈 — 문제 여러 개(문장 + 정답 O/X). 투표와는 동시에 못 켠다.
+  const [quizOn, setQuizOn] = useState(false);
+  const [quizItems, setQuizItems] = useState<{ text: string; answer: boolean }[]>([{ text: "", answer: true }]);
   const [isBlinded, setIsBlinded] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -201,18 +204,26 @@ export default function CommunityComposeModal({
     setMessage("");
     setPollOn(false);
     setPollOptions(["", ""]);
+    setQuizOn(false);
+    setQuizItems([{ text: "", answer: true }]);
     setIsBlinded(false);
   }
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
+  const filledQuizItems = quizItems
+    .map((q) => ({ text: q.text.trim(), answer: q.answer }))
+    .filter((q) => q.text.length > 0);
   const canPost =
-    !!content.trim() && !posting && !uploading && (!pollOn || filledPollOptions.length >= 2);
+    !!content.trim() && !posting && !uploading
+    && (!pollOn || filledPollOptions.length >= 2)
+    && (!quizOn || filledQuizItems.length >= 1);
   const selectedGroup = groups.find((g) => g.id === groupId);
 
   async function submit() {
     if (!canPost) return;
     if (!groupId) { setPickerOpen(true); setMessage("커뮤니티(주제)를 선택해주세요."); return; }
     if (pollOn && filledPollOptions.length < 2) { setMessage("투표 항목을 2개 이상 입력해주세요."); return; }
+    if (quizOn && filledQuizItems.length < 1) { setMessage("OX 퀴즈 문제를 1개 이상 입력해주세요."); return; }
     setPosting(true);
     setMessage("");
     try {
@@ -226,9 +237,10 @@ export default function CommunityComposeModal({
           content: content.trim(),
           tagIds: [],
           imageUrls: images.map((i) => i.url),
-          type: pollOn ? "poll" : "normal",
+          type: quizOn ? "quiz" : pollOn ? "poll" : "normal",
           isBlinded,
           pollOptions: pollOn ? filledPollOptions : [],
+          quizItems: quizOn ? filledQuizItems : [],
         }),
       });
       const data = await res.json();
@@ -341,7 +353,63 @@ export default function CommunityComposeModal({
               </div>
             )}
 
-            {/* 첨부 아이콘 줄 — 사진 · GIF · 투표 · 블라인드 */}
+            {quizOn && (
+              <div className="cmp-quiz">
+                {quizItems.map((q, i) => (
+                  <div key={i} className="cmp-quiz-row">
+                    <div className="cmp-quiz-top">
+                      <span className="cmp-quiz-no">{i + 1}</span>
+                      <input
+                        className="cmp-quiz-input"
+                        value={q.text}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setQuizItems((cur) => cur.map((it, idx) => (idx === i ? { ...it, text: v } : it)));
+                        }}
+                        placeholder={`문제 ${i + 1}`}
+                        maxLength={200}
+                      />
+                      {quizItems.length > 1 && (
+                        <button
+                          type="button"
+                          className="cmp-poll-x"
+                          aria-label="문제 삭제"
+                          onClick={() => setQuizItems((cur) => cur.filter((_, idx) => idx !== i))}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <div className="cmp-quiz-ox">
+                      <span className="cmp-quiz-label">정답</span>
+                      {([true, false] as const).map((val) => (
+                        <button
+                          key={String(val)}
+                          type="button"
+                          className={`cmp-quiz-ox-btn${q.answer === val ? " is-on" : ""}${val ? " is-o" : " is-x"}`}
+                          aria-pressed={q.answer === val}
+                          onClick={() => setQuizItems((cur) => cur.map((it, idx) => (idx === i ? { ...it, answer: val } : it)))}
+                        >
+                          {val ? "O" : "X"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {quizItems.length < 10 && (
+                  <button
+                    type="button"
+                    className="cmp-poll-add"
+                    onClick={() => setQuizItems((cur) => [...cur, { text: "", answer: true }])}
+                  >
+                    + 문제 추가
+                  </button>
+                )}
+                <p className="cmp-poll-hint">문제마다 정답을 O 또는 X로 고르세요. 최대 10문제까지 낼 수 있어요.</p>
+              </div>
+            )}
+
+            {/* 첨부 아이콘 줄 — 사진 · GIF · 투표 · OX퀴즈 · 블라인드 */}
             <div className="cmp-attach">
               <button type="button" className="cmp-attach-btn" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="사진">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -353,10 +421,18 @@ export default function CommunityComposeModal({
               <button
                 type="button"
                 className={`cmp-chip${pollOn ? " is-on" : ""}`}
-                onClick={() => { setPollOn((v) => !v); setMessage(""); }}
+                onClick={() => { setPollOn((v) => !v); setQuizOn(false); setMessage(""); }}
                 aria-pressed={pollOn}
               >
                 투표
+              </button>
+              <button
+                type="button"
+                className={`cmp-chip${quizOn ? " is-on" : ""}`}
+                onClick={() => { setQuizOn((v) => !v); setPollOn(false); setMessage(""); }}
+                aria-pressed={quizOn}
+              >
+                OX퀴즈
               </button>
               <button
                 type="button"
@@ -504,6 +580,16 @@ function ComposeStyles() {
       .cmp-poll-input { flex: 1; height: 40px; border-radius: 10px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 12px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
       .cmp-poll-x { width: 28px; height: 28px; border: none; background: none; color: var(--c-text-5); font-size: 18px; cursor: pointer; flex-shrink: 0; }
       .cmp-poll-add { align-self: flex-start; border: none; background: none; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--c-brand); cursor: pointer; }
+      .cmp-quiz { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+      .cmp-quiz-row { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: var(--c-bg-soft); border: 1px solid var(--c-border); }
+      .cmp-quiz-top { display: flex; align-items: center; gap: 8px; }
+      .cmp-quiz-no { width: 20px; flex-shrink: 0; text-align: center; font-size: 13px; font-weight: 800; color: var(--c-text-4); }
+      .cmp-quiz-input { flex: 1; min-width: 0; height: 40px; border-radius: 10px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 12px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
+      .cmp-quiz-ox { display: flex; align-items: center; gap: 6px; padding-left: 28px; }
+      .cmp-quiz-label { font-size: 12px; font-weight: 700; color: var(--c-text-5); margin-right: 2px; }
+      .cmp-quiz-ox-btn { width: 44px; height: 32px; border-radius: 9px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text-4); font-size: 15px; font-weight: 800; cursor: pointer; }
+      .cmp-quiz-ox-btn.is-on.is-o { background: var(--c-brand-soft-4); border-color: var(--c-brand); color: var(--c-brand-deep-2); }
+      .cmp-quiz-ox-btn.is-on.is-x { background: var(--c-danger-soft); border-color: var(--c-danger-b); color: var(--c-danger-b); }
       .cmp-poll-hint { margin: 0; font-size: 12px; color: var(--c-text-5); font-weight: 500; }
       .cmp-add-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
       .cmp-add-avatar { width: 26px; height: 26px; border-radius: 999px; overflow: hidden; background: var(--c-bg-muted); color: var(--c-text-4); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-left: 7px; }

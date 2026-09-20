@@ -110,6 +110,22 @@ interface CommunityPoll {
   myOptionId: string | null;
 }
 
+interface CommunityQuizQuestion {
+  id: string;
+  text: string;
+  myAnswer: boolean | null;
+  correctAnswer: boolean | null;
+  oCount: number;
+  xCount: number;
+}
+
+interface CommunityQuiz {
+  questions: CommunityQuizQuestion[];
+  solvedCount: number;
+  correctCount: number;
+  participantCount: number;
+}
+
 interface CommunityPostDetail {
   id: string;
   userId: string | null;
@@ -132,6 +148,7 @@ interface CommunityPostDetail {
   reactionCounts: Record<string, number>;
   myReaction: string | null;
   poll: CommunityPoll | null;
+  quiz: CommunityQuiz | null;
   imageUrls: string[];
   tags: CommunityTag[];
   pinnedCommentId?: string | null;
@@ -164,6 +181,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [replyPosting, setReplyPosting] = useState(false);
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
+  const [quizBusy, setQuizBusy] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   // 어떤 계정으로 쓰는지 보이도록 댓글 입력 위에 내 프로필을 띄운다.
   const [me, setMe] = useState<{ nickname: string; avatar: string | null } | null>(null);
@@ -434,6 +452,28 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "공감을 처리하지 못했습니다.");
+    }
+  }
+
+  // OX 퀴즈 — 문제 하나를 풀면 서버가 갱신된 결과를 돌려준다(한 번 고르면 변경 불가).
+  async function answerQuiz(questionId: string, answer: boolean) {
+    if (!post || quizBusy) return;
+    setQuizBusy(questionId);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/quiz`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, answer }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "퀴즈를 처리하지 못했습니다.");
+      setPost({ ...post, quiz: data.quiz });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "퀴즈를 처리하지 못했습니다.");
+    } finally {
+      setQuizBusy(null);
     }
   }
 
@@ -769,6 +809,71 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   {post.isBlinded && !revealBlind && (
                     <BlindNoiseCover onReveal={() => setRevealBlind(true)} />
                   )}
+                </div>
+              )}
+
+              {post.quiz && post.quiz.questions.length > 0 && (
+                <div style={{ display: "grid", gap: 10 }}>
+                  {post.quiz.questions.map((q, i) => {
+                    const solved = q.myAnswer !== null;
+                    const correct = solved && q.myAnswer === q.correctAnswer;
+                    const answers = q.oCount + q.xCount;
+                    return (
+                      <div key={q.id} style={{ padding: "13px 14px", borderRadius: 14, background: "var(--c-bg-soft)", border: "1px solid var(--c-border)", display: "grid", gap: 9 }}>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--c-text)", lineHeight: 1.5 }}>
+                          <span style={{ fontWeight: 800, color: "var(--c-text-4)", marginRight: 6 }}>{i + 1}.</span>
+                          {q.text}
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          {([true, false] as const).map((val) => {
+                            const picked = q.myAnswer === val;
+                            const isAnswer = solved && q.correctAnswer === val;
+                            return (
+                              <button
+                                key={String(val)}
+                                type="button"
+                                disabled={solved || quizBusy === q.id}
+                                onClick={() => answerQuiz(q.id, val)}
+                                style={{
+                                  width: 62,
+                                  height: 40,
+                                  borderRadius: 12,
+                                  border: "1px solid var(--c-border)",
+                                  boxShadow: isAnswer
+                                    ? "inset 0 0 0 2px var(--c-success-b)"
+                                    : picked
+                                      ? "inset 0 0 0 2px var(--c-danger-b)"
+                                      : "none",
+                                  background: "var(--c-bg)",
+                                  color: val ? "var(--c-brand-deep-2)" : "var(--c-danger-b)",
+                                  fontSize: 18,
+                                  fontWeight: 800,
+                                  cursor: solved ? "default" : "pointer",
+                                }}
+                              >
+                                {val ? "O" : "X"}
+                              </button>
+                            );
+                          })}
+                          {solved ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700 }}>
+                              <span style={{ color: correct ? "var(--c-success-b)" : "var(--c-danger-b)" }}>{correct ? "정답!" : "오답"}</span>
+                              <span style={{ color: "var(--c-text-4)", fontWeight: 600 }}>
+                                O {answers > 0 ? Math.round((q.oCount / answers) * 100) : 0}% · X {answers > 0 ? Math.round((q.xCount / answers) * 100) : 0}%
+                              </span>
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 600 }}>O 또는 X를 골라보세요</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>
+                    {post.quiz.solvedCount > 0
+                      ? `${post.quiz.questions.length}문제 중 ${post.quiz.solvedCount}문제 풀이 · ${post.quiz.correctCount}개 정답`
+                      : `${post.quiz.questions.length}문제 · ${post.quiz.participantCount}명 참여`}
+                  </span>
                 </div>
               )}
 

@@ -50,7 +50,9 @@ export default function CommunityWriteClient() {
   const [posting, setPosting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [postType, setPostType] = useState<"normal" | "poll">("normal");
+  const [postType, setPostType] = useState<"normal" | "poll" | "quiz">("normal");
+  // OX 퀴즈 — 문제 여러 개(문장 + 정답 O/X)
+  const [quizItems, setQuizItems] = useState<{ text: string; answer: boolean }[]>([{ text: "", answer: true }]);
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [isBlinded, setIsBlinded] = useState(false);
 
@@ -66,6 +68,9 @@ export default function CommunityWriteClient() {
   );
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+  const filledQuizItems = quizItems
+    .map((q) => ({ text: q.text.trim(), answer: q.answer }))
+    .filter((q) => q.text.length > 0);
 
   function updatePollOption(index: number, value: string) {
     setPollOptions((current) => current.map((opt, i) => (i === index ? value : opt)));
@@ -172,6 +177,8 @@ export default function CommunityWriteClient() {
       ? "제목을 입력해주세요."
       : !content.trim()
       ? "내용을 입력해주세요."
+      : postType === "quiz" && filledQuizItems.length < 1
+      ? "OX 퀴즈는 문제를 1개 이상 입력해주세요."
       : postType === "poll" && filledPollOptions.length < 2
       ? "투표 항목을 2개 이상 입력해주세요."
       : "";
@@ -197,6 +204,7 @@ export default function CommunityWriteClient() {
           type: postType,
           isBlinded,
           pollOptions: postType === "poll" ? filledPollOptions : [],
+          quizItems: postType === "quiz" ? filledQuizItems : [],
         }),
       });
       const data = await response.json();
@@ -247,6 +255,7 @@ export default function CommunityWriteClient() {
               {([
                 { key: "normal", label: "일반 글" },
                 { key: "poll", label: "투표" },
+                { key: "quiz", label: "OX 퀴즈" },
               ] as const).map((opt) => (
                 <button
                   key={opt.key}
@@ -332,6 +341,68 @@ export default function CommunityWriteClient() {
                 </button>
               )}
               <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>2~4개 항목을 입력하세요. 1인 1표로 투표됩니다.</span>
+            </div>
+          )}
+
+          {postType === "quiz" && (
+            <div style={{ display: "grid", gap: 10 }}>
+              <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>OX 문제 (최대 10개)</span>
+              {quizItems.map((item, index) => (
+                <div key={index} style={{ display: "grid", gap: 6, padding: 10, borderRadius: 10, border: "1px solid var(--c-border)", background: "var(--c-bg-soft)" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ width: 18, textAlign: "center", fontWeight: 800, color: "var(--c-text-4)", fontSize: 13 }}>{index + 1}</span>
+                    <input
+                      value={item.text}
+                      onChange={(event) => {
+                        const v = event.target.value;
+                        setQuizItems((cur) => cur.map((q, i) => (i === index ? { ...q, text: v } : q)));
+                      }}
+                      placeholder={`문제 ${index + 1}`}
+                      maxLength={200}
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    {quizItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setQuizItems((cur) => cur.filter((_, i) => i !== index))}
+                        aria-label="문제 삭제"
+                        style={{ ...typeChipStyle(false), padding: "9px 12px" }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", paddingLeft: 26 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-4)" }}>정답</span>
+                    {([true, false] as const).map((val) => (
+                      <button
+                        key={String(val)}
+                        type="button"
+                        onClick={() => setQuizItems((cur) => cur.map((q, i) => (i === index ? { ...q, answer: val } : q)))}
+                        style={{
+                          ...typeChipStyle(item.answer === val),
+                          padding: "7px 16px",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {val ? "O" : "X"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {quizItems.length < 10 && (
+                <button
+                  type="button"
+                  onClick={() => setQuizItems((cur) => [...cur, { text: "", answer: true }])}
+                  style={{ ...typeChipStyle(false), justifySelf: "start" }}
+                >
+                  + 문제 추가
+                </button>
+              )}
+              <span style={{ color: "var(--c-text-4)", fontSize: 13 }}>
+                문제마다 정답을 O 또는 X로 고르세요. 읽는 사람은 문제당 한 번만 답할 수 있어요.
+              </span>
             </div>
           )}
 
