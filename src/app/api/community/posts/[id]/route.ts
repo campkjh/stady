@@ -122,7 +122,6 @@ export async function GET(
         reactionCounts: detail.post.reaction_counts || {},
         myReaction: detail.post.my_reaction ?? null,
         poll: detail.post.poll ?? null,
-        quiz: detail.post.quiz ?? null,
         imageUrls: detail.post.images.map((image) => image.image_url),
         tags: detail.post.tags.map(mapTag),
         pinnedCommentId: detail.post.pinned_comment_id ?? null,

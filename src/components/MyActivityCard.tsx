@@ -23,8 +23,6 @@ const XP_RULES = [
   { icon: "xp-comment", label: "댓글 남기기", xp: 3 },
   { icon: "xp-like", label: "내 글이 공감 받기", xp: 2 },
   { icon: "xp-daily", label: "데일리 퀴즈 정답", xp: 5 },
-  // OX 퀴즈는 낸 사람에게 문제 1개당 5 XP(한 글에서 5문제까지 인정).
-  { icon: "xp-daily", label: "OX 퀴즈 문제 내기(1문제)", xp: 5 },
   { icon: "xp-quiz", label: "퀴즈 풀기(1회)", xp: 1 },
 ];
 const LABEL: Record<string, string> = {

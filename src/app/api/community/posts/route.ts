@@ -24,7 +24,6 @@ function mapPost(
     content: post.content,
     type: post.type,
     poll: post.poll ?? null,
-    quiz: post.quiz ?? null,
     topComment: post.topComment ?? null,
     myReaction: post.myReaction ?? null,
     likers: post.likers ?? [],
@@ -98,18 +97,7 @@ export async function POST(request: NextRequest) {
           .slice(0, 5)
       : [];
     const isBlinded = body.isBlinded === true;
-    const type = body.type === "poll" ? "poll" : body.type === "quiz" ? "quiz" : "normal";
-    // OX 퀴즈 문제들 — { text, answer(O=true) } 최대 10개
-    const quizItems: { text: string; answer: boolean }[] =
-      type === "quiz" && Array.isArray(body.quizItems)
-        ? body.quizItems
-            .map((q: unknown) => {
-              const item = (q || {}) as { text?: unknown; answer?: unknown };
-              return { text: String(item.text || "").trim(), answer: item.answer === true || item.answer === "O" };
-            })
-            .filter((q: { text: string }) => q.text.length > 0)
-            .slice(0, 10)
-        : [];
+    const type = body.type === "poll" ? "poll" : "normal";
     const pollOptions: string[] =
       type === "poll" && Array.isArray(body.pollOptions)
         ? body.pollOptions
@@ -123,9 +111,6 @@ export async function POST(request: NextRequest) {
     }
     if (type === "poll" && pollOptions.length < 2) {
       return NextResponse.json({ error: "투표는 항목을 2개 이상 입력해주세요." }, { status: 400 });
-    }
-    if (type === "quiz" && quizItems.length === 0) {
-      return NextResponse.json({ error: "OX 퀴즈는 문제를 1개 이상 입력해주세요." }, { status: 400 });
     }
 
     const activeTags = await getTags({ groupId, activeOnly: true });
@@ -142,7 +127,6 @@ export async function POST(request: NextRequest) {
       isBlinded,
       type,
       pollOptions,
-      quizItems,
     });
 
     return NextResponse.json({ id }, { status: 201 });
