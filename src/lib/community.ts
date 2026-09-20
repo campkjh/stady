@@ -667,6 +667,24 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
 export type CommunityTier =
   | "iron" | "silver" | "gold" | "emerald" | "diamond" | "master" | "grandmaster" | "gongsin";
 
+// OX 퀴즈를 낸 사람에게 주는 경험치 — 문제 1개당 QUIZ_XP_PER_QUESTION 점.
+// 한 글에서 인정하는 문제 수는 QUIZ_XP_MAX_QUESTIONS_PER_POST 개까지만(문제 도배로 점수 먹는 걸 막는다).
+export const QUIZ_XP_PER_QUESTION = 5;
+export const QUIZ_XP_MAX_QUESTIONS_PER_POST = 5;
+
+/** 내가 낸 OX 퀴즈 문제로 얻은 경험치(글당 상한 적용). */
+const QUIZ_XP_SQL = `
+  SELECT t."user_id" AS id, COALESCE(SUM(LEAST(t.c, ${QUIZ_XP_MAX_QUESTIONS_PER_POST})), 0)::bigint AS c
+  FROM (
+    SELECT p."user_id", q."post_id", COUNT(*)::int AS c
+    FROM "CommunityQuizQuestion" q
+    JOIN "CommunityPost" p ON p."id" = q."post_id" AND p."is_active" = true
+    WHERE p."user_id" IS NOT NULL AND %WHERE%
+    GROUP BY p."user_id", q."post_id"
+  ) t
+  GROUP BY t."user_id"
+`;
+
 export function tierForScore(score: number): CommunityTier {
   if (score >= 4800) return "gongsin";
   if (score >= 2400) return "grandmaster";
@@ -733,6 +751,16 @@ export async function getUserActivityScore(userId: string): Promise<number> {
     prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" = $1`, userId),
   ]);
   let score = num(posts) * 10 + num(comments) * 3 + num(likes) * 2 + num(attempts) * 1;
+  // 내가 낸 OX 퀴즈 문제(글당 최대 5문제까지) × 5
+  try {
+    const quiz = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
+      QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" = $1`).replace('t."user_id" AS id, ', ""),
+      userId
+    );
+    score += num(quiz) * QUIZ_XP_PER_QUESTION;
+  } catch (e) {
+    console.error("getUserActivityScore quiz xp skipped:", e);
+  }
   try {
     await ensureDailyQuizTable();
     const daily = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
@@ -898,6 +926,16 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   apply(comments, 3);
   apply(likes, 2);
   apply(attempts, 1);
+  // 내가 낸 OX 퀴즈 문제(글당 최대 5문제) × 5 — 문제를 낸 사람에게 주는 경험치.
+  try {
+    const quizXp = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
+      QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" IN (${ph})`),
+      ...ids
+    );
+    apply(quizXp, QUIZ_XP_PER_QUESTION);
+  } catch (e) {
+    console.error("getUserTiers quiz-xp aggregate skipped:", e);
+  }
   // 데일리 퀴즈 정답(×5). 테이블이 아직 없을 수 있으니 실패해도 티어 계산은 계속.
   try {
     await ensureDailyQuizTable();
