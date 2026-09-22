@@ -814,14 +814,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
               {post.quiz && post.quiz.questions.length > 0 && (
                 <div style={{ display: "grid", gap: 10 }}>
-                  {post.quiz.questions.map((q, i) => {
+                  {post.quiz.questions.map((q) => {
                     const solved = q.myAnswer !== null;
                     const correct = solved && q.myAnswer === q.correctAnswer;
                     const answers = q.oCount + q.xCount;
                     return (
                       <div key={q.id} style={{ padding: "13px 14px", borderRadius: 14, background: "var(--c-bg-soft)", border: "1px solid var(--c-border)", display: "grid", gap: 9 }}>
                         <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--c-text)", lineHeight: 1.5 }}>
-                          <span style={{ fontWeight: 800, color: "var(--c-text-4)", marginRight: 6 }}>{i + 1}.</span>
                           {q.text}
                         </p>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -835,9 +834,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                                 disabled={solved || quizBusy === q.id}
                                 onClick={() => answerQuiz(q.id, val)}
                                 style={{
-                                  width: 62,
-                                  height: 40,
-                                  borderRadius: 12,
+                                  // O / X 칸은 정사각(1:1)
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: 14,
                                   border: "none",
                                   boxShadow: isAnswer
                                     ? `inset 0 0 0 2px ${val ? "var(--c-quiz-o-line)" : "var(--c-quiz-x-line)"}`
@@ -856,7 +856,17 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                           })}
                           {solved ? (
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700 }}>
-                              <span style={{ color: correct ? "var(--c-quiz-o)" : "var(--c-quiz-x)" }}>{correct ? "정답!" : "오답"}</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: correct ? "var(--c-quiz-o)" : "var(--c-quiz-x)" }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={correct ? "/icons/emoji/quiz-correct.svg" : "/icons/emoji/quiz-wrong.svg"}
+                                  alt=""
+                                  width={18}
+                                  height={18}
+                                  style={{ display: "block" }}
+                                />
+                                {correct ? "정답!" : "오답"}
+                              </span>
                               <span style={{ color: "var(--c-text-4)", fontWeight: 600 }}>
                                 O {answers > 0 ? Math.round((q.oCount / answers) * 100) : 0}% · X {answers > 0 ? Math.round((q.xCount / answers) * 100) : 0}%
                               </span>

@@ -863,8 +863,8 @@ export default function CommunityClient() {
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/icons/community/ox-quiz.svg" alt="" width={15} height={15} style={{ display: "block" }} />
-                        OX 퀴즈
+                        <img src="/icons/community/ox-quiz.svg" alt="OX" width={15} height={15} style={{ display: "block" }} />
+                        퀴즈
                       </span>
                     )}
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
@@ -1204,7 +1204,7 @@ function FeedQuiz({
       onKeyDown={(event) => event.stopPropagation()}
       style={{ display: "grid", gap: 8, margin: "2px 0" }}
     >
-      {quiz.questions.map((q, i) => {
+      {quiz.questions.map((q) => {
         const solved = q.myAnswer !== null;
         const correct = solved && q.myAnswer === q.correctAnswer;
         const answers = q.oCount + q.xCount;
@@ -1220,7 +1220,6 @@ function FeedQuiz({
             }}
           >
             <p style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: "var(--c-text-2e)", lineHeight: 1.45 }}>
-              <span style={{ fontWeight: 800, color: "var(--c-text-4c)", marginRight: 6 }}>{i + 1}.</span>
               {q.text}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1241,9 +1240,10 @@ function FeedQuiz({
                     style={{
                       position: "relative",
                       overflow: "hidden",
-                      width: 58,
-                      height: 38,
-                      borderRadius: 11,
+                      // O / X 칸은 정사각(1:1)
+                      width: 44,
+                      height: 44,
+                      borderRadius: 13,
                       border: "none",
                       // 정답 칸은 그 칸의 색으로 테두리를 두르고, 내가 고른 오답은 흐리게 둔다.
                       boxShadow: isAnswer
@@ -1264,7 +1264,15 @@ function FeedQuiz({
               })}
               {solved ? (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, minWidth: 0 }}>
-                  <span style={{ color: correct ? "var(--c-quiz-o)" : "var(--c-quiz-x)" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: correct ? "var(--c-quiz-o)" : "var(--c-quiz-x)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={correct ? "/icons/emoji/quiz-correct.svg" : "/icons/emoji/quiz-wrong.svg"}
+                      alt=""
+                      width={17}
+                      height={17}
+                      style={{ display: "block" }}
+                    />
                     {correct ? "정답!" : "오답"}
                   </span>
                   <span style={{ color: "var(--c-text-4c)", fontWeight: 600 }}>
