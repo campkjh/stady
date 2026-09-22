@@ -23,6 +23,24 @@ export async function GET() {
 
     const progress: Record<string, number> = {};
     for (const r of rows) progress[r.set_id] = Number(r.answered);
+
+    // 세트 뒤에 붙은 사상가 문제도 함께 센다(테이블이 없으면 조용히 건너뛴다).
+    try {
+      const extra = await prisma.$queryRawUnsafe<{ set_id: string; answered: bigint }[]>(
+        `
+          SELECT q."ox_quiz_set_id" AS set_id, COUNT(DISTINCT a."question_id") AS answered
+          FROM "OxThinkerAnswer" a
+          JOIN "OxThinkerQuestion" q ON q."id" = a."question_id"
+          JOIN "QuizAttempt" t ON t."id" = a."attempt_id"
+          WHERE t."userId" = $1
+          GROUP BY q."ox_quiz_set_id"
+        `,
+        user.id
+      );
+      for (const r of extra) progress[r.set_id] = (progress[r.set_id] ?? 0) + Number(r.answered);
+    } catch {
+      /* 사상가 테이블이 아직 없으면 무시 */
+    }
     return NextResponse.json({ progress });
   } catch {
     return NextResponse.json({ progress: {} });

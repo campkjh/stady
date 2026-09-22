@@ -20,6 +20,8 @@ interface OxQuestion {
   explanation?: string;
   examYearMonth?: string | null;
   answerRate?: number | null;
+  /** 세트 마지막에 붙는 사상가 문제(객관식)면 보기와 정답이 들어온다. OX 문제면 없음. */
+  thinker?: { choices: string[]; answer: string };
 }
 
 interface OxQuizSet {
@@ -54,7 +56,7 @@ export default function OxQuizSolvePage() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<
-    Map<string, { selected: boolean; isCorrect: boolean }>
+    Map<string, { selected: boolean | string; isCorrect: boolean }>
   >(new Map());
   const [tabFilter, setTabFilter] = useState<TabFilter>("all");
   const [submitted, setSubmitted] = useState(false);
@@ -190,6 +192,27 @@ export default function OxQuizSolvePage() {
           } catch {}
         }
 
+        // 사상가 퀴즈는 세트의 마지막 파트 — 셔플과 무관하게 항상 뒤에 붙인다.
+        const thinkers = (data.thinkerQuestions || []) as {
+          id: string; order: number; passage: string; choices: string[]; answer: string; explanation?: string | null;
+        }[];
+        if (!bookmarkMode.enabled && thinkers.length > 0) {
+          const extra: OxQuestion[] = thinkers.map((t, i) => ({
+            id: t.id,
+            order: 100000 + i,
+            section: "사상가 퀴즈",
+            question: t.passage,
+            answer: false,
+            explanation: t.explanation || undefined,
+            thinker: { choices: t.choices, answer: t.answer },
+          }));
+          nextQuiz = {
+            ...nextQuiz,
+            totalQuestions: nextQuiz.questions.length + extra.length,
+            questions: [...nextQuiz.questions, ...extra],
+          };
+        }
+
         setQuiz(nextQuiz);
         if (bookmarkMode.focusId) {
           const focusIndex = nextQuiz.questions.findIndex((question) => question.id === bookmarkMode.focusId);
@@ -305,18 +328,30 @@ export default function OxQuizSolvePage() {
   // 최신 답안을 직접 넘겨받는다. 이걸 빼먹으면 이 콜백이 캡처한 answers 는 마지막 답이
   // 빠진 이전 렌더의 것이라 마지막 문제가 무응답(오답)으로 채점·제출된다
   // — "다 맞았는데 하나 틀렸다고 뜨고 정답률이 100%가 안 된다"는 신고의 원인이었다.
-  const submitQuiz = useCallback(async (finalAnswers?: Map<string, { selected: boolean; isCorrect: boolean }>) => {
+  const submitQuiz = useCallback(async (finalAnswers?: Map<string, { selected: boolean | string; isCorrect: boolean }>) => {
     if (submitted || !quiz) return;
     setSubmitted(true);
     const src = finalAnswers ?? answers;
 
-    const answerArray = quiz.questions.map((q) => {
-      const ans = src.get(q.id);
-      return {
-        questionId: q.id,
-        selected: ans?.selected ?? null,
-      };
-    });
+    // OX 문제와 사상가 문제는 서버에서 따로 채점·기록한다.
+    const answerArray = quiz.questions
+      .filter((q) => !q.thinker)
+      .map((q) => {
+        const ans = src.get(q.id);
+        return {
+          questionId: q.id,
+          selected: typeof ans?.selected === "boolean" ? ans.selected : null,
+        };
+      });
+    const thinkerArray = quiz.questions
+      .filter((q) => q.thinker)
+      .map((q) => {
+        const ans = src.get(q.id);
+        return {
+          questionId: q.id,
+          selected: typeof ans?.selected === "string" ? ans.selected : null,
+        };
+      });
 
     // 로컬 채점(제출 실패해도 결과는 보여준다).
     const correct = Array.from(src.values()).filter((a) => a.isCorrect).length;
@@ -329,6 +364,7 @@ export default function OxQuizSolvePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           answers: answerArray,
+          thinkerAnswers: thinkerArray,
           timeTaken: Math.floor((Date.now() - startTime) / 1000),
         }),
       });
@@ -497,6 +533,19 @@ export default function OxQuizSolvePage() {
     if (quiz && newAnswers.size === quiz.questions.length) {
       // Small delay so user sees the result before submit
       // 최신 답안을 직접 넘긴다(위 setAnswers 는 아직 이 콜백의 answers 에 반영되지 않았다).
+      setTimeout(() => submitQuiz(newAnswers), 800);
+    }
+  };
+
+  // 사상가 문제 — 보기를 하나 고르면 바로 채점된다(OX 와 같은 흐름).
+  const handleThinkerAnswer = (choice: string) => {
+    if (!currentQuestion?.thinker || answers.has(currentQuestion.id) || navigating) return;
+    const isCorrect = choice === currentQuestion.thinker.answer;
+    const newAnswers = new Map(answers);
+    newAnswers.set(currentQuestion.id, { selected: choice, isCorrect });
+    setAnswers(newAnswers);
+    if (newAnswers.size === 3) maybePromptAppReviewAfterQuiz();
+    if (quiz && newAnswers.size === quiz.questions.length) {
       setTimeout(() => submitQuiz(newAnswers), 800);
     }
   };
@@ -824,9 +873,58 @@ export default function OxQuizSolvePage() {
                 <h2 className="text-xl font-bold leading-relaxed">
                   Q. {currentQuestion.question}
                 </h2>
+                {currentQuestion.thinker && (
+                  <p style={{ marginTop: 10, fontSize: 14.5, fontWeight: 700, color: "var(--c-text-4b)" }}>
+                    이 주장을 한 사상가는?
+                  </p>
+                )}
               </div>
             </div>
 
+            {/* 사상가 문제 — O/X 대신 보기 목록 */}
+            {currentQuestion.thinker ? (
+              <div style={{ display: "grid", gap: 10, flexShrink: 0, width: "100%", position: "relative", zIndex: 10 }}>
+                {currentQuestion.thinker.choices.map((choice) => {
+                  const picked = answered?.selected === choice;
+                  const isAnswer = !!answered && choice === currentQuestion.thinker!.answer;
+                  return (
+                    <button
+                      key={choice}
+                      type="button"
+                      onClick={() => handleThinkerAnswer(choice)}
+                      disabled={!!answered}
+                      className="press"
+                      style={{
+                        minHeight: 54,
+                        padding: "0 18px",
+                        borderRadius: 16,
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: 16.5,
+                        fontWeight: 700,
+                        cursor: answered ? "default" : "pointer",
+                        background: isAnswer
+                          ? "var(--c-brand-soft)"
+                          : picked
+                            ? "var(--c-danger-soft-2)"
+                            : "var(--c-bg-soft)",
+                        color: "var(--c-text-2c)",
+                        boxShadow: isAnswer
+                          ? "inset 0 0 0 2px var(--c-brand)"
+                          : picked
+                            ? "inset 0 0 0 2px var(--c-danger-b)"
+                            : "none",
+                        opacity: answered && !isAnswer && !picked ? 0.5 : 1,
+                        transition: "background 0.2s ease, opacity 0.2s ease",
+                      }}
+                    >
+                      {choice}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+            <>
             {/* Answer buttons */}
             <div style={{ display: "flex", gap: 16, flexShrink: 0, width: "100%", position: "relative", zIndex: 10 }}>
               <button
@@ -887,6 +985,8 @@ export default function OxQuizSolvePage() {
                 <span style={{ fontSize: 16, fontWeight: 600, color: "var(--c-text-2c)" }}>아니다</span>
               </button>
             </div>
+            </>
+            )}
 
             {/* Result + Explanation + Next */}
             {answered && (

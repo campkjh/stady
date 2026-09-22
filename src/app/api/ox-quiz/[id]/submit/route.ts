@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { isOxSetLocked, viewerHasPremiumAccess } from "@/lib/premiumGate";
+import { ensureThinkerTables, getThinkerAnswerMap } from "@/lib/oxThinker";
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function POST(
       );
     }
 
-    const { answers, timeTaken } = await request.json();
+    const { answers, timeTaken, thinkerAnswers } = await request.json();
 
     if (!answers || !Array.isArray(answers)) {
       return NextResponse.json(
@@ -61,6 +62,21 @@ export async function POST(
       });
     }
 
+    // 사상가 문제(객관식)는 OxAnswer 에 넣을 수 없다(questionId 가 OxQuestion FK) → 별도 테이블.
+    const thinkerList = Array.isArray(thinkerAnswers)
+      ? (thinkerAnswers as { questionId: string; selected: string | null }[])
+      : [];
+    const thinkerData: { questionId: string; selected: string | null; isCorrect: boolean }[] = [];
+    if (thinkerList.length > 0) {
+      const thinkerMap = await getThinkerAnswerMap(id);
+      for (const ta of thinkerList) {
+        const correct = thinkerMap.get(ta.questionId);
+        const isCorrect = correct !== undefined && ta.selected === correct;
+        if (isCorrect) score++;
+        thinkerData.push({ questionId: ta.questionId, selected: ta.selected ?? null, isCorrect });
+      }
+    }
+
     const attempt = await prisma.$transaction(async (tx) => {
       const created = await tx.quizAttempt.create({
         data: {
@@ -68,7 +84,7 @@ export async function POST(
           quizType: "ox",
           oxQuizSetId: id,
           score,
-          totalScore: answerData.length,
+          totalScore: answerData.length + thinkerData.length,
           timeTaken: timeTaken || 0,
           oxAnswers: {
             create: answerData,
@@ -100,12 +116,32 @@ export async function POST(
         }
       }
 
+      // 사상가 답안 기록(실패해도 채점 결과는 살린다)
+      if (thinkerData.length > 0) {
+        try {
+          await ensureThinkerTables();
+          for (const t of thinkerData) {
+            await tx.$executeRawUnsafe(
+              `INSERT INTO "OxThinkerAnswer" ("id","attempt_id","question_id","selected","is_correct")
+               VALUES (gen_random_uuid()::text, $1, $2, $3, $4)`,
+              created.id,
+              t.questionId,
+              t.selected,
+              t.isCorrect
+            );
+          }
+        } catch (e) {
+          console.error("사상가 답안 기록 실패:", e);
+        }
+      }
+
       return created;
     });
 
     // 상위 N% — 이 세트를 푼 사용자별 "최고 정답률"과 비교한 경쟁 백분위.
     // 나보다 정답률이 높은 사람 수 higher → 내 순위=higher+1 → 상위=round(순위/전체*100).
-    const myFraction = answerData.length > 0 ? score / answerData.length : 0;
+    const totalCount = answerData.length + thinkerData.length;
+    const myFraction = totalCount > 0 ? score / totalCount : 0;
     let topPercent: number | null = null;
     try {
       const rank = await prisma.$queryRawUnsafe<{ total: bigint; higher: bigint }[]>(
@@ -127,7 +163,7 @@ export async function POST(
       console.error("OX percentile error:", e);
     }
 
-    return NextResponse.json({ attempt, score, totalScore: answerData.length, topPercent });
+    return NextResponse.json({ attempt, score, totalScore: totalCount, topPercent });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

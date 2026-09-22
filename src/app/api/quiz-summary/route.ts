@@ -92,6 +92,25 @@ async function countQuestions(
   return result;
 }
 
+// 사상가 문제 수(테이블이 아직 없을 수 있어 실패해도 0 으로 넘어간다).
+async function countThinkerQuestions(ids: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (ids.length === 0) return result;
+  try {
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(", ");
+    const rows = await prisma.$queryRawUnsafe<{ set_id: string; total: bigint }[]>(
+      `SELECT "ox_quiz_set_id" AS set_id, COUNT(*) AS total
+       FROM "OxThinkerQuestion" WHERE "ox_quiz_set_id" IN (${placeholders})
+       GROUP BY "ox_quiz_set_id"`,
+      ...ids
+    );
+    for (const row of rows) result.set(row.set_id, toNum(row.total));
+  } catch (error) {
+    console.error("countThinkerQuestions skipped:", error);
+  }
+  return result;
+}
+
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -128,6 +147,16 @@ export async function GET() {
             )
           GROUP BY t."oxQuizSetId"
           UNION ALL
+          -- 세트 뒤에 붙은 사상가 문제(별도 테이블)도 '푼 문항'으로 함께 센다.
+          SELECT 'ox' AS kind,
+                 q."ox_quiz_set_id" AS set_id,
+                 COUNT(DISTINCT a."question_id") AS answered
+          FROM "OxThinkerAnswer" a
+          JOIN "OxThinkerQuestion" q ON q."id" = a."question_id"
+          JOIN "QuizAttempt" t ON t."id" = a."attempt_id"
+          WHERE t."userId" = $1
+          GROUP BY q."ox_quiz_set_id"
+          UNION ALL
           SELECT 'vocab' AS kind,
                  t."vocabQuizSetId" AS set_id,
                  COUNT(*) AS attempts,
@@ -156,6 +185,16 @@ export async function GET() {
           JOIN "QuizAttempt" t ON t."id" = a."attemptId"
           WHERE t."userId" = $1
           GROUP BY q."oxQuizSetId"
+          UNION ALL
+          -- 세트 뒤에 붙은 사상가 문제(별도 테이블)도 '푼 문항'으로 함께 센다.
+          SELECT 'ox' AS kind,
+                 q."ox_quiz_set_id" AS set_id,
+                 COUNT(DISTINCT a."question_id") AS answered
+          FROM "OxThinkerAnswer" a
+          JOIN "OxThinkerQuestion" q ON q."id" = a."question_id"
+          JOIN "QuizAttempt" t ON t."id" = a."attempt_id"
+          WHERE t."userId" = $1
+          GROUP BY q."ox_quiz_set_id"
           UNION ALL
           SELECT 'vocab' AS kind,
                  q."vocabQuizSetId" AS set_id,
@@ -204,10 +243,15 @@ export async function GET() {
     }
 
     // 4) 기록이 있는 세트의 실제 문항 수(라이브 COUNT). 비정규화 totalQuestions 는 드리프트가 있어 쓰지 않는다.
-    const [oxTotals, vocabTotals] = await Promise.all([
+    const [oxTotals, vocabTotals, thinkerTotals] = await Promise.all([
       countQuestions("OxQuestion", "oxQuizSetId", [...oxAcc.keys()]),
       countQuestions("VocabQuestion", "vocabQuizSetId", [...vocabAcc.keys()]),
+      countThinkerQuestions([...oxAcc.keys()]),
     ]);
+    // 사상가 문제도 세트의 일부 — 분모에 더한다.
+    for (const [setId, n] of thinkerTotals) {
+      oxTotals.set(setId, (oxTotals.get(setId) ?? 0) + n);
+    }
 
     // 기록이 있는 세트만 내려보낸다(answered>0 또는 completed). 키가 없으면 화면이 '미시작'으로 렌더한다.
     const build = (accMap: Map<string, Acc>, totals: Map<string, number>): SummaryMap => {

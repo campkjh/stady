@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { computeAnswerRates } from "@/lib/oxAnswerRate";
 import { isOxSetLocked, viewerHasPremiumAccess } from "@/lib/premiumGate";
+import { getThinkerQuestions } from "@/lib/oxThinker";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +42,10 @@ export async function GET(
       answerRate: rates.get(q.id) ?? null,
     }));
 
-    return NextResponse.json({ oxQuizSet });
+    // 세트 마지막 파트 — 제시문을 읽고 사상가를 고르는 문제(없으면 빈 배열).
+    const thinkerQuestions = await getThinkerQuestions(id);
+
+    return NextResponse.json({ oxQuizSet, thinkerQuestions });
   } catch (error) {
     console.error("OX Quiz detail error:", error);
     return NextResponse.json(
