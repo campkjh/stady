@@ -1007,6 +1007,7 @@ export default function CommunityClient() {
       <CommunityStyles />
       {/* 당겨서 새로고침 — 이모지가 통통 튀며 바뀐다(스피너 대신) */}
       <PullToRefresh
+        offsetTop={topbarHeight}
         onRefresh={async () => {
           clientCache.clearPrefix("community-");
           await Promise.all([loadPosts(), loadWeeklyPopular()]);

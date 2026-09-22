@@ -25,9 +25,12 @@ const SWAP_MS = 240; // 새로고침 도는 동안 이모지 교체 주기
 export default function PullToRefresh({
   onRefresh,
   disabled,
+  offsetTop = 0,
 }: {
   onRefresh: () => Promise<void> | void;
   disabled?: boolean;
+  /** 화면 위에 고정 헤더가 있으면 그 높이만큼 내려서 띄운다(헤더에 가리지 않게) */
+  offsetTop?: number;
 }) {
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,7 +153,8 @@ export default function PullToRefresh({
         display: "flex",
         justifyContent: "center",
         pointerEvents: "none",
-        zIndex: 40,
+        // 커뮤니티 고정 헤더(z-index 80)보다 위. 전체화면 모달(1200)보다는 아래.
+        zIndex: 90,
         transform: `translateY(${pull}px)`,
         transition: refreshing || pull === 0 ? "transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
       }}
@@ -158,7 +162,7 @@ export default function PullToRefresh({
       <div
         className={refreshing ? "ptr-badge is-refreshing" : "ptr-badge"}
         style={{
-          marginTop: "calc(6px + env(safe-area-inset-top, 0px))",
+          marginTop: offsetTop > 0 ? offsetTop + 8 : "calc(8px + env(safe-area-inset-top, 0px))",
           transform: `scale(${scale})`,
           opacity: ready || refreshing ? 1 : 0.65,
         }}
