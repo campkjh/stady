@@ -1134,6 +1134,40 @@ label {
   }
 }
 
+/* ── 탭 첫 진입 인터랙션 ──────────────────────────────────────────────
+   홈·커뮤니티·옵시디언·책갈피·마이홈에 들어올 때, 화면이 한 번 페이드되고
+   위쪽 섹션부터 차례로 떠오른다(프리티풀 퀵매칭 랜딩과 같은 결:
+   0.5s cubic-bezier(.22,.61,.36,1), 70ms 간격 스태거).
+   ⚠️ fill-mode 는 반드시 backwards — both 로 두면 애니메이션이 끝난 뒤에도
+   transform 이 남아, 그 안의 position:fixed 요소가 섹션에 종속돼 버린다. */
+.page-enter {
+  animation: pageEnterFade 0.3s ease both;
+}
+@keyframes pageEnterFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pageEnterUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter > * > * {
+  animation: pageEnterUp 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+}
+.page-enter > * > *:nth-child(1) { animation-delay: 0.04s; }
+.page-enter > * > *:nth-child(2) { animation-delay: 0.11s; }
+.page-enter > * > *:nth-child(3) { animation-delay: 0.18s; }
+.page-enter > * > *:nth-child(4) { animation-delay: 0.25s; }
+.page-enter > * > *:nth-child(5) { animation-delay: 0.32s; }
+.page-enter > * > *:nth-child(6) { animation-delay: 0.39s; }
+.page-enter > * > *:nth-child(n + 7) { animation-delay: 0.46s; }
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter > * > * {
+    animation: none;
+  }
+}
+
 /* 검색 아이콘 호버 */
 .search-btn {
   transition: transform 0.2s ease, opacity 0.2s ease;
