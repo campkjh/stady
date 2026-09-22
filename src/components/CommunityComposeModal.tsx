@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
@@ -256,7 +257,12 @@ export default function CommunityComposeModal({
     }
   }
 
-  return (
+  // 하단 네비게이션은 페이지 바깥(문서 루트)에 fixed 로 떠 있다. 글쓰기 화면을 페이지
+  // 안에 그리면 상위에 쌓임 맥락이 생기는 순간 z-index 와 무관하게 네비가 위로 올라와
+  // 가려버린다 → body 포털로 띄운다.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="compose-modal" role="dialog" aria-label="새로운 스레드" aria-modal="true">
       {/* 헤더 */}
       <div className="cmp-head">
@@ -505,7 +511,8 @@ export default function CommunityComposeModal({
       )}
 
       <ComposeStyles />
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -514,8 +521,12 @@ function ComposeStyles() {
     <style>{`
       .compose-modal {
         position: fixed;
-        inset: 0;
-        z-index: 200;
+        /* 안드로이드 WebView 는 inset 단축을 무시하는 버전이 있다 — 개별 지정 */
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1200;
         background: var(--c-bg);
         display: flex;
         flex-direction: column;
