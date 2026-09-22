@@ -37,6 +37,22 @@ function isImageFile(file: File) {
   return IMAGE_EXT_RE.test(file.name || "");
 }
 
+// 정답 O / X 는 글자가 아니라 도형으로(커뮤니티 카드와 같은 모양).
+function OXMark({ o, size = 18 }: { o: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      {o ? (
+        <circle cx="12" cy="12" r="7.6" stroke="currentColor" strokeWidth="3.2" />
+      ) : (
+        <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="round">
+          <line x1="6.2" y1="6.2" x2="17.8" y2="17.8" />
+          <line x1="17.8" y1="6.2" x2="6.2" y2="17.8" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 export default function CommunityWriteClient() {
   const router = useRouter();
   const [groups, setGroups] = useState<CategoryGroup[]>([]);
@@ -383,9 +399,13 @@ export default function CommunityWriteClient() {
                           ...typeChipStyle(item.answer === val),
                           padding: "7px 16px",
                           fontWeight: 800,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: val ? "var(--c-quiz-o)" : "var(--c-quiz-x)",
                         }}
                       >
-                        {val ? "O" : "X"}
+                        <OXMark o={val} />
                       </button>
                     ))}
                   </div>

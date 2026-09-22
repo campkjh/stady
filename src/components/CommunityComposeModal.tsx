@@ -36,6 +36,22 @@ function deriveTitle(content: string) {
   return firstLine.slice(0, 40) || "새 글";
 }
 
+// 정답 고르는 O / X 도 읽는 쪽(퀴즈 카드)과 같은 도형으로 그린다.
+function OXMark({ o, size = 18 }: { o: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      {o ? (
+        <circle cx="12" cy="12" r="7.6" stroke="currentColor" strokeWidth="3.2" />
+      ) : (
+        <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="round">
+          <line x1="6.2" y1="6.2" x2="17.8" y2="17.8" />
+          <line x1="17.8" y1="6.2" x2="6.2" y2="17.8" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 export default function CommunityComposeModal({
   onClose,
   onPosted,
@@ -364,7 +380,6 @@ export default function CommunityComposeModal({
                 {quizItems.map((q, i) => (
                   <div key={i} className="cmp-quiz-row">
                     <div className="cmp-quiz-top">
-                      <span className="cmp-quiz-no">{i + 1}</span>
                       <input
                         className="cmp-quiz-input"
                         value={q.text}
@@ -387,7 +402,6 @@ export default function CommunityComposeModal({
                       )}
                     </div>
                     <div className="cmp-quiz-ox">
-                      <span className="cmp-quiz-label">정답</span>
                       {([true, false] as const).map((val) => (
                         <button
                           key={String(val)}
@@ -396,9 +410,10 @@ export default function CommunityComposeModal({
                           aria-pressed={q.answer === val}
                           onClick={() => setQuizItems((cur) => cur.map((it, idx) => (idx === i ? { ...it, answer: val } : it)))}
                         >
-                          {val ? "O" : "X"}
+                          <OXMark o={val} size={20} />
                         </button>
                       ))}
+                      <span className="cmp-quiz-label">정답을 골라주세요</span>
                     </div>
                   </div>
                 ))}
@@ -591,18 +606,20 @@ function ComposeStyles() {
       .cmp-poll-input { flex: 1; height: 40px; border-radius: 10px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 12px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
       .cmp-poll-x { width: 28px; height: 28px; border: none; background: none; color: var(--c-text-5); font-size: 18px; cursor: pointer; flex-shrink: 0; }
       .cmp-poll-add { align-self: flex-start; border: none; background: none; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--c-brand); cursor: pointer; }
-      .cmp-quiz { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
-      .cmp-quiz-row { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: var(--c-bg-soft); border: 1px solid var(--c-border); }
+      /* 읽는 쪽(퀴즈 카드)과 같은 모양 — 박스 없이 문장 + 정사각 O/X */
+      .cmp-quiz { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }
+      .cmp-quiz-row { display: flex; flex-direction: column; gap: 8px; }
       .cmp-quiz-top { display: flex; align-items: center; gap: 8px; }
-      .cmp-quiz-no { width: 20px; flex-shrink: 0; text-align: center; font-size: 13px; font-weight: 800; color: var(--c-text-4); }
-      .cmp-quiz-input { flex: 1; min-width: 0; height: 40px; border-radius: 10px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 12px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
-      .cmp-quiz-ox { display: flex; align-items: center; gap: 6px; padding-left: 28px; }
-      .cmp-quiz-label { font-size: 12px; font-weight: 700; color: var(--c-text-5); margin-right: 2px; }
-      .cmp-quiz-ox-btn { width: 44px; height: 32px; border-radius: 9px; border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text-4); font-size: 15px; font-weight: 800; cursor: pointer; }
-      .cmp-quiz-ox-btn.is-o { color: var(--c-quiz-o); }
-      .cmp-quiz-ox-btn.is-x { color: var(--c-quiz-x); }
-      .cmp-quiz-ox-btn.is-on.is-o { background: var(--c-quiz-o-soft); border-color: var(--c-quiz-o-line); color: var(--c-quiz-o); }
-      .cmp-quiz-ox-btn.is-on.is-x { background: var(--c-quiz-x-soft); border-color: var(--c-quiz-x-line); color: var(--c-quiz-x); }
+      .cmp-quiz-input { flex: 1; min-width: 0; height: 42px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg-muted); padding: 0 13px; font-size: 16px; color: var(--c-text); outline: none; box-sizing: border-box; }
+      .cmp-quiz-ox { display: flex; align-items: center; gap: 7px; }
+      .cmp-quiz-label { font-size: 12.5px; font-weight: 600; color: var(--c-text-5); margin-left: 2px; }
+      .cmp-quiz-ox-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 13px; border: none; cursor: pointer; flex-shrink: 0; }
+      .cmp-quiz-ox-btn.is-o { background: var(--c-quiz-o-soft); color: var(--c-quiz-o); opacity: 0.45; }
+      .cmp-quiz-ox-btn.is-x { background: var(--c-quiz-x-soft); color: var(--c-quiz-x); opacity: 0.45; }
+      /* 고른 쪽만 또렷하게(카드에서 정답 칸을 보여주는 방식과 같다) */
+      .cmp-quiz-ox-btn.is-on { opacity: 1; }
+      .cmp-quiz-ox-btn.is-on.is-o { box-shadow: inset 0 0 0 2px var(--c-quiz-o-line); }
+      .cmp-quiz-ox-btn.is-on.is-x { box-shadow: inset 0 0 0 2px var(--c-quiz-x-line); }
       .cmp-poll-hint { margin: 0; font-size: 12px; color: var(--c-text-5); font-weight: 500; }
       .cmp-add-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
       .cmp-add-avatar { width: 26px; height: 26px; border-radius: 999px; overflow: hidden; background: var(--c-bg-muted); color: var(--c-text-4); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-left: 7px; }
