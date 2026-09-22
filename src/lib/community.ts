@@ -42,6 +42,27 @@ export interface CommunityPollResult {
   myOptionId: string | null;
 }
 
+/** OX 퀴즈 한 문제. 정답(correctAnswer)은 내가 푼 뒤(또는 글쓴이일 때)에만 내려준다. */
+export interface CommunityQuizQuestionResult {
+  id: string;
+  text: string;
+  /** 내가 고른 답(O=true, X=false). 아직 안 풀었으면 null */
+  myAnswer: boolean | null;
+  /** 내가 풀었거나 내 글일 때만 값이 있다 */
+  correctAnswer: boolean | null;
+  oCount: number;
+  xCount: number;
+}
+
+export interface CommunityQuizResult {
+  questions: CommunityQuizQuestionResult[];
+  /** 내가 푼 문제 수 / 맞힌 수 */
+  solvedCount: number;
+  correctCount: number;
+  /** 이 퀴즈를 한 문제라도 푼 사람 수 */
+  participantCount: number;
+}
+
 export interface CommunityPostRow {
   id: string;
   user_id: string | null;
@@ -66,6 +87,7 @@ export interface CommunityPostRow {
   reaction_counts?: Record<string, number>;
   my_reaction?: string | null;
   poll?: CommunityPollResult | null;
+  quiz?: CommunityQuizResult | null;
 }
 
 export interface CommunityPostImageRow {
@@ -342,6 +364,37 @@ export async function ensureCommunityTables() {
     ON "CommunityPollVote" ("option_id")
   `);
 
+  // --- OX 퀴즈: 개인이 낸 문제 여러 개 + 사용자 답안 (글 하나에 문제 N개) ---
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityQuizQuestion" (
+      "id" TEXT PRIMARY KEY,
+      "post_id" TEXT NOT NULL REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "text" TEXT NOT NULL,
+      "answer" BOOLEAN NOT NULL,
+      "sort_order" INTEGER NOT NULL DEFAULT 0,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityQuizQuestion_post_idx"
+    ON "CommunityQuizQuestion" ("post_id", "sort_order")
+  `);
+  // 한 번 고른 답은 바꾸지 않는다(정답을 본 뒤 고치는 걸 막는다).
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityQuizAnswer" (
+      "question_id" TEXT NOT NULL REFERENCES "CommunityQuizQuestion"("id") ON DELETE CASCADE,
+      "user_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "post_id" TEXT NOT NULL REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "answer" BOOLEAN NOT NULL,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("question_id", "user_id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityQuizAnswer_post_idx"
+    ON "CommunityQuizAnswer" ("post_id", "user_id")
+  `);
+
   // --- 질문게시판 카테고리(없으면 생성). 답변 여부에 따라 Q 배지를 보여준다. ---
   await prisma.$executeRawUnsafe(
     `
@@ -614,6 +667,24 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
 export type CommunityTier =
   | "iron" | "silver" | "gold" | "emerald" | "diamond" | "master" | "grandmaster" | "gongsin";
 
+// OX 퀴즈를 낸 사람에게 주는 경험치 — 문제 1개당 QUIZ_XP_PER_QUESTION 점.
+// 한 글에서 인정하는 문제 수는 QUIZ_XP_MAX_QUESTIONS_PER_POST 개까지만(문제 도배로 점수 먹는 걸 막는다).
+export const QUIZ_XP_PER_QUESTION = 5;
+export const QUIZ_XP_MAX_QUESTIONS_PER_POST = 5;
+
+/** 내가 낸 OX 퀴즈 문제로 얻은 경험치(글당 상한 적용). */
+const QUIZ_XP_SQL = `
+  SELECT t."user_id" AS id, COALESCE(SUM(LEAST(t.c, ${QUIZ_XP_MAX_QUESTIONS_PER_POST})), 0)::bigint AS c
+  FROM (
+    SELECT p."user_id", q."post_id", COUNT(*)::int AS c
+    FROM "CommunityQuizQuestion" q
+    JOIN "CommunityPost" p ON p."id" = q."post_id" AND p."is_active" = true
+    WHERE p."user_id" IS NOT NULL AND %WHERE%
+    GROUP BY p."user_id", q."post_id"
+  ) t
+  GROUP BY t."user_id"
+`;
+
 export function tierForScore(score: number): CommunityTier {
   if (score >= 4800) return "gongsin";
   if (score >= 2400) return "grandmaster";
@@ -680,6 +751,16 @@ export async function getUserActivityScore(userId: string): Promise<number> {
     prisma.$queryRawUnsafe<{ c: bigint }[]>(`SELECT COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" = $1`, userId),
   ]);
   let score = num(posts) * 10 + num(comments) * 3 + num(likes) * 2 + num(attempts) * 1;
+  // 내가 낸 OX 퀴즈 문제(글당 최대 5문제까지) × 5
+  try {
+    const quiz = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
+      QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" = $1`).replace('t."user_id" AS id, ', ""),
+      userId
+    );
+    score += num(quiz) * QUIZ_XP_PER_QUESTION;
+  } catch (e) {
+    console.error("getUserActivityScore quiz xp skipped:", e);
+  }
   try {
     await ensureDailyQuizTable();
     const daily = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
@@ -845,6 +926,16 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   apply(comments, 3);
   apply(likes, 2);
   apply(attempts, 1);
+  // 내가 낸 OX 퀴즈 문제(글당 최대 5문제) × 5 — 문제를 낸 사람에게 주는 경험치.
+  try {
+    const quizXp = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
+      QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" IN (${ph})`),
+      ...ids
+    );
+    apply(quizXp, QUIZ_XP_PER_QUESTION);
+  } catch (e) {
+    console.error("getUserTiers quiz-xp aggregate skipped:", e);
+  }
   // 데일리 퀴즈 정답(×5). 테이블이 아직 없을 수 있으니 실패해도 티어 계산은 계속.
   try {
     await ensureDailyQuizTable();
@@ -949,11 +1040,25 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   // 투표글은 목록에서도 바로 투표할 수 있게 결과(내 선택 포함)를 함께 실어 보낸다.
   // 투표글은 드물어 건별 조회 비용이 미미하다. 투표가 아닌 글은 null.
   const pollByPost = new Map<string, CommunityPollResult | null>();
+  const quizByPost = new Map<string, CommunityQuizResult | null>();
   await Promise.all(
     posts
       .filter((post) => post.type === "poll")
       .map(async (post) => {
         pollByPost.set(post.id, await getPollResult(post.id, options.viewerId ?? null));
+      })
+  );
+  await Promise.all(
+    posts
+      .filter((post) => post.type === "quiz")
+      .map(async (post) => {
+        quizByPost.set(
+          post.id,
+          await getQuizResult(post.id, options.viewerId ?? null, {
+            // 내가 낸 문제면 정답이 보여야 한다.
+            revealAll: !!options.viewerId && post.user_id === options.viewerId,
+          })
+        );
       })
   );
   // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
@@ -980,6 +1085,7 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
       .filter(Boolean) as CommunityTagRow[],
     images: imagesByPost.get(post.id) || [],
     poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
+    quiz: post.type === "quiz" ? quizByPost.get(post.id) ?? null : null,
     topComment: topCommentByPost.get(post.id) ?? null,
     myReaction: myReactionByPost.get(post.id) ?? null,
     likers: likersByPost.get(post.id) ?? [],
@@ -1156,10 +1262,18 @@ export async function createCommunityPost(input: {
   isBlinded?: boolean;
   type?: string;
   pollOptions?: string[];
+  /** OX 퀴즈 문제들(최대 10개) — text 와 정답(O=true) */
+  quizItems?: { text: string; answer: boolean }[];
 }) {
   await ensureCommunityTables();
   const id = randomUUID();
   const isPoll = input.type === "poll";
+  const isQuiz = input.type === "quiz";
+  const quizItems = (input.quizItems || [])
+    .map((q) => ({ text: String(q?.text || "").trim(), answer: !!q?.answer }))
+    .filter((q) => q.text.length > 0)
+    .slice(0, 10);
+  if (isQuiz && quizItems.length === 0) throw new Error("CommunityQuizEmpty");
   const pollOptions = (input.pollOptions || [])
     .map((t) => String(t || "").trim())
     .filter((t) => t.length > 0)
@@ -1171,9 +1285,21 @@ export async function createCommunityPost(input: {
     input.groupId,
     input.title,
     input.content,
-    isPoll ? "poll" : "normal",
+    isPoll ? "poll" : isQuiz ? "quiz" : "normal",
     !!input.isBlinded
   );
+  if (isQuiz) {
+    for (const [index, item] of quizItems.entries()) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "CommunityQuizQuestion" ("id", "post_id", "text", "answer", "sort_order") VALUES ($1, $2, $3, $4, $5)`,
+        randomUUID(),
+        id,
+        item.text,
+        item.answer,
+        index
+      );
+    }
+  }
   if (isPoll) {
     for (const [index, text] of pollOptions.entries()) {
       await prisma.$executeRawUnsafe(
@@ -1359,6 +1485,9 @@ export async function getCommunityPostDetail(
   const imagesByPost = await getImagesByPost([postId]);
   const reactions = await getPostReactions(postId, viewerId);
   const poll = post.type === "poll" ? await getPollResult(postId, viewerId) : null;
+  const quiz = post.type === "quiz"
+    ? await getQuizResult(postId, viewerId, { revealAll: !!viewerId && post.user_id === viewerId })
+    : null;
 
   // 댓글은 공용 조회로 일원화(정렬 선택·차단 숨김·고정 최상위·아바타 포함).
   const comments = await getCommunityComments(
@@ -1383,6 +1512,7 @@ export async function getCommunityPostDetail(
       reaction_counts: reactions.counts,
       my_reaction: reactions.myReaction,
       poll,
+      quiz,
       pinned_comment_id: pinnedId,
     },
     comments,
@@ -1843,6 +1973,84 @@ export async function getPollResult(
   }));
   const totalVotes = options.reduce((s, o) => s + o.votes, 0);
   return { options, totalVotes, myOptionId };
+}
+
+/** OX 퀴즈 결과 — 문제별 O/X 응답 수, 내 답, (내가 푼 문제만) 정답. */
+export async function getQuizResult(
+  postId: string,
+  viewerId?: string | null,
+  options?: { revealAll?: boolean }
+): Promise<CommunityQuizResult | null> {
+  const rows = await prisma.$queryRawUnsafe<
+    { id: string; text: string; answer: boolean; o_count: bigint; x_count: bigint; my_answer: boolean | null }[]
+  >(
+    `
+      SELECT q."id", q."text", q."answer",
+             COALESCE(a."o_count", 0)::bigint AS "o_count",
+             COALESCE(a."x_count", 0)::bigint AS "x_count",
+             m."answer" AS "my_answer"
+      FROM "CommunityQuizQuestion" q
+      LEFT JOIN (
+        SELECT "question_id",
+               COUNT(*) FILTER (WHERE "answer") AS "o_count",
+               COUNT(*) FILTER (WHERE NOT "answer") AS "x_count"
+        FROM "CommunityQuizAnswer" GROUP BY "question_id"
+      ) a ON a."question_id" = q."id"
+      LEFT JOIN "CommunityQuizAnswer" m ON m."question_id" = q."id" AND m."user_id" = $2
+      WHERE q."post_id" = $1
+      ORDER BY q."sort_order" ASC
+    `,
+    postId,
+    viewerId ?? "",
+  );
+  if (rows.length === 0) return null;
+
+  const participants = await prisma.$queryRawUnsafe<{ c: bigint }[]>(
+    `SELECT COUNT(DISTINCT "user_id")::bigint AS c FROM "CommunityQuizAnswer" WHERE "post_id" = $1`,
+    postId
+  );
+
+  const questions = rows.map((r) => {
+    const solved = r.my_answer !== null && r.my_answer !== undefined;
+    return {
+      id: r.id,
+      text: r.text,
+      myAnswer: solved ? !!r.my_answer : null,
+      // 안 푼 문제의 정답은 내려보내지 않는다(개발자도구로 미리 보는 걸 막는다).
+      correctAnswer: solved || options?.revealAll ? !!r.answer : null,
+      oCount: Number(r.o_count),
+      xCount: Number(r.x_count),
+    };
+  });
+  const solvedCount = questions.filter((q) => q.myAnswer !== null).length;
+  const correctCount = questions.filter((q) => q.myAnswer !== null && q.myAnswer === q.correctAnswer).length;
+  return { questions, solvedCount, correctCount, participantCount: Number(participants[0]?.c || 0) };
+}
+
+/** OX 퀴즈 풀기 — 한 문제당 한 번만 기록한다(정답 공개 후 수정 불가). */
+export async function answerCommunityQuiz(
+  postId: string,
+  userId: string,
+  questionId: string,
+  answer: boolean
+): Promise<CommunityQuizResult | null> {
+  await ensureCommunityTables();
+  await assertActiveCommunityPost(postId);
+  const valid = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
+    `SELECT COUNT(*)::bigint AS "count" FROM "CommunityQuizQuestion" WHERE "id" = $1 AND "post_id" = $2`,
+    questionId,
+    postId
+  );
+  if (Number(valid[0]?.count || 0) === 0) throw new Error("CommunityQuizQuestionNotFound");
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "CommunityQuizAnswer" ("question_id", "user_id", "post_id", "answer")
+     VALUES ($1, $2, $3, $4) ON CONFLICT ("question_id", "user_id") DO NOTHING`,
+    questionId,
+    userId,
+    postId,
+    answer
+  );
+  return getQuizResult(postId, userId);
 }
 
 // 투표(1인 1표): 이미 투표했으면 선택을 변경한다.

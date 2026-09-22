@@ -177,6 +177,13 @@
   --c-timer-glow: rgba(103, 55, 232, 0.34);
   --c-timer-glow-soft: rgba(103, 55, 232, 0.2);
   --c-timer-ring: rgba(103, 55, 232, 0.16);
+  /* OX 퀴즈 — 토스 Weak 뱃지 톤(O=블루, X=레드). 초록은 쓰지 않는다. */
+  --c-quiz-o: #2272EB;
+  --c-quiz-o-soft: rgba(49, 130, 246, 0.16);
+  --c-quiz-o-line: rgba(49, 130, 246, 0.9);
+  --c-quiz-x: #E42939;
+  --c-quiz-x-soft: rgba(240, 68, 82, 0.16);
+  --c-quiz-x-line: rgba(240, 68, 82, 0.9);
   --c-brand: #3787FF;
   --c-brand-b: #3182F6;
   --c-brand-deep: #1F5EDC;
@@ -378,6 +385,13 @@
   --c-timer-glow: rgba(160, 132, 255, 0.3);
   --c-timer-glow-soft: rgba(160, 132, 255, 0.18);
   --c-timer-ring: rgba(160, 132, 255, 0.2);
+  /* OX 퀴즈 — 다크에서는 글자색만 밝게(배경 16% 는 그대로 얹힌다) */
+  --c-quiz-o: #8AB4FF;
+  --c-quiz-o-soft: rgba(74, 147, 255, 0.18);
+  --c-quiz-o-line: rgba(138, 180, 255, 0.9);
+  --c-quiz-x: #FF8A94;
+  --c-quiz-x-soft: rgba(255, 138, 148, 0.18);
+  --c-quiz-x-line: rgba(255, 138, 148, 0.9);
   --c-brand: #4A93FF;
   --c-brand-b: #4A93FF;
   --c-brand-deep: #7FB0FF;

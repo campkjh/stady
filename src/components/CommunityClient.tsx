@@ -44,6 +44,22 @@ interface CommunityPoll {
   myOptionId: string | null;
 }
 
+interface CommunityQuizQuestion {
+  id: string;
+  text: string;
+  myAnswer: boolean | null;
+  correctAnswer: boolean | null;
+  oCount: number;
+  xCount: number;
+}
+
+interface CommunityQuiz {
+  questions: CommunityQuizQuestion[];
+  solvedCount: number;
+  correctCount: number;
+  participantCount: number;
+}
+
 interface CommunityTopComment {
   id: string;
   nickname: string;
@@ -74,6 +90,7 @@ interface CommunityPost {
   content: string;
   type?: string;
   poll?: CommunityPoll | null;
+  quiz?: CommunityQuiz | null;
   topComment?: CommunityTopComment | null;
   myReaction?: string | null;
   isBlinded?: boolean;
@@ -159,6 +176,7 @@ export default function CommunityClient() {
   const [revealedBlind, setRevealedBlind] = useState<Set<string>>(() => new Set());
   // 지금 투표 요청 중인 글 id(중복 클릭 방지).
   const [votingPostId, setVotingPostId] = useState<string | null>(null);
+  const [answeringQuizId, setAnsweringQuizId] = useState<string | null>(null);
   // 목록에서 바로 좋아요/댓글: 좋아요 진행중 글 id, 댓글 모달을 띄운 글.
   const [likingPostId, setLikingPostId] = useState<string | null>(null);
   const [commentModalPost, setCommentModalPost] = useState<CommunityPost | null>(null);
@@ -215,6 +233,32 @@ export default function CommunityClient() {
       clientCache.set(postsKey(selectedGroupId, query), next);
       return next;
     });
+  }
+
+  // 목록에서 바로 OX 퀴즈 풀기 — 문제 하나를 누르면 그 글의 quiz 만 갱신한다.
+  async function answerQuiz(postId: string, questionId: string, answer: boolean) {
+    if (answeringQuizId) return;
+    setAnsweringQuizId(questionId);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/quiz`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, answer }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "퀴즈를 처리하지 못했습니다.");
+      setPosts((prev) => {
+        const next = prev.map((p) => (p.id === postId ? { ...p, quiz: data.quiz } : p));
+        clientCache.set(postsKey(selectedGroupId, query), next);
+        return next;
+      });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "퀴즈를 처리하지 못했습니다.");
+    } finally {
+      setAnsweringQuizId(null);
+    }
   }
 
   // 목록에서 바로 투표. 결과를 받아 해당 글의 poll 만 갱신한다(상세 진입 불필요).
@@ -802,6 +846,27 @@ export default function CommunityClient() {
                         투표
                       </span>
                     )}
+                    {post.type === "quiz" && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 3,
+                          marginRight: 6,
+                          padding: "2px 8px 2px 5px",
+                          borderRadius: 999,
+                          background: "var(--c-brand-soft-4)",
+                          color: "var(--c-brand-deep-2)",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          verticalAlign: "middle",
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/icons/community/ox-quiz.svg" alt="" width={15} height={15} style={{ display: "block" }} />
+                        OX 퀴즈
+                      </span>
+                    )}
                     {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
                     {post.title}
                   </h2>
@@ -811,6 +876,13 @@ export default function CommunityClient() {
                       poll={post.poll}
                       voting={votingPostId === post.id}
                       onVote={(optionId) => votePoll(post.id, optionId)}
+                    />
+                  )}
+                  {post.type === "quiz" && post.quiz && post.quiz.questions.length > 0 && (
+                    <FeedQuiz
+                      quiz={post.quiz}
+                      busyQuestionId={answeringQuizId}
+                      onAnswer={(questionId, answer) => answerQuiz(post.id, questionId, answer)}
                     />
                   )}
                   {post.imageUrls.length > 0 && (
@@ -1108,6 +1180,111 @@ function EyeIcon() {
       <path fillRule="evenodd" clipRule="evenodd" d="M12.1251 9.22461C10.5251 9.22461 9.2251 10.5246 9.2251 12.1246C9.2251 13.7246 10.5251 15.0246 12.1251 15.0246C13.7251 15.0246 15.0251 13.7246 15.0251 12.1246C15.0251 10.5246 13.7251 9.22461 12.1251 9.22461Z" fill="currentColor" />
       <path fillRule="evenodd" clipRule="evenodd" d="M12.125 17.1248C9.325 17.1248 7.125 14.8248 7.125 12.1248C7.125 9.4248 9.425 7.1248 12.125 7.1248C14.825 7.1248 17.125 9.4248 17.125 12.1248C17.125 14.8248 14.925 17.1248 12.125 17.1248ZM23.125 10.8248C20.525 6.8248 16.425 4.4248 12.125 4.4248C7.825 4.4248 3.725 6.8248 1.125 10.8248C0.625 11.6248 0.625 12.6248 1.125 13.4248C3.725 17.4248 7.825 19.8248 12.125 19.8248C16.425 19.8248 20.525 17.4248 23.125 13.4248C23.725 12.6248 23.725 11.6248 23.125 10.8248Z" fill="currentColor" />
     </svg>
+  );
+}
+
+// 목록 인라인 OX 퀴즈 — 문제마다 O / X 버튼. 고르면 바로 정답·오답과 응답 비율이 보인다.
+// 한 번 고른 답은 못 바꾼다(서버도 같은 규칙). 카드 클릭(상세 이동)으로 번지지 않게 막는다.
+function FeedQuiz({
+  quiz,
+  busyQuestionId,
+  onAnswer,
+}: {
+  quiz: CommunityQuiz;
+  busyQuestionId: string | null;
+  onAnswer: (questionId: string, answer: boolean) => void;
+}) {
+  const total = quiz.questions.length;
+  return (
+    <div
+      className="feed-quiz"
+      role="group"
+      aria-label="OX 퀴즈"
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+      style={{ display: "grid", gap: 8, margin: "2px 0" }}
+    >
+      {quiz.questions.map((q, i) => {
+        const solved = q.myAnswer !== null;
+        const correct = solved && q.myAnswer === q.correctAnswer;
+        const answers = q.oCount + q.xCount;
+        return (
+          <div
+            key={q.id}
+            style={{
+              padding: "11px 13px",
+              borderRadius: 14,
+              background: "var(--c-bg-muted-13)",
+              display: "grid",
+              gap: 8,
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: "var(--c-text-2e)", lineHeight: 1.45 }}>
+              <span style={{ fontWeight: 800, color: "var(--c-text-4c)", marginRight: 6 }}>{i + 1}.</span>
+              {q.text}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {([true, false] as const).map((val) => {
+                const picked = q.myAnswer === val;
+                const isAnswer = solved && q.correctAnswer === val;
+                const pct = answers > 0 ? Math.round(((val ? q.oCount : q.xCount) / answers) * 100) : 0;
+                return (
+                  <button
+                    key={String(val)}
+                    type="button"
+                    className="press"
+                    disabled={solved || busyQuestionId === q.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAnswer(q.id, val);
+                    }}
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      width: 58,
+                      height: 38,
+                      borderRadius: 11,
+                      border: "none",
+                      // 정답 칸은 그 칸의 색으로 테두리를 두르고, 내가 고른 오답은 흐리게 둔다.
+                      boxShadow: isAnswer
+                        ? `inset 0 0 0 2px ${val ? "var(--c-quiz-o-line)" : "var(--c-quiz-x-line)"}`
+                        : "none",
+                      background: val ? "var(--c-quiz-o-soft)" : "var(--c-quiz-x-soft)",
+                      color: val ? "var(--c-quiz-o)" : "var(--c-quiz-x)",
+                      opacity: solved && !isAnswer ? (picked ? 0.55 : 0.32) : 1,
+                      fontSize: 17,
+                      fontWeight: 800,
+                      cursor: solved ? "default" : "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {val ? "O" : "X"}
+                  </button>
+                );
+              })}
+              {solved ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, minWidth: 0 }}>
+                  <span style={{ color: correct ? "var(--c-quiz-o)" : "var(--c-quiz-x)" }}>
+                    {correct ? "정답!" : "오답"}
+                  </span>
+                  <span style={{ color: "var(--c-text-4c)", fontWeight: 600 }}>
+                    O {answers > 0 ? Math.round((q.oCount / answers) * 100) : 0}% · X{" "}
+                    {answers > 0 ? Math.round((q.xCount / answers) * 100) : 0}%
+                  </span>
+                </span>
+              ) : (
+                <span style={{ fontSize: 12.5, color: "var(--c-text-4c)", fontWeight: 600 }}>O 또는 X를 골라보세요</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p style={{ margin: 0, fontSize: 12.5, color: "var(--c-text-4c)", fontWeight: 700 }}>
+        {quiz.solvedCount > 0
+          ? `${total}문제 중 ${quiz.solvedCount}문제 풀이 · ${quiz.correctCount}개 정답`
+          : `${total}문제 · ${quiz.participantCount}명 참여`}
+      </p>
+    </div>
   );
 }
 
