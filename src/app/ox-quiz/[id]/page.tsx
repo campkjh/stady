@@ -41,6 +41,31 @@ interface BookmarkItem {
 
 type TabFilter = "all" | "correct" | "wrong";
 
+// '이 문제 이상해요' → 건의게시판 글쓰기로 넘어갈 주소.
+// 문제 문장을 발췌하고, 그 문제로 바로 들어오는 딥링크(?q=문제id)를 함께 담는다.
+function buildQuizReportHref(
+  setId: string,
+  setTitle: string,
+  question: { id: string; question: string; answer: boolean },
+  myAnswer: boolean
+): string {
+  const correct = question.answer;
+  const link = `${typeof window === "undefined" ? "" : window.location.origin}/ox-quiz/${setId}?q=${question.id}`;
+  const text = [
+    "[문제 오류 건의]",
+    "",
+    `문제집: ${setTitle}`,
+    `문제: ${question.question}`,
+    `표시된 정답: ${correct ? "O" : "X"} / 내가 고른 답: ${myAnswer ? "O" : "X"}`,
+    `바로가기: ${link}`,
+    "",
+    "어떤 점이 이상한지 적어주세요 → ",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+  return `/community?compose=1&group=suggestion&text=${encodeURIComponent(text)}`;
+}
+
 // 정답률이 이 값 미만이면 "핵어려움"으로 표시(절대 기준).
 const HARD_ANSWER_RATE = 60;
 
@@ -260,6 +285,24 @@ export default function OxQuizSolvePage() {
     : [];
 
   const currentQuestion = filteredQuestions[currentIndex] ?? null;
+
+  // 딥링크(?q=문제id)로 들어오면 그 문제로 바로 넘긴다 — 오류 건의 글에서 바로 확인하려고.
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current || filteredQuestions.length === 0) return;
+    if (typeof window === "undefined") return;
+    const qid = new URLSearchParams(window.location.search).get("q");
+    if (!qid) {
+      deepLinkDone.current = true;
+      return;
+    }
+    const idx = filteredQuestions.findIndex((q) => q.id === qid);
+    deepLinkDone.current = true;
+    if (idx >= 0) {
+      const t = setTimeout(() => setCurrentIndex(idx), 0);
+      return () => clearTimeout(t);
+    }
+  }, [filteredQuestions]);
 
   // 조작 가이드 자동 닫기. 2.5초는 문구를 읽기도 전에 사라져 "가이드가 잘 안 보인다"는
   // 신고로 이어졌다 — 읽고 이해할 시간을 준다(직접 닫으려면 '알겠어요' 버튼).
@@ -902,6 +945,30 @@ export default function OxQuizSolvePage() {
                     </p>
                   </div>
                 )}
+
+                {/* 정답이 이상할 때 — 문제를 발췌하고 딥링크를 붙여 건의게시판 글쓰기로 넘긴다 */}
+                <button
+                  type="button"
+                  className="press"
+                  onClick={() => router.push(buildQuizReportHref(quiz.id, quiz.title, currentQuestion, answered.selected))}
+                  style={{
+                    marginTop: 2,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    border: "none",
+                    background: "none",
+                    padding: "6px 4px",
+                    cursor: "pointer",
+                    color: "var(--c-text-4b)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                  }}
+                >
+                  이 문제 이상해요 · 건의하기
+                </button>
               </div>
             )}
 

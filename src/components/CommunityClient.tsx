@@ -183,6 +183,9 @@ export default function CommunityClient() {
   const [commentModalPost, setCommentModalPost] = useState<CommunityPost | null>(null);
   // 스레드 스타일 글 작성 모달.
   const [composeOpen, setComposeOpen] = useState(false);
+  // 다른 화면(문제 오류 건의 등)에서 ?compose=1&text=...&group=... 로 들어오면
+  // 글쓰기 화면을 미리 채워서 연다.
+  const [composePreset, setComposePreset] = useState<{ text: string; group: string } | null>(null);
 
   // 목록에서 좋아요 토글(상세 진입 불필요). 낙관적 갱신 후 서버 결과로 확정.
   async function toggleLike(post: CommunityPost) {
@@ -235,6 +238,20 @@ export default function CommunityClient() {
       return next;
     });
   }
+
+  // 딥링크로 들어온 글쓰기 요청 — 한 번 열고 주소는 깨끗하게 되돌린다.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("compose") !== "1") return;
+    const preset = { text: sp.get("text") || "", group: sp.get("group") || "" };
+    const t = setTimeout(() => {
+      setComposePreset(preset);
+      setComposeOpen(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
 
   // 목록에서 바로 OX 퀴즈 풀기 — 문제 하나를 누르면 그 글의 quiz 만 갱신한다.
   async function answerQuiz(postId: string, questionId: string, answer: boolean) {
@@ -1045,8 +1062,10 @@ export default function CommunityClient() {
       {/* 스레드 스타일 글 작성 모달 */}
       {composeOpen && (
         <CommunityComposeModal
-          onClose={() => setComposeOpen(false)}
-          onPosted={() => { setComposeOpen(false); loadPosts(); loadWeeklyPopular(); }}
+          initialContent={composePreset?.text}
+          initialGroupSlug={composePreset?.group}
+          onClose={() => { setComposeOpen(false); setComposePreset(null); }}
+          onPosted={() => { setComposeOpen(false); setComposePreset(null); loadPosts(); loadWeeklyPopular(); }}
         />
       )}
 

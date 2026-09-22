@@ -12,6 +12,7 @@ import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload
 interface CategoryGroup {
   id: string;
   name: string;
+  slug?: string;
 }
 interface UploadedImage {
   url: string;
@@ -55,13 +56,19 @@ function OXMark({ o, size = 18 }: { o: boolean; size?: number }) {
 export default function CommunityComposeModal({
   onClose,
   onPosted,
+  initialContent,
+  initialGroupSlug,
 }: {
   onClose: () => void;
   onPosted?: () => void;
+  /** 다른 화면에서 넘어올 때 미리 채워둘 본문(문제 오류 건의 등) */
+  initialContent?: string;
+  /** 미리 골라둘 카테고리(slug) */
+  initialGroupSlug?: string;
 }) {
   const [groups, setGroups] = useState<CategoryGroup[]>([]);
   const [groupId, setGroupId] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(initialContent ?? "");
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [posting, setPosting] = useState(false);
@@ -98,6 +105,11 @@ export default function CommunityComposeModal({
         const data = await res.json();
         const gs: CategoryGroup[] = data.groups || [];
         setGroups(gs);
+        // 넘겨받은 카테고리(건의게시판 등)가 있으면 미리 골라둔다.
+        if (initialGroupSlug) {
+          const hit = gs.find((g) => g.slug === initialGroupSlug);
+          if (hit) setGroupId(hit.id);
+        }
       } catch {
         /* 카테고리 못 불러와도 모달은 열어둔다 */
       }
@@ -224,6 +236,12 @@ export default function CommunityComposeModal({
     setQuizOn(false);
     setQuizItems([{ text: "", answer: true }]);
     setIsBlinded(false);
+  }
+
+  // 투표·OX퀴즈 글은 주제가 따로 없으니 '자유'로 자동 지정한다(사용자가 다시 바꿀 수 있다).
+  function pickFree() {
+    const free = groups.find((g) => g.slug === "free");
+    if (free) setGroupId(free.id);
   }
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
@@ -442,7 +460,7 @@ export default function CommunityComposeModal({
               <button
                 type="button"
                 className={`cmp-chip${pollOn ? " is-on" : ""}`}
-                onClick={() => { setPollOn((v) => !v); setQuizOn(false); setMessage(""); }}
+                onClick={() => { setPollOn((v) => { const next = !v; if (next) pickFree(); return next; }); setQuizOn(false); setMessage(""); }}
                 aria-pressed={pollOn}
               >
                 투표
@@ -450,7 +468,7 @@ export default function CommunityComposeModal({
               <button
                 type="button"
                 className={`cmp-chip${quizOn ? " is-on" : ""}`}
-                onClick={() => { setQuizOn((v) => !v); setPollOn(false); setMessage(""); }}
+                onClick={() => { setQuizOn((v) => { const next = !v; if (next) pickFree(); return next; }); setPollOn(false); setMessage(""); }}
                 aria-pressed={quizOn}
               >
                 OX퀴즈
