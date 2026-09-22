@@ -154,6 +154,22 @@ interface CommunityPostDetail {
   pinnedCommentId?: string | null;
 }
 
+// O / X 는 글자가 아니라 도형으로 그린다(목록 카드와 같은 모양).
+function OXMark({ o, size = 22 }: { o: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      {o ? (
+        <circle cx="12" cy="12" r="7.6" stroke="currentColor" strokeWidth="3.2" />
+      ) : (
+        <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="round">
+          <line x1="6.2" y1="6.2" x2="17.8" y2="17.8" />
+          <line x1="17.8" y1="6.2" x2="6.2" y2="17.8" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 // 이모지 대신 아이콘셋(public/icons/community/*.svg)으로 통일한다.
 const REACTIONS: { key: string; icon: string; label: string }[] = [
   { key: "heart", icon: "heart-red", label: "좋아요" },
@@ -819,7 +835,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     const correct = solved && q.myAnswer === q.correctAnswer;
                     const answers = q.oCount + q.xCount;
                     return (
-                      <div key={q.id} style={{ padding: "13px 14px", borderRadius: 14, background: "var(--c-bg-soft)", border: "1px solid var(--c-border)", display: "grid", gap: 9 }}>
+                      <div key={q.id} style={{ display: "grid", gap: 9, padding: "2px 0" }}>
                         <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--c-text)", lineHeight: 1.5 }}>
                           {q.text}
                         </p>
@@ -848,9 +864,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                                   fontSize: 18,
                                   fontWeight: 800,
                                   cursor: solved ? "default" : "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                 }}
                               >
-                                {val ? "O" : "X"}
+                                <OXMark o={val} size={22} />
                               </button>
                             );
                           })}

@@ -1183,6 +1183,22 @@ function EyeIcon() {
   );
 }
 
+// O / X 표시는 글자가 아니라 도형으로 그린다(폰트에 따라 모양이 달라지지 않게).
+function OXMark({ o, size = 20 }: { o: boolean; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "block" }}>
+      {o ? (
+        <circle cx="12" cy="12" r="7.6" stroke="currentColor" strokeWidth="3.2" />
+      ) : (
+        <g stroke="currentColor" strokeWidth="3.2" strokeLinecap="round">
+          <line x1="6.2" y1="6.2" x2="17.8" y2="17.8" />
+          <line x1="17.8" y1="6.2" x2="6.2" y2="17.8" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 // 목록 인라인 OX 퀴즈 — 문제마다 O / X 버튼. 고르면 바로 정답·오답과 응답 비율이 보인다.
 // 한 번 고른 답은 못 바꾼다(서버도 같은 규칙). 카드 클릭(상세 이동)으로 번지지 않게 막는다.
 function FeedQuiz({
@@ -1212,11 +1228,9 @@ function FeedQuiz({
           <div
             key={q.id}
             style={{
-              padding: "11px 13px",
-              borderRadius: 14,
-              background: "var(--c-bg-muted-13)",
               display: "grid",
               gap: 8,
+              padding: "2px 0",
             }}
           >
             <p style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: "var(--c-text-2e)", lineHeight: 1.45 }}>
@@ -1256,9 +1270,12 @@ function FeedQuiz({
                       fontWeight: 800,
                       cursor: solved ? "default" : "pointer",
                       flexShrink: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {val ? "O" : "X"}
+                    <OXMark o={val} size={20} />
                   </button>
                 );
               })}
