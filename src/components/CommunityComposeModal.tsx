@@ -14,6 +14,8 @@ interface CategoryGroup {
   name: string;
   slug?: string;
 }
+interface PickCategory { id: string; name: string; icon: string; sets: number }
+interface PickSet { id: string; title: string; total: number }
 interface PickQuestion {
   id: string;
   question: string;
@@ -90,6 +92,11 @@ export default function CommunityComposeModal({
   const [qLoading, setQLoading] = useState(false);
   // 카테고리 목록이 아직 안 왔을 때 고른 주제를 기억해 뒀다가, 오면 그때 적용한다.
   const [pendingGroupSlug, setPendingGroupSlug] = useState("");
+  // 단계별 고르기(과목 → 문제집 → 문제). 검색어가 있으면 검색 결과가 우선.
+  const [qCats, setQCats] = useState<PickCategory[]>([]);
+  const [qSets, setQSets] = useState<PickSet[]>([]);
+  const [qCat, setQCat] = useState<PickCategory | null>(null);
+  const [qSet, setQSet] = useState<PickSet | null>(null);
 
   // GIF 피커 (인스타/스레드처럼 GIPHY 에서 검색해 붙인다)
   // GIF 버튼은 서버에 GIPHY 키가 설정돼 있을 때만 보인다(값싼 probe 로 확인).
@@ -256,24 +263,53 @@ export default function CommunityComposeModal({
     if (!qPickOpen) return;
     let alive = true;
     setQLoading(true);
+    const search = qQuery.trim();
+    // 검색어 > 문제집 선택 > 과목 선택 > (기본) 최근 푼 문제 + 과목 목록
+    const url = search
+      ? `/api/ox-questions/pick?q=${encodeURIComponent(search)}`
+      : qSet
+        ? `/api/ox-questions/pick?level=questions&setId=${encodeURIComponent(qSet.id)}`
+        : qCat
+          ? `/api/ox-questions/pick?level=sets&categoryId=${encodeURIComponent(qCat.id)}`
+          : `/api/ox-questions/pick`;
     const timer = setTimeout(() => {
-      fetch(`/api/ox-questions/pick?q=${encodeURIComponent(qQuery.trim())}`, { credentials: "include" })
+      fetch(url, { credentials: "include" })
         .then((r) => r.json())
         .then((d) => {
-          if (alive) setQList(d.questions || []);
+          if (!alive) return;
+          setQList(d.questions || []);
+          setQSets(d.sets || []);
         })
         .catch(() => {
-          if (alive) setQList([]);
+          if (alive) {
+            setQList([]);
+            setQSets([]);
+          }
         })
         .finally(() => {
           if (alive) setQLoading(false);
         });
-    }, qQuery.trim() ? 250 : 0);
+    }, search ? 250 : 0);
     return () => {
       alive = false;
       clearTimeout(timer);
     };
-  }, [qPickOpen, qQuery]);
+  }, [qPickOpen, qQuery, qCat, qSet]);
+
+  // 과목 목록은 시트를 열 때 한 번만
+  useEffect(() => {
+    if (!qPickOpen || qCats.length > 0) return;
+    let alive = true;
+    fetch("/api/ox-questions/pick?level=categories")
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive) setQCats(d.categories || []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [qPickOpen, qCats.length]);
 
   useEffect(() => {
     if (!pendingGroupSlug || groups.length === 0) return;
@@ -309,6 +345,8 @@ export default function CommunityComposeModal({
     chooseGroup("suggestion");
     setQPickOpen(false);
     setQQuery("");
+    setQCat(null);
+    setQSet(null);
   }
 
   // 투표·OX퀴즈 글은 주제가 따로 없으니 '자유'로 자동 지정한다(사용자가 다시 바꿀 수 있다).
@@ -588,7 +626,7 @@ export default function CommunityComposeModal({
       {qPickOpen && (
         <div className="cmp-gif-sheet">
           <div className="cmp-head">
-            <button type="button" className="cmp-cancel" onClick={() => setQPickOpen(false)}>취소</button>
+            <button type="button" className="cmp-cancel" onClick={() => { setQPickOpen(false); setQQuery(""); setQCat(null); setQSet(null); }}>취소</button>
             <span className="cmp-title">문제 고르기</span>
             <span className="cmp-head-right" aria-hidden="true" />
           </div>
@@ -597,22 +635,92 @@ export default function CommunityComposeModal({
               className="cmp-quiz-input"
               value={qQuery}
               onChange={(e) => setQQuery(e.target.value)}
-              placeholder="문제 내용으로 검색 (비워두면 최근 푼 문제)"
+              placeholder="문제 내용으로 검색"
             />
-            {qLoading && <p className="cmp-poll-hint">불러오는 중…</p>}
-            {!qLoading && qList.length === 0 && (
-              <p className="cmp-poll-hint">
-                {qQuery.trim() ? "찾은 문제가 없어요." : "최근에 푼 문제가 없어요. 문제 내용으로 검색해 보세요."}
-              </p>
+
+            {/* 검색 중이 아니면 과목 → 문제집 → 문제 순으로 골라 들어간다 */}
+            {!qQuery.trim() && (qCat || qSet) && (
+              <div className="cmp-qpick-crumb">
+                <button type="button" onClick={() => { setQCat(null); setQSet(null); }}>과목</button>
+                <span aria-hidden="true">›</span>
+                {qCat && (
+                  <button type="button" onClick={() => setQSet(null)} className={qSet ? "" : "is-now"}>
+                    {qCat.name}
+                  </button>
+                )}
+                {qSet && (
+                  <>
+                    <span aria-hidden="true">›</span>
+                    <button type="button" className="is-now">{qSet.title}</button>
+                  </>
+                )}
+              </div>
             )}
-            <div className="cmp-qpick-list">
-              {qList.map((q) => (
-                <button key={q.id} type="button" className="cmp-qpick-item" onClick={() => attachQuestion(q)}>
-                  <span className="cmp-qpick-set">{q.setTitle}</span>
-                  <span className="cmp-qpick-text">{q.question}</span>
-                </button>
-              ))}
-            </div>
+
+            {qLoading && <p className="cmp-poll-hint">불러오는 중…</p>}
+
+            {/* 1단계: 과목 */}
+            {!qQuery.trim() && !qCat && (
+              <>
+                {qList.length > 0 && (
+                  <>
+                    <p className="cmp-qpick-label">최근에 푼 문제</p>
+                    <div className="cmp-qpick-list">
+                      {qList.slice(0, 5).map((q) => (
+                        <button key={q.id} type="button" className="cmp-qpick-item" onClick={() => attachQuestion(q)}>
+                          <span className="cmp-qpick-set">{q.setTitle}</span>
+                          <span className="cmp-qpick-text">{q.question}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p className="cmp-qpick-label">과목에서 찾기</p>
+                <div className="cmp-qpick-list">
+                  {qCats.map((c) => (
+                    <button key={c.id} type="button" className="cmp-qpick-item is-row" onClick={() => { setQCat(c); setQSet(null); }}>
+                      <span className="cmp-qpick-text">
+                        {/* 과목 아이콘은 이미지 경로일 수도, 이모지일 수도 있다 */}
+                        {c.icon?.startsWith("/") ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.icon} alt="" width={20} height={20} style={{ display: "inline-block", verticalAlign: "-4px", marginRight: 6, objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ marginRight: 6 }}>{c.icon}</span>
+                        )}
+                        {c.name}
+                      </span>
+                      <span className="cmp-qpick-count">{c.sets}개</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 2단계: 문제집 */}
+            {!qQuery.trim() && qCat && !qSet && (
+              <div className="cmp-qpick-list">
+                {qSets.map((st) => (
+                  <button key={st.id} type="button" className="cmp-qpick-item is-row" onClick={() => setQSet(st)}>
+                    <span className="cmp-qpick-text">{st.title}</span>
+                    <span className="cmp-qpick-count">{st.total}문제</span>
+                  </button>
+                ))}
+                {!qLoading && qSets.length === 0 && <p className="cmp-poll-hint">문제집이 없어요.</p>}
+              </div>
+            )}
+
+            {/* 3단계(또는 검색 결과): 문제 */}
+            {(qQuery.trim() || qSet) && (
+              <div className="cmp-qpick-list">
+                {qList.map((q, i) => (
+                  <button key={q.id} type="button" className="cmp-qpick-item" onClick={() => attachQuestion(q)}>
+                    <span className="cmp-qpick-set">{qSet ? `${i + 1}번` : q.setTitle}</span>
+                    <span className="cmp-qpick-text">{q.question}</span>
+                  </button>
+                ))}
+                {!qLoading && qList.length === 0 && <p className="cmp-poll-hint">찾은 문제가 없어요.</p>}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -740,6 +848,12 @@ function ComposeStyles() {
       .cmp-qpick { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
       .cmp-qpick-list { display: flex; flex-direction: column; gap: 8px; }
       .cmp-qpick-item { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); cursor: pointer; }
+      .cmp-qpick-item.is-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+      .cmp-qpick-count { font-size: 12.5px; font-weight: 700; color: var(--c-text-5); flex-shrink: 0; }
+      .cmp-qpick-label { margin: 6px 2px 0; font-size: 12.5px; font-weight: 800; color: var(--c-text-4); }
+      .cmp-qpick-crumb { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; font-weight: 700; color: var(--c-text-5); }
+      .cmp-qpick-crumb button { border: none; background: none; padding: 2px 0; font: inherit; color: var(--c-brand); cursor: pointer; }
+      .cmp-qpick-crumb button.is-now { color: var(--c-text-3); cursor: default; }
       .cmp-qpick-set { font-size: 12px; font-weight: 700; color: var(--c-text-5); }
       .cmp-qpick-text { font-size: 14.5px; font-weight: 600; color: var(--c-text); line-height: 1.45; }
       .cmp-quiz { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }

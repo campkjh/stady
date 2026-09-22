@@ -18,8 +18,46 @@ interface Row {
 
 export async function GET(request: NextRequest) {
   try {
-    const q = (new URL(request.url).searchParams.get("q") || "").trim();
+    const sp = new URL(request.url).searchParams;
+    const q = (sp.get("q") || "").trim();
+    const level = sp.get("level") || "";
+    const categoryId = sp.get("categoryId") || "";
+    const setId = sp.get("setId") || "";
     const user = await getCurrentUser();
+
+    // 단계별 고르기 — 과목 → 문제집 → 문제
+    if (level === "categories") {
+      const cats = await prisma.$queryRawUnsafe<{ id: string; name: string; icon: string; sets: number }[]>(
+        `SELECT c."id", c."name", c."icon", COUNT(s."id")::int AS sets
+         FROM "Category" c JOIN "OxQuizSet" s ON s."categoryId" = c."id"
+         GROUP BY c."id", c."name", c."icon", c."order"
+         ORDER BY c."order" ASC, c."name" ASC`
+      );
+      return NextResponse.json({ categories: cats });
+    }
+    if (level === "sets" && categoryId) {
+      const sets = await prisma.$queryRawUnsafe<{ id: string; title: string; total: number }[]>(
+        `SELECT s."id", s."title", COUNT(x."id")::int AS total
+         FROM "OxQuizSet" s LEFT JOIN "OxQuestion" x ON x."oxQuizSetId" = s."id"
+         WHERE s."categoryId" = $1
+         GROUP BY s."id", s."title", s."createdAt"
+         ORDER BY s."createdAt" ASC`,
+        categoryId
+      );
+      return NextResponse.json({ sets });
+    }
+    if (level === "questions" && setId) {
+      const qs = await prisma.$queryRawUnsafe<Row[]>(
+        `SELECT x."id", x."question", x."answer", s."id" AS set_id, s."title" AS set_title
+         FROM "OxQuestion" x JOIN "OxQuizSet" s ON s."id" = x."oxQuizSetId"
+         WHERE x."oxQuizSetId" = $1
+         ORDER BY x."order" ASC`,
+        setId
+      );
+      return NextResponse.json({
+        questions: qs.map((r) => ({ id: r.id, question: r.question, answer: r.answer, setId: r.set_id, setTitle: r.set_title })),
+      });
+    }
 
     let rows: Row[] = [];
     if (q) {
