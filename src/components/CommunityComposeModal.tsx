@@ -573,6 +573,8 @@ export default function CommunityComposeModal({
                 onClick={() => { setPollOn((v) => { const next = !v; if (next) pickFree(); return next; }); setQuizOn(false); setMessage(""); }}
                 aria-pressed={pollOn}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/compose/vote.svg" alt="" width={20} height={20} />
                 투표
               </button>
               <button
@@ -581,6 +583,8 @@ export default function CommunityComposeModal({
                 onClick={() => { setQuizOn((v) => { const next = !v; if (next) pickFree(); return next; }); setPollOn(false); setMessage(""); }}
                 aria-pressed={quizOn}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/compose/ox.svg" alt="" width={20} height={20} />
                 OX퀴즈
               </button>
               <button
@@ -588,6 +592,8 @@ export default function CommunityComposeModal({
                 className="cmp-chip"
                 onClick={() => { setQPickOpen(true); setMessage(""); }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/compose/report.svg" alt="" width={20} height={20} />
                 문제 오류
               </button>
               <button
@@ -596,6 +602,8 @@ export default function CommunityComposeModal({
                 onClick={() => setIsBlinded((v) => !v)}
                 aria-pressed={isBlinded}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/compose/blind.svg" alt="" width={20} height={20} />
                 블라인드
               </button>
             </div>
@@ -631,12 +639,24 @@ export default function CommunityComposeModal({
             <span className="cmp-head-right" aria-hidden="true" />
           </div>
           <div className="cmp-qpick">
-            <input
-              className="cmp-quiz-input"
-              value={qQuery}
-              onChange={(e) => setQQuery(e.target.value)}
-              placeholder="문제 내용으로 검색"
-            />
+            <div className="cmp-qsearch">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.2-3.2" />
+              </svg>
+              <input
+                value={qQuery}
+                onChange={(e) => setQQuery(e.target.value)}
+                placeholder="문제 내용으로 검색"
+              />
+              {qQuery && (
+                <button type="button" onClick={() => setQQuery("")} aria-label="검색어 지우기">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
 
             {/* 검색 중이 아니면 과목 → 문제집 → 문제 순으로 골라 들어간다 */}
             {!qQuery.trim() && (qCat || qSet) && (
@@ -785,7 +805,8 @@ function ComposeStyles() {
         flex-direction: column;
         animation: cmpUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
       }
-      @keyframes cmpUp { from { transform: translateY(24px); opacity: 0.4; } to { transform: translateY(0); opacity: 1; } }
+      /* 배경까지 반투명해지면 뒤 화면이 비친다 → 불투명하게 두고 살짝 올라오기만 한다 */
+      @keyframes cmpUp { from { transform: translateY(24px); } to { transform: translateY(0); } }
       .cmp-head {
         flex-shrink: 0;
         display: grid;
@@ -831,13 +852,22 @@ function ComposeStyles() {
       .cmp-image { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--c-bg-muted-6); }
       .cmp-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .cmp-image-x { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 999px; border: none; background: rgba(17,24,39,0.7); color: #fff; font-size: 16px; line-height: 24px; cursor: pointer; }
-      .cmp-attach { display: flex; align-items: center; gap: 20px; margin-top: 12px; }
+      .cmp-attach { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin-top: 14px; }
       .cmp-attach-btn { border: none; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
       .cmp-attach-btn:disabled { opacity: 0.5; }
-      .cmp-attach-btn img { width: 25px; height: 25px; display: block; }
+      .cmp-attach-btn { width: 40px; height: 40px; border-radius: 999px; }
+      .cmp-attach-btn img { width: 26px; height: 26px; display: block; }
       .cmp-gif { font-size: 12px; font-weight: 800; color: var(--c-text-4); border: 2px solid var(--c-text-4) !important; border-radius: 7px; width: 30px; height: 21px; opacity: 0.7; }
-      /* 투표 · 블라인드 토글 칩 */
-      .cmp-chip { border: 1px solid var(--c-border); background: none; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      /* 투표 · OX퀴즈 · 문제 오류 · 블라인드 칩 — 아이콘 + 글자, 손가락으로 누르기 좋게 키운다 */
+      .cmp-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 40px; padding: 0 15px 0 12px;
+        border: 1px solid var(--c-border); background: none; border-radius: 999px;
+        font-size: 14px; font-weight: 700; color: var(--c-text-3); cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+      }
+      .cmp-chip img { display: block; width: 20px; height: 20px; flex-shrink: 0; }
       .cmp-chip.is-on { background: var(--c-brand-soft-6); border-color: transparent; color: var(--c-brand); }
       .cmp-poll { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
       .cmp-poll-row { display: flex; align-items: center; gap: 8px; }
@@ -845,6 +875,25 @@ function ComposeStyles() {
       .cmp-poll-x { width: 28px; height: 28px; border: none; background: none; color: var(--c-text-5); font-size: 18px; cursor: pointer; flex-shrink: 0; }
       .cmp-poll-add { align-self: flex-start; border: none; background: none; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--c-brand); cursor: pointer; }
       /* 읽는 쪽(퀴즈 카드)과 같은 모양 — 박스 없이 문장 + 정사각 O/X */
+      /* 커뮤니티(태블릿) 검색창과 같은 결 — 회색 면 → 포커스 시 흰 면 + 파란 테두리 */
+      .cmp-qsearch {
+        display: flex; align-items: center; gap: 8px;
+        height: 44px; padding: 0 14px; border-radius: 14px;
+        background: var(--c-bg-muted-2); border: 1px solid transparent;
+        color: var(--c-text-4b); box-sizing: border-box;
+        transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+      }
+      .cmp-qsearch:focus-within { background: var(--c-bg); border-color: var(--c-brand); box-shadow: 0 0 0 3px rgba(55, 135, 255, 0.12); }
+      .cmp-qsearch input {
+        flex: 1; min-width: 0; border: none; background: none; outline: none;
+        font-size: 15px; font-family: inherit; color: var(--c-text-b); letter-spacing: -0.2px;
+      }
+      .cmp-qsearch input::placeholder { color: var(--c-text-4b); }
+      .cmp-qsearch button {
+        display: flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border: none; border-radius: 999px;
+        background: var(--c-bg-muted-3); color: var(--c-text-4); cursor: pointer; flex-shrink: 0;
+      }
       .cmp-qpick { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
       .cmp-qpick-list { display: flex; flex-direction: column; gap: 8px; }
       .cmp-qpick-item { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); cursor: pointer; }
@@ -889,7 +938,7 @@ function ComposeStyles() {
 
       /* GIF 피커 시트 — 모달 위에 덮는다 */
       .cmp-gif-sheet {
-        position: absolute; inset: 0; z-index: 10;
+        position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 10;
         background: var(--c-bg); display: flex; flex-direction: column;
         animation: cmpUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
       }
