@@ -14,6 +14,13 @@ interface CategoryGroup {
   name: string;
   slug?: string;
 }
+interface PickQuestion {
+  id: string;
+  question: string;
+  answer: boolean;
+  setId: string;
+  setTitle: string;
+}
 interface UploadedImage {
   url: string;
   previewUrl: string;
@@ -76,6 +83,13 @@ export default function CommunityComposeModal({
   const [nickname, setNickname] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // 문제 오류 건의 — 문제를 골라 본문에 발췌 + 딥링크로 붙인다.
+  const [qPickOpen, setQPickOpen] = useState(false);
+  const [qQuery, setQQuery] = useState("");
+  const [qList, setQList] = useState<PickQuestion[]>([]);
+  const [qLoading, setQLoading] = useState(false);
+  // 카테고리 목록이 아직 안 왔을 때 고른 주제를 기억해 뒀다가, 오면 그때 적용한다.
+  const [pendingGroupSlug, setPendingGroupSlug] = useState("");
 
   // GIF 피커 (인스타/스레드처럼 GIPHY 에서 검색해 붙인다)
   // GIF 버튼은 서버에 GIPHY 키가 설정돼 있을 때만 보인다(값싼 probe 로 확인).
@@ -238,10 +252,68 @@ export default function CommunityComposeModal({
     setIsBlinded(false);
   }
 
+  useEffect(() => {
+    if (!qPickOpen) return;
+    let alive = true;
+    setQLoading(true);
+    const timer = setTimeout(() => {
+      fetch(`/api/ox-questions/pick?q=${encodeURIComponent(qQuery.trim())}`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (alive) setQList(d.questions || []);
+        })
+        .catch(() => {
+          if (alive) setQList([]);
+        })
+        .finally(() => {
+          if (alive) setQLoading(false);
+        });
+    }, qQuery.trim() ? 250 : 0);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [qPickOpen, qQuery]);
+
+  useEffect(() => {
+    if (!pendingGroupSlug || groups.length === 0) return;
+    const hit = groups.find((g) => g.slug === pendingGroupSlug);
+    if (!hit) return;
+    const t = setTimeout(() => {
+      setGroupId(hit.id);
+      setPendingGroupSlug("");
+    }, 0);
+    return () => clearTimeout(t);
+  }, [pendingGroupSlug, groups]);
+
+  // 주제를 slug 로 고른다. 목록이 아직이면 기억해 뒀다 적용.
+  function chooseGroup(slug: string) {
+    const hit = groups.find((g) => g.slug === slug);
+    if (hit) setGroupId(hit.id);
+    else setPendingGroupSlug(slug);
+  }
+
+  // 고른 문제를 본문에 붙이고 카테고리를 건의게시판으로
+  function attachQuestion(q: PickQuestion) {
+    const origin = typeof window === "undefined" ? "https://stady.kr" : window.location.origin;
+    const block = [
+      "[문제 오류 건의]",
+      `문제집: ${q.setTitle}`,
+      `문제: ${q.question}`,
+      `표시된 정답: ${q.answer ? "O" : "X"}`,
+      `바로가기: ${origin}/ox-quiz/${q.setId}?q=${q.id}`,
+      "",
+      "",
+    ].join("\n");
+    setContent((cur) => (cur.trim() ? `${cur.replace(/\s+$/, "")}\n\n${block}` : block));
+    chooseGroup("suggestion");
+    setQPickOpen(false);
+    setQQuery("");
+  }
+
   // 투표·OX퀴즈 글은 주제가 따로 없으니 '자유'로 자동 지정한다(사용자가 다시 바꿀 수 있다).
   function pickFree() {
-    const free = groups.find((g) => g.slug === "free");
-    if (free) setGroupId(free.id);
+    chooseGroup("free");
   }
 
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
@@ -475,6 +547,13 @@ export default function CommunityComposeModal({
               </button>
               <button
                 type="button"
+                className="cmp-chip"
+                onClick={() => { setQPickOpen(true); setMessage(""); }}
+              >
+                문제 오류
+              </button>
+              <button
+                type="button"
                 className={`cmp-chip${isBlinded ? " is-on" : ""}`}
                 onClick={() => setIsBlinded((v) => !v)}
                 aria-pressed={isBlinded}
@@ -504,6 +583,39 @@ export default function CommunityComposeModal({
           {posting ? "게시 중…" : "게시"}
         </button>
       </div>
+
+      {/* 문제 고르기 시트 — 최근 푼 문제 또는 검색 */}
+      {qPickOpen && (
+        <div className="cmp-gif-sheet">
+          <div className="cmp-head">
+            <button type="button" className="cmp-cancel" onClick={() => setQPickOpen(false)}>취소</button>
+            <span className="cmp-title">문제 고르기</span>
+            <span className="cmp-head-right" aria-hidden="true" />
+          </div>
+          <div className="cmp-qpick">
+            <input
+              className="cmp-quiz-input"
+              value={qQuery}
+              onChange={(e) => setQQuery(e.target.value)}
+              placeholder="문제 내용으로 검색 (비워두면 최근 푼 문제)"
+            />
+            {qLoading && <p className="cmp-poll-hint">불러오는 중…</p>}
+            {!qLoading && qList.length === 0 && (
+              <p className="cmp-poll-hint">
+                {qQuery.trim() ? "찾은 문제가 없어요." : "최근에 푼 문제가 없어요. 문제 내용으로 검색해 보세요."}
+              </p>
+            )}
+            <div className="cmp-qpick-list">
+              {qList.map((q) => (
+                <button key={q.id} type="button" className="cmp-qpick-item" onClick={() => attachQuestion(q)}>
+                  <span className="cmp-qpick-set">{q.setTitle}</span>
+                  <span className="cmp-qpick-text">{q.question}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* GIF 피커 시트 */}
       {gifOpen && (
@@ -625,6 +737,11 @@ function ComposeStyles() {
       .cmp-poll-x { width: 28px; height: 28px; border: none; background: none; color: var(--c-text-5); font-size: 18px; cursor: pointer; flex-shrink: 0; }
       .cmp-poll-add { align-self: flex-start; border: none; background: none; padding: 2px 0; font-size: 13px; font-weight: 700; color: var(--c-brand); cursor: pointer; }
       /* 읽는 쪽(퀴즈 카드)과 같은 모양 — 박스 없이 문장 + 정사각 O/X */
+      .cmp-qpick { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+      .cmp-qpick-list { display: flex; flex-direction: column; gap: 8px; }
+      .cmp-qpick-item { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg); cursor: pointer; }
+      .cmp-qpick-set { font-size: 12px; font-weight: 700; color: var(--c-text-5); }
+      .cmp-qpick-text { font-size: 14.5px; font-weight: 600; color: var(--c-text); line-height: 1.45; }
       .cmp-quiz { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }
       .cmp-quiz-row { display: flex; flex-direction: column; gap: 8px; }
       .cmp-quiz-top { display: flex; align-items: center; gap: 8px; }

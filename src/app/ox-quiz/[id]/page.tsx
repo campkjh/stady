@@ -41,31 +41,6 @@ interface BookmarkItem {
 
 type TabFilter = "all" | "correct" | "wrong";
 
-// '이 문제 이상해요' → 건의게시판 글쓰기로 넘어갈 주소.
-// 문제 문장을 발췌하고, 그 문제로 바로 들어오는 딥링크(?q=문제id)를 함께 담는다.
-function buildQuizReportHref(
-  setId: string,
-  setTitle: string,
-  question: { id: string; question: string; answer: boolean },
-  myAnswer: boolean
-): string {
-  const correct = question.answer;
-  const link = `${typeof window === "undefined" ? "" : window.location.origin}/ox-quiz/${setId}?q=${question.id}`;
-  const text = [
-    "[문제 오류 건의]",
-    "",
-    `문제집: ${setTitle}`,
-    `문제: ${question.question}`,
-    `표시된 정답: ${correct ? "O" : "X"} / 내가 고른 답: ${myAnswer ? "O" : "X"}`,
-    `바로가기: ${link}`,
-    "",
-    "어떤 점이 이상한지 적어주세요 → ",
-  ]
-    .filter((line) => line !== "")
-    .join("\n");
-  return `/community?compose=1&group=suggestion&text=${encodeURIComponent(text)}`;
-}
-
 // 정답률이 이 값 미만이면 "핵어려움"으로 표시(절대 기준).
 const HARD_ANSWER_RATE = 60;
 
@@ -945,30 +920,6 @@ export default function OxQuizSolvePage() {
                     </p>
                   </div>
                 )}
-
-                {/* 정답이 이상할 때 — 문제를 발췌하고 딥링크를 붙여 건의게시판 글쓰기로 넘긴다 */}
-                <button
-                  type="button"
-                  className="press"
-                  onClick={() => router.push(buildQuizReportHref(quiz.id, quiz.title, currentQuestion, answered.selected))}
-                  style={{
-                    marginTop: 2,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    border: "none",
-                    background: "none",
-                    padding: "6px 4px",
-                    cursor: "pointer",
-                    color: "var(--c-text-4b)",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textDecoration: "underline",
-                    textUnderlineOffset: 3,
-                  }}
-                >
-                  이 문제 이상해요 · 건의하기
-                </button>
               </div>
             )}
 
