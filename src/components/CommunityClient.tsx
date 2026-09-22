@@ -9,6 +9,7 @@ import IntroBanner from "@/components/IntroBanner";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
+import PullToRefresh from "@/components/PullToRefresh";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import NudgeBubble from "@/components/NudgeBubble";
 import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
@@ -1004,6 +1005,13 @@ export default function CommunityClient() {
         </button>
       </div>
       <CommunityStyles />
+      {/* 당겨서 새로고침 — 이모지가 통통 튀며 바뀐다(스피너 대신) */}
+      <PullToRefresh
+        onRefresh={async () => {
+          clientCache.clearPrefix("community-");
+          await Promise.all([loadPosts(), loadWeeklyPopular()]);
+        }}
+      />
 
       {/* 넓은 화면 전용 상세 패널 — 목록을 그대로 둔 채 오른쪽을 덮는다.
           상세 화면 컴포넌트를 그대로 재사용하고, 그 안의 fixed 상단바만 패널 기준으로 눕힌다. */}
