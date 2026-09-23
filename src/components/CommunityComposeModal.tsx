@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 
 // 스레드(Threads) 스타일 게시물 작성 모달. 커뮤니티 목록 위에 올라온다.
 // 백엔드는 groupId·title·content 가 필수라, 제목은 본문 첫 줄에서 자동으로 뽑는다.
@@ -123,6 +124,11 @@ export default function CommunityComposeModal({
 
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  // 안드로이드 WebView 는 키보드가 떠도 fixed 기준 화면(레이아웃 뷰포트)을 줄이지 않는다.
+  // 그대로 두면 모달 아래쪽(입력칸·'게시' 버튼)이 키보드 뒤로 숨는데, 가로모드는 화면이
+  // 낮아서 본문까지 통째로 가린다 → 덮인 높이만큼 모달을 줄여 항상 보이는 영역 안에 둔다.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const keyboardInset = useKeyboardInset(true, rootRef);
   const imagesRef = useRef<UploadedImage[]>([]);
   imagesRef.current = images;
 
@@ -438,7 +444,16 @@ export default function CommunityComposeModal({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="compose-modal" role="dialog" aria-label="새로운 스레드" aria-modal="true">
+    <div
+      ref={rootRef}
+      className="compose-modal"
+      role="dialog"
+      aria-label="새로운 스레드"
+      aria-modal="true"
+      /* 높이(bottom)를 줄이면 이 요소를 재서 덮인 높이를 구하는 훅이 0 을 보고 되돌려
+         진동한다 → 테두리 상자는 그대로 두고 padding 으로만 안쪽을 좁힌다. */
+      style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
+    >
       {/* 헤더 */}
       <div className="cmp-head">
         <button type="button" className="cmp-cancel" onClick={onClose}>취소</button>
@@ -839,6 +854,8 @@ function ComposeStyles() {
         background: var(--c-bg);
         display: flex;
         flex-direction: column;
+        /* 키보드가 덮은 높이를 padding 으로 받아내므로 테두리 상자 기준이어야 한다 */
+        box-sizing: border-box;
         animation: cmpUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
       }
       /* 배경까지 반투명해지면 뒤 화면이 비친다 → 불투명하게 두고 살짝 올라오기만 한다 */

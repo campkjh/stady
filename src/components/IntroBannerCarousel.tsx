@@ -30,6 +30,9 @@ export default function IntroBannerCarousel({
 }) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  // 배너 이미지 중 가장 세로로 긴 것의 가로/세로 비. 이 값으로 카드 폭을 줄여
+  // 화면이 낮을 때(폰 가로모드) 카드가 위아래로 잘려 X 버튼이 화면 밖으로 나가는 걸 막는다.
+  const [ratio, setRatio] = useState<number | null>(null);
   const startX = useRef<number | null>(null);
   const dragging = useRef(false);
 
@@ -101,7 +104,15 @@ export default function IntroBannerCarousel({
         padding: 24, boxSizing: "border-box",
       }}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 340 }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          // 세로 여백(padding 24 × 2)을 뺀 높이에 맞춰 폭을 줄인다 — 가로모드에서도 카드 전체가 보인다.
+          maxWidth: ratio ? `min(340px, calc((100dvh - 48px) * ${ratio}))` : 340,
+        }}
+      >
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
@@ -117,7 +128,17 @@ export default function IntroBannerCarousel({
             {slides.map((s) => (
               <div key={s.image} style={{ flex: "0 0 100%", minWidth: "100%" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.image} alt={s.alt} style={{ width: "100%", height: "auto", display: "block" }} />
+                <img
+                  src={s.image}
+                  alt={s.alt}
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.naturalHeight) return;
+                    const r = img.naturalWidth / img.naturalHeight;
+                    setRatio((cur) => (cur === null ? r : Math.min(cur, r)));
+                  }}
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
               </div>
             ))}
           </div>

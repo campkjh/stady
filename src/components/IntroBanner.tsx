@@ -22,6 +22,8 @@ export default function IntroBanner({
   hideDays?: number;
 }) {
   const [open, setOpen] = useState(false);
+  // 이미지의 가로/세로 비 — 화면이 낮을 때 카드 폭을 줄이는 데 쓴다.
+  const [ratio, setRatio] = useState<number | null>(null);
 
   useEffect(() => {
     let until = 0;
@@ -69,9 +71,25 @@ export default function IntroBanner({
         padding: 24, boxSizing: "border-box",
       }}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 340 }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          // 가로모드처럼 화면이 낮을 때 카드가 잘려 X 가 화면 밖으로 나가지 않게 폭을 줄인다.
+          maxWidth: ratio ? `min(340px, calc((100dvh - 48px) * ${ratio}))` : 340,
+        }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt={alt} style={{ width: "100%", height: "auto", display: "block", borderRadius: 32 }} />
+        <img
+          src={image}
+          alt={alt}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
+          }}
+          style={{ width: "100%", height: "auto", display: "block", borderRadius: 32 }}
+        />
         <button
           type="button"
           onClick={closeForDays}

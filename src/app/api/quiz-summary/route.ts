@@ -147,16 +147,6 @@ export async function GET() {
             )
           GROUP BY t."oxQuizSetId"
           UNION ALL
-          -- 세트 뒤에 붙은 사상가 문제(별도 테이블)도 '푼 문항'으로 함께 센다.
-          SELECT 'ox' AS kind,
-                 q."ox_quiz_set_id" AS set_id,
-                 COUNT(DISTINCT a."question_id") AS answered
-          FROM "OxThinkerAnswer" a
-          JOIN "OxThinkerQuestion" q ON q."id" = a."question_id"
-          JOIN "QuizAttempt" t ON t."id" = a."attempt_id"
-          WHERE t."userId" = $1
-          GROUP BY q."ox_quiz_set_id"
-          UNION ALL
           SELECT 'vocab' AS kind,
                  t."vocabQuizSetId" AS set_id,
                  COUNT(*) AS attempts,
