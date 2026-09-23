@@ -362,7 +362,7 @@ export default function CommunityWriteClient() {
 
           {postType === "quiz" && (
             <div style={{ display: "grid", gap: 10 }}>
-              <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>OX 문제 (최대 10개)</span>
+              <span style={{ color: "var(--c-text-2c)", fontSize: 14, fontWeight: 600 }}>OX 문제 (최대 5개)</span>
               {quizItems.map((item, index) => (
                 <div key={index} style={{ display: "grid", gap: 6, padding: 10, borderRadius: 10, border: "1px solid var(--c-border)", background: "var(--c-bg-soft)" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -411,7 +411,7 @@ export default function CommunityWriteClient() {
                   </div>
                 </div>
               ))}
-              {quizItems.length < 10 && (
+              {quizItems.length < 5 && (
                 <button
                   type="button"
                   onClick={() => setQuizItems((cur) => [...cur, { text: "", answer: true }])}

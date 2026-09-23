@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, getAdminUserIds } from "@/lib/auth";
-import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getCommunityKings, mapTag, toNumber, type CommunityTier, type CommunityKings } from "@/lib/community";
+import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getCommunityKings, mapTag, toNumber, QUIZ_MAX_QUESTIONS_PER_POST, QUIZ_MAX_POSTS_PER_DAY, type CommunityTier, type CommunityKings } from "@/lib/community";
 
 function mapPost(
   post: Awaited<ReturnType<typeof getCommunityPosts>>[number],
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       : [];
     const isBlinded = body.isBlinded === true;
     const type = body.type === "poll" ? "poll" : body.type === "quiz" ? "quiz" : "normal";
-    // OX 퀴즈 문제들 — { text, answer(O=true) } 최대 10개
+    // OX 퀴즈 문제들 — { text, answer(O=true) } 최대 QUIZ_MAX_QUESTIONS_PER_POST 개
     const quizItems: { text: string; answer: boolean }[] =
       type === "quiz" && Array.isArray(body.quizItems)
         ? body.quizItems
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
               return { text: String(item.text || "").trim(), answer: item.answer === true || item.answer === "O" };
             })
             .filter((q: { text: string }) => q.text.length > 0)
-            .slice(0, 10)
+            .slice(0, QUIZ_MAX_QUESTIONS_PER_POST)
         : [];
     const pollOptions: string[] =
       type === "poll" && Array.isArray(body.pollOptions)
@@ -147,6 +147,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "CommunityQuizDailyLimit") {
+      return NextResponse.json(
+        { error: `OX 퀴즈는 하루에 ${QUIZ_MAX_POSTS_PER_DAY}개까지 올릴 수 있어요. 내일 다시 올려주세요.` },
+        { status: 429 }
+      );
+    }
     console.error("Community posts POST error:", error);
     return NextResponse.json({ error: "게시글을 저장하지 못했습니다." }, { status: 500 });
   }

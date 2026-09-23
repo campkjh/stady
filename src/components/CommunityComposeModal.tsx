@@ -9,6 +9,11 @@ import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload
 // 스레드(Threads) 스타일 게시물 작성 모달. 커뮤니티 목록 위에 올라온다.
 // 백엔드는 groupId·title·content 가 필수라, 제목은 본문 첫 줄에서 자동으로 뽑는다.
 
+// OX 퀴즈 상한 — src/lib/community.ts 의 QUIZ_MAX_* 와 같은 값.
+// 서버 상수를 그대로 가져오면 prisma 까지 번들에 딸려와서 여기서 다시 적는다.
+const QUIZ_MAX_QUESTIONS_PER_POST = 5;
+const QUIZ_MAX_POSTS_PER_DAY = 3;
+
 interface CategoryGroup {
   id: string;
   name: string;
@@ -112,6 +117,8 @@ export default function CommunityComposeModal({
   // OX 퀴즈 — 문제 여러 개(문장 + 정답 O/X). 투표와는 동시에 못 켠다.
   const [quizOn, setQuizOn] = useState(false);
   const [quizItems, setQuizItems] = useState<{ text: string; answer: boolean }[]>([{ text: "", answer: true }]);
+  // 오늘 더 올릴 수 있는 퀴즈 글 수. null 은 아직 안 물어본 상태.
+  const [quizLeft, setQuizLeft] = useState<number | null>(null);
   const [isBlinded, setIsBlinded] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -354,6 +361,30 @@ export default function CommunityComposeModal({
     chooseGroup("free");
   }
 
+  // OX 퀴즈 켜기/끄기. 켤 때 오늘 남은 개수를 확인해서, 다 썼으면 아예 못 켜게 한다.
+  // (진짜 상한은 저장할 때 서버가 잡는다 — 여기 확인은 헛수고를 막기 위한 것.)
+  function toggleQuiz() {
+    setPollOn(false);
+    setMessage("");
+    if (quizOn) {
+      setQuizOn(false);
+      return;
+    }
+    setQuizOn(true);
+    pickFree();
+    fetch("/api/community/quiz-quota", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || typeof data.remaining !== "number") return;
+        setQuizLeft(data.remaining);
+        if (data.remaining <= 0) {
+          setQuizOn(false);
+          setMessage(`OX 퀴즈는 하루에 ${QUIZ_MAX_POSTS_PER_DAY}개까지 올릴 수 있어요. 내일 다시 올려주세요.`);
+        }
+      })
+      .catch(() => {});
+  }
+
   const filledPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
   const filledQuizItems = quizItems
     .map((q) => ({ text: q.text.trim(), answer: q.answer }))
@@ -545,7 +576,7 @@ export default function CommunityComposeModal({
                     </div>
                   </div>
                 ))}
-                {quizItems.length < 10 && (
+                {quizItems.length < QUIZ_MAX_QUESTIONS_PER_POST && (
                   <button
                     type="button"
                     className="cmp-poll-add"
@@ -554,7 +585,12 @@ export default function CommunityComposeModal({
                     + 문제 추가
                   </button>
                 )}
-                <p className="cmp-poll-hint">문제마다 정답을 O 또는 X로 고르세요. 최대 10문제까지 낼 수 있어요.</p>
+                <p className="cmp-poll-hint">
+                  문제마다 정답을 O 또는 X로 고르세요. 한 글에 최대 {QUIZ_MAX_QUESTIONS_PER_POST}문제까지 낼 수 있어요.
+                  {quizLeft === null
+                    ? ` OX 퀴즈는 하루에 ${QUIZ_MAX_POSTS_PER_DAY}개까지 올릴 수 있어요.`
+                    : ` 오늘은 ${quizLeft}개 더 올릴 수 있어요.`}
+                </p>
               </div>
             )}
 
@@ -580,7 +616,7 @@ export default function CommunityComposeModal({
               <button
                 type="button"
                 className={`cmp-chip${quizOn ? " is-on" : ""}`}
-                onClick={() => { setQuizOn((v) => { const next = !v; if (next) pickFree(); return next; }); setPollOn(false); setMessage(""); }}
+                onClick={() => { toggleQuiz(); }}
                 aria-pressed={quizOn}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

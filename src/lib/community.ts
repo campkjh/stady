@@ -394,6 +394,20 @@ export async function ensureCommunityTables() {
     CREATE INDEX IF NOT EXISTS "CommunityQuizAnswer_post_idx"
     ON "CommunityQuizAnswer" ("post_id", "user_id")
   `);
+  // 하루 상한을 세는 발행 기록. 글은 지우면 행째 사라지므로(CommunityPost 는 하드 삭제)
+  // 글 테이블로 세면 지웠다 다시 올리는 식으로 상한을 피할 수 있다 → 별도로 남긴다.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityQuizPostLog" (
+      "id" TEXT PRIMARY KEY,
+      "user_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "post_id" TEXT,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityQuizPostLog_user_idx"
+    ON "CommunityQuizPostLog" ("user_id", "created_at")
+  `);
 
   // --- 질문게시판 카테고리(없으면 생성). 답변 여부에 따라 Q 배지를 보여준다. ---
   await prisma.$executeRawUnsafe(
@@ -661,6 +675,12 @@ export async function reorderTags(items: { id: string; sortOrder: number }[]) {
   }
 }
 
+// ── OX 퀴즈 상한 ────────────────────────────────────────────────
+// 한 글에 낼 수 있는 문제 수와, 한 사람이 하루에 올릴 수 있는 퀴즈 글 수.
+// 둘 다 서버에서 강제한다(작성 화면의 제한은 안내용일 뿐이다).
+export const QUIZ_MAX_QUESTIONS_PER_POST = 5;
+export const QUIZ_MAX_POSTS_PER_DAY = 3;
+
 // ── 활동 티어(리그) ──────────────────────────────────────────────
 // 출석 전용 테이블이 없어, 활동량(글·댓글·받은 공감·퀴즈 활동)으로 점수를 매겨
 // 6등급으로 환산한다. 인기글 등재는 공감 수에 자연히 반영된다.
@@ -670,7 +690,7 @@ export type CommunityTier =
 // OX 퀴즈를 낸 사람에게 주는 경험치 — 문제 1개당 QUIZ_XP_PER_QUESTION 점.
 // 한 글에서 인정하는 문제 수는 QUIZ_XP_MAX_QUESTIONS_PER_POST 개까지만(문제 도배로 점수 먹는 걸 막는다).
 export const QUIZ_XP_PER_QUESTION = 5;
-export const QUIZ_XP_MAX_QUESTIONS_PER_POST = 5;
+export const QUIZ_XP_MAX_QUESTIONS_PER_POST = QUIZ_MAX_QUESTIONS_PER_POST;
 
 /** 내가 낸 OX 퀴즈 문제로 얻은 경험치(글당 상한 적용). */
 const QUIZ_XP_SQL = `
@@ -1252,6 +1272,24 @@ async function getImagesByPost(postIds: string[]) {
   return imagesByPost;
 }
 
+/** 오늘(KST) 내가 올린 OX 퀴즈 글 수. 글을 지워도 줄지 않는다(발행 기록 기준). */
+export async function countTodayQuizPosts(userId: string): Promise<number> {
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{ c: number }[]>(
+    `SELECT COUNT(*)::int AS c FROM "CommunityQuizPostLog"
+     WHERE "user_id" = $1
+       AND ("created_at" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
+           = (now() AT TIME ZONE 'Asia/Seoul')::date`,
+    userId
+  );
+  return Number(rows[0]?.c ?? 0);
+}
+
+/** 오늘 더 올릴 수 있는 OX 퀴즈 글 수(0 이면 내일까지 기다려야 한다). */
+export async function remainingQuizPostsToday(userId: string): Promise<number> {
+  return Math.max(0, QUIZ_MAX_POSTS_PER_DAY - (await countTodayQuizPosts(userId)));
+}
+
 export async function createCommunityPost(input: {
   userId: string | null;
   groupId: string;
@@ -1262,7 +1300,7 @@ export async function createCommunityPost(input: {
   isBlinded?: boolean;
   type?: string;
   pollOptions?: string[];
-  /** OX 퀴즈 문제들(최대 10개) — text 와 정답(O=true) */
+  /** OX 퀴즈 문제들(최대 QUIZ_MAX_QUESTIONS_PER_POST 개) — text 와 정답(O=true) */
   quizItems?: { text: string; answer: boolean }[];
 }) {
   await ensureCommunityTables();
@@ -1272,8 +1310,12 @@ export async function createCommunityPost(input: {
   const quizItems = (input.quizItems || [])
     .map((q) => ({ text: String(q?.text || "").trim(), answer: !!q?.answer }))
     .filter((q) => q.text.length > 0)
-    .slice(0, 10);
+    .slice(0, QUIZ_MAX_QUESTIONS_PER_POST);
   if (isQuiz && quizItems.length === 0) throw new Error("CommunityQuizEmpty");
+  if (isQuiz && input.userId) {
+    const todayCount = await countTodayQuizPosts(input.userId);
+    if (todayCount >= QUIZ_MAX_POSTS_PER_DAY) throw new Error("CommunityQuizDailyLimit");
+  }
   const pollOptions = (input.pollOptions || [])
     .map((t) => String(t || "").trim())
     .filter((t) => t.length > 0)
@@ -1297,6 +1339,14 @@ export async function createCommunityPost(input: {
         item.text,
         item.answer,
         index
+      );
+    }
+    if (input.userId) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "CommunityQuizPostLog" ("id", "user_id", "post_id") VALUES ($1, $2, $3)`,
+        randomUUID(),
+        input.userId,
+        id
       );
     }
   }
