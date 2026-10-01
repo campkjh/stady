@@ -99,6 +99,12 @@ const PageCanvas = forwardRef<
   const strokeBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   // 필기 중에는 저장을 미루는 타이머(연속 필기 중 localStorage 쓰기로 끊기지 않게).
   const persistTimer = useRef<number | null>(null);
+  // 저장된 필기를 캔버스에 되살리는 중인지. 복원 전 캔버스는 비어 있으므로
+  // 그 상태로 저장하면 "빈 그림"이 원본을 덮어쓴다(아래 persist 주석 참고).
+  const restored = useRef(false);
+  // 마지막 저장 이후 실제로 그린 게 있는지. 손대지 않은 페이지까지 저장하면
+  // 전환 한 번에 16~29장 × 100KB 를 쓰느라 멈칫거리고 저장 용량도 금방 찬다.
+  const dirty = useRef(false);
   // 획을 긋는 동안 고정해두는 캔버스 위치/배율(매 move마다 레이아웃 강제 계산 방지).
   const rectRef = useRef<{ left: number; top: number; sx: number; sy: number } | null>(null);
   const notifyHistory = () => {
@@ -177,6 +183,7 @@ const PageCanvas = forwardRef<
     undoStack.current = [];
     redoStack.current = [];
     fittedSize.current = { w: 0, h: 0 };
+    restored.current = false;
     setSized(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nearViewport]);
@@ -188,6 +195,8 @@ const PageCanvas = forwardRef<
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
+    // 언마운트 정리 시점에는 리액트가 ref 를 이미 null 로 끊어둔다 → 지금 잡아둔다.
+    const canvasAtMount = canvasRef.current;
     fit();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => fit()) : null;
     ro?.observe(wrap);
@@ -198,13 +207,13 @@ const PageCanvas = forwardRef<
       // 여기서 캔버스를 비워주지 않으면 안드로이드 WebView 가 두 섹션의 캔버스·이미지
       // 픽셀을 잠깐 동시에 들고 있다가 새 해설 이미지 디코딩을 포기해 해설이 빈 화면이
       // 된다(iPad 는 여유가 있어 증상이 안 나타남 — 갤럭시탭 '해설 안 뜸' 신고의 원인).
-      persist();
-      const c = canvasRef.current;
-      if (c) {
-        c.width = 0;
-        c.height = 0;
+      persist(canvasAtMount);
+      if (canvasAtMount) {
+        canvasAtMount.width = 0;
+        canvasAtMount.height = 0;
       }
       shadowRef.current = null;
+      restored.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -243,6 +252,8 @@ const PageCanvas = forwardRef<
     if (w === 0 || h === 0) return;
     // 같은 크기로 다시 부르면 그린 내용과 되돌리기 이력만 날아가므로 무시한다.
     if (fittedSize.current.w === w && fittedSize.current.h === h) return;
+    // 크기가 바뀌면 캔버스 내용이 지워진다(화면 회전 등) — 아직 저장 못 한 획을 먼저 저장한다.
+    persist();
     fittedSize.current = { w, h };
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     dprRef.current = dpr;
@@ -258,13 +269,21 @@ const PageCanvas = forwardRef<
     redoStack.current = [];
     shadowRef.current = null;
     notifyHistory();
-    // 저장된 필기 복원.
+    // 저장된 필기 복원. 복원이 끝날 때까지는 저장 금지(빈 캔버스로 덮어쓰는 걸 막는다).
+    restored.current = false;
+    dirty.current = false;
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) restore(saved);
-      else syncShadow();
+      if (saved && saved.startsWith("data:image/")) {
+        restore(saved);
+      } else {
+        // 예전 버전이 반납된(0×0) 캔버스를 저장해 남긴 "data:," 같은 값은 그림이 아니다.
+        if (saved) localStorage.removeItem(storageKey);
+        syncShadow();
+        restored.current = true;
+      }
     } catch {
-      /* ignore */
+      restored.current = true;
     }
   }
 
@@ -277,6 +296,11 @@ const PageCanvas = forwardRef<
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight);
       syncShadow();
+      restored.current = true;
+    };
+    im.onerror = () => {
+      syncShadow();
+      restored.current = true;
     };
     im.src = dataUrl;
   }
@@ -299,16 +323,32 @@ const PageCanvas = forwardRef<
     return shadow;
   }
 
-  function persist() {
+  // 현재 캔버스를 localStorage 에 저장한다.
+  //
+  // ⚠️ 저장은 "지금 캔버스에 보이는 것"을 그대로 덮어쓰는 동작이라, 캔버스가 아직
+  //    준비되지 않은 순간에 부르면 **멀쩡한 필기가 빈 그림으로 지워진다.** 실제로
+  //    "문제 다 풀고 해설 눌렀다 돌아오면 필기가 싹 사라진다"는 신고의 원인이었다:
+  //    섹션을 바꾸면 모든 페이지가 새로 마운트되고 fit() 이 저장본을 **비동기로**
+  //    복원하는데(PNG 디코딩), 그 사이 부모가 화면 밖 페이지를 반납시키며 persist 를
+  //    부른다 → 아직 빈 캔버스가 저장돼 원본이 날아간다(태블릿처럼 디코딩이 느릴수록 심함).
+  //    그래서 ①복원이 끝났고 ②픽셀을 들고 있고 ③바뀐 게 있을 때만 저장한다.
+  //
+  // 언마운트 정리에서 부를 때는 캔버스를 인자로 받는다 — 리액트가 passive 정리보다
+  // 먼저 ref 를 null 로 끊어서, ref 로만 찾으면 아무것도 저장되지 않는다(섹션을 바꾸기
+  // 직전에 그은 획이 사라지던 또 하나의 경로).
+  function persist(target?: HTMLCanvasElement | null) {
     if (persistTimer.current != null) {
       window.clearTimeout(persistTimer.current);
       persistTimer.current = null;
     }
+    const canvas = target ?? canvasRef.current;
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return;
+    if (!restored.current || !dirty.current) return;
     try {
-      const canvas = canvasRef.current;
-      if (canvas) localStorage.setItem(storageKey, canvas.toDataURL("image/png"));
+      localStorage.setItem(storageKey, canvas.toDataURL("image/png"));
+      dirty.current = false;
     } catch {
-      /* 용량 초과 등은 무시 */
+      /* 용량 초과 등은 무시(dirty 를 남겨 다음 기회에 다시 시도한다) */
     }
   }
 
@@ -367,6 +407,7 @@ const PageCanvas = forwardRef<
       if (!patch) return;
       applyPatch(patch.before, patch.x, patch.y);
       redoStack.current.push(patch);
+      dirty.current = true;
       schedulePersist();
       notifyHistory();
     },
@@ -375,6 +416,7 @@ const PageCanvas = forwardRef<
       if (!patch) return;
       applyPatch(patch.after, patch.x, patch.y);
       undoStack.current.push(patch);
+      dirty.current = true;
       schedulePersist();
       notifyHistory();
     },
@@ -391,6 +433,7 @@ const PageCanvas = forwardRef<
         persistTimer.current = null;
       }
       try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+      dirty.current = false;
       notifyHistory();
     },
   }));
@@ -430,6 +473,7 @@ const PageCanvas = forwardRef<
     if (undoStack.current.length > 40) undoStack.current.shift();
     redoStack.current = [];
     sctx.putImageData(after, x, y);
+    dirty.current = true;
     schedulePersist();
     notifyHistory();
   }
