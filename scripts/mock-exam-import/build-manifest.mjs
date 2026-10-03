@@ -49,8 +49,9 @@ const exams = {};
 for (const f of files) {
   // "2026년 7월 [시행 ]<과목>[ 해설].pdf" — 공백/'시행' 표기가 들쭉날쭉해서 정규화 후 매칭
   const base = f.normalize("NFC").replace(/\.pdf$/, "").replace(new RegExp("^" + PREFIX + "\\s*"), "").replace(/^시행\s*/, "").trim();
-  const isSolution = /해설\s*$/.test(base);
-  const subjectName = base.replace(/\s*해설\s*$/, "").trim();
+  // "해설"이 "해 설"처럼 띄어져 오는 파일이 섞인다(2025년 10월 생명과학2).
+  const isSolution = /해\s*설\s*$/.test(base);
+  const subjectName = base.replace(/\s*해\s*설\s*$/, "").trim();
   const id = SUBJECT[subjectName];
   if (!id) { console.error("!! 과목 매칭 실패:", JSON.stringify(subjectName), "←", f); continue; }
   exams[id] ??= { subject: id, label: LABEL[id], problem: null, solution: null };
