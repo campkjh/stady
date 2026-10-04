@@ -180,6 +180,9 @@ export default function MockExamBrowser({
                       ) : (
                         <span className="mx-thumb-empty"><img src="/icons/toss/file.svg" alt="" style={{ width: 28, height: 28 }} /></span>
                       )}
+                      {/* 스타디 워터마크 — 시험지(흰 바탕) 위라 회색으로 빼서 옅게 얹는다. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/icons/stady-logo.svg" alt="" aria-hidden="true" className="mx-wm" />
                       {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
                       {locked && (
                         <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
@@ -311,6 +314,14 @@ function BrowserStyles() {
         border: 1px solid var(--c-bg-muted-6); background: var(--c-bg-muted); box-shadow: 0 4px 14px rgba(15,23,42,0.06);
       }
       .mx-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      /* 썸네일 우측 하단 워터마크. 표지 이미지 규칙(cover·100%)보다 선택자가 구체적이라 덮어쓴다. */
+      .mx-thumb .mx-wm {
+        position: absolute; right: 7px; bottom: 6px;
+        width: 40px; height: auto;
+        filter: grayscale(100%);
+        opacity: 0.3;
+        pointer-events: none;
+      }
       .mx-thumb-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--c-text-5); font-size: 30px; }
       .mx-badge {
         position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
