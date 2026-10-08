@@ -7,6 +7,7 @@ import Image from "next/image";
 import SurveyGate from "@/components/SurveyGate";
 import NoticePopup from "@/components/NoticePopup";
 import IntroBannerCarousel from "@/components/IntroBannerCarousel";
+import NudgeBubble from "@/components/NudgeBubble";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
@@ -33,6 +34,7 @@ interface Workbook {
   totalQuestions: number;
   questionPerPage: number;
   isPopular: boolean;
+  createdAt: string | Date;
   category: Category;
 }
 
@@ -343,6 +345,7 @@ export default function HomeClient({
   userName,
   isAdmin,
   categories,
+  workbooks,
   oxQuizSets,
   vocabQuizSets,
   mockExams,
@@ -426,6 +429,11 @@ export default function HomeClient({
   const slideBanners = banners.filter((banner) => banner.bannerType !== "modal");
 
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
+  // 7일 안에 올라온 문제집이 있는 과목 — 홈 과목 버튼 위 말풍선용.
+  const newWorkbookCategoryIds = new Set(
+    workbooks.filter((w) => isNewCreatedAt(w.createdAt)).map((w) => w.categoryId)
+  );
+
   const newQuizzes = [
     ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: q.answerRate ?? null, isPremium: q.isPremium ?? false })),
     ...vocabQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `vocab:${q.id}`, type: "vocab" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: null, isPremium: false })),
@@ -574,7 +582,9 @@ export default function HomeClient({
 
       <div className="home-main">
       {/* Category Grid */}
-      <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 16px" }}>
+      {/* 최근 올라온 문제집이 있는 과목에는 버튼 위로 '새로운 문제집' 말풍선을 띄운다.
+          기준은 OX·단어의 NEW 배지와 같은 7일. 말풍선이 들어갈 자리만큼 위를 띄운다. */}
+      <div className="fade-in-up fade-in-up-2" style={{ padding: `${newWorkbookCategoryIds.size > 0 ? 34 : 0}px 10px 16px` }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {categories.map((cat) => (
               <button
@@ -592,6 +602,16 @@ export default function HomeClient({
                   border: "none",
                 }}
               >
+                {newWorkbookCategoryIds.has(cat.id) && (
+                  // 가운데 정렬하면 첫 칸(화면 왼쪽 끝)에서 말풍선이 잘린다 →
+                  // 버튼 왼쪽에 맞추고 꼬리만 아이콘 가운데로 보낸다.
+                  <span style={{
+                    position: "absolute", left: 0, bottom: "calc(100% + 2px)",
+                    zIndex: 3, pointerEvents: "none",
+                  }}>
+                    <NudgeBubble icon="book-cover" text="새로운 문제집" compact tailAlign="start" tailInset={28} />
+                  </span>
+                )}
                 {/* 아이콘 + 인기 뱃지(버튼 끝이 아니라 아이콘 원 우상단에 붙임) */}
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   {cat.isPopular && (
