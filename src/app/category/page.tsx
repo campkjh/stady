@@ -44,11 +44,22 @@ function CategoryContent() {
   const [workbooks, setWorkbooks] = useState<Workbook[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 과목 탭은 문제집이 있는 과목만 띄운다(홈 과목 버튼과 같은 규칙).
+  // 없는 과목을 눌러 봐야 "등록된 문제집이 없습니다"만 나온다.
   useEffect(() => {
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((data) => setCategories(data.categories || []))
-      .catch(() => setCategories([]));
+    Promise.all([
+      fetch("/api/categories").then((r) => r.json()).catch(() => ({ categories: [] })),
+      fetch("/api/workbooks").then((r) => r.json()).catch(() => ({ workbooks: [] })),
+    ]).then(([catData, wbData]) => {
+      const withWorkbook = new Set(
+        ((wbData.workbooks || []) as { categoryId: string }[]).map((w) => w.categoryId)
+      );
+      setCategories(
+        ((catData.categories || []) as Category[]).filter(
+          (c) => c.name === "전체" || withWorkbook.has(c.id)
+        )
+      );
+    });
   }, []);
 
   useEffect(() => {
