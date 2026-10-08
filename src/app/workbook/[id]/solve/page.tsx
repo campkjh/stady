@@ -90,6 +90,10 @@ export default function SolvePage() {
       setLoading(true);
       try {
         const res = await fetch(`/api/workbooks/${id}`);
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          if (body?.premiumRequired) { router.replace("/subscribe"); return; }
+        }
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
         let nextWorkbook = data.workbook as Workbook;

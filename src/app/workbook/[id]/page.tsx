@@ -72,6 +72,11 @@ export default function WorkbookDetailPage() {
     async function fetchData() {
       try {
         const res = await fetch(`/api/workbooks/${id}`);
+        // 프리미엄 전용 문제집 — 구독 안내로 보낸다(서버가 문제·정답을 안 내려준다).
+        if (res.status === 403) {
+          const body = await res.json().catch(() => ({}));
+          if (body?.premiumRequired) { router.replace("/subscribe"); return; }
+        }
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setWorkbook(data.workbook);

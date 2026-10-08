@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { isWorkbookLocked, viewerHasPremiumAccess } from "@/lib/premiumGate";
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +9,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    // 프리미엄 전용 문제집(엘리트 모의고사 등)은 문제·정답을 아예 내려보내지 않는다.
+    if ((await isWorkbookLocked(id)) && !(await viewerHasPremiumAccess())) {
+      return NextResponse.json(
+        { error: "프리미엄 구독이 필요한 콘텐츠예요.", premiumRequired: true },
+        { status: 403 }
+      );
+    }
 
     const workbook = await prisma.workbook.findUnique({
       where: { id },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { ensureInitialWorkbookDataRemoved } from "@/lib/workbook-cleanup";
+import { getPremiumWorkbookIds } from "@/lib/premiumGate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,11 +16,16 @@ export async function GET(request: NextRequest) {
     if (categoryId) where.categoryId = categoryId;
     if (search) where.title = { contains: search };
 
-    const workbooks = await prisma.workbook.findMany({
-      where,
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const [rows, premiumIds] = await Promise.all([
+      prisma.workbook.findMany({
+        where,
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      getPremiumWorkbookIds(),
+    ]);
+    // 목록은 누구나 본다(카드까지 숨기지는 않는다). 들어갈 때 상세 API 가 막는다.
+    const workbooks = rows.map((w) => ({ ...w, isPremium: premiumIds.has(w.id) }));
 
     return NextResponse.json({ workbooks });
   } catch (error) {

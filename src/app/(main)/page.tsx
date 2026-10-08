@@ -39,7 +39,14 @@ export default async function HomePage() {
     listMockExams(true),
   ]);
 
-  const categories = categoriesRaw.filter((c) => c.name !== "전체");
+  // 홈의 과목 버튼은 그 과목의 '문제집' 목록으로 가는 입구다. 문제집이 없는 과목은
+  // 눌러도 "등록된 문제집이 없습니다"만 나오므로, 문제집이 있는 과목만 띄운다.
+  // (지금은 생활과윤리만 해당 — 사회문화·윤리와사상·통합사회는 자동으로 숨는다.
+  //  나중에 그 과목에 문제집을 등록하면 따로 손대지 않아도 다시 나타난다.)
+  const categoryIdsWithWorkbook = new Set(workbooks.map((w) => w.categoryId));
+  const categories = categoriesRaw.filter(
+    (c) => c.name !== "전체" && categoryIdsWithWorkbook.has(c.id)
+  );
   const isAdmin = user?.role === "admin" || isMasterAdminEmail(user?.email);
 
   // 프리미엄 접근 여부 + 잠금 OX 세트 — 홈의 모의고사/생윤·윤사 카드 잠금 표시용.

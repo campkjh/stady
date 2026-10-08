@@ -18,6 +18,7 @@ interface Workbook {
   categoryId: string;
   totalQuestions: number;
   questionPerPage: number;
+  isPremium?: boolean;
 }
 
 const GRADIENTS = [
@@ -173,6 +174,7 @@ function CategoryContent() {
               style={{ textAlign: "left", background: "none", border: "none" }}
             >
               <div style={{
+                position: "relative",
                 aspectRatio: "3/4",
                 borderRadius: 8,
                 overflow: "hidden",
@@ -185,6 +187,22 @@ function CategoryContent() {
                   <img src={wb.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <img src="/icons/book-cover.svg" alt="" style={{ width: "60%", opacity: 0.8 }} />
+                )}
+                {wb.isPremium && (
+                  <span
+                    aria-label="프리미엄 전용"
+                    style={{
+                      position: "absolute", top: 6, left: 6, display: "inline-flex", alignItems: "center", gap: 3,
+                      background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 7px",
+                      fontSize: 10, fontWeight: 800,
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M7 10V8a5 5 0 0110 0v2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+                      <rect x="5" y="10" width="14" height="9" rx="2.5" fill="#fff" />
+                    </svg>
+                    프리미엄
+                  </span>
                 )}
               </div>
               <div style={{ paddingTop: 8 }}>
