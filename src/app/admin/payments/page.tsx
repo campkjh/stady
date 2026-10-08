@@ -123,8 +123,9 @@ export default function AdminPaymentsPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [revoking, setRevoking] = useState<string | null>(null);
-  // 스토어 수수료율 — 애플 소규모 개발자/구글 첫 100만$ 구간이면 15%, 아니면 30%.
-  const [feePct, setFeePct] = useState<15 | 30>(30);
+  // 스토어 수수료율 — 애플 소규모 개발자/구글 첫 100만$ 구간이라 지금은 둘 다 15%.
+  // (연 매출 100만 달러를 넘기면 30% 로 올려 보면 된다.)
+  const [feePct, setFeePct] = useState<15 | 30>(15);
   // 정산 상세는 기본 접어두고, 접힌 상태에선 핵심 수치 2개만 나란히 보여준다.
   const [revenueOpen, setRevenueOpen] = useState(false);
 

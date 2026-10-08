@@ -10,8 +10,9 @@ import type { Platform } from "@/lib/iap/types";
 // 전체 어드민이 아니라 **이 계정에서만** 보인다. 다른 어드민에게는 응답에 담기지도 않는다.
 // 어드민은 ADMIN_EMAILS 로 2명인데, 정산은 마스터 계정 한 명만 본다.
 export const OWNER_SETTLEMENT_EMAIL = MASTER_ADMIN_EMAIL;
-// 스토어 수수료율. 안드로이드(구글 플레이) 15%, 애플 앱스토어 30%.
-export const STORE_FEE_PCT: Record<Platform, number> = { google: 15, apple: 30 };
+// 스토어 수수료율. 애플 소규모 개발자 프로그램·구글 플레이 첫 100만 달러 구간은 둘 다 15%.
+// (연 매출 100만 달러를 넘기면 그 초과분부터 30% 라 그때 바꿔야 한다.)
+export const STORE_FEE_PCT: Record<Platform, number> = { google: 15, apple: 15 };
 // 스토어 수수료를 뗀 정산액에서 내가 받는 비율.
 export const OWNER_SHARE_PCT = 8;
 
@@ -86,7 +87,7 @@ export interface AdminChurn {
 }
 
 // 정산 추정. 스토어 수수료율은 프로그램 가입 여부(애플 소규모 개발자/구글 첫 100만$)에
-// 따라 15% 또는 30% 라 서버는 총액만 주고, 화면에서 비율을 골라 환산한다.
+// 따라 15% 또는 30% 라 서버는 총액만 주고, 화면에서 비율을 골라 환산한다(기본 15%).
 export interface AdminRevenue {
   grossKrw: number; // 누적 결제액(환불·샌드박스 제외)
   googleGrossKrw: number;
