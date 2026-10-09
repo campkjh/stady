@@ -25,6 +25,7 @@ const SUBJECT = {
   "물리학": "sci-physics1", "화학": "sci-chem1",
   "생명과학": "sci-bio1", "지구과학": "sci-earth1",
   "사회·문화": "soc-culture",
+  "사회 문화": "soc-culture",
 };
 // 표시용 라벨(앱 과목 label 과 동일하게)
 const LABEL = {
