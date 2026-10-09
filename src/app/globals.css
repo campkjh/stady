@@ -1402,3 +1402,142 @@ label {
   .blind-noise::before { animation: none; }
   .blind-noise::after { animation: none; opacity: 0; }
 }
+
+/* ─── 홈 "새로운 문제집" 말풍선 ──────────────────────────────────────────
+   프리티풀 홈 퀵매칭 말풍선(globals .qm-bubble*)을 **디자인·움직임 그대로** 옮겼다.
+   값은 토스 화면 실측 그대로다 — 모서리 26·꼬리 28×12.5, 등장은 녹화를 30fps 로 재서
+   구간을 이어 붙인 것(linear). 숫자를 손대려면 프리티풀 쪽과 같이 볼 것.
+   · 뒤 흐림(backdrop-filter)은 조상에 filter·opacity<1·mask 가 있으면 안 먹는다(Backdrop Root)
+     → 바깥 칸은 transform 만 움직이고 투명도는 흐림을 가진 유리에 직접 건다.
+   · 바탕은 꼬리+몸통 한 장(components/TossBubble.tsx) — 따로 흐리면 만나는 자리에 선이 생긴다.
+   · 여기선 말풍선이 대상 **위**에 떠서 꼬리가 아래를 본다(.is-tail-down) — 프리티풀은 반대. */
+.qm-bubble {
+  position: absolute; z-index: 20;
+  transform-origin: var(--tail-x, 64px) 0;
+  animation: qmBubblePop 1s linear both;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none;
+}
+.qm-bubble.is-tail-down { transform-origin: var(--tail-x, 64px) 100%; animation-name: qmBubblePopDown; }
+.qm-bubble-shadow, .qm-bubble-glass { animation: qmBubbleFade 1s linear both; }
+.qm-bubble.is-out { animation: qmBubbleOut 0.18s cubic-bezier(0.4, 0, 1, 1) both; pointer-events: none; }
+.qm-bubble.is-out .qm-bubble-shadow,
+.qm-bubble.is-out .qm-bubble-glass,
+.qm-bubble.is-out .qm-bubble-body { animation: qmBubbleFadeOut 0.18s cubic-bezier(0.4, 0, 1, 1) both; }
+/* 그림자 — 몸통 자리에만, 아래로 아주 옅게(음수 spread 로 위·옆 번짐 최소) */
+.qm-bubble-shadow {
+  position: absolute; top: 13px; left: 0; right: 0; bottom: 0; display: block; border-radius: 26px;
+  box-shadow: 0 14px 30px -12px rgba(22, 38, 72, 0.16), 0 4px 14px -6px rgba(22, 38, 72, 0.07);
+}
+.qm-bubble.is-tail-down .qm-bubble-shadow { top: 0; bottom: 13px; }
+/* 유리 — 꼬리 쪽이 옅은 푸른 흰색 80%, 몸통으로 가며 불투명해진다 */
+.qm-bubble-glass {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: block;
+  background: linear-gradient(180deg,
+    rgba(250, 252, 255, 0.8) 0%, rgba(250, 252, 255, 0.8) 14%, rgba(251, 252, 255, 0.84) 21%,
+    rgba(252, 253, 255, 0.9) 27%, rgba(253, 254, 255, 0.96) 31.5%, #FEFEFE 35%, #FEFEFE 100%);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2); backdrop-filter: blur(12px) saturate(1.2);
+}
+.qm-bubble.is-tail-down .qm-bubble-glass {
+  background: linear-gradient(0deg,
+    rgba(250, 252, 255, 0.8) 0%, rgba(250, 252, 255, 0.8) 14%, rgba(251, 252, 255, 0.84) 21%,
+    rgba(252, 253, 255, 0.9) 27%, rgba(253, 254, 255, 0.96) 31.5%, #FEFEFE 35%, #FEFEFE 100%);
+}
+[data-theme="dark"] .qm-bubble-glass,
+[data-theme="dark"] .qm-bubble.is-tail-down .qm-bubble-glass {
+  background: linear-gradient(0deg, rgba(42, 42, 51, 0.86) 0%, rgba(42, 42, 51, 0.86) 20%, #2A2A33 38%, #2A2A33 100%);
+}
+.qm-bubble-body { position: relative; margin-top: 13px; padding: 13px 42px 12px 64px; }
+.qm-bubble.is-tail-down .qm-bubble-body { margin-top: 0; margin-bottom: 13px; }
+.qm-bubble-ic { position: absolute; left: 21px; top: 50%; width: 28px; height: 28px; margin-top: -14px; display: block; animation: qmBubbleIcon 1s linear both; }
+.qm-bubble.is-tail-down .qm-bubble-ic { margin-top: -20px; }
+.qm-bubble-ic svg { display: block; }
+.qm-bubble-title, .qm-bubble-sub, .qm-bubble-x { animation: qmBubbleContent 1s linear both; }
+/* 제목 — 앞쪽은 파랑에서 남색으로 짙어지다 44~48% 에서 검은 본문으로 */
+.qm-bubble-title {
+  width: fit-content; max-width: 100%; margin: 0;
+  font-size: 17px; font-weight: 700; line-height: 1.42; letter-spacing: -0.3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: linear-gradient(90deg,
+    #2955B5 0%, #2851AA 4%, #274B9C 8%, #254692 12%, #25438C 16%, #223E7C 20%, #20396F 24%,
+    #1F3565 28%, #1D2F57 32%, #1C2E50 36%, #1C2943 40%, #1B2535 44%, #191F28 48%, #191F28 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+}
+[data-theme="dark"] .qm-bubble-title {
+  background: linear-gradient(90deg, #7FB0FF 0%, #9CC3FF 30%, #E7EAF0 48%, #E7EAF0 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+.qm-bubble-sub { margin: 4.5px 0 0; font-size: 15px; font-weight: 500; line-height: 1.42; letter-spacing: -0.2px; color: #6B7684; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-theme="dark"] .qm-bubble-sub { color: #A7ACB6; }
+.qm-bubble-x {
+  position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 9999px;
+  display: flex; align-items: center; justify-content: center; background: #E0E3E9; color: #9398A3; cursor: pointer;
+}
+.qm-bubble-x::before { content: ''; position: absolute; top: -10px; right: -10px; bottom: -10px; left: -10px; }
+@keyframes qmBubblePop {
+  0%    { transform: translateY(-10px) scale(0.53, 0.16); }
+  3.3%  { transform: translateY(-9.5px) scale(0.8, 0.6); }
+  6.7%  { transform: translateY(-9px) scale(0.85, 0.62); }
+  8.3%  { transform: translateY(-8.5px) scale(0.86, 0.66); }
+  10%   { transform: translateY(-8px) scale(0.92, 0.85); }
+  13.3% { transform: translateY(-6.5px) scale(0.96, 0.92); }
+  15%   { transform: translateY(-5px) scale(0.99, 1); }
+  18.3% { transform: translateY(-3px) scale(1.003); }
+  20%   { transform: translateY(-0.7px) scale(1.01); }
+  21.7% { transform: translateY(1.3px) scale(1.013); }
+  23.3% { transform: translateY(3px) scale(1.013); }
+  25%   { transform: translateY(4px) scale(1.013); }
+  31.7% { transform: translateY(6.3px) scale(1.009); }
+  38.3% { transform: translateY(5.7px) scale(1.004); }
+  41.7% { transform: translateY(4.3px) scale(1.002); }
+  45%   { transform: translateY(3.3px) scale(1); }
+  48.3% { transform: translateY(2.3px) scale(1); }
+  51.7% { transform: translateY(1.3px) scale(1); }
+  55%   { transform: translateY(0.7px) scale(1); }
+  70%   { transform: translateY(0.2px) scale(1); }
+  100%  { transform: translateY(0) scale(1); }
+}
+/* 꼬리가 아래인 판 — 위 값의 세로 방향만 뒤집었다. */
+@keyframes qmBubblePopDown {
+  0%    { transform: translateY(10px) scale(0.53, 0.16); }
+  3.3%  { transform: translateY(9.5px) scale(0.8, 0.6); }
+  6.7%  { transform: translateY(9px) scale(0.85, 0.62); }
+  8.3%  { transform: translateY(8.5px) scale(0.86, 0.66); }
+  10%   { transform: translateY(8px) scale(0.92, 0.85); }
+  13.3% { transform: translateY(6.5px) scale(0.96, 0.92); }
+  15%   { transform: translateY(5px) scale(0.99, 1); }
+  18.3% { transform: translateY(3px) scale(1.003); }
+  20%   { transform: translateY(0.7px) scale(1.01); }
+  21.7% { transform: translateY(-1.3px) scale(1.013); }
+  23.3% { transform: translateY(-3px) scale(1.013); }
+  25%   { transform: translateY(-4px) scale(1.013); }
+  31.7% { transform: translateY(-6.3px) scale(1.009); }
+  38.3% { transform: translateY(-5.7px) scale(1.004); }
+  41.7% { transform: translateY(-4.3px) scale(1.002); }
+  45%   { transform: translateY(-3.3px) scale(1); }
+  48.3% { transform: translateY(-2.3px) scale(1); }
+  51.7% { transform: translateY(-1.3px) scale(1); }
+  55%   { transform: translateY(-0.7px) scale(1); }
+  70%   { transform: translateY(-0.2px) scale(1); }
+  100%  { transform: translateY(0) scale(1); }
+}
+@keyframes qmBubbleFade {
+  0% { opacity: 0.2; } 3.3% { opacity: 0.42; } 6.7% { opacity: 0.55; } 8.3% { opacity: 0.62; } 10% { opacity: 0.72; }
+  13.3% { opacity: 0.86; } 15% { opacity: 0.95; } 18.3% { opacity: 1; } 100% { opacity: 1; }
+}
+/* 아이콘·글씨는 말풍선보다 늦게 진해진다(0.38초) */
+@keyframes qmBubbleContent {
+  0% { opacity: 0; } 6.7% { opacity: 0.3; } 15% { opacity: 0.55; } 26.7% { opacity: 0.8; } 31.7% { opacity: 0.9; } 38.3% { opacity: 1; } 100% { opacity: 1; }
+}
+@keyframes qmBubbleIcon {
+  0% { opacity: 0; transform: scale(0.72) rotate(-10deg); }
+  15% { opacity: 0.55; transform: scale(0.9) rotate(-6deg); }
+  30% { opacity: 0.9; transform: scale(1.08) rotate(3deg); }
+  42% { opacity: 1; transform: scale(0.98) rotate(-1deg); }
+  55% { transform: scale(1) rotate(0); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes qmBubbleOut { from { transform: none; } to { transform: translateY(6px) scale(0.9, 0.7); } }
+@keyframes qmBubbleFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .qm-bubble, .qm-bubble * { animation: none !important; }
+}

@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import SurveyGate from "@/components/SurveyGate";
 import NoticePopup from "@/components/NoticePopup";
 import IntroBannerCarousel from "@/components/IntroBannerCarousel";
-import NudgeBubble from "@/components/NudgeBubble";
+import NewWorkbookBubble from "@/components/NewWorkbookBubble";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
 import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
@@ -353,6 +353,9 @@ export default function HomeClient({
   isPremiumUser,
 }: HomeClientProps) {
   const router = useRouter();
+  // '새로운 문제집' 말풍선 자리 계산용 — 과목 줄(기준 칸)과 가리킬 과목 버튼.
+  const catRowRef = useRef<HTMLDivElement>(null);
+  const freshCatRef = useRef<HTMLButtonElement>(null);
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
   const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
@@ -430,9 +433,10 @@ export default function HomeClient({
 
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
   // 7일 안에 올라온 문제집이 있는 과목 — 홈 과목 버튼 위 말풍선용.
-  const newWorkbookCategoryIds = new Set(
-    workbooks.filter((w) => isNewCreatedAt(w.createdAt)).map((w) => w.categoryId)
-  );
+  // 여러 과목에 걸쳐 있으면 가장 최근 것 하나만 알린다(말풍선이 겹치지 않게).
+  const freshWorkbook = workbooks
+    .filter((w) => isNewCreatedAt(w.createdAt))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   const newQuizzes = [
     ...oxQuizSets.filter((q) => isNewCreatedAt(q.createdAt)).map((q) => ({ key: `ox:${q.id}`, type: "ox" as const, id: q.id, title: q.title, totalQuestions: q.totalQuestions, isPopular: q.isPopular, createdAt: q.createdAt, answerRate: q.answerRate ?? null, isPremium: q.isPremium ?? false })),
@@ -582,13 +586,22 @@ export default function HomeClient({
 
       <div className="home-main">
       {/* Category Grid */}
-      {/* 최근 올라온 문제집이 있는 과목에는 버튼 위로 '새로운 문제집' 말풍선을 띄운다.
-          기준은 OX·단어의 NEW 배지와 같은 7일. 말풍선이 들어갈 자리만큼 위를 띄운다. */}
-      <div className="fade-in-up fade-in-up-2" style={{ padding: `${newWorkbookCategoryIds.size > 0 ? 34 : 0}px 10px 16px` }}>
+      {/* 최근(7일) 올라온 문제집이 있으면 그 과목 버튼 위로 말풍선을 띄운다.
+          말풍선은 절대 배치라 위 배너 위에 겹쳐 뜬다(유리라 뒤가 비친다) — 자리를 따로 비우지 않는다. */}
+      <div ref={catRowRef} className="fade-in-up fade-in-up-2" style={{ position: "relative", padding: "0 10px 16px" }}>
+        {freshWorkbook && (
+          <NewWorkbookBubble
+            containerRef={catRowRef}
+            anchorRef={freshCatRef}
+            categoryId={freshWorkbook.categoryId}
+            subtitle={`${freshWorkbook.category?.name ?? ""} · ${freshWorkbook.title}`}
+          />
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {categories.map((cat) => (
               <button
                 key={cat.id}
+                ref={cat.id === freshWorkbook?.categoryId ? freshCatRef : undefined}
                 type="button"
                 onClick={() => router.push(`/category?id=${cat.id}`)}
                 className="cat-btn"
@@ -602,16 +615,6 @@ export default function HomeClient({
                   border: "none",
                 }}
               >
-                {newWorkbookCategoryIds.has(cat.id) && (
-                  // 가운데 정렬하면 첫 칸(화면 왼쪽 끝)에서 말풍선이 잘린다 →
-                  // 버튼 왼쪽에 맞추고 꼬리만 아이콘 가운데로 보낸다.
-                  <span style={{
-                    position: "absolute", left: 0, bottom: "calc(100% + 2px)",
-                    zIndex: 3, pointerEvents: "none",
-                  }}>
-                    <NudgeBubble icon="book-cover" text="새로운 문제집" compact tailAlign="start" tailInset={28} />
-                  </span>
-                )}
                 {/* 아이콘 + 인기 뱃지(버튼 끝이 아니라 아이콘 원 우상단에 붙임) */}
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   {cat.isPopular && (

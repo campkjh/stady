@@ -230,14 +230,16 @@ export default function MockExamCover({
       </g>
 
       {/* 스타디 로고 — 봉투 색 위에 흰색으로 */}
+      {/* CSS filter 로 흰색을 만들면 일부 WebView 에서 안 먹어 파란 로고가 그대로 나온다
+          → 흰색만 들어간 별도 파일을 쓴다. */}
       <image
-        href="/icons/stady-logo.svg"
+        href="/icons/stady-logo-white.svg"
         x="212"
         y="368"
         width="64"
         height="23"
         preserveAspectRatio="xMaxYMid meet"
-        style={{ filter: "brightness(0) invert(1)", opacity: 0.95 }}
+        opacity="0.95"
       />
     </svg>
   );
