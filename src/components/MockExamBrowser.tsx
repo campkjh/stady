@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import MockExamCover from "@/components/MockExamCover";
 import { SUBJECT_GROUPS, EXAM_MONTHS, findSubject } from "@/lib/examSubjects";
 
 export interface BrowserExam {
@@ -174,15 +175,17 @@ export default function MockExamBrowser({
                 <div key={ex.id} className="mx-item-wrap">
                   <Link href={locked ? "/subscribe" : `/mock-exam/${ex.id}`} className="hover-lift mx-item">
                     <div className="mx-thumb">
-                      {ex.coverUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={ex.coverUrl} alt="" loading="lazy" decoding="async" style={locked ? { filter: "grayscale(0.4) brightness(0.92)" } : undefined} />
-                      ) : (
-                        <span className="mx-thumb-empty"><img src="/icons/toss/file.svg" alt="" style={{ width: 28, height: 28 }} /></span>
-                      )}
-                      {/* 스타디 워터마크 — 시험지(흰 바탕) 위라 회색으로 빼서 옅게 얹는다. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/icons/stady-logo.svg" alt="" aria-hidden="true" className="mx-wm" />
+                      {/* 시험지 1쪽 대신 봉투 표지를 그린다(연도=색, 과목=무늬).
+                          로고가 표지 안에 들어가 있어 따로 워터마크를 얹지 않는다. */}
+                      <div className="mx-cover" style={locked ? { filter: "grayscale(0.45) brightness(0.95)" } : undefined}>
+                        <MockExamCover
+                          title={ex.title}
+                          subject={ex.subject}
+                          year={ex.year}
+                          month={ex.month}
+                          pageCount={ex.pageCount}
+                        />
+                      </div>
                       {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
                       {locked && (
                         <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
@@ -314,14 +317,9 @@ function BrowserStyles() {
         border: 1px solid var(--c-bg-muted-6); background: var(--c-bg-muted); box-shadow: 0 4px 14px rgba(15,23,42,0.06);
       }
       .mx-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      /* 썸네일 우측 하단 워터마크. 표지 이미지 규칙(cover·100%)보다 선택자가 구체적이라 덮어쓴다. */
-      .mx-thumb .mx-wm {
-        position: absolute; right: 7px; bottom: 6px;
-        width: 40px; height: auto;
-        filter: grayscale(100%);
-        opacity: 0.3;
-        pointer-events: none;
-      }
+      /* 봉투 표지(SVG)는 썸네일을 꽉 채운다. */
+      .mx-thumb .mx-cover { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+      .mx-thumb .mx-cover svg { width: 100%; height: 100%; display: block; }
       .mx-thumb-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--c-text-5); font-size: 30px; }
       .mx-badge {
         position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
@@ -387,7 +385,10 @@ function BrowserStyles() {
         .mx-pchip.is-on { background: var(--c-brand-soft-7); color: var(--c-brand-deep); font-weight: 800; }
         @keyframes mxPanelRight { from { opacity: 0; transform: translateX(-10px) } to { opacity: 1; transform: translateX(0) } }
 
-        .mx-shell:not(.is-embedded) .mx-main { padding-left: 14px; }
+        /* 목록은 늘 마지막(1fr) 칸에 둔다. 가운데 auto 칸은 필터 패널 자리라 패널이 닫히면
+           0이 된다 — main 을 그 칸에 두면 내용의 고유 너비만큼만 벌어진다(표지를 <img>에서
+           SVG 로 바꾸자 고유 너비가 사라져 한 줄로 쪼그라들었다). */
+        .mx-shell:not(.is-embedded) .mx-main { grid-column: 3; padding-left: 14px; }
         .mx-shell:not(.is-embedded) .mx-result-head { padding: 8px 6px 10px; }
         .mx-shell:not(.is-embedded) .mx-reset-wide {
           display: inline-block; border: none; background: none; color: var(--c-text-4b);
