@@ -86,7 +86,7 @@ export default function OxQuizListPage() {
 
   if (loading) {
     return (
-      <div style={{ position: "fixed", inset: 0, backgroundColor: "var(--ox-intro-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="oxi-bg" style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
       </div>
     );
@@ -111,7 +111,7 @@ export default function OxQuizListPage() {
 
 
   return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", backgroundColor: "var(--ox-intro-bg)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div className="oxi-bg" style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
         onClick={() => selectedGroup ? setSelectedGroupName(null) : router.back()}
@@ -151,13 +151,10 @@ export default function OxQuizListPage() {
                 key={group.name}
                 type="button"
                 onClick={() => requireLoginThen(() => setSelectedGroupName(group.name))}
-                className="press"
+                className={`press oxi-card${allDone ? " is-done" : ""}`}
                 style={{
                   width: "100%", padding: "20px 18px", borderRadius: 18,
-                  backgroundColor: allDone ? "var(--c-brand-soft-2)" : "var(--c-bg)",
-                  border: `1.5px solid ${allDone ? "var(--c-brand-line-10)" : "transparent"}`,
-                  color: "var(--c-text-2)", textAlign: "center",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
+                  textAlign: "center", flexShrink: 0,
                   animation: "quizItemFadeUp 0.5s",
                 }}
               >
@@ -166,11 +163,11 @@ export default function OxQuizListPage() {
                   {allDone && (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                       <img src="/icons/quiz-allclear.svg" alt="" width={18} height={18} style={{ display: "block" }} />
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>전체 완료</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#8FC0FF" }}>전체 완료</span>
                     </span>
                   )}
                 </span>
-                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--c-text-4)" }}>
+                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.62)" }}>
                   {group.items.length}개 중분류 · {totalQuestions}문항
                   {doneCount > 0 && (
                     <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>
@@ -208,42 +205,39 @@ export default function OxQuizListPage() {
                       key={qs.id}
                       type="button"
                       onClick={() => openSet(qs)}
-                      className="press"
+                      className={`press oxi-card${completed ? " is-done" : ""}`}
                       style={{
                         position: "relative", overflow: "hidden",
                         width: "100%", padding: "16px 18px", borderRadius: 18,
-                        backgroundColor: completed ? "var(--c-brand-soft-2)" : "var(--c-bg)",
-                        border: `1.5px solid ${completed ? "var(--c-brand-line-10)" : "transparent"}`,
-                        color: "var(--c-text-2)", textAlign: "left",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.1)", flexShrink: 0,
+                        textAlign: "left", flexShrink: 0,
                         animation: "quizItemFadeUp 0.5s",
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center", opacity: locked ? 0.85 : 1 }}>
                         {locked && (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="var(--c-text-4)" strokeWidth="2" strokeLinecap="round" />
-                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="var(--c-text-4)" />
+                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" />
+                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="rgba(255,255,255,0.6)" />
                           </svg>
                         )}
                         <span>{qs.title}</span>
                         {locked && (
-                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "var(--c-warn-i-deep, #B8860B)", background: "var(--c-warn-i, #FFF3D6)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
+                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#FFD88A", background: "rgba(255,200,90,0.18)", border: "1px solid rgba(255,200,90,0.36)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
                         )}
                         {completed && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                             <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
-                            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--c-brand)" }}>완료</span>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: "#8FC0FF" }}>완료</span>
                           </span>
                         )}
                       </span>
-                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--c-text-4)", textAlign: "center" }}>
+                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.62)", textAlign: "center" }}>
                         {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{denom}문항
                         {completed && stat?.bestPct != null && (
-                          <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                          <span style={{ color: "#8FC0FF", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
                         )}
                         {inProgress && (
-                          <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
+                          <span style={{ color: "#8FC0FF", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
                         )}
                       </span>
                       {sections.length > 0 && (
@@ -255,8 +249,9 @@ export default function OxQuizListPage() {
                                 padding: "4px 8px",
                                 borderRadius: 999,
                                 // 완료 카드는 배경이 이미 brand-soft-2 라 칩이 묻힌다 → 카드 면색으로 뒤집는다.
-                                backgroundColor: completed ? "var(--c-bg)" : "var(--c-brand-soft-2)",
-                                color: "var(--c-brand)",
+                                backgroundColor: "rgba(143,192,255,0.16)",
+                                border: "1px solid rgba(143,192,255,0.28)",
+                                color: "#8FC0FF",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -269,8 +264,8 @@ export default function OxQuizListPage() {
                               padding: "4px 8px",
                               borderRadius: 999,
                               // 넘침 칩도 일반 칩과 같은 completed 분기 → 완료 카드에서 배경에 묻히지 않는다.
-                              backgroundColor: completed ? "var(--c-bg)" : "var(--c-bg-muted)",
-                              color: "var(--c-text-4)",
+                              backgroundColor: "rgba(255,255,255,0.1)",
+                              color: "rgba(255,255,255,0.66)",
                               fontSize: 11,
                               fontWeight: 700,
                             }}>
@@ -282,11 +277,11 @@ export default function OxQuizListPage() {
                       {inProgress && (
                         <span style={{
                           position: "absolute", left: 0, right: 0, bottom: 0, height: 4,
-                          display: "block", backgroundColor: "var(--c-bg-muted)",
+                          display: "block", backgroundColor: "rgba(255,255,255,0.14)",
                         }}>
                           <span style={{
                             display: "block", height: "100%", width: `${progressPct}%`,
-                            background: "linear-gradient(90deg, var(--c-brand) 0%, var(--c-brand-deep-7) 100%)",
+                            background: "linear-gradient(90deg, #8FC0FF 0%, #4A86E8 100%)",
                           }} />
                         </span>
                       )}
@@ -308,10 +303,31 @@ export default function OxQuizListPage() {
       </div>
 
       <style>{`
-        /* 인트로 배경은 브랜드 색이라 테마와 무관하게 두고 싶지만, 카드는 테마를 따르므로
-           다크에서 '밝은 하늘색 배경 + 검은 카드'가 되어 부딪힌다. 배경만 같은 색상의 어두운 톤으로 낮춘다. */
-        :root { --ox-intro-bg: #7BC5E8; }
-        [data-theme="dark"] { --ox-intro-bg: #14313F; }
+        /* 인트로는 브랜드 화면이라 테마와 상관없이 한 벌로 간다(짙은 잉크 + 유리).
+           카드도 테마 토큰 대신 이 화면 전용 유리 값을 쓴다 — 밝은 테마에서 흰 카드가
+           짙은 배경 위에 떠서 부딪히던 문제가 애초에 안 생긴다.
+           --ox-intro-bg 는 아래쪽 페이드가 배경과 같은 색이어야 해서 남겨 둔다. */
+        :root, [data-theme="dark"] { --ox-intro-bg: #0A1420; }
+        .oxi-bg {
+          background:
+            radial-gradient(60% 42% at 24% 16%, rgba(66, 146, 255, 0.30) 0%, rgba(66, 146, 255, 0) 70%),
+            radial-gradient(56% 40% at 78% 20%, rgba(255, 86, 86, 0.22) 0%, rgba(255, 86, 86, 0) 70%),
+            radial-gradient(90% 60% at 50% 108%, rgba(24, 68, 110, 0.55) 0%, rgba(10, 20, 32, 0) 70%),
+            linear-gradient(168deg, #0C1A2B 0%, #12293C 46%, #0A1420 100%);
+        }
+        /* 유리 카드 — 뒤 배경(번짐)이 비쳐 보이게 */
+        .oxi-card {
+          background: rgba(255, 255, 255, 0.07);
+          border: 1px solid rgba(255, 255, 255, 0.13);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
+          -webkit-backdrop-filter: blur(16px) saturate(1.15);
+          backdrop-filter: blur(16px) saturate(1.15);
+          color: #EEF4FB;
+        }
+        .oxi-card.is-done {
+          background: rgba(104, 172, 255, 0.16);
+          border-color: rgba(150, 198, 255, 0.46);
+        }
         @keyframes quizItemFadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
