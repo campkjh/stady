@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDailyQuizMessage } from "@/lib/daily-quiz-message";
+import OxHeroScene from "@/components/OxHeroScene";
 
 interface OxQuizSet {
   id: string;
@@ -123,26 +124,9 @@ export default function OxQuizListPage() {
       </button>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px 20px" }}>
-        {/* OX Blocks */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 48, animation: "oxBlockAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-          <div style={{
-            width: 120, height: 120, borderRadius: 24,
-            backgroundColor: "var(--c-brand-deep-7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 12px 28px rgba(46,117,227,0.35)",
-            animation: "oxBounceL 2.2s ease-in-out infinite",
-          }}>
-            <span style={{ fontSize: 90, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>O</span>
-          </div>
-          <div style={{
-            width: 120, height: 120, borderRadius: 24,
-            backgroundColor: "var(--c-danger-k)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 12px 28px rgba(232,69,60,0.35)",
-            animation: "oxBounceR 2.2s ease-in-out 0.3s infinite",
-          }}>
-            <span style={{ fontSize: 90, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -2 }}>X</span>
-          </div>
+        {/* 머리 그림 — 펼친 책 위로 O·X 판이 떠오른다(OxHeroScene) */}
+        <div style={{ marginBottom: 28 }}>
+          <OxHeroScene />
         </div>
 
         <h1 style={{ fontSize: 30, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 12 }}>
@@ -328,18 +312,6 @@ export default function OxQuizListPage() {
            다크에서 '밝은 하늘색 배경 + 검은 카드'가 되어 부딪힌다. 배경만 같은 색상의 어두운 톤으로 낮춘다. */
         :root { --ox-intro-bg: #7BC5E8; }
         [data-theme="dark"] { --ox-intro-bg: #14313F; }
-        @keyframes oxBlockAppear {
-          from { opacity: 0; transform: scale(0.7); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes oxBounceL {
-          0%, 100% { transform: translateY(0) rotate(-2deg); }
-          50% { transform: translateY(-8px) rotate(-4deg); }
-        }
-        @keyframes oxBounceR {
-          0%, 100% { transform: translateY(0) rotate(2deg); }
-          50% { transform: translateY(-8px) rotate(4deg); }
-        }
         @keyframes quizItemFadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
