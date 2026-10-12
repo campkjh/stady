@@ -16,6 +16,7 @@ import { useEntrance } from "@/lib/entrance";
 import PrimeFab from "@/components/PrimeFab";
 import { HeaderBellIcon, HeaderSearchIcon } from "@/components/HeaderIcons";
 import StadyLogo from "@/components/StadyLogo";
+import HomeMockSection from "@/components/HomeMockSection";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
 // 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
@@ -824,6 +825,9 @@ export default function HomeClient({
           </button>
         </section>
         )}
+
+        {/* 모의고사 — 태블릿에서만 홈 맨 아래(폰은 '기출 모의고사' 카드로 진입) */}
+        <HomeMockSection isPremiumUser={isPremiumUser} />
       </div>
       </div>{/* /home-main */}
       </div>{/* /home-body */}
