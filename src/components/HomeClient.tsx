@@ -14,6 +14,7 @@ import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser"
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
 import { useEntrance } from "@/lib/entrance";
+import PrimeFab from "@/components/PrimeFab";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
 // 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
@@ -532,20 +533,11 @@ export default function HomeClient({
               <line x1="20.5" y1="20.5" x2="16.2" y2="16.2" />
             </svg>
           </button>
-          {/* 스타디 프라임 — 미구독은 '구독하기', 구독중이면 '구독중'(그라데이션 알약). */}
-          <button
-            type="button"
-            onClick={() => router.push("/subscribe")}
-            className="press home-prime-btn"
-            aria-label={isPremiumUser ? "스타디 프라임 구독중" : "스타디 프라임 구독하기"}
-            data-on={isPremiumUser ? "1" : undefined}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/stady-mark.webp" alt="" className="home-prime-mark" />
-            {isPremiumUser ? "구독중" : "프라임 구독"}
-          </button>
         </div>
       </div>
+
+      {/* 스타디 프라임 구독 — 헤더가 아니라 네비 위 플로팅(홈에서만, 미구독자에게만) */}
+      {!isPremiumUser && <PrimeFab onClick={() => router.push("/subscribe")} />}
 
       {/* 첫 진입 시 안 본 새 공지 카드 */}
       <NoticeHomeCard />
