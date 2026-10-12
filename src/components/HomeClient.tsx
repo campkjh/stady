@@ -10,7 +10,6 @@ import IntroBannerCarousel from "@/components/IntroBannerCarousel";
 import NewWorkbookBubble from "@/components/NewWorkbookBubble";
 import NoticeHomeCard from "@/components/NoticeHomeCard";
 import DailyQuizCard from "@/components/DailyQuizCard";
-import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
 import { useEntrance } from "@/lib/entrance";
@@ -304,8 +303,6 @@ interface HomeClientProps {
   workbooks: Workbook[];
   oxQuizSets: OxQuizSet[];
   vocabQuizSets: VocabQuizSet[];
-  mockExams: BrowserExam[];
-  mockExamYears: number[];
   isPremiumUser: boolean;
 }
 
@@ -346,8 +343,6 @@ export default function HomeClient({
   workbooks,
   oxQuizSets,
   vocabQuizSets,
-  mockExams,
-  mockExamYears,
   isPremiumUser,
 }: HomeClientProps) {
   const router = useRouter();
@@ -828,20 +823,6 @@ export default function HomeClient({
             }}>구매</span>
           </button>
         </section>
-        )}
-
-        {/* 모의고사 — 목록 화면(/mock-exam)과 같은 분류 탭(시행 연도/월/과목) + 같은 카드.
-            두 화면이 갈라지지 않도록 컴포넌트를 그대로 재사용한다(embedded 로 페이지 여백만 끈다). */}
-        {mockExams.length > 0 && (
-          <section>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.4, color: "var(--c-text-c)", margin: 0 }}>모의고사</h2>
-              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 14, fontWeight: 600, color: "var(--c-text-4)", textDecoration: "none" }}>
-                전체보기 ›
-              </Link>
-            </div>
-            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded limit={6} isPremiumUser={isPremiumUser} />
-          </section>
         )}
       </div>
       </div>{/* /home-main */}

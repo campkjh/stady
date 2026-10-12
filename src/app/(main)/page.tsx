@@ -6,10 +6,6 @@ import { isPremium } from "@/lib/iap/entitlements";
 import { computeSetAnswerRates } from "@/lib/oxAnswerRate";
 import { getLockedOxSetIds } from "@/lib/premiumGate";
 import HomeClient from "@/components/HomeClient";
-import { type BrowserExam } from "@/components/MockExamBrowser";
-import { listMockExams } from "@/lib/mockExam";
-import { yearOptions } from "@/lib/examSubjects";
-import { examIdsWithQuestions } from "@/lib/mockExamQuestion";
 
 export default async function HomePage() {
   await ensureInitialWorkbookDataRemoved();
@@ -17,7 +13,7 @@ export default async function HomePage() {
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;
 
-  const [user, categoriesRaw, workbooks, oxQuizSets, vocabQuizSets, setRates, mockExamsRaw] = await Promise.all([
+  const [user, categoriesRaw, workbooks, oxQuizSets, vocabQuizSets, setRates] = await Promise.all([
     userId
       ? prisma.user.findUnique({ where: { id: userId }, select: { email: true, nickname: true, role: true, signupSource: true } })
       : null,
@@ -36,7 +32,6 @@ export default async function HomePage() {
     }),
     // OX 세트별 정답률(사용자 응답 집계) — 홈 카드에 표시. 다른 쿼리와 병렬.
     computeSetAnswerRates(),
-    listMockExams(true),
   ]);
 
   // 홈의 과목 버튼은 그 과목의 '문제집' 목록으로 가는 입구다. 문제집이 없는 과목은
@@ -61,33 +56,6 @@ export default async function HomePage() {
     isPremium: lockedOxIds.has(s.id),
   }));
 
-  // 홈 모의고사 섹션은 목록 화면과 같은 분류 탭을 쓰므로 전체를 넘긴다(필터가 골라낸다).
-  // 카드 순서는 최근 회차 먼저, 한 회차 안에서는 목록 화면과 같은 과목 순서(sort_order).
-  // 등록 시각만으로 정렬하면 24과목이 초 단위로 들어간 탓에 과목 순서가 뒤집힌다.
-  const examDay = (d: Date) => d.toISOString().slice(0, 10);
-  const withQuestions = await examIdsWithQuestions(mockExamsRaw.map((e) => e.id));
-  const mockExams: BrowserExam[] = [...mockExamsRaw]
-    .sort((a, b) =>
-      examDay(a.createdAt) === examDay(b.createdAt)
-        ? a.sortOrder - b.sortOrder
-        : examDay(b.createdAt).localeCompare(examDay(a.createdAt))
-    )
-    .map((e) => ({
-      id: e.id,
-      title: e.title,
-      subtitle: e.subtitle,
-      coverUrl: e.imageUrls[0] ?? null,
-      pageCount: e.imageUrls.length,
-      solutionCount: e.solutionImageUrls.length,
-      year: e.year,
-      month: e.month,
-      subject: e.subject,
-      hasQuestions: withQuestions.has(e.id),
-    }));
-  const mockExamYears = yearOptions(
-    mockExamsRaw.map((e) => e.year).filter((y): y is number => typeof y === "number")
-  );
-
   return (
     <HomeClient
       userName={user?.nickname ?? null}
@@ -96,8 +64,6 @@ export default async function HomePage() {
       workbooks={workbooks}
       oxQuizSets={oxQuizSetsWithRate}
       vocabQuizSets={vocabQuizSets}
-      mockExams={mockExams}
-      mockExamYears={mockExamYears}
       isPremiumUser={isPremiumUser}
     />
   );

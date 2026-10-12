@@ -74,8 +74,10 @@ function glyphOf(label: string | null): { big: string; roman: string } {
   return { big: label.trim().charAt(0), roman };
 }
 
-/** 제목을 봉투 오른쪽에 세울 2줄로 자른다("2025학년도 / 9월 모의평가"). */
+/** 제목을 봉투 오른쪽에 세울 2줄로 자른다("2024년 9월 / 모의평가"). 시행 연도 기준 제목("2024년 9월 모의평가")이 기본이다. */
 function splitTitle(title: string): string[] {
+  const ym = title.match(/^(\d+년\s+\d+월)\s+(.*)$/);
+  if (ym) return [ym[1], ym[2]];
   const m = title.match(/^(\S*학년도)\s+(.*)$/);
   if (m) return [m[1], m[2]];
   const parts = title.split(" ");
