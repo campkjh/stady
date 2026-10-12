@@ -25,21 +25,25 @@ const INSET = 10;
 export default function NewWorkbookBubble({
   containerRef,
   anchorRef,
-  categoryId,
+  href,
   subtitle,
+  tail = "up",
   delay = 600,
 }: {
   /** 말풍선 자리를 재는 기준 칸(position: relative) */
   containerRef: RefObject<HTMLDivElement | null>;
   /** 꼬리가 가리킬 대상(과목 버튼) */
   anchorRef: RefObject<HTMLElement | null>;
-  categoryId: string;
+  /** 누르면 갈 곳(엘리트 모의고사 문제집) */
+  href: string;
   subtitle: string;
+  /** 꼬리 방향. up = 말풍선이 대상 아래(프리티풀과 같은 배치), down = 대상 위 */
+  tail?: "up" | "down";
   delay?: number;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"hidden" | "in" | "out">("hidden");
-  const [pos, setPos] = useState<{ bottom: number; tailX: number } | null>(null);
+  const [pos, setPos] = useState<{ offset: number; tailX: number } | null>(null);
   const visible = phase !== "hidden";
 
   useEffect(() => {
@@ -69,8 +73,11 @@ export default function NewWorkbookBubble({
       }
       if (el !== box) return;
       setPos({
-        // 말풍선 아래끝(꼬리 끝)을 대상 위 GAP 만큼 띄운다.
-        bottom: Math.round(box.offsetHeight - y + GAP),
+        // up = 대상 아래에 두고 꼬리가 위를, down = 대상 위에 두고 꼬리가 아래를 가리킨다.
+        offset:
+          tail === "up"
+            ? Math.round(y + anchor.offsetHeight + GAP)
+            : Math.round(box.offsetHeight - y + GAP),
         tailX: Math.round(x + anchor.offsetWidth / 2 - INSET),
       });
     };
@@ -79,7 +86,7 @@ export default function NewWorkbookBubble({
     ro.observe(box);
     ro.observe(anchor);
     return () => ro.disconnect();
-  }, [visible, containerRef, anchorRef]);
+  }, [visible, containerRef, anchorRef, tail]);
 
   if (!visible || !pos) return null;
 
@@ -93,12 +100,17 @@ export default function NewWorkbookBubble({
     setPhase("out");
     window.setTimeout(() => setPhase("hidden"), 200);
   };
-  const go = () => router.push(`/category?id=${categoryId}`);
+  const go = () => router.push(href);
 
   return (
     <div
-      className={`qm-bubble is-tail-down${phase === "out" ? " is-out" : ""}`}
-      style={{ bottom: pos.bottom, left: INSET, right: INSET, "--tail-x": `${pos.tailX}px` } as CSSProperties}
+      className={`qm-bubble${tail === "down" ? " is-tail-down" : ""}${phase === "out" ? " is-out" : ""}`}
+      style={{
+        ...(tail === "up" ? { top: pos.offset } : { bottom: pos.offset }),
+        left: INSET,
+        right: INSET,
+        ["--tail-x" as string]: `${pos.tailX}px`,
+      } as CSSProperties}
       role="link"
       tabIndex={0}
       aria-label={`새로운 문제집, ${subtitle}`}
@@ -107,7 +119,7 @@ export default function NewWorkbookBubble({
     >
       {/* 그림자(몸통 바깥에만 그려져 반투명한 꼬리에 안 비친다) → 유리(꼬리+몸통 한 장) → 글씨 */}
       <span className="qm-bubble-shadow" aria-hidden="true" />
-      <TossBubbleGlass tailX={pos.tailX} side="bottom" />
+      <TossBubbleGlass tailX={pos.tailX} side={tail === "up" ? "top" : "bottom"} />
       <div className="qm-bubble-body">
         <span className="qm-bubble-ic" aria-hidden="true">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">

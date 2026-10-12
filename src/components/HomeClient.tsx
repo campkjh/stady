@@ -305,39 +305,33 @@ interface HomeClientProps {
   isPremiumUser: boolean;
 }
 
-type BannerItem = { title: string; icon: string; bg: string; href: string; iconW?: number; iconH?: number };
+type BannerItem = { title: string; image: string; bg: string; href: string };
+/** 홈 바로가기 4장(2×2). 사장이 준 3D 그림 — 바탕은 그림 색을 아주 옅게 깐다. */
 const BANNER_ITEMS: BannerItem[] = [
   {
     title: "매일매일\nOX 퀴즈",
-    icon: "/icons/banner-ox.svg",
-    bg: "var(--c-brand)",
+    image: "/images/home/shortcut-ox.webp",
+    bg: "#E9F1FF",
     href: "/ox-quiz-intro",
   },
   {
     title: "영단어\n퀴즈",
-    icon: "/icons/banner-vocab.svg",
-    bg: "#A58CFF",
+    image: "/images/home/shortcut-vocab.webp",
+    bg: "#F1ECFF",
     href: "/vocab-quiz-intro",
   },
   {
-    title: "모의고사\n(태블릿)",
-    icon: "/icons/banner-mock.svg",
-    bg: "#F5A623",
+    title: "적중\n모의고사",
+    image: "/images/home/shortcut-mock.webp",
+    bg: "#FFF1E3",
     href: "/mock-exam",
-    iconW: 46,
-    iconH: 46,
   },
   {
-    title: "새로운\n공지사항",
-    icon: "/icons/banner-notice.svg",
-    bg: "#5AD39F",
-    href: "/notice",
-  },
-  {
-    title: "스타디\n자주묻는 질문",
-    icon: "/icons/banner-faq.svg",
-    bg: "#FF9CB2",
-    href: "/faq",
+    title: "엘리트\n모의고사",
+    image: "/images/home/shortcut-elite.webp",
+    bg: "#ECF4E7",
+    // 실제 문제집으로 보낸다(없으면 문제집 목록). id 를 박지 않고 데이터에서 찾는다.
+    href: "",
   },
 ];
 
@@ -353,9 +347,9 @@ export default function HomeClient({
   isPremiumUser,
 }: HomeClientProps) {
   const router = useRouter();
-  // '새로운 문제집' 말풍선 자리 계산용 — 과목 줄(기준 칸)과 가리킬 과목 버튼.
-  const catRowRef = useRef<HTMLDivElement>(null);
-  const freshCatRef = useRef<HTMLButtonElement>(null);
+  // '새로운 문제집' 말풍선 자리 계산용 — 바로가기 묶음(기준 칸)과 가리킬 '엘리트 모의고사' 카드.
+  const shortcutsRef = useRef<HTMLDivElement>(null);
+  const eliteCardRef = useRef<HTMLButtonElement>(null);
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
   const [banners, setBanners] = useState<HomeBanner[]>(() => clientCache.get<HomeBanner[]>("home-banners") ?? []);
   const [popupBanner, setPopupBanner] = useState<HomeBanner | null>(null);
@@ -434,6 +428,9 @@ export default function HomeClient({
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
   // 7일 안에 올라온 문제집이 있는 과목 — 홈 과목 버튼 위 말풍선용.
   // 여러 과목에 걸쳐 있으면 가장 최근 것 하나만 알린다(말풍선이 겹치지 않게).
+  // '엘리트 모의고사' 바로가기가 갈 곳 — id 를 박지 않고 제목으로 찾는다(없으면 문제집 목록).
+  const eliteWorkbook = workbooks.find((w) => w.title.includes("엘리트")) ?? workbooks[0];
+  const eliteHref = eliteWorkbook ? `/workbook/${eliteWorkbook.id}` : "/category";
   const freshWorkbook = workbooks
     .filter((w) => isNewCreatedAt(w.createdAt))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
@@ -542,117 +539,46 @@ export default function HomeClient({
       <div className="home-body">
       {/* Shortcut Cards (태블릿=좌측 스티키 컬럼) */}
       <div className="home-side">
-      <div
-        className="fade-in-up fade-in-up-1 home-shortcuts"
-        style={{ overflowX: "auto", overflowY: "hidden", padding: "0 10px 20px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div className="home-shortcuts-row" style={{ display: "flex", gap: 12, width: "max-content" }}>
-          {BANNER_ITEMS.map((item) => (
-            <button
-              key={item.title}
-              type="button"
-              onClick={() => router.push(item.href)}
-              className="press-deep home-shortcut-card"
-              style={{
-                position: "relative",
-                width: 140,
-                height: 140,
-                backgroundColor: item.bg,
-                borderRadius: 24,
-                border: "none",
-                textAlign: "left",
-                flexShrink: 0,
-                overflow: "hidden",
-              }}
-            >
-              <Image
-                src={item.icon}
-                alt=""
-                width={item.iconW ?? 80}
-                height={item.iconH ?? 53}
-                unoptimized
-                style={{ position: "absolute", top: 16, left: 12 }}
-              />
-              <div style={{ position: "absolute", bottom: 12, left: 12 }}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: "#fff", whiteSpace: "pre-line", lineHeight: 1.3 }}>
-                  {item.title}
-                </p>
-              </div>
-            </button>
-          ))}
+      <div ref={shortcutsRef} className="fade-in-up fade-in-up-1 home-shortcuts" style={{ position: "relative", padding: "0 10px 20px" }}>
+        {freshWorkbook && (
+          <NewWorkbookBubble
+            containerRef={shortcutsRef}
+            anchorRef={eliteCardRef}
+            href={eliteHref}
+            subtitle={`${freshWorkbook.category?.name ?? ""} · ${freshWorkbook.title}`}
+          />
+        )}
+        <div className="home-shortcuts-row">
+          {BANNER_ITEMS.map((item) => {
+            const href = item.href || eliteHref;
+            return (
+              <button
+                key={item.title}
+                ref={item.href === "" ? eliteCardRef : undefined}
+                type="button"
+                onClick={() => router.push(href)}
+                className="press-deep home-shortcut-card"
+                style={{ backgroundColor: item.bg }}
+              >
+                <p className="home-shortcut-title">{item.title}</p>
+                {/* 그림은 칸을 넘칠 만큼 크게 깔고 오른쪽 아래에 붙인다(바탕이 비치는 3D 컷) */}
+                <Image
+                  src={item.image}
+                  alt=""
+                  width={1536}
+                  height={1024}
+                  unoptimized
+                  className="home-shortcut-art"
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
       </div>{/* /home-side */}
 
       <div className="home-main">
-      {/* Category Grid */}
-      {/* 최근(7일) 올라온 문제집이 있으면 그 과목 버튼 위로 말풍선을 띄운다.
-          말풍선은 절대 배치라 위 배너 위에 겹쳐 뜬다(유리라 뒤가 비친다) — 자리를 따로 비우지 않는다. */}
-      <div ref={catRowRef} className="fade-in-up fade-in-up-2" style={{ position: "relative", padding: "0 10px 16px" }}>
-        {freshWorkbook && (
-          <NewWorkbookBubble
-            containerRef={catRowRef}
-            anchorRef={freshCatRef}
-            categoryId={freshWorkbook.categoryId}
-            subtitle={`${freshWorkbook.category?.name ?? ""} · ${freshWorkbook.title}`}
-          />
-        )}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-          {categories.map((cat) => (
-              <button
-                key={cat.id}
-                ref={cat.id === freshWorkbook?.categoryId ? freshCatRef : undefined}
-                type="button"
-                onClick={() => router.push(`/category?id=${cat.id}`)}
-                className="cat-btn"
-                style={{
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  background: "none",
-                  border: "none",
-                }}
-              >
-                {/* 아이콘 + 인기 뱃지(버튼 끝이 아니라 아이콘 원 우상단에 붙임) */}
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  {cat.isPopular && (
-                    <span style={{
-                      position: "absolute", top: -5, right: -8, zIndex: 1,
-                      padding: "1px 6px", borderRadius: 20,
-                      backgroundColor: "var(--c-danger-f)", color: "#fff",
-                      fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
-                      lineHeight: "16px",
-                    }}>인기</span>
-                  )}
-                  <div className="cat-circle" style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    /* 카테고리 PNG 아이콘(생윤·사문·윤사)은 #F2F2F6 원판이 박혀 있어
-                       다크에서 원을 어둡게 칠하면 안쪽에 흰 원판이 따로 떠 보인다 →
-                       테마와 무관하게 아이콘 원판색으로 고정(아이콘을 투명 배경으로 재출력하면 var 로 되돌릴 것) */
-                    backgroundColor: "#F2F2F6",
-                    border: "1px solid #F2F2F6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
-                    {cat.icon.startsWith("/") ? (
-                      <Image src={cat.icon} alt={cat.name} width={38} height={38} unoptimized style={{ width: 38, height: 38, objectFit: "contain" }} />
-                    ) : (
-                      <span style={{ fontSize: 20 }}>{cat.icon}</span>
-                    )}
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, color: "var(--c-text-2c)", fontWeight: 500 }}>
-                  {cat.name}
-                </span>
-              </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* 데일리 퀴즈 (카테고리 아이콘 아래) */}
       <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 20px" }}>
