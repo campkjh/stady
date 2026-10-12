@@ -1417,6 +1417,10 @@ label {
   animation: qmBubblePop 1s linear both;
   cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none;
 }
+/* 글 길이에 딱 맞는 폭(좌우 여백은 NewWorkbookBubble 이 maxWidth 로 막는다) */
+.qm-bubble.is-fit { width: max-content; }
+.qm-bubble.is-fit .qm-bubble-body { padding: 12px 40px 11px 58px; }
+.qm-bubble.is-fit .qm-bubble-ic { left: 17px; }
 .qm-bubble.is-tail-down { transform-origin: var(--tail-x, 64px) 100%; animation-name: qmBubblePopDown; }
 .qm-bubble-shadow, .qm-bubble-glass { animation: qmBubbleFade 1s linear both; }
 .qm-bubble.is-out { animation: qmBubbleOut 0.18s cubic-bezier(0.4, 0, 1, 1) both; pointer-events: none; }

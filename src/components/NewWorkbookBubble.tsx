@@ -17,8 +17,8 @@ import { TossBubbleGlass } from "@/components/TossBubble";
 
 const HIDE_KEY = "stady-home-workbook-bubble-hide-until";
 const HIDE_MS = 30 * 60 * 1000;
-/** 꼬리 끝과 과목 아이콘 사이 간격 */
-const GAP = 6;
+/** 말풍선이 대상 카드 아래쪽에 **겹쳐 올라타는** 깊이(꼬리 끝이 카드 안으로 들어간다) */
+const OVERLAP = 52;
 /** 말풍선 좌우 여백(과목 줄의 좌우 패딩과 같게) */
 const INSET = 10;
 
@@ -43,7 +43,10 @@ export default function NewWorkbookBubble({
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"hidden" | "in" | "out">("hidden");
-  const [pos, setPos] = useState<{ offset: number; tailX: number } | null>(null);
+  // anchorX = 대상 가운데(컨테이너 기준), boxW = 컨테이너 폭. 꼬리 자리는 말풍선 폭을 잰 뒤 정한다.
+  const [pos, setPos] = useState<{ offset: number; anchorX: number; boxW: number } | null>(null);
+  const [bubbleW, setBubbleW] = useState<number | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const visible = phase !== "hidden";
 
   useEffect(() => {
@@ -74,11 +77,13 @@ export default function NewWorkbookBubble({
       if (el !== box) return;
       setPos({
         // up = 대상 아래에 두고 꼬리가 위를, down = 대상 위에 두고 꼬리가 아래를 가리킨다.
+        // 둘 다 대상과 OVERLAP 만큼 겹쳐 올라탄다.
         offset:
           tail === "up"
-            ? Math.round(y + anchor.offsetHeight + GAP)
-            : Math.round(box.offsetHeight - y + GAP),
-        tailX: Math.round(x + anchor.offsetWidth / 2 - INSET),
+            ? Math.round(y + anchor.offsetHeight - OVERLAP)
+            : Math.round(box.offsetHeight - y - OVERLAP),
+        anchorX: Math.round(x + anchor.offsetWidth / 2),
+        boxW: box.offsetWidth,
       });
     };
     measure();
@@ -88,7 +93,23 @@ export default function NewWorkbookBubble({
     return () => ro.disconnect();
   }, [visible, containerRef, anchorRef, tail]);
 
+  // 말풍선은 글 길이에 딱 맞는 폭(fit-content)으로 대상 쪽(오른쪽)에 붙인다 — 폭을 잰 뒤 꼬리 자리를 정한다.
+  const mounted = visible && !!pos;
+  useLayoutEffect(() => {
+    const el = bubbleRef.current;
+    if (!mounted || !el) return;
+    const measure = () => setBubbleW((prev) => (prev === el.offsetWidth ? prev : el.offsetWidth));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mounted]);
+
   if (!visible || !pos) return null;
+
+  // 말풍선 왼쪽 끝 = 컨테이너 폭 - 오른쪽 여백 - 말풍선 폭. 꼬리는 대상 가운데를 가리킨다.
+  const bw = bubbleW ?? pos.boxW - INSET * 2;
+  const tailX = Math.round(pos.anchorX - (pos.boxW - INSET - bw));
 
   const close = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -104,12 +125,13 @@ export default function NewWorkbookBubble({
 
   return (
     <div
-      className={`qm-bubble${tail === "down" ? " is-tail-down" : ""}${phase === "out" ? " is-out" : ""}`}
+      ref={bubbleRef}
+      className={`qm-bubble is-fit${tail === "down" ? " is-tail-down" : ""}${phase === "out" ? " is-out" : ""}`}
       style={{
         ...(tail === "up" ? { top: pos.offset } : { bottom: pos.offset }),
-        left: INSET,
         right: INSET,
-        ["--tail-x" as string]: `${pos.tailX}px`,
+        maxWidth: pos.boxW - INSET * 2,
+        ["--tail-x" as string]: `${tailX}px`,
       } as CSSProperties}
       role="link"
       tabIndex={0}
@@ -119,7 +141,7 @@ export default function NewWorkbookBubble({
     >
       {/* 그림자(몸통 바깥에만 그려져 반투명한 꼬리에 안 비친다) → 유리(꼬리+몸통 한 장) → 글씨 */}
       <span className="qm-bubble-shadow" aria-hidden="true" />
-      <TossBubbleGlass tailX={pos.tailX} side={tail === "up" ? "top" : "bottom"} />
+      <TossBubbleGlass tailX={tailX} side={tail === "up" ? "top" : "bottom"} />
       <div className="qm-bubble-body">
         <span className="qm-bubble-ic" aria-hidden="true">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
