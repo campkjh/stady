@@ -168,7 +168,7 @@ export default function CategoryGroupManager() {
   return (
     <section style={{ display: "grid", gap: 20 }}>
       <div>
-        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>카테고리 관리</h1>
+        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 700 }}>카테고리 관리</h1>
         <p style={{ margin: "8px 0 0", color: "var(--c-text-3)", fontSize: 14 }}>커뮤니티 상위 카테고리 그룹을 동적으로 관리합니다.</p>
       </div>
       {message && (
@@ -261,7 +261,7 @@ const secondaryButtonStyle = {
   color: "var(--c-text-2c)",
   padding: "9px 12px",
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;
 
@@ -272,6 +272,6 @@ const primaryOutlineStyle = {
   color: "var(--c-brand-deep-2)",
   padding: "11px 14px",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

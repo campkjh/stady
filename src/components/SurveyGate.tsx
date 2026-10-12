@@ -84,7 +84,7 @@ export default function SurveyGate() {
           marginBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
       >
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: "var(--c-text-b)", margin: 0, lineHeight: 1.35 }}>
+        <h2 style={{ fontSize: 19, fontWeight: 700, color: "var(--c-text-b)", margin: 0, lineHeight: 1.35 }}>
           스타디, 어떻게 쓰고 계신가요?
         </h2>
         <p style={{ fontSize: 13.5, color: "var(--c-text-4b)", margin: "8px 0 0", fontWeight: 500 }}>
@@ -117,7 +117,7 @@ export default function SurveyGate() {
                 }}
               >
                 <span style={{ fontSize: 24, lineHeight: 1 }}>{f.emoji}</span>
-                <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600, color: active ? "var(--c-brand-deep-2)" : "var(--c-text-4b)" }}>
+                <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, color: active ? "var(--c-brand-deep-2)" : "var(--c-text-4b)" }}>
                   {f.label}
                 </span>
               </button>
@@ -164,7 +164,7 @@ export default function SurveyGate() {
             background: satisfaction == null ? "var(--c-brand-line-5)" : "var(--c-brand)",
             color: "#fff",
             fontSize: 16,
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: satisfaction == null ? "default" : "pointer",
           }}
         >

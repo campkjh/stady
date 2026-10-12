@@ -193,13 +193,13 @@ export default function AdminBannersPage() {
                 {banner.imageUrl && <img src={banner.imageUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
                 <div style={{ position: "absolute", inset: 0, background: banner.imageUrl ? "linear-gradient(90deg, rgba(0,0,0,0.54), rgba(0,0,0,0.08))" : "rgba(0,0,0,0.08)" }} />
                 <div style={{ position: "absolute", left: 18, right: 18, bottom: 16 }}>
-                  <p style={{ color: "#fff", fontSize: 20, fontWeight: 900 }}>{banner.title}</p>
+                  <p style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{banner.title}</p>
                   {banner.subtitle && <p style={{ color: "rgba(255,255,255,0.86)", fontSize: 13, marginTop: 4 }}>{banner.subtitle}</p>}
                 </div>
-                <span style={{ position: "absolute", top: 12, left: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 800 }}>
+                <span style={{ position: "absolute", top: 12, left: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 700 }}>
                   {banner.bannerType === "modal" ? "모달" : "슬라이드"}
                 </span>
-                {!banner.isActive && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 800 }}>숨김</span>}
+                {!banner.isActive && <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 8px", borderRadius: 999, background: "rgba(0,0,0,0.58)", color: "#fff", fontSize: 12, fontWeight: 700 }}>숨김</span>}
               </div>
               <div style={{ padding: 14, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                 <div style={{ minWidth: 0 }}>

@@ -35,7 +35,7 @@ function MemberAvatar({ nickname, avatar, studying, size = 34 }: { nickname: str
         width: size, height: size, flexShrink: 0, borderRadius: "50%", overflow: "hidden",
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         background: "var(--c-timer-soft)", color: "var(--c-timer-deep)",
-        fontSize: size * 0.42, fontWeight: 800,
+        fontSize: size * 0.42, fontWeight: 700,
         boxShadow: studying ? "0 0 0 2px var(--c-bg), 0 0 0 4px #22C55E" : "none",
       }}
     >
@@ -73,7 +73,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <p style={{ fontSize: 13, color: "var(--c-text-4c)", fontWeight: 600 }}>
-          스타디룸 <span style={{ color: "var(--c-timer)", fontWeight: 800 }}>{rooms?.length ?? 0}</span>개
+          스타디룸 <span style={{ color: "var(--c-timer)", fontWeight: 700 }}>{rooms?.length ?? 0}</span>개
         </p>
         {canWrite && (
           <button
@@ -82,7 +82,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
             className="press"
             style={{
               border: "none", borderRadius: 999, padding: "8px 14px", cursor: "pointer",
-              background: "var(--c-timer)", color: "#fff", fontSize: 13, fontWeight: 800,
+              background: "var(--c-timer)", color: "#fff", fontSize: 13, fontWeight: 700,
             }}
           >
             스타디룸 생성
@@ -94,7 +94,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
         <p style={{ fontSize: 13, color: "var(--c-text-4c)", textAlign: "center", padding: "28px 0" }}>불러오는 중이에요.</p>
       ) : rooms.length === 0 ? (
         <div style={{ padding: "38px 20px", textAlign: "center" }}>
-          <p style={{ fontSize: 15.5, fontWeight: 800, color: "var(--c-text-2)", marginBottom: 5 }}>스타디룸이 텅텅</p>
+          <p style={{ fontSize: 15.5, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 5 }}>스타디룸이 텅텅</p>
           <p style={{ fontSize: 12.5, color: "var(--c-text-4c)", fontWeight: 600 }}>첫 번째 방을 만들어보세요</p>
         </div>
       ) : (
@@ -143,7 +143,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
         .sr-tile img.sr-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 23%; }
         .sr-live {
           position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px;
-          border-radius: 999px; background: #22C55E; color: #fff; font-size: 11px; font-weight: 800;
+          border-radius: 999px; background: #22C55E; color: #fff; font-size: 11px; font-weight: 700;
           display: inline-flex; align-items: center; justify-content: center;
           border: 2px solid var(--c-bg);
         }
@@ -155,7 +155,7 @@ export default function StudyRooms({ canWrite }: { canWrite: boolean }) {
         /* 승인 대기 인원(방장에게만) — 공부 중 배지와 구분되게 왼쪽 위에 주황으로 */
         .sr-wait {
           position: absolute; top: -4px; left: -4px; min-width: 20px; height: 20px; padding: 0 5px;
-          border-radius: 999px; background: #F59E0B; color: #fff; font-size: 11px; font-weight: 800;
+          border-radius: 999px; background: #F59E0B; color: #fff; font-size: 11px; font-weight: 700;
           display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--c-bg);
         }
         .sr-lock { font-size: 10px; margin-right: 2px; }
@@ -240,7 +240,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
         }}
       >
         <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
-          <span style={{ fontSize: 16, fontWeight: 900, color: "var(--c-text-b)" }}>스타디룸 생성</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-b)" }}>스타디룸 생성</span>
           <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "none", fontSize: 13, color: "var(--c-text-4)", cursor: "pointer", fontWeight: 700 }}>
             닫기
           </button>
@@ -297,7 +297,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
             style={{
               flex: 1, height: 44, borderRadius: 12, cursor: uploading ? "default" : "pointer",
               border: "1px solid var(--c-border)", background: "var(--c-bg)",
-              color: "var(--c-text-2)", fontSize: 13.5, fontWeight: 800,
+              color: "var(--c-text-2)", fontSize: 13.5, fontWeight: 700,
             }}
           >
             {uploading ? "올리는 중…" : preview ? "사진 바꾸기" : "사진으로 만들기"}
@@ -317,7 +317,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           )}
         </div>
 
-        <p style={{ fontSize: 12, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-3)", marginBottom: 7 }}>
           아이콘{preview ? " (사진을 쓰면 아이콘은 안 보여요)" : ""}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginBottom: 14 }}>
@@ -338,7 +338,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           ))}
         </div>
 
-        <p style={{ fontSize: 12, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>색</p>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-3)", marginBottom: 7 }}>색</p>
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
           {COLOR_KEYS.map((k) => (
             <button
@@ -366,7 +366,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           }}
         >
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 13.5, fontWeight: 800, color: "var(--c-text-b)" }}>승인 스타디룸</span>
+            <span style={{ display: "block", fontSize: 13.5, fontWeight: 700, color: "var(--c-text-b)" }}>승인 스타디룸</span>
             <span style={{ display: "block", fontSize: 11.5, color: "var(--c-text-4b)", marginTop: 2 }}>
               방장이 수락해야 들어올 수 있어요
             </span>
@@ -389,7 +389,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
           disabled={busy || !name.trim()}
           style={{
             width: "100%", height: 50, border: "none", borderRadius: 13, background: "var(--c-timer)",
-            color: "#fff", fontSize: 15.5, fontWeight: 900,
+            color: "#fff", fontSize: 15.5, fontWeight: 700,
             cursor: busy || !name.trim() ? "default" : "pointer", opacity: busy || !name.trim() ? 0.55 : 1,
           }}
         >
@@ -467,7 +467,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                   : <img src={`/icons/room/${room.icon}.svg`} alt="" width={28} height={28} style={{ display: "block" }} />}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 16.5, fontWeight: 900, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{room.name}</p>
+                <p style={{ fontSize: 16.5, fontWeight: 700, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{room.name}</p>
                 <p style={{ fontSize: 12.5, color: "var(--c-text-4b)", fontWeight: 600, marginTop: 2 }}>
                   {room.memberCount}명 · 지금 {room.studyingCount}명 공부 중{room.requireApproval ? " · 승인제" : ""}
                 </p>
@@ -485,7 +485,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                 onClick={() => act(room.joined || room.pending ? "leave" : "join")}
                 disabled={busy}
                 style={{
-                  flex: 1, height: 46, borderRadius: 12, cursor: busy ? "default" : "pointer", fontSize: 14.5, fontWeight: 800,
+                  flex: 1, height: 46, borderRadius: 12, cursor: busy ? "default" : "pointer", fontSize: 14.5, fontWeight: 700,
                   border: room.joined ? "1px solid var(--c-border)" : "none",
                   background: room.joined ? "var(--c-bg)" : "var(--c-timer)",
                   color: room.joined ? "var(--c-text-3)" : "#fff",
@@ -501,7 +501,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                   disabled={busy}
                   style={{
                     flex: 1, height: 46, padding: "0 16px", borderRadius: 12, border: "1px solid #F1B4B4",
-                    background: "#FDECEC", color: "#D63A3A", fontSize: 14, fontWeight: 800, cursor: busy ? "default" : "pointer",
+                    background: "#FDECEC", color: "#D63A3A", fontSize: 14, fontWeight: 700, cursor: busy ? "default" : "pointer",
                   }}
                 >
                   방 닫기
@@ -512,7 +512,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
             {/* 방장에게만 보이는 승인 대기 목록 */}
             {room.isOwner && room.pendingMembers.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <p style={{ fontSize: 12.5, fontWeight: 800, color: "var(--c-text-3)", marginBottom: 7 }}>
+                <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-text-3)", marginBottom: 7 }}>
                   승인 대기 {room.pendingMembers.length}명
                 </p>
                 <div style={{ borderRadius: 14, border: "1px solid var(--c-bg-muted)", overflow: "hidden" }}>
@@ -526,7 +526,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
                         {p.nickname}
                       </span>
                       <button type="button" disabled={busy} onClick={() => act("accept", p.userId)}
-                        style={{ border: "none", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-timer)", color: "#fff", fontSize: 12.5, fontWeight: 800 }}>
+                        style={{ border: "none", borderRadius: 9, padding: "6px 12px", cursor: "pointer", background: "var(--c-timer)", color: "#fff", fontSize: 12.5, fontWeight: 700 }}>
                         수락
                       </button>
                       <button type="button" disabled={busy} onClick={() => act("reject", p.userId)}

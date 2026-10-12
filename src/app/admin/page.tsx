@@ -213,7 +213,7 @@ export default function AdminDashboard() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`/icons/admin-color/${card.icon}.svg`} alt="" aria-hidden width={24} height={24} style={{ display: "block" }} />
                 </div>
-                <p style={{ fontSize: 30, fontWeight: 800, color: TEXT_TITLE, lineHeight: 1, letterSpacing: "-0.02em" }}>{card.count}</p>
+                <p style={{ fontSize: 30, fontWeight: 700, color: TEXT_TITLE, lineHeight: 1, letterSpacing: "-0.02em" }}>{card.count}</p>
                 <p style={{ fontSize: 13, fontWeight: 600, color: TEXT_BODY, marginTop: 10 }}>{card.label}</p>
               </Link>
             ))}

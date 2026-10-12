@@ -667,7 +667,7 @@ body {
 }
 .home-exam-badge {
   position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
-  background: rgba(17, 24, 39, 0.72); color: #fff; font-size: 10.5px; font-weight: 800;
+  background: rgba(17, 24, 39, 0.72); color: #fff; font-size: 10.5px; font-weight: 700;
 }
 .home-exam-title {
   margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: var(--c-text-b);
@@ -837,7 +837,7 @@ body {
 }
 .nudge-bubble-text {
   font-size: 13.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.2px;
   background: linear-gradient(110deg, #8B95A1 0%, #8B95A1 26%, #3182F6 42%, #333D4B 58%, #333D4B 100%);
   background-size: 230% 100%;
@@ -855,7 +855,7 @@ body {
 }
 .nudge-bubble-xp {
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--c-brand-b);
   background: var(--c-brand-soft-3);
   border-radius: 999px;
@@ -1194,7 +1194,7 @@ label {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: #fff;
   cursor: pointer;
@@ -1237,7 +1237,7 @@ label {
 }
 .answer-king-text {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.2px;
   background-image: linear-gradient(
     110deg,
@@ -1560,7 +1560,7 @@ label {
 }
 .home-shortcut-title {
   position: absolute; top: 14px; left: 14px; z-index: 1; margin: 0;
-  font-size: 16px; font-weight: 800; line-height: 1.3; letter-spacing: -0.3px;
+  font-size: 16px; font-weight: 700; line-height: 1.3; letter-spacing: -0.3px;
   color: #1B2535; white-space: pre-line;
 }
 .home-shortcut-art {

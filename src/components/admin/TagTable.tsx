@@ -23,7 +23,7 @@ export default function TagTable({ tags, selectedId, onSelect, onReorder }: TagT
             <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {tag.name}
             </strong>
-            <span style={{ color: tag.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 11, fontWeight: 800 }}>
+            <span style={{ color: tag.isActive ? "var(--c-success-c)" : "var(--c-text-3)", fontSize: 11, fontWeight: 700 }}>
               {tag.isActive ? "노출" : "비노출"}
             </span>
           </div>

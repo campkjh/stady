@@ -139,7 +139,7 @@ export default function AdminStoriesPage() {
       <style>{`@media (max-width: 768px){ .sadm{ margin-left:-16px !important; margin-right:-16px !important; padding:0 10px !important; max-width:none !important; } }`}</style>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--c-text-2)", margin: 0 }}>사용 후기 관리</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-2)", margin: 0 }}>사용 후기 관리</h1>
         <button type="button" onClick={showForm ? () => { setShowForm(false); setEditingId(null); } : openAdd}
           style={{ padding: "9px 16px", background: showForm ? "var(--c-bg)" : ACCENT, color: showForm ? "var(--c-text-2)" : "#fff", border: showForm ? `1px solid ${BORDER}` : "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
           {showForm ? "취소" : "+ 추가"}
@@ -178,7 +178,7 @@ export default function AdminStoriesPage() {
                 <div key={url} style={{ position: "relative", width: 72, height: 110, borderRadius: 8, overflow: "hidden", border: `1px solid ${BORDER}` }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <span style={{ position: "absolute", left: 4, top: 4, fontSize: 10, fontWeight: 800, color: "#fff", background: "rgba(0,0,0,0.5)", borderRadius: 4, padding: "1px 5px" }}>{i + 1}</span>
+                  <span style={{ position: "absolute", left: 4, top: 4, fontSize: 10, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.5)", borderRadius: 4, padding: "1px 5px" }}>{i + 1}</span>
                   <button type="button" onClick={() => setForm((f) => ({ ...f, imageUrls: f.imageUrls.filter((u) => u !== url) }))}
                     style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 999, border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 13, lineHeight: 1, cursor: "pointer" }}>×</button>
                 </div>

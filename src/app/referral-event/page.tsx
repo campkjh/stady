@@ -141,14 +141,14 @@ export default function ReferralEventPage() {
         <section style={{ marginTop: 14, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
           <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 700 }}>내 초대코드</p>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <div style={{ flex: 1, height: 48, borderRadius: 14, background: "var(--c-brand-soft-14)", display: "flex", alignItems: "center", padding: "0 14px", color: "var(--c-text)", fontSize: 20, fontWeight: 900, letterSpacing: 0 }}>
+            <div style={{ flex: 1, height: 48, borderRadius: 14, background: "var(--c-brand-soft-14)", display: "flex", alignItems: "center", padding: "0 14px", color: "var(--c-text)", fontSize: 20, fontWeight: 700, letterSpacing: 0 }}>
               {loading ? "불러오는 중" : summary?.inviteCode || "-"}
             </div>
             <button
               type="button"
               onClick={copyInvite}
               disabled={!summary}
-              style={{ width: 86, border: "none", borderRadius: 14, background: summary ? primary : "var(--c-border-strong)", color: "#fff", fontSize: 14, fontWeight: 900 }}
+              style={{ width: 86, border: "none", borderRadius: 14, background: summary ? primary : "var(--c-border-strong)", color: "#fff", fontSize: 14, fontWeight: 700 }}
             >
               {copied ? "복사됨" : "공유"}
             </button>
@@ -163,7 +163,7 @@ export default function ReferralEventPage() {
           <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
             <p style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 700 }}>받은 초대코드 입력</p>
             {applied ? (
-              <p style={{ marginTop: 10, fontSize: 14, fontWeight: 800, color: primary }}>
+              <p style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: primary }}>
                 초대코드가 적용됐어요! 무료 이용권이 지급됩니다 <img src="/icons/toss/gift.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block" }} />
               </p>
             ) : (
@@ -188,7 +188,7 @@ export default function ReferralEventPage() {
                     style={{
                       width: 86, border: "none", borderRadius: 14,
                       background: codeInput.trim() ? primary : "var(--c-border-strong)",
-                      color: "#fff", fontSize: 14, fontWeight: 900, opacity: applying ? 0.6 : 1,
+                      color: "#fff", fontSize: 14, fontWeight: 700, opacity: applying ? 0.6 : 1,
                     }}
                   >
                     {applying ? "적용 중" : "적용"}
@@ -207,7 +207,7 @@ export default function ReferralEventPage() {
 
         {/* 현재 프라임(무료 프리미엄) 상태 — 상세 혜택 안내는 위 이미지가 담당 */}
         {summary?.freePremiumUntil && (
-          <div style={{ marginTop: 12, padding: "13px 16px", borderRadius: 14, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13.5, fontWeight: 800, textAlign: "center" }}>
+          <div style={{ marginTop: 12, padding: "13px 16px", borderRadius: 14, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13.5, fontWeight: 700, textAlign: "center" }}>
             <img src="/icons/toss/gift.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block", marginRight: 4 }} />현재 프라임 이용 중 · {fmtDay(summary.freePremiumUntil)}까지
           </div>
         )}
@@ -215,7 +215,7 @@ export default function ReferralEventPage() {
         <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: "1px solid var(--c-border)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)" }}>초대한 친구</h2>
-            <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13, fontWeight: 900 }}>
+            <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13, fontWeight: 700 }}>
               {summary?.invitedCount || 0}명
             </span>
           </div>
@@ -225,7 +225,7 @@ export default function ReferralEventPage() {
             {!loading && summary?.invitees.length === 0 && <EmptyText text="아직 가입을 완료한 친구가 없어요." />}
             {summary?.invitees.map((invitee) => (
               <div key={invitee.id} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 58 }}>
-                <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", background: "var(--c-brand-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 15, fontWeight: 900 }}>
+                <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", background: "var(--c-brand-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 15, fontWeight: 700 }}>
                   {invitee.avatar ? <img src={invitee.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : invitee.nickname.slice(0, 1)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -241,12 +241,12 @@ export default function ReferralEventPage() {
           <section style={{ marginTop: 12, padding: 18, borderRadius: 18, background: "var(--c-bg)", border: `1.5px solid ${primary}` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <span style={{ display: "inline-block", padding: "3px 8px", borderRadius: 6, background: primary, color: "#fff", fontSize: 11, fontWeight: 900, marginBottom: 6 }}>
+                <span style={{ display: "inline-block", padding: "3px 8px", borderRadius: 6, background: primary, color: "#fff", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>
                   마스터
                 </span>
                 <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)" }}>전체 초대 내역</h2>
               </div>
-              <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13, fontWeight: 900 }}>
+              <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: primary, fontSize: 13, fontWeight: 700 }}>
                 {summary.allReferrals?.length || 0}건
               </span>
             </div>
@@ -264,7 +264,7 @@ export default function ReferralEventPage() {
                     </p>
                     <p style={{ fontSize: 12, color: "var(--c-text-5)", fontWeight: 600 }}>초대한 사람</p>
                   </div>
-                  <span style={{ color: primary, fontSize: 18, fontWeight: 900, flexShrink: 0 }}>→</span>
+                  <span style={{ color: primary, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>→</span>
                   <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {pair.inviteeNickname}
@@ -284,7 +284,7 @@ export default function ReferralEventPage() {
 
 function ReferralAvatar({ nickname, avatar }: { nickname: string; avatar: string | null }) {
   return (
-    <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "var(--c-brand-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+    <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "var(--c-brand-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: primary, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
       {avatar ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : nickname.slice(0, 1)}
     </div>
   );

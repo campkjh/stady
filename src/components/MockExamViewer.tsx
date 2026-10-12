@@ -1141,10 +1141,10 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                       padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: on ? "var(--c-bg-muted-4)" : "transparent",
                       color: disabled ? "var(--c-text-5)" : "var(--c-text-b)",
-                      fontSize: 14, fontWeight: on ? 800 : 600, textAlign: "left",
+                      fontSize: 14, fontWeight: on ? 700 : 600, textAlign: "left",
                     }}
                   >
-                    <span style={{ width: 16, flexShrink: 0, color: "var(--c-brand)", fontWeight: 900 }}>{on ? "✓" : ""}</span>
+                    <span style={{ width: 16, flexShrink: 0, color: "var(--c-brand)", fontWeight: 700 }}>{on ? "✓" : ""}</span>
                     {lbl}
                     {disabled && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--c-text-5)", fontWeight: 700 }}>없음</span>}
                   </button>
@@ -1156,7 +1156,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
         <span style={{ flex: 1 }} />
         {zoom > 1.01 && (
           <button type="button" onClick={resetZoom} aria-label="확대 초기화"
-            style={{ ...barBtn, width: "auto", padding: "0 9px", color: "#fff", fontSize: 12.5, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+            style={{ ...barBtn, width: "auto", padding: "0 9px", color: "#fff", fontSize: 12.5, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
             {Math.round(zoom * 100)}%
           </button>
         )}
@@ -1265,7 +1265,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
                 display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
                 height: 32, padding: "0 12px", borderRadius: 9, cursor: "pointer",
                 border: "1px solid var(--c-danger-line-3)", background: "var(--c-danger-soft-4)", color: "var(--c-danger-i)",
-                fontSize: 12.5, fontWeight: 800, whiteSpace: "nowrap",
+                fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap",
               }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -1365,11 +1365,11 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
           style={{ position: "fixed", inset: 0, zIndex: 110, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "var(--c-bg)", borderRadius: 18, padding: "22px 20px 16px", border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
-            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
             <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>이 페이지의 필기를 모두 지울까요?</p>
             <div style={{ display: "flex", gap: 8 }}>
               <button type="button" onClick={() => setShowClearConfirm(false)} style={{ flex: 1, height: 48, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
-              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>확인</button>
+              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>확인</button>
             </div>
           </div>
         </div>
@@ -1379,7 +1379,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
       {ocrText !== null && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => !ocrBusy && setOcrText(null)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "var(--c-bg)", borderRadius: 18, padding: 20, border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 800, color: "var(--c-text-b)" }}>OCR 결과</h3>
+            <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "var(--c-text-b)" }}>OCR 결과</h3>
             {ocrBusy ? (
               <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>글자를 인식하는 중이에요… (처음엔 엔진을 받느라 조금 걸려요)</p>
             ) : (
@@ -1389,7 +1389,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               {!ocrBusy && (
                 <button type="button" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-brand)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>복사</button>
               )}
-              <button type="button" disabled={ocrBusy} onClick={() => setOcrText(null)} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: ocrBusy ? "default" : "pointer", opacity: ocrBusy ? 0.6 : 1 }}>닫기</button>
+              <button type="button" disabled={ocrBusy} onClick={() => setOcrText(null)} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: ocrBusy ? "default" : "pointer", opacity: ocrBusy ? 0.6 : 1 }}>닫기</button>
             </div>
           </div>
         </div>

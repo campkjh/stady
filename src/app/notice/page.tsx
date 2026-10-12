@@ -20,7 +20,7 @@ export default async function NoticePage({
       <div>
         <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
           {notice.isRecent && (
-            <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 800, color: "#fff", background: "var(--c-danger-e)", borderRadius: 6, padding: "2px 6px", lineHeight: 1.2 }}>
+            <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, color: "#fff", background: "var(--c-danger-e)", borderRadius: 6, padding: "2px 6px", lineHeight: 1.2 }}>
               최근
             </span>
           )}

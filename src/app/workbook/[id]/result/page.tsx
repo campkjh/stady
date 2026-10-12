@@ -123,7 +123,7 @@ export default function ResultPage() {
           {correctRate >= 80 ? "잘했어요!" : correctRate >= 50 ? "조금 더 연습해봐요" : "기초부터 다시 해볼까요?"}
         </p>
         <div style={{ display: "inline-flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-          <span style={{ fontSize: 56, fontWeight: 800, color: "var(--c-text-c)", letterSpacing: -2 }}>
+          <span style={{ fontSize: 56, fontWeight: 700, color: "var(--c-text-c)", letterSpacing: -2 }}>
             {totalPoints}
           </span>
           <span style={{ fontSize: 22, color: "var(--c-text-4c)", fontWeight: 600 }}>
@@ -154,9 +154,9 @@ export default function ResultPage() {
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 22, height: 22, borderRadius: 6,
             background: "linear-gradient(135deg, #3787FF, #7B5BFF)",
-            color: "#fff", fontSize: 11, fontWeight: 800,
+            color: "#fff", fontSize: 11, fontWeight: 700,
           }}>AI</span>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)" }}>스타디 AI 분석</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)" }}>스타디 AI 분석</h2>
         </div>
         {analysisLoading || !analysis ? (
           <div style={{
@@ -211,7 +211,7 @@ export default function ResultPage() {
 
       {/* Problem-by-problem results */}
       <div style={{ padding: "20px 16px 24px" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 10 }}>문제별 결과</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 10 }}>문제별 결과</h2>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 30 }}>
             <div style={{ width: 22, height: 22, border: "2px solid var(--c-border)", borderTopColor: "var(--c-brand)", borderRadius: "50%", animation: "resSpin 0.8s linear infinite" }} />
@@ -292,7 +292,7 @@ function StatBox({ label, value, color }: { label: string; value: string; color:
   return (
     <div style={{ textAlign: "center" }}>
       <p style={{ fontSize: 11, color: "var(--c-text-4c)", marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 15, fontWeight: 800, color, letterSpacing: -0.3 }}>{value}</p>
+      <p style={{ fontSize: 15, fontWeight: 700, color, letterSpacing: -0.3 }}>{value}</p>
     </div>
   );
 }

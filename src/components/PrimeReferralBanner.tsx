@@ -47,7 +47,7 @@ export default function PrimeReferralBanner() {
           padding: 9px 15px;
           border-radius: 999px;
           font-size: 13.5px;
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: -0.2px;
           color: #2f3ba3;
           background: rgba(255, 255, 255, 0.34);

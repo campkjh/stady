@@ -106,7 +106,7 @@ const primaryButtonStyle = {
   color: "#fff",
   padding: "11px 18px",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;
 
@@ -117,6 +117,6 @@ const dangerButtonStyle = {
   color: "var(--c-danger-deep)",
   padding: "11px 14px",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

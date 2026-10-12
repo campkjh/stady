@@ -48,7 +48,7 @@ export default function PremiumRequired({
         </svg>
       </div>
 
-      <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 6, textAlign: "center" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 6, textAlign: "center" }}>
         {title}
       </h2>
       <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 30, textAlign: "center", lineHeight: 1.5, maxWidth: 300 }}>

@@ -146,7 +146,7 @@ export default function InviteCodeGate() {
           box-sizing: border-box; text-align: center;
         }
         .icg-icon { width: 44px; height: 44px; display: block; margin: 0 auto 10px; }
-        .icg-title { margin: 0 0 8px; font-size: 19px; font-weight: 800; color: var(--c-text-b); }
+        .icg-title { margin: 0 0 8px; font-size: 19px; font-weight: 700; color: var(--c-text-b); }
         .icg-desc { margin: 0 0 16px; font-size: 13.5px; line-height: 1.6; color: var(--c-text-2d); }
         .icg-input {
           width: 100%; height: 50px; border-radius: 12px;
@@ -158,7 +158,7 @@ export default function InviteCodeGate() {
         .icg-err { min-height: 18px; margin-top: 7px; font-size: 12.5px; font-weight: 700; color: #E5484D; }
         .icg-primary {
           width: 100%; height: 50px; border: none; border-radius: 12px;
-          background: var(--c-brand); color: #fff; font-size: 15.5px; font-weight: 800; cursor: pointer;
+          background: var(--c-brand); color: #fff; font-size: 15.5px; font-weight: 700; cursor: pointer;
         }
         .icg-primary:disabled { opacity: 0.5; }
         .icg-skip {

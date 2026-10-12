@@ -329,7 +329,7 @@ export default function BottomNav() {
         }
         .community-tip-text {
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: -0.2px;
           background: linear-gradient(110deg, #8B95A1 0%, #8B95A1 26%, #3182F6 42%, #333D4B 58%, #333D4B 100%);
           background-size: 230% 100%;

@@ -65,13 +65,13 @@ export default function StudyCheckPopup({
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/flame/f4.svg" alt="" width={18} height={18} style={{ display: "block" }} />
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: "var(--c-brand-b)" }}>공부 중 확인</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--c-brand-b)" }}>공부 중 확인</span>
           <span style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 700, color: "var(--c-text-5)" }}>{deadline}까지</span>
         </div>
 
         {result ? (
           <>
-            <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 900, color: result.correct ? "var(--c-brand-b)" : "#E5484D" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 700, color: result.correct ? "var(--c-brand-b)" : "#E5484D" }}>
               {result.correct ? "정답이에요!" : "아쉬워요"}
             </p>
             <p style={{ margin: "0 0 14px", fontSize: 13.5, lineHeight: 1.6, color: "var(--c-text-2d)" }}>
@@ -83,7 +83,7 @@ export default function StudyCheckPopup({
               onClick={() => onDone("answered")}
               style={{
                 width: "100%", height: 48, border: "none", borderRadius: 12,
-                background: "var(--c-brand)", color: "#fff", fontSize: 15.5, fontWeight: 900, cursor: "pointer",
+                background: "var(--c-brand)", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer",
               }}
             >
               계속 공부하기
@@ -91,7 +91,7 @@ export default function StudyCheckPopup({
           </>
         ) : (
           <>
-            <p style={{ margin: "0 0 4px", fontSize: 15.5, fontWeight: 800, lineHeight: 1.55, color: "var(--c-text-b)" }}>
+            <p style={{ margin: "0 0 4px", fontSize: 15.5, fontWeight: 700, lineHeight: 1.55, color: "var(--c-text-b)" }}>
               {check.question}
             </p>
             <p style={{ margin: "8px 0 16px", fontSize: 12, lineHeight: 1.6, color: "var(--c-text-5)" }}>
@@ -105,7 +105,7 @@ export default function StudyCheckPopup({
                 style={{
                   flex: 1, height: 56, borderRadius: 14, border: "1.5px solid var(--c-brand)",
                   background: "var(--c-brand-soft-3)", color: "var(--c-brand-deep)",
-                  fontSize: 20, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                  fontSize: 20, fontWeight: 700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
                 }}
               >
                 O
@@ -117,7 +117,7 @@ export default function StudyCheckPopup({
                 style={{
                   flex: 1, height: 56, borderRadius: 14, border: "1.5px solid #E5484D",
                   background: "#FDECEC", color: "#D63A3A",
-                  fontSize: 20, fontWeight: 900, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                  fontSize: 20, fontWeight: 700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
                 }}
               >
                 X

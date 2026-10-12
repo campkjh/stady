@@ -832,7 +832,7 @@ export default function WorkbookManagement() {
                           </>
                         ) : (
                           <>
-                            <span style={{ fontSize: 10, fontWeight: 800 }}>AI</span>
+                            <span style={{ fontSize: 10, fontWeight: 700 }}>AI</span>
                             해설 자동 생성
                           </>
                         )}

@@ -84,7 +84,7 @@ export default function MyActivityCard() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/icons/tier-${tier}.svg`} alt="" width={46} height={46} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text-b)" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-b)" }}>
               {LABEL[tier] ?? "아이언"}
               <span style={{ color: "var(--c-text-4b)", fontSize: 13, fontWeight: 600, marginLeft: 4 }}>등급</span>
             </div>
@@ -162,14 +162,14 @@ export default function MyActivityCard() {
             <div className="tier-guide" style={{ marginTop: 10 }}>
               {/* 경험치 쌓는 방법 */}
               <div style={{ background: "var(--c-bg-soft-4)", borderRadius: 12, padding: "12px 14px" }}>
-                <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 800, color: "var(--c-text-3b)" }}>경험치(XP) 쌓는 방법</p>
+                <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 700, color: "var(--c-text-3b)" }}>경험치(XP) 쌓는 방법</p>
                 <div style={{ display: "grid", gap: 6 }}>
                   {XP_RULES.map((r) => (
                     <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 9 }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`/icons/${r.icon}.svg`} alt="" width={21} height={21} style={{ flexShrink: 0, display: "block" }} />
                       <span style={{ flex: 1, fontSize: 13, color: "var(--c-text-3b)", fontWeight: 600 }}>{r.label}</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-brand)", fontVariantNumeric: "tabular-nums" }}>+{r.xp} XP</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand)", fontVariantNumeric: "tabular-nums" }}>+{r.xp} XP</span>
                     </div>
                   ))}
                 </div>
@@ -193,11 +193,11 @@ export default function MyActivityCard() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`/icons/tier-${t}.svg`} alt="" width={26} height={26}
                         style={{ flexShrink: 0, filter: earned ? "none" : "grayscale(1)", opacity: earned ? 1 : 0.35 }} />
-                      <span style={{ fontSize: 13.5, fontWeight: isCurrent ? 800 : 700, color: isCurrent ? "var(--c-brand-deep)" : "var(--c-text-b)" }}>
+                      <span style={{ fontSize: 13.5, fontWeight: isCurrent ? 700 : 700, color: isCurrent ? "var(--c-brand-deep)" : "var(--c-text-b)" }}>
                         {LABEL[t]}
                       </span>
                       {isCurrent && (
-                        <span style={{ fontSize: 10.5, fontWeight: 800, color: "#fff", background: "var(--c-brand)", borderRadius: 999, padding: "2px 7px" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: "#fff", background: "var(--c-brand)", borderRadius: 999, padding: "2px 7px" }}>
                           현재
                         </span>
                       )}

@@ -862,7 +862,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                                   color: val ? "var(--c-quiz-o)" : "var(--c-quiz-x)",
                                   opacity: solved && !isAnswer ? (picked ? 0.55 : 0.32) : 1,
                                   fontSize: 18,
-                                  fontWeight: 800,
+                                  fontWeight: 700,
                                   cursor: solved ? "default" : "pointer",
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -1322,7 +1322,7 @@ function CommentItem({
         <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/pin-star.svg" alt="" width={15} height={15} style={{ display: "block" }} />
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--c-warn-d)" }}>고정</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-warn-d)" }}>고정</span>
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1389,7 +1389,7 @@ function CommentItem({
         )}
         {isAdmin && !isEditing && (
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, alignItems: "center" }}>
-            <span style={{ padding: "2px 7px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: "var(--c-brand-deep)", fontSize: 10.5, fontWeight: 800 }}>관리자</span>
+            <span style={{ padding: "2px 7px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: "var(--c-brand-deep)", fontSize: 10.5, fontWeight: 700 }}>관리자</span>
             <button type="button" onClick={() => onStartEdit(comment)} style={{ border: "none", background: "none", color: "var(--c-brand)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
               수정
             </button>

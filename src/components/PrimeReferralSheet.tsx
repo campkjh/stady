@@ -113,7 +113,7 @@ export default function PrimeReferralSheet() {
           position: absolute; right: 14px; bottom: 14px;
           display: inline-flex; align-items: center; gap: 5px;
           padding: 9px 16px; border-radius: 999px;
-          font-size: 13.5px; font-weight: 800; letter-spacing: -0.2px; color: #2f3ba3;
+          font-size: 13.5px; font-weight: 700; letter-spacing: -0.2px; color: #2f3ba3;
           background: rgba(255,255,255,0.34);
           -webkit-backdrop-filter: blur(9px) saturate(1.35);
           backdrop-filter: blur(9px) saturate(1.35);
@@ -124,7 +124,7 @@ export default function PrimeReferralSheet() {
         .prs-foot { display: flex; gap: 8px; margin-top: 12px; }
         .prs-btn {
           flex: 1; height: 48px; border: none; border-radius: 14px;
-          font-size: 14.5px; font-weight: 800; cursor: pointer;
+          font-size: 14.5px; font-weight: 700; cursor: pointer;
         }
         .prs-week { background: rgba(255,255,255,0.72); color: #4E5968; }
         .prs-close { background: #3787FF; color: #fff; }

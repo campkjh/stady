@@ -412,7 +412,7 @@ export default function TimerPage() {
             marginLeft: "auto", position: "relative", height: 38, borderRadius: 999,
             border: "none", background: "var(--c-timer-soft)", cursor: "pointer",
             display: "inline-flex", alignItems: "center", gap: 5, padding: "0 13px 0 9px",
-            color: "var(--c-timer-deep)", fontSize: 13.5, fontWeight: 800,
+            color: "var(--c-timer-deep)", fontSize: 13.5, fontWeight: 700,
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -503,7 +503,7 @@ export default function TimerPage() {
                 color: "var(--c-text-2c)", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
               }}
             >
-              <span style={{ fontWeight: 900, color: i === 0 ? "#F59E0B" : i === 1 ? "#94A3B8" : "#CD7F32" }}>{i + 1}위</span>
+              <span style={{ fontWeight: 700, color: i === 0 ? "#F59E0B" : i === 1 ? "#94A3B8" : "#CD7F32" }}>{i + 1}위</span>
               {u.nickname}
               <span style={{ color: TEXT_MUTED, fontWeight: 700 }}>{formatTime(u.todayTotalSeconds)}</span>
             </button>
@@ -539,7 +539,7 @@ export default function TimerPage() {
               />
               <span style={{
                 fontSize: 15,
-                fontWeight: isActive ? 800 : 600,
+                fontWeight: isActive ? 700 : 600,
                 color: isActive ? "var(--c-text-c)" : "var(--c-text-4c)",
                 whiteSpace: "nowrap",
               }}>
@@ -670,13 +670,13 @@ export default function TimerPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
-              <span style={{ fontSize: 16, fontWeight: 900, color: "var(--c-text-b)" }}>친구</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-b)" }}>친구</span>
               <button type="button" onClick={() => setFriendsOpen(false)} style={{ marginLeft: "auto", border: "none", background: "none", fontSize: 13, color: "var(--c-text-4)", cursor: "pointer", fontWeight: 700 }}>
                 닫기
               </button>
             </div>
             <div style={{ marginBottom: 18, padding: 14, borderRadius: 16, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}` }}>
-              <p style={{ fontSize: 13, color: PRIMARY_DARK, fontWeight: 800, marginBottom: 10 }}>아이디로 친구 추가</p>
+              <p style={{ fontSize: 13, color: PRIMARY_DARK, fontWeight: 700, marginBottom: 10 }}>아이디로 친구 추가</p>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={friendIdentifier}
@@ -695,7 +695,7 @@ export default function TimerPage() {
                   type="button"
                   onClick={sendFriendRequestByIdentifier}
                   disabled={friendAddLoading}
-                  style={{ width: 74, height: 42, borderRadius: 12, border: "none", background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 800, flexShrink: 0, opacity: friendAddLoading ? 0.65 : 1 }}
+                  style={{ width: 74, height: 42, borderRadius: 12, border: "none", background: PRIMARY, color: "#fff", fontSize: 13, fontWeight: 700, flexShrink: 0, opacity: friendAddLoading ? 0.65 : 1 }}
                 >
                   추가
                 </button>
@@ -1149,7 +1149,7 @@ function WeeklyRanking({ data }: { data: { ranking: WeeklyRankRow[]; awards: Wee
   return (
     <>
       <div style={{ padding: "11px 14px", borderRadius: 14, background: PRIMARY_SOFTER, border: `1px solid ${ACCENT_BG}`, marginBottom: 12 }}>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: PRIMARY_DARK, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 700, color: PRIMARY_DARK, lineHeight: 1.6 }}>
           이번 주 {awardRanks}위 안에 들면 다음 주에 스타디 프라임 {awardDays}일을 드려요
         </p>
         <p style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3 }}>월요일 0시에 새로 시작해요 · 이미 구독 중이면 구독이 끝난 뒤로 이어져요</p>
@@ -1174,14 +1174,14 @@ function WeeklyRanking({ data }: { data: { ranking: WeeklyRankRow[]; awards: Wee
                 borderBottom: i === ranking.length - 1 ? "none" : "1px solid var(--c-bg-muted)",
                 background: u.isMe ? PRIMARY_SOFTER : "var(--c-bg)",
               }}>
-                <span style={{ width: 26, textAlign: "center", fontSize: 15, fontWeight: 900, color: rankColor }}>{rank}</span>
+                <span style={{ width: 26, textAlign: "center", fontSize: 15, fontWeight: 700, color: rankColor }}>{rank}</span>
                 <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {u.nickname}
                   </span>
                   <FlameChip totalSeconds={u.seconds} size={12} />
                 </span>
-                <span style={{ fontSize: 13.5, fontWeight: 800, color: rank <= awardRanks ? PRIMARY : "var(--c-text-3)", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: rank <= awardRanks ? PRIMARY : "var(--c-text-3)", whiteSpace: "nowrap" }}>
                   {fmt(u.seconds)}
                 </span>
               </div>

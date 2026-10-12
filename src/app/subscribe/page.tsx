@@ -101,7 +101,7 @@ export default function SubscribePage() {
 
             {/* 공통 혜택 */}
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--c-text-4b)", marginBottom: 12, letterSpacing: "-0.2px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-4b)", marginBottom: 12, letterSpacing: "-0.2px" }}>
                 두 플랜 모두 이런 혜택을 드려요
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -199,7 +199,7 @@ export default function SubscribePage() {
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.42)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: "24px 20px 16px", width: "100%", maxWidth: 320, boxSizing: "border-box" }}>
-            <div style={{ fontSize: 16.5, fontWeight: 800, color: "#191F28", textAlign: "center" }}>구독을 해지하시겠어요?</div>
+            <div style={{ fontSize: 16.5, fontWeight: 700, color: "#191F28", textAlign: "center" }}>구독을 해지하시겠어요?</div>
             <p style={{ fontSize: 13.5, color: "#6B7280", textAlign: "center", margin: "8px 0 18px", lineHeight: 1.55 }}>
               남은 이용 기간까지는 그대로 이용할 수 있어요.
               <br />
@@ -293,15 +293,15 @@ function PlanCard({
       }}
     >
       {badge && (
-        <span style={{ position: "absolute", top: -9, left: 12, background: "var(--c-brand-b)", color: "#fff", fontSize: 10.5, fontWeight: 800, padding: "3px 8px", borderRadius: 999 }}>
+        <span style={{ position: "absolute", top: -9, left: 12, background: "var(--c-brand-b)", color: "#fff", fontSize: 10.5, fontWeight: 700, padding: "3px 8px", borderRadius: 999 }}>
           {badge}
         </span>
       )}
-      <div style={{ fontSize: 14.5, fontWeight: 800, color: "var(--c-text-b)" }}>{plan.name}</div>
+      <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--c-text-b)" }}>{plan.name}</div>
       {/* 앱 심사 3.1.2(c): 가장 크고 눈에 띄는 가격은 반드시 "실제 청구 금액"이어야 한다.
           월 환산가(9,900원/월 등)를 크게 쓰면 리젝 — 환산가는 subLabel/highlight 로만. */}
       <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 3 }}>
-        <span style={{ fontSize: 21, fontWeight: 800, color: selected ? "var(--c-brand-deep-4)" : "var(--c-text-b)" }}>
+        <span style={{ fontSize: 21, fontWeight: 700, color: selected ? "var(--c-brand-deep-4)" : "var(--c-text-b)" }}>
           {won(plan.priceKrw)}
         </span>
         <span style={{ fontSize: 13, color: "var(--c-text-4b)", fontWeight: 700 }}>
@@ -310,7 +310,7 @@ function PlanCard({
       </div>
       <div style={{ fontSize: 12, color: "var(--c-text-4b)", marginTop: 3 }}>{subLabel}</div>
       {highlight && (
-        <div style={{ marginTop: 9, fontSize: 11.5, fontWeight: 800, color: "var(--c-brand-deep-4)", background: "var(--c-brand-soft-11)", borderRadius: 7, padding: "4px 7px", display: "inline-block" }}>
+        <div style={{ marginTop: 9, fontSize: 11.5, fontWeight: 700, color: "var(--c-brand-deep-4)", background: "var(--c-brand-soft-11)", borderRadius: 7, padding: "4px 7px", display: "inline-block" }}>
           {highlight}
         </div>
       )}
@@ -341,9 +341,9 @@ function ActiveState({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/premium/medal-gold.svg" alt="" style={{ width: 38, height: 38 }} />
       </div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-b)" }}>{planName} 이용 중</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-b)" }}>{planName} 이용 중</div>
       {/* 남은 기간. 만료일이 없는 건(답변왕 유지)은 기간 대신 유지 조건을 보여준다. */}
-      <div style={{ display: "inline-flex", alignItems: "center", padding: "5px 13px", borderRadius: 999, background: "var(--c-brand-soft-12)", color: "var(--c-brand-b)", fontSize: 13, fontWeight: 800, marginTop: 10 }}>
+      <div style={{ display: "inline-flex", alignItems: "center", padding: "5px 13px", borderRadius: 999, background: "var(--c-brand-soft-12)", color: "var(--c-brand-b)", fontSize: 13, fontWeight: 700, marginTop: 10 }}>
         {daysLeft === null
           ? (isKing ? "답변왕 유지 중 계속 이용" : "이용 중")
           : daysLeft <= 0
@@ -451,7 +451,7 @@ function ctaStyle(bg: string, color: string, disabled: boolean): React.CSSProper
     color,
     padding: "15px 0",
     fontSize: 15.5,
-    fontWeight: 800,
+    fontWeight: 700,
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.55 : 1,
   };

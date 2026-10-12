@@ -91,7 +91,7 @@ export default function VocabQuizListPage() {
           <VocaHeroScene />
         </div>
 
-        <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--voi-ink)", textAlign: "center", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 700, color: "var(--voi-ink)", textAlign: "center", marginBottom: 12 }}>
           하루에 한 번 영단어 퀴즈
         </h1>
         <p style={{ fontSize: 15, color: "var(--voi-ink-soft)", textAlign: "center" }}>
@@ -130,19 +130,19 @@ export default function VocabQuizListPage() {
                   {completed && (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                       <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--voi-accent)" }}>완료</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--voi-accent)" }}>완료</span>
                     </span>
                   )}
                 </span>
                 {inProgress ? (
-                  <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 800, color: "var(--voi-accent)" }}>
+                  <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 700, color: "var(--voi-accent)" }}>
                     {shown}/{denom} 진행 중
                   </span>
                 ) : denom > 0 ? (
                   <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--voi-sub)" }}>
                     {denom}문항
                     {completed && stat?.bestPct != null && (
-                      <span style={{ color: "var(--voi-accent)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                      <span style={{ color: "var(--voi-accent)", fontWeight: 700 }}>{` · 최고 ${stat.bestPct}%`}</span>
                     )}
                   </span>
                 ) : null}

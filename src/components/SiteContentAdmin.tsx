@@ -170,7 +170,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
       {/* 모바일: 어드민 본문(admin-content) 좌우 패딩(16px)을 상쇄해 좌우 여백을 최소화. */}
       <style>{`@media (max-width: 768px){ .sca-root{ padding:16px 10px !important; margin-left:-16px !important; margin-right:-16px !important; max-width:none !important; } }`}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{heading}</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{heading}</h1>
         <button
           type="button"
           onClick={showForm ? () => { setShowForm(false); setEditingId(null); } : openAdd}
@@ -275,7 +275,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
           <img src="/icons/toss/alarm.svg" alt="" style={{ width: 22, height: 22, flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-brand-deep-5, var(--c-brand))" }}>지금 첫 진입 팝업으로 뜨는 공지</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-b)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {popupNotice ? popupNotice.title : "없음 (노출 중인 공지 없음)"}
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
                   <div style={{ fontSize: 11, color: "var(--c-text-5)", marginTop: 6, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     {simple ? (
                       popupNotice && popupNotice.id === it.id && (
-                        <span style={{ padding: "1px 8px", borderRadius: 999, background: "var(--c-brand)", color: "#fff", fontWeight: 800, fontSize: 10.5 }}>
+                        <span style={{ padding: "1px 8px", borderRadius: 999, background: "var(--c-brand)", color: "#fff", fontWeight: 700, fontSize: 10.5 }}>
                           지금 팝업 공지
                         </span>
                       )

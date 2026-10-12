@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
+import { TossBubbleGlass } from "@/components/TossBubble";
 
 const CACHE_KEY = "daily-quiz";
 
@@ -32,6 +33,159 @@ interface DailyData {
   stats?: DailyStats | null;
 }
 
+/** 답한 직후 네비게이션 위로 올라오는 결과 토스트(섹션 안에 끼워 넣지 않는다). */
+interface ResultToastData {
+  correct: boolean;
+  xp: number;
+  guest: boolean;
+  rate: number;
+  total: number;
+}
+
+/**
+ * 결과 토스트 — 홈 "새로운 문제집" 말풍선(프리티풀 퀴크매칭 말풍선 이식, globals .qm-bubble*)과 같은 유리 말풍선.
+ *  · 바탕은 꼬리+몸통 한 장의 유리(TossBubbleGlass) + 뒤 흐림. 등장은 꼬리 쪽에서 납작하게 솟아 제 크기로(qmBubblePopDown).
+ *  · 안에서는 아이콘이 튀고(맞히면 반짝이 터짐), 정답률 숫자가 올라가고, 바가 왼쪽에서 차오른다.
+ *  · 누르면 접히고, 4.6초 뒤 저절로 접힌다. 하단 네비 바로 위에 뜬다.
+ */
+function ResultToast({ data, onClose }: { data: ResultToastData; onClose: () => void }) {
+  // 네비 높이(안전영역 포함)를 재서 그 위 12px 에 둔다.
+  const [bottom, setBottom] = useState(96);
+  const [leaving, setLeaving] = useState(false);
+  const [rate, setRate] = useState(0);
+  const [width, setWidth] = useState<number | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useLayoutEffect(() => {
+    const nav = document.querySelector<HTMLElement>(".main-nav");
+    setBottom((nav ? nav.getBoundingClientRect().height : 0) + 12);
+    const el = bubbleRef.current;
+    if (!el) return;
+    const measure = () => setWidth((prev) => (prev === el.offsetWidth ? prev : el.offsetWidth));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const t1 = window.setTimeout(() => setLeaving(true), 4600);
+    const t2 = window.setTimeout(() => closeRef.current(), 4800);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, []);
+
+  // 정답률 숫자 카운트업(말풍선이 다 솟은 뒤 시작)
+  useEffect(() => {
+    if (!data.rate) return;
+    let raf = 0;
+    const start = performance.now() + 380;
+    const tick = (t: number) => {
+      const p = Math.max(0, Math.min(1, (t - start) / 900));
+      setRate(Math.round(data.rate * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [data.rate]);
+
+  function dismiss() {
+    setLeaving(true);
+    window.setTimeout(() => closeRef.current(), 200);
+  }
+
+  if (typeof document === "undefined") return null;
+  const tailX = Math.round((width ?? 300) / 2);
+  const ok = data.correct;
+  return createPortal(
+    <div className="dqt" style={{ bottom }}>
+      <div
+        ref={bubbleRef}
+        className={`qm-bubble is-tail-down is-fit dqt-bubble${leaving ? " is-out" : ""}`}
+        style={{ ["--tail-x" as string]: `${tailX}px` } as React.CSSProperties}
+        role="status"
+        aria-live="polite"
+        onClick={dismiss}
+      >
+        <span className="qm-bubble-shadow" aria-hidden="true" />
+        <TossBubbleGlass tailX={tailX} side="bottom" />
+        <div className="qm-bubble-body">
+          <span className="qm-bubble-ic" aria-hidden="true">
+            <span className={`dqt-medal ${ok ? "is-ok" : "is-no"}`}>
+              {ok ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round"><path d="M12 6v7M12 18v.5" /></svg>
+              )}
+            </span>
+            {ok && (
+              <span className="dqt-burst">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <i key={i} style={{ ["--a" as string]: `${i * 45}deg`, ["--c" as string]: i % 2 ? "#FFC53D" : "#5BA3FF" } as React.CSSProperties} />
+                ))}
+              </span>
+            )}
+          </span>
+          <div className="dqt-line">
+            <p className={`qm-bubble-title dqt-title ${ok ? "is-ok" : "is-no"}`}>{ok ? "정답이에요!" : "아쉬워요"}</p>
+            {ok && data.xp > 0 && <span className="dqt-xp">경험치 +{data.xp}</span>}
+          </div>
+          <p className="qm-bubble-sub dqt-sub">
+            정답률 <b>{rate}%</b>
+            {data.total > 0 && <span> · {data.total.toLocaleString()}명이 풀었어요</span>}
+          </p>
+          <div className="dqt-track" aria-hidden="true">
+            <div className="dqt-fill" style={{ width: `${data.rate}%` }} />
+          </div>
+          {data.guest && <p className="dqt-guest">로그인하면 정답 시 경험치가 쌓여요.</p>}
+        </div>
+      </div>
+      <style>{`
+        .dqt { position: fixed; left: 0; right: 0; z-index: 60; display: flex; justify-content: center; padding: 0 14px; pointer-events: none; }
+        /* 말풍선 기본(.qm-bubble)은 absolute — 여기선 가운데 칸 안에서 제 폭으로 */
+        .qm-bubble.dqt-bubble { position: relative; width: 100%; max-width: 440px; pointer-events: auto; }
+        .qm-bubble.dqt-bubble .qm-bubble-body { padding: 13px 20px 12px 60px; }
+        .dqt-line { display: flex; align-items: center; gap: 8px; min-width: 0; animation: qmBubbleContent 1s linear both; }
+        /* 제목 색 — 맞히면 파랑, 틀리면 빨강(말풍선 제목과 같은 그라데이션 글씨) */
+        .qm-bubble-title.dqt-title { animation: none; }
+        .qm-bubble-title.dqt-title.is-ok { background-image: linear-gradient(90deg, #2F7BFF 0%, #2A5BD0 55%, #1E3F9C 100%); }
+        .qm-bubble-title.dqt-title.is-no { background-image: linear-gradient(90deg, #F25C5C 0%, #D13C3C 55%, #A93030 100%); }
+        [data-theme="dark"] .qm-bubble-title.dqt-title.is-ok { background-image: linear-gradient(90deg, #8FC0FF 0%, #B7D6FF 55%, #E7EEFB 100%); }
+        [data-theme="dark"] .qm-bubble-title.dqt-title.is-no { background-image: linear-gradient(90deg, #FF9A9A 0%, #FFB6B6 55%, #FFE3E3 100%); }
+        .dqt-xp { flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #A9780D; background: rgba(255, 196, 80, 0.24); white-space: nowrap; animation: dqtPop 0.7s cubic-bezier(0.22, 1.6, 0.36, 1) 0.55s both; }
+        [data-theme="dark"] .dqt-xp { color: #F5CF72; background: rgba(255, 200, 90, 0.18); }
+        .dqt-sub { font-variant-numeric: tabular-nums; }
+        .dqt-sub b { font-weight: 700; color: #191F28; }
+        [data-theme="dark"] .dqt-sub b { color: #E7EAF0; }
+        .dqt-track { height: 5px; margin-top: 10px; border-radius: 999px; background: rgba(23, 35, 58, 0.09); overflow: hidden; animation: qmBubbleContent 1s linear both; }
+        [data-theme="dark"] .dqt-track { background: rgba(255, 255, 255, 0.14); }
+        .dqt-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7DC4FF, #3787FF 55%, #7A5CFF); transform-origin: left center; animation: dqtBar 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
+        .dqt-guest { margin: 8px 0 0; font-size: 12px; color: #8B95A1; animation: qmBubbleContent 1s linear both; }
+        /* 아이콘 메달 */
+        .qm-bubble.dqt-bubble .qm-bubble-ic { width: 34px; height: 34px; }
+        .dqt-medal { position: relative; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 12px -4px rgba(47, 123, 255, 0.55); animation: dqtMedal 0.7s cubic-bezier(0.22, 1.7, 0.36, 1) 0.28s both; }
+        .dqt-medal.is-ok { background: linear-gradient(135deg, #7DB8FF, #2F7BFF); }
+        .dqt-medal.is-no { background: linear-gradient(135deg, #FF9C9C, #EE4A4A); box-shadow: 0 6px 12px -4px rgba(238, 74, 74, 0.5); }
+        .dqt-medal.is-ok::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgba(47, 123, 255, 0.55); animation: dqtRing 1s ease-out 0.5s both; }
+        /* 맞히면 반짝이가 사방으로 터진다 */
+        .dqt-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+        .dqt-burst i { position: absolute; left: -2.5px; top: -2.5px; width: 5px; height: 5px; border-radius: 50%; background: var(--c); opacity: 0; animation: dqtBurst 0.85s cubic-bezier(0.2, 0.8, 0.3, 1) 0.45s both; }
+        @keyframes dqtMedal { from { opacity: 0; transform: scale(0.3) rotate(-40deg); } to { opacity: 1; transform: none; } }
+        @keyframes dqtRing { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.7); } }
+        @keyframes dqtBurst { 0% { opacity: 1; transform: rotate(var(--a)) translateY(-8px) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-30px) scale(0.3); } }
+        @keyframes dqtPop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+        @keyframes dqtBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @media (prefers-reduced-motion: reduce) { .dqt-medal, .dqt-medal::after, .dqt-burst i, .dqt-xp, .dqt-fill { animation: none !important; } .dqt-burst { display: none; } }
+      `}</style>
+    </div>,
+    document.body
+  );
+}
+
 function fmtTime(sec: number) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -44,8 +198,7 @@ export default function DailyQuizCard() {
   const [loaded, setLoaded] = useState(() => clientCache.has(CACHE_KEY));
   const [submitting, setSubmitting] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [xpGained, setXpGained] = useState(0);
-  const [isGuest, setIsGuest] = useState(false);
+  const [toast, setToast] = useState<ResultToastData | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // 처음 보이는 순간 재생할지(마운트 때 한 번 정한다) — 재방문·캐시 복귀는 조용히 보여 준다.
   const playEntrance = useRef(!dqEntrancePlayed);
@@ -54,8 +207,6 @@ export default function DailyQuizCard() {
   const lpStart = useRef<{ x: number; y: number } | null>(null);
   const lpFired = useRef(false);
   const [pressing, setPressing] = useState(false);
-  // 정답률 숫자 카운트업(0 → 실제 값)
-  const [rateShown, setRateShown] = useState(0);
 
   // ── 과목 설정 ──────────────────────────────────────────────
   // 예전엔 전체 문항에서 뽑아 그날그날 과목이 달라졌다("사문이랑 생윤이 랜덤하게 나온다").
@@ -132,27 +283,10 @@ export default function DailyQuizCard() {
 
   const answered = !!data?.answered;
   const hasQuestion = !!data?.question;
-  const targetRate = answered ? data?.stats?.correctRate ?? 0 : 0;
 
   useEffect(() => {
     if (loaded && hasQuestion) dqEntrancePlayed = true;
   }, [loaded, hasQuestion]);
-
-  useEffect(() => {
-    if (!targetRate) {
-      setRateShown(0);
-      return;
-    }
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / 900);
-      setRateShown(Math.round(targetRate * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [targetRate]);
 
   // 미응답 동안 경과 시간 카운트업(이미지의 우상단 타이머).
   useEffect(() => {
@@ -182,8 +316,13 @@ export default function DailyQuizCard() {
           setSubmitting(false);
           return;
         }
-        setIsGuest(!!r.guest);
-        setXpGained(r.xpGained ?? 0);
+        setToast({
+          correct: !!r.isCorrect,
+          xp: r.xpGained ?? 0,
+          guest: !!r.guest,
+          rate: r.stats?.correctRate ?? 0,
+          total: r.stats?.total ?? 0,
+        });
         setData((prev) => {
           if (!prev) return prev;
           const next: DailyData = {
@@ -343,28 +482,9 @@ export default function DailyQuizCard() {
           <span className="dq-time">{fmtTime(elapsed)}</span>
         </span>
       </div>
-
-        {/* 응답 후: 결과 + 정답률 */}
-        {answered && stats && (
-          <div className="dq-rcard dq-in" style={stagger(4)}>
-            <div className="dq-result-row">
-              <span className={`dq-verdict ${myCorrect ? "is-ok" : "is-no"}`}>
-                {myCorrect ? "정답이에요!" : "아쉬워요"}
-                {myCorrect && xpGained > 0 && <span className="dq-xp">경험치 +{xpGained}</span>}
-              </span>
-              <span className="dq-rate">
-                정답률 <b>{rateShown}%</b>
-                {stats.total > 0 && <span className="dq-rate-n"> · {stats.total.toLocaleString()}명</span>}
-              </span>
-            </div>
-            {/* 정답률 바 — 왼쪽에서 차오른다 */}
-            <div className="dq-track">
-              <div className="dq-fill" style={{ width: `${stats.correctRate}%` }} />
-            </div>
-            {isGuest && <p className="dq-guest">로그인하면 정답 시 경험치가 쌓여요.</p>}
-          </div>
-        )}
       </div>
+
+      {toast && <ResultToast data={toast} onClose={() => setToast(null)} />}
 
       {/* 과목 설정 시트 — 고른 과목에서만 오늘의 문제가 나온다(아무것도 안 고르면 전체)
           반드시 document.body 포털로 띄운다. 카드(overflow:hidden) 안에서 fixed 로 두면 조상에
@@ -394,7 +514,7 @@ export default function DailyQuizCard() {
               padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--c-text-2)" }}>
+            <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "var(--c-text-2)" }}>
               데일리 퀴즈 과목
             </p>
             <p style={{ margin: "6px 0 16px", fontSize: 13, color: "var(--c-text-5)", lineHeight: 1.5 }}>
@@ -480,7 +600,7 @@ export default function DailyQuizCard() {
                 className="press"
                 style={{
                   flex: 2, height: 50, borderRadius: 14, border: "none",
-                  background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 800,
+                  background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 700,
                   cursor: prefSaving ? "default" : "pointer", opacity: prefSaving ? 0.6 : 1,
                 }}
               >
@@ -504,10 +624,8 @@ export default function DailyQuizCard() {
             --dq-pill-bg: rgba(23, 35, 58, 0.05);
           --dq-opt-bg: rgba(255, 255, 255, 0.82); --dq-opt-bd: rgba(40, 84, 170, 0.14);
           --dq-opt-sh: 0 8px 18px -10px rgba(40, 84, 170, 0.32);
-          --dq-ok: #12936A; --dq-ok-bg: rgba(31, 190, 140, 0.13); --dq-ok-bd: rgba(31, 190, 140, 0.55);
+          --dq-ok: #2A6FE0; --dq-ok-bg: rgba(55, 135, 255, 0.12); --dq-ok-bd: rgba(55, 135, 255, 0.55);
           --dq-no: #D13C3C; --dq-no-bg: rgba(240, 80, 80, 0.10); --dq-no-bd: rgba(240, 80, 80, 0.5);
-          --dq-track: rgba(23, 35, 58, 0.08);
-          --dq-gold: #A9780D; --dq-gold-bg: rgba(255, 196, 80, 0.2);
         }
         /* 예전엔 문제·보기·결과가 한 카드에 묶여 있었다. 지금은 문제는 카드 없이 글만, 보기 둘과 결과만 각자 카드. */
         .dq-qcard { padding: 2px 4px 6px; }
@@ -520,10 +638,8 @@ export default function DailyQuizCard() {
             --dq-pill-bg: rgba(255, 255, 255, 0.08);
           --dq-opt-bg: rgba(255, 255, 255, 0.06); --dq-opt-bd: rgba(255, 255, 255, 0.12);
           --dq-opt-sh: 0 8px 18px -10px rgba(0, 0, 0, 0.6);
-          --dq-ok: #5BE0B4; --dq-ok-bg: rgba(60, 214, 160, 0.16); --dq-ok-bd: rgba(80, 224, 176, 0.55);
+          --dq-ok: #8FC0FF; --dq-ok-bg: rgba(90, 150, 255, 0.18); --dq-ok-bd: rgba(120, 170, 255, 0.6);
           --dq-no: #FF8B8B; --dq-no-bg: rgba(255, 100, 100, 0.14); --dq-no-bd: rgba(255, 120, 120, 0.5);
-          --dq-track: rgba(255, 255, 255, 0.12);
-          --dq-gold: #F5CF72; --dq-gold-bg: rgba(255, 200, 90, 0.16);
         }
 
         .dq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 4px 0; }
@@ -538,13 +654,13 @@ export default function DailyQuizCard() {
         .dq-card { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .dq-card.is-pressing { transform: scale(0.982); transition: transform 0.55s cubic-bezier(0.3, 0, 0.5, 1); }
         .dq-cat { margin: 14px 0 0; text-align: left; font-size: 15px; font-weight: 700; color: var(--dq-sub); letter-spacing: -0.2px; }
-        .dq-q { margin: 8px 0 0; padding: 0; font-size: 21px; font-weight: 800; line-height: 1.5; letter-spacing: -0.4px; color: var(--dq-ink); word-break: keep-all; }
+        .dq-q { margin: 8px 0 0; padding: 0; font-size: 21px; font-weight: 700; line-height: 1.5; letter-spacing: -0.4px; color: var(--dq-ink); word-break: keep-all; }
 
         .dq-opts { display: flex; flex-direction: column; gap: 10px; padding: 18px 0 0; }
         .dq-opt {
           position: relative; display: flex; align-items: center; gap: 12px; width: 100%; height: 60px; padding: 0 16px 0 12px;
           border-radius: 18px; border: 1px solid var(--dq-opt-bd); background: var(--dq-opt-bg); box-shadow: var(--dq-opt-sh);
-          color: var(--dq-ink); font-size: 17px; font-weight: 800; text-align: left; letter-spacing: -0.2px;
+          color: var(--dq-ink); font-size: 17px; font-weight: 700; text-align: left; letter-spacing: -0.2px;
         }
         .dq-opt:disabled { cursor: default; }
         .dq-badge { display: block; width: 34px; height: 34px; flex-shrink: 0; filter: drop-shadow(0 4px 6px rgba(30, 60, 140, 0.28)); transition: transform 0.35s cubic-bezier(0.22, 1.5, 0.36, 1); }
@@ -552,7 +668,7 @@ export default function DailyQuizCard() {
         .dq-badge-x { filter: drop-shadow(0 4px 6px rgba(200, 40, 40, 0.28)); }
         .dq-opt:active:not(:disabled) .dq-badge { transform: scale(0.88) rotate(-6deg); }
         .dq-opt-tag {
-          margin-left: auto; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap;
+          margin-left: auto; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
           color: var(--dq-ok); background: var(--dq-ok-bg);
         }
         .dq-opt.is-correct { border-color: var(--dq-ok-bd); background: var(--dq-ok-bg); color: var(--dq-ok); box-shadow: 0 0 0 3px var(--dq-ok-bg), var(--dq-opt-sh); animation: dqCorrect 0.55s cubic-bezier(0.22, 1.5, 0.36, 1) both; }
@@ -561,21 +677,6 @@ export default function DailyQuizCard() {
         .dq-opt.is-wrong .dq-opt-tag { color: var(--dq-no); background: var(--dq-no-bg); }
         .dq-opt.is-dim { opacity: 0.5; box-shadow: none; }
 
-        .dq-rcard {
-          margin-top: 12px; padding: 16px 18px 18px; border-radius: 22px;
-          background: var(--dq-opt-bg); border: 1px solid var(--dq-opt-bd); box-shadow: var(--dq-opt-sh);
-        }
-        .dq-result-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; animation: dqUp 0.45s ease-out both; }
-        .dq-verdict { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; font-weight: 800; }
-        .dq-verdict.is-ok { color: var(--dq-ok); }
-        .dq-verdict.is-no { color: var(--dq-no); }
-        .dq-xp { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; color: var(--dq-gold); background: var(--dq-gold-bg); animation: dqXp 0.7s cubic-bezier(0.22, 1.6, 0.36, 1) 0.25s both; }
-        .dq-rate { font-size: 13px; font-weight: 600; color: var(--dq-sub); white-space: nowrap; font-variant-numeric: tabular-nums; }
-        .dq-rate b { font-size: 15px; font-weight: 800; color: var(--dq-ink); }
-        .dq-rate-n { opacity: 0.8; }
-        .dq-track { height: 8px; border-radius: 999px; background: var(--dq-track); overflow: hidden; }
-        .dq-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7DC4FF, #3787FF 55%, #7A5CFF); transform-origin: left center; animation: dqBar 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
-        .dq-guest { margin: 10px 0 0; font-size: 12px; color: var(--dq-sub); }
 
         /* 처음 보일 때 — 카드가 떠오르고, 안의 것들이 차례로 들어온다(앱을 연 뒤 한 번만) */
         .dq-anim .dq-card { animation: dqCardIn 0.75s cubic-bezier(0.2, 1.15, 0.3, 1) backwards; }
@@ -590,11 +691,9 @@ export default function DailyQuizCard() {
         @keyframes dqBadgePop { 0% { transform: scale(1); } 45% { transform: scale(1.28) rotate(-8deg); } 100% { transform: scale(1); } }
         @keyframes dqCorrect { 0% { transform: scale(0.97); } 60% { transform: scale(1.025); } 100% { transform: scale(1); } }
         @keyframes dqShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
-        @keyframes dqBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes dqXp { from { opacity: 0; transform: translateY(6px) scale(0.6); } to { opacity: 1; transform: none; } }
         @keyframes dqGlow { 0%, 100% { opacity: 0.75; transform: translate(0, 0) scale(1); } 50% { opacity: 1; transform: translate(-8px, 6px) scale(1.12); } }
         @media (prefers-reduced-motion: reduce) {
-          .dq-card, .dq-in, .dq-opt, .dq-badge, .dq-fill, .dq-xp, .dq-result-row { animation: none !important; }
+          .dq-card, .dq-in, .dq-opt, .dq-badge { animation: none !important; }
         }
       `}</style>
     </section>

@@ -169,7 +169,7 @@ export default function MockExamCover({
             x="14"
             y="296"
             fontSize="172"
-            fontWeight="900"
+            fontWeight="700"
             letterSpacing="-6"
             style={{ fontFamily: "inherit" }}
           >
@@ -184,7 +184,7 @@ export default function MockExamCover({
         ))}
       </g>
       {roman && (
-        <text x="196" y="302" fontSize="30" fontWeight="800" fill="#FFFFFF" opacity="0.92">
+        <text x="196" y="302" fontSize="30" fontWeight="700" fill="#FFFFFF" opacity="0.92">
           {roman}
         </text>
       )}
@@ -200,7 +200,7 @@ export default function MockExamCover({
             x="276"
             y={110 + i * 23}
             fontSize={line.length > 9 ? 17 : 20}
-            fontWeight="800"
+            fontWeight="700"
             letterSpacing="-0.5"
           >
             {line}

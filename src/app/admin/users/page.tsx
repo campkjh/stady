@@ -222,7 +222,7 @@ export default function AdminUsersPage() {
                       <button
                         type="button"
                         onClick={() => setGrantUser(user)}
-                        style={{ border: "none", borderRadius: 8, background: JC.accentBg, color: JC.accent, padding: "7px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}
+                        style={{ border: "none", borderRadius: 8, background: JC.accentBg, color: JC.accent, padding: "7px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
                       >
                         지급
                       </button>
@@ -337,7 +337,7 @@ function PremiumGrantModal({ user, onClose }: { user: AdminUser; onClose: () => 
         onClick={(e) => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 380, background: "var(--c-bg)", border: `1px solid ${JC.soft}`, borderRadius: 18, padding: "24px 22px 20px", boxSizing: "border-box" }}
       >
-        <div style={{ fontSize: 17, fontWeight: 800, color: JC.title }}>프리미엄권 지급</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: JC.title }}>프리미엄권 지급</div>
         <div style={{ marginTop: 6, fontSize: 13, color: JC.body }}>
           <b style={{ color: JC.title }}>{user.nickname}</b> · {user.email}
         </div>
@@ -354,7 +354,7 @@ function PremiumGrantModal({ user, onClose }: { user: AdminUser; onClose: () => 
               disabled={busy}
               onClick={() => grant(d.days, d.label)}
               className="press"
-              style={{ border: "none", borderRadius: 12, background: "#3180F7", color: "#fff", padding: "12px 0", fontSize: 14, fontWeight: 800, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+              style={{ border: "none", borderRadius: 12, background: "#3180F7", color: "#fff", padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
             >
               {d.label}
             </button>

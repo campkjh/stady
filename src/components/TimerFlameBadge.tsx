@@ -17,7 +17,7 @@ export function FlameChip({ totalSeconds, size = 13 }: { totalSeconds: number; s
       style={{
         display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "middle",
         padding: "2px 7px 2px 5px", borderRadius: 999,
-        background: t.soft, color: t.color, fontSize: size - 2, fontWeight: 800, whiteSpace: "nowrap",
+        background: t.soft, color: t.color, fontSize: size - 2, fontWeight: 700, whiteSpace: "nowrap",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -51,7 +51,7 @@ export default function TimerFlameBadge({ totalSeconds }: { totalSeconds: number
           <img src={tier.icon} alt="" width={30} height={30} style={{ display: "block" }} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: tier.color }}>{tier.name}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: tier.color }}>{tier.name}</div>
           <div style={{ fontSize: 12.5, color: "var(--c-text-4b)", fontWeight: 600, marginTop: 2 }}>
             이번 주 {hours(totalSeconds)} · 월요일에 초기화
           </div>
@@ -83,7 +83,7 @@ export default function TimerFlameBadge({ totalSeconds }: { totalSeconds: number
                 height={22}
                 style={{ display: "block", margin: "0 auto", filter: reached ? "none" : "grayscale(1)", opacity: reached ? 1 : 0.3 }}
               />
-              <span style={{ display: "block", fontSize: 9.5, marginTop: 3, fontWeight: reached ? 800 : 600, color: reached ? t.color : "var(--c-text-5)" }}>
+              <span style={{ display: "block", fontSize: 9.5, marginTop: 3, fontWeight: reached ? 700 : 600, color: reached ? t.color : "var(--c-text-5)" }}>
                 {t.name}
               </span>
             </div>

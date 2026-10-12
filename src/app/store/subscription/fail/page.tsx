@@ -29,7 +29,7 @@ function SubscriptionFailContent() {
 
       <div style={contentStyle}>
         <div style={badgeStyle}>!</div>
-        <h1 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "var(--c-text)" }}>구독을 시작하지 못했어요</h1>
+        <h1 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 700, color: "var(--c-text)" }}>구독을 시작하지 못했어요</h1>
         <p style={{ margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600, lineHeight: 1.6 }}>{message}</p>
         <button type="button" style={primaryButtonStyle} onClick={() => router.replace("/mypage")}>
           마이페이지로
@@ -96,7 +96,7 @@ const badgeStyle = {
   alignItems: "center",
   justifyContent: "center",
   fontSize: 32,
-  fontWeight: 900,
+  fontWeight: 700,
   background: "var(--c-danger-soft)",
   color: "var(--c-danger-c)",
 } as const;
@@ -111,6 +111,6 @@ const primaryButtonStyle = {
   color: "#fff",
   padding: "15px 18px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

@@ -1295,7 +1295,7 @@ function FeedQuiz({
                       color: val ? "var(--c-quiz-o)" : "var(--c-quiz-x)",
                       opacity: solved && !isAnswer ? (picked ? 0.55 : 0.32) : 1,
                       fontSize: 17,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: solved ? "default" : "pointer",
                       flexShrink: 0,
                       display: "inline-flex",
@@ -2078,7 +2078,7 @@ function CommunityStyles() {
         background: none;
         padding: 0;
         font-size: 20px;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: -0.3px;
         color: var(--c-text-5);
         cursor: pointer;
@@ -2532,7 +2532,7 @@ function CommunityStyles() {
         padding: 16px 16px 12px;
         border-bottom: 1px solid var(--c-bg-muted-6);
       }
-      .ccs-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--c-text); }
+      .ccs-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--c-text); }
       .ccs-sub {
         margin: 3px 0 0;
         font-size: 13px;
@@ -2641,8 +2641,8 @@ function CommunityStyles() {
         color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent;
       }
       .ccs-action:disabled { opacity: 0.5; cursor: default; }
-      .ccs-action.is-primary { color: var(--c-brand); font-weight: 800; }
-      .ccs-action.is-danger { color: #D63A3A; font-weight: 800; }
+      .ccs-action.is-primary { color: var(--c-brand); font-weight: 700; }
+      .ccs-action.is-danger { color: #D63A3A; font-weight: 700; }
       .ccs-action-dot { font-size: 12px; color: var(--c-text-5); }
       .ccs-editbox { margin-top: 6px; }
       .ccs-edit {

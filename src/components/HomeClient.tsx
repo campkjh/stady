@@ -129,7 +129,7 @@ function QuizBookCard({
         }}
       >
         {locked && (
-          <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 7, left: 7, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 7px", fontSize: 10, fontWeight: 800 }}>
+          <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 7, left: 7, zIndex: 2, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 7px", fontSize: 10, fontWeight: 700 }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M7 10V8a5 5 0 0110 0v2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
               <rect x="5" y="10" width="14" height="9" rx="2.5" fill="#fff" />
@@ -221,7 +221,7 @@ function QuizBookCard({
                   background: "var(--c-danger-e)",
                   color: "#fff",
                   fontSize: "clamp(8px, 7cqw, 11px)",
-                  fontWeight: 800,
+                  fontWeight: 700,
                   letterSpacing: 0.3,
                 }}
               >
@@ -248,7 +248,7 @@ function QuizBookCard({
               alt=""
               style={{ width: "clamp(13px, 15cqw, 22px)", height: "auto", display: "block" }}
             />
-            <span style={{ fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 800, color: "var(--c-warn-e)", letterSpacing: "-0.2px" }}>
+            <span style={{ fontSize: "clamp(8px, 7cqw, 11px)", fontWeight: 700, color: "var(--c-warn-e)", letterSpacing: "-0.2px" }}>
               인기
             </span>
           </div>
@@ -507,7 +507,7 @@ export default function HomeClient({
                 alignItems: "center",
                 gap: 5,
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: 700,
               }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -704,7 +704,7 @@ export default function HomeClient({
                 <div style={{ position: "relative", width: "100%", aspectRatio: "2/1" }}>
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.1), rgba(255,255,255,0.08))" }} />
                   <div style={{ position: "absolute", left: 22, right: 54, bottom: 20 }}>
-                    <p style={{ fontSize: 24, fontWeight: 900, color: "#fff", lineHeight: 1.22, whiteSpace: "pre-line" }}>{popupBanner.title}</p>
+                    <p style={{ fontSize: 24, fontWeight: 700, color: "#fff", lineHeight: 1.22, whiteSpace: "pre-line" }}>{popupBanner.title}</p>
                     {popupBanner.subtitle && (
                       <p style={{ marginTop: 6, fontSize: 14, color: "rgba(255,255,255,0.88)", fontWeight: 700 }}>{popupBanner.subtitle}</p>
                     )}
@@ -713,10 +713,10 @@ export default function HomeClient({
               )}
             </button>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--c-bg-muted-9)", flex: "0 0 auto" }}>
-              <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14, fontWeight: 800 }}>
+              <button type="button" onClick={hidePopupForThreeDays} style={{ height: 48, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14, fontWeight: 700 }}>
                 3일동안 안보기
               </button>
-              <button type="button" onClick={closePopup} style={{ height: 48, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14, fontWeight: 900 }}>
+              <button type="button" onClick={closePopup} style={{ height: 48, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14, fontWeight: 700 }}>
                 닫기
               </button>
             </div>
@@ -787,13 +787,13 @@ export default function HomeClient({
               justifyContent: "center",
               color: "#fff",
             }}>
-              <span style={{ fontSize: 9, fontWeight: 800, opacity: 0.85, letterSpacing: 0.5 }}>STADY</span>
-              <span style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.1, textAlign: "center" }}>2026<br />한국사</span>
+              <span style={{ fontSize: 9, fontWeight: 700, opacity: 0.85, letterSpacing: 0.5 }}>STADY</span>
+              <span style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.1, textAlign: "center" }}>2026<br />한국사</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text-c)", margin: 0 }}>2026 한국사</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-c)", margin: 0 }}>2026 한국사</p>
               <p style={{ fontSize: 12, color: "var(--c-text-4c)", margin: "3px 0 0", fontWeight: 600 }}>한국사 문제집 · PDF 다운로드</p>
-              <p style={{ fontSize: 16, fontWeight: 900, color: "var(--c-brand)", margin: "8px 0 0" }}>3,900원</p>
+              <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-brand)", margin: "8px 0 0" }}>3,900원</p>
             </div>
             <span style={{
               flexShrink: 0,
@@ -802,7 +802,7 @@ export default function HomeClient({
               background: "var(--c-brand)",
               color: "#fff",
               fontSize: 13,
-              fontWeight: 800,
+              fontWeight: 700,
             }}>구매</span>
           </button>
         </section>

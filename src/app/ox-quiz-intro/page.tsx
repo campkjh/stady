@@ -129,7 +129,7 @@ export default function OxQuizListPage() {
           <OxHeroScene />
         </div>
 
-        <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--oxi-ink)", textAlign: "center", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 700, color: "var(--oxi-ink)", textAlign: "center", marginBottom: 12 }}>
           하루에 한 번 OX퀴즈
         </h1>
         <p style={{ fontSize: 15, color: "var(--oxi-ink-soft)", textAlign: "center" }}>
@@ -160,19 +160,19 @@ export default function OxQuizListPage() {
                   animation: "quizItemFadeUp 0.5s",
                 }}
               >
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 900 }}>
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
                   <span>{group.name}</span>
                   {allDone && (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                       <img src="/icons/quiz-allclear.svg" alt="" width={18} height={18} style={{ display: "block" }} />
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--oxi-accent)" }}>전체 완료</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--oxi-accent)" }}>전체 완료</span>
                     </span>
                   )}
                 </span>
                 <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--oxi-sub)" }}>
                   {group.items.length}개 중분류 · {totalQuestions}문항
                   {doneCount > 0 && (
-                    <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>
+                    <span style={{ color: "var(--c-brand)", fontWeight: 700 }}>
                       {` · ${doneCount}/${group.items.length} 단원 완료`}
                     </span>
                   )}
@@ -215,7 +215,7 @@ export default function OxQuizListPage() {
                         animation: "quizItemFadeUp 0.5s",
                       }}
                     >
-                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center", opacity: locked ? 0.85 : 1 }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 700, textAlign: "center", opacity: locked ? 0.85 : 1 }}>
                         {locked && (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
                             <path d="M7 10V8a5 5 0 0110 0v2" stroke="var(--oxi-sub)" strokeWidth="2" strokeLinecap="round" />
@@ -224,22 +224,22 @@ export default function OxQuizListPage() {
                         )}
                         <span>{qs.title}</span>
                         {locked && (
-                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "var(--oxi-prem-fg)", background: "var(--oxi-prem-bg)", border: "1px solid var(--oxi-prem-bd)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
+                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, color: "var(--oxi-prem-fg)", background: "var(--oxi-prem-bg)", border: "1px solid var(--oxi-prem-bd)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
                         )}
                         {completed && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                             <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
-                            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--oxi-accent)" }}>완료</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--oxi-accent)" }}>완료</span>
                           </span>
                         )}
                       </span>
                       <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--oxi-sub)", textAlign: "center" }}>
                         {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{denom}문항
                         {completed && stat?.bestPct != null && (
-                          <span style={{ color: "var(--oxi-accent)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                          <span style={{ color: "var(--oxi-accent)", fontWeight: 700 }}>{` · 최고 ${stat.bestPct}%`}</span>
                         )}
                         {inProgress && (
-                          <span style={{ color: "var(--oxi-accent)", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
+                          <span style={{ color: "var(--oxi-accent)", fontWeight: 700 }}>{` · ${answered}/${denom} 진행 중`}</span>
                         )}
                       </span>
                       {sections.length > 0 && (

@@ -157,7 +157,7 @@ export default function LoginPage() {
         </div>
 
         {/* Title */}
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
           스타디
         </h1>
         <p style={{ fontSize: 14, color: "var(--c-text-4c)", textAlign: "center" }}>
@@ -185,7 +185,7 @@ export default function LoginPage() {
       </div>
 
       {/* Title */}
-      <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
         스타디
       </h1>
       <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 48, textAlign: "center" }}>

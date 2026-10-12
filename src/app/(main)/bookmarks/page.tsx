@@ -108,7 +108,7 @@ function SwipeableVocabBookmarkItem({
           background: "var(--c-danger)",
           color: "#fff",
           fontSize: 14,
-          fontWeight: 800,
+          fontWeight: 700,
         }}
       >
         삭제
@@ -301,7 +301,7 @@ export default function BookmarksPage() {
                 color: "var(--c-danger-c)",
                 padding: "8px 12px",
                 fontSize: 13,
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: deletingAll ? "not-allowed" : "pointer",
                 opacity: deletingAll ? 0.64 : 1,
                 whiteSpace: "nowrap",
@@ -352,7 +352,7 @@ export default function BookmarksPage() {
                   borderBottom: active ? "2.5px solid var(--c-brand)" : "2.5px solid transparent",
                   marginBottom: -1,
                   fontSize: 14,
-                  fontWeight: active ? 800 : 600,
+                  fontWeight: active ? 700 : 600,
                   color: active ? "var(--c-brand)" : "var(--c-text-4c)",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
@@ -405,7 +405,7 @@ export default function BookmarksPage() {
             <span style={{
               position: "absolute", top: -12, right: -6,
               padding: "5px 10px", borderRadius: 999, background: "var(--c-bg)",
-              color: "var(--c-text-2d)", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
+              color: "var(--c-text-2d)", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
               boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
             }}>모아 풀기</span>
           </span>
@@ -415,7 +415,7 @@ export default function BookmarksPage() {
             <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--c-brand-mid-2)", marginBottom: 6 }}>
               모아둔 문제 복습
             </span>
-            <span style={{ display: "block", fontSize: 17.5, fontWeight: 800, color: "var(--c-text-e)", lineHeight: 1.38, letterSpacing: -0.2 }}>
+            <span style={{ display: "block", fontSize: 17.5, fontWeight: 700, color: "var(--c-text-e)", lineHeight: 1.38, letterSpacing: -0.2 }}>
               책갈피한 문제만<br />한번에 풀어보는 복습
             </span>
           </span>
@@ -471,7 +471,7 @@ export default function BookmarksPage() {
           {otherGroups.map((group) => (
             <div key={group.key}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "0 2px 10px" }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-2c)" }}>{group.key}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2c)" }}>{group.key}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-4c)" }}>{group.items.length}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -588,7 +588,7 @@ export default function BookmarksPage() {
               padding: "22px 20px 16px", boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
             }}
           >
-            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>
               모든 책갈피 취소
             </p>
             <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>
@@ -610,7 +610,7 @@ export default function BookmarksPage() {
                 onClick={handleDeleteAllBookmarks}
                 style={{
                   flex: 1, height: 48, borderRadius: 12, border: "none",
-                  background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+                  background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
                 }}
               >
                 확인

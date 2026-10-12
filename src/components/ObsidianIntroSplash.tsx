@@ -368,7 +368,7 @@ export default function ObsidianIntroSplash() {
           margin: 0;
           text-align: center;
           font-size: clamp(21px, 6.2vw, 30px);
-          font-weight: 800;
+          font-weight: 700;
           line-height: 1.35;
           letter-spacing: -0.01em;
           /* 기본값은 단색 — 그라데이션(background-clip:text)을 못 그리는 웹뷰에서도

@@ -30,7 +30,7 @@ export default function MainError({
         textAlign: "center",
       }}
     >
-      <p style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text-c)" }}>
+      <p style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text-c)" }}>
         화면을 여는 중 문제가 생겼어요
       </p>
       <p style={{ fontSize: 13.5, color: "var(--c-text-4c)", lineHeight: 1.6 }}>
@@ -44,7 +44,7 @@ export default function MainError({
           onClick={reset}
           style={{
             border: "none", borderRadius: 12, padding: "11px 20px", cursor: "pointer",
-            background: "var(--c-timer)", color: "#fff", fontSize: 14, fontWeight: 800,
+            background: "var(--c-timer)", color: "#fff", fontSize: 14, fontWeight: 700,
           }}
         >
           다시 시도

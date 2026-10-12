@@ -94,7 +94,7 @@ export default function NoticeHomeCard() {
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 5, padding: "1px 5px", flexShrink: 0 }}>공지</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 5, padding: "1px 5px", flexShrink: 0 }}>공지</span>
             <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {notice.title}
             </p>

@@ -206,7 +206,7 @@ export default function TagManager() {
   return (
     <section style={{ display: "grid", gap: 20 }}>
       <div>
-        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 900 }}>태그 관리</h1>
+        <h1 style={{ margin: 0, color: "var(--c-text)", fontSize: 26, fontWeight: 700 }}>태그 관리</h1>
         <p style={{ margin: "8px 0 0", color: "var(--c-text-3)", fontSize: 14 }}>카테고리 안의 세부 태그를 동적으로 관리합니다.</p>
       </div>
       {message && (
@@ -302,7 +302,7 @@ const secondaryButtonStyle = {
   color: "var(--c-text-2c)",
   padding: "9px 12px",
   fontSize: 13,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;
 
@@ -313,6 +313,6 @@ const primaryOutlineStyle = {
   color: "var(--c-brand-deep-2)",
   padding: "11px 14px",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

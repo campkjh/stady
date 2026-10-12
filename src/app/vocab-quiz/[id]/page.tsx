@@ -666,7 +666,7 @@ export default function VocabQuizSolvePage() {
             {/* Result indicator */}
             {answered && (
               <div style={{ marginTop: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "resultFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)", position: "relative", zIndex: 10 }}>
-                <p style={{ fontSize: 28, fontWeight: 900, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
+                <p style={{ fontSize: 28, fontWeight: 700, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
                   {answered.isCorrect ? "정답" : "오답"}
                 </p>
                 {currentQuestion.explanation && (
@@ -753,7 +753,7 @@ export default function VocabQuizSolvePage() {
             textAlign: "center",
             animation: "fadeInUp 0.3s ease",
           }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>
               다 풀으셨나요?
             </h2>
             <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 24 }}>

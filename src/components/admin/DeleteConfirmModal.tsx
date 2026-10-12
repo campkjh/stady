@@ -46,7 +46,7 @@ export default function DeleteConfirmModal({
           padding: 24,
         }}
       >
-        <h2 style={{ margin: 0, color: "var(--c-text)", fontSize: 18, fontWeight: 800 }}>{title}</h2>
+        <h2 style={{ margin: 0, color: "var(--c-text)", fontSize: 18, fontWeight: 700 }}>{title}</h2>
         <p style={{ margin: "10px 0 22px", color: "var(--c-text-3)", fontSize: 14, lineHeight: 1.55 }}>{description}</p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <button
@@ -77,7 +77,7 @@ export default function DeleteConfirmModal({
               color: "#fff",
               padding: "10px 14px",
               fontSize: 14,
-              fontWeight: 800,
+              fontWeight: 700,
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
             }}

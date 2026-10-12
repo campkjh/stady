@@ -188,7 +188,7 @@ export default function MockExamBrowser({
                       </div>
                       {ex.solutionCount > 0 && <span className="mx-badge">해설</span>}
                       {locked && (
-                        <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 8px", fontSize: 11, fontWeight: 800 }}>
+                        <span aria-label="프리미엄 전용" style={{ position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="M7 10V8a5 5 0 0110 0v2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
                             <rect x="5" y="10" width="14" height="9" rx="2.5" fill="#fff" />
@@ -268,7 +268,7 @@ function BrowserStyles() {
       }
       .mx-rail-item.is-on .mx-rail-label, .mx-rail-item.is-open .mx-rail-label { color: var(--c-text-2b); }
       .mx-rail-picked {
-        font-size: 10px; font-weight: 800; color: var(--c-brand); max-width: 62px;
+        font-size: 10px; font-weight: 700; color: var(--c-brand); max-width: 62px;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .mx-rail-reset {
@@ -282,7 +282,7 @@ function BrowserStyles() {
       }
       .mx-panel-head {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 12px 16px 2px; font-size: 13px; font-weight: 800; color: var(--c-text-2b);
+        padding: 12px 16px 2px; font-size: 13px; font-weight: 700; color: var(--c-text-2b);
       }
       .mx-panel-close { border: none; background: none; padding: 4px; cursor: pointer; line-height: 0; }
       .mx-panel-body { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 16px 14px; }
@@ -298,7 +298,7 @@ function BrowserStyles() {
       /* ── 결과 ── */
       .mx-result-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 8px; }
       .mx-count { font-size: 13px; color: var(--c-text-4b); font-weight: 600; }
-      .mx-count b { color: var(--c-text-b); font-weight: 800; }
+      .mx-count b { color: var(--c-text-b); font-weight: 700; }
       .mx-reset-wide { display: none; }
       .mx-empty { padding: 48px 20px; text-align: center; color: var(--c-text-4c); font-size: 14px; margin: 0; }
       .mx-grid { padding: 4px 16px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
@@ -308,7 +308,7 @@ function BrowserStyles() {
       .mx-solve {
         position: absolute; right: 7px; top: 7px; z-index: 2;
         padding: 5px 10px; border-radius: 999px; text-decoration: none;
-        background: var(--c-brand); color: #fff; font-size: 11px; font-weight: 800;
+        background: var(--c-brand); color: #fff; font-size: 11px; font-weight: 700;
         box-shadow: 0 2px 8px rgba(55,135,255,0.35);
       }
       .mx-solve:active { transform: scale(0.94); }
@@ -323,7 +323,7 @@ function BrowserStyles() {
       .mx-thumb-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--c-text-5); font-size: 30px; }
       .mx-badge {
         position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 999px;
-        background: rgba(17,24,39,0.72); color: #fff; font-size: 10.5px; font-weight: 800;
+        background: rgba(17,24,39,0.72); color: #fff; font-size: 10.5px; font-weight: 700;
       }
       .mx-title { margin: 8px 2px 0; font-size: 14px; font-weight: 700; color: var(--c-text-b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .mx-sub {
@@ -382,7 +382,7 @@ function BrowserStyles() {
         }
         .mx-shell:not(.is-embedded) .mx-pchip { text-align: left; border: none; background: none; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
         .mx-shell:not(.is-embedded) .mx-pchip:hover { background: var(--c-bg-soft-4); }
-        .mx-pchip.is-on { background: var(--c-brand-soft-7); color: var(--c-brand-deep); font-weight: 800; }
+        .mx-pchip.is-on { background: var(--c-brand-soft-7); color: var(--c-brand-deep); font-weight: 700; }
         @keyframes mxPanelRight { from { opacity: 0; transform: translateX(-10px) } to { opacity: 1; transform: translateX(0) } }
 
         /* 목록은 늘 마지막(1fr) 칸에 둔다. 가운데 auto 칸은 필터 패널 자리라 패널이 닫히면

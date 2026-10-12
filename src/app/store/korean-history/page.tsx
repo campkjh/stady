@@ -77,22 +77,22 @@ export default function KoreanHistoryStorePage() {
             <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--c-text)" }}>교재 구매</h1>
+        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--c-text)" }}>교재 구매</h1>
       </header>
 
       <div style={{ padding: "16px 18px 28px" }}>
         <div style={coverStyle}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.82)", letterSpacing: 1 }}>STADY</span>
-          <span style={{ fontSize: 34, fontWeight: 900, color: "#fff", lineHeight: 1.2, marginTop: 8 }}>2026<br />한국사</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.82)", letterSpacing: 1 }}>STADY</span>
+          <span style={{ fontSize: 34, fontWeight: 700, color: "#fff", lineHeight: 1.2, marginTop: 8 }}>2026<br />한국사</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginTop: 10 }}>문제집 · PDF</span>
         </div>
 
-        <h2 style={{ margin: "20px 0 4px", fontSize: 22, fontWeight: 900, color: "var(--c-text)" }}>{PRODUCT_TITLE}</h2>
+        <h2 style={{ margin: "20px 0 4px", fontSize: 22, fontWeight: 700, color: "var(--c-text)" }}>{PRODUCT_TITLE}</h2>
         <p style={{ margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600 }}>{PRODUCT_SUBTITLE}</p>
 
         <div style={priceRowStyle}>
           <span style={{ fontSize: 14, color: "var(--c-text-3)", fontWeight: 700 }}>판매가</span>
-          <span style={{ fontSize: 24, fontWeight: 900, color: "var(--c-text)" }}>{PRICE.toLocaleString()}원</span>
+          <span style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text)" }}>{PRICE.toLocaleString()}원</span>
         </div>
 
         <ul style={infoListStyle}>
@@ -220,6 +220,6 @@ const primaryButtonStyle = {
   color: "#fff",
   padding: "16px 18px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

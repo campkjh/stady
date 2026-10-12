@@ -366,7 +366,7 @@ export default function CommunityWriteClient() {
               {quizItems.map((item, index) => (
                 <div key={index} style={{ display: "grid", gap: 6, padding: 10, borderRadius: 10, border: "1px solid var(--c-border)", background: "var(--c-bg-soft)" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ width: 18, textAlign: "center", fontWeight: 800, color: "var(--c-text-4)", fontSize: 13 }}>{index + 1}</span>
+                    <span style={{ width: 18, textAlign: "center", fontWeight: 700, color: "var(--c-text-4)", fontSize: 13 }}>{index + 1}</span>
                     <input
                       value={item.text}
                       onChange={(event) => {
@@ -398,7 +398,7 @@ export default function CommunityWriteClient() {
                         style={{
                           ...typeChipStyle(item.answer === val),
                           padding: "7px 16px",
-                          fontWeight: 800,
+                          fontWeight: 700,
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",

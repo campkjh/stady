@@ -149,7 +149,7 @@ const contentStyle = {
   padding: 24,
 } as const;
 
-const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 900, color: "var(--c-text)" } as const;
+const titleStyle = { margin: "8px 0 0", fontSize: 22, fontWeight: 700, color: "var(--c-text)" } as const;
 const descStyle = { margin: 0, fontSize: 14, color: "var(--c-text-3)", fontWeight: 600, lineHeight: 1.6 } as const;
 
 const badgeStyle = {
@@ -160,7 +160,7 @@ const badgeStyle = {
   alignItems: "center",
   justifyContent: "center",
   fontSize: 32,
-  fontWeight: 900,
+  fontWeight: 700,
 } as const;
 
 const spinnerStyle = {
@@ -182,6 +182,6 @@ const primaryButtonStyle = {
   color: "#fff",
   padding: "15px 18px",
   fontSize: 16,
-  fontWeight: 900,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

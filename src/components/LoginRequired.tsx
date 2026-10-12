@@ -89,7 +89,7 @@ export default function LoginRequired() {
       </div>
 
       {/* Text */}
-      <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 4, textAlign: "center" }}>
         로그인이 필요한 페이지에요!
       </h2>
       <p style={{ fontSize: 14, color: "var(--c-text-4c)", marginBottom: 32, textAlign: "center" }}>

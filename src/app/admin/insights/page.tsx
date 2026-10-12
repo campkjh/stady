@@ -189,7 +189,7 @@ function InsightsContent() {
             <NavInsightsIcon size={24} />
           </div>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text-2)" }}>사용자 인사이트</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)" }}>사용자 인사이트</h1>
             <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 4 }}>
               어디서 머물고, 언제 공부하고, 무엇을 푸는지 확인합니다. 시간은 모두 한국시간(KST) 기준입니다.
             </p>
@@ -208,7 +208,7 @@ function InsightsContent() {
                   padding: "8px 14px",
                   borderRadius: 9,
                   fontSize: 13,
-                  fontWeight: 800,
+                  fontWeight: 700,
                   textDecoration: "none",
                   background: active ? "var(--c-brand)" : "transparent",
                   color: active ? "#fff" : "var(--c-text-3)",
@@ -299,7 +299,7 @@ function InsightsContent() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {data.hourly.map((row) => (
                     <div key={row.hour} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ width: 36, flexShrink: 0, fontSize: 12, fontWeight: 800, color: row.total === (peakHour?.total ?? -1) ? "var(--c-brand)" : "var(--c-text-4)", textAlign: "right" }}>
+                      <span style={{ width: 36, flexShrink: 0, fontSize: 12, fontWeight: 700, color: row.total === (peakHour?.total ?? -1) ? "var(--c-brand)" : "var(--c-text-4)", textAlign: "right" }}>
                         {String(row.hour).padStart(2, "0")}시
                       </span>
                       <div
@@ -319,7 +319,7 @@ function InsightsContent() {
                           })}
                         </div>
                       </div>
-                      <span style={{ width: 68, flexShrink: 0, fontSize: 12, fontWeight: 800, color: "var(--c-text-2d)", textAlign: "right" }}>
+                      <span style={{ width: 68, flexShrink: 0, fontSize: 12, fontWeight: 700, color: "var(--c-text-2d)", textAlign: "right" }}>
                         {formatNumber(row.total)}
                       </span>
                     </div>
@@ -337,7 +337,7 @@ function InsightsContent() {
           >
             {!data.dwellAvailable ? (
               <div style={{ padding: "28px 20px", textAlign: "center" }}>
-                <p style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-2)" }}>아직 수집 중입니다</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2)" }}>아직 수집 중입니다</p>
                 <p style={{ fontSize: 13, color: "var(--c-text-4)", marginTop: 6, lineHeight: 1.6 }}>
                   페이지 체류 데이터는 이 기능이 배포된 뒤부터 쌓입니다.
                   <br />
@@ -359,7 +359,7 @@ function InsightsContent() {
                   {data.dwell.map((row) => (
                     <tr key={row.path} style={{ borderTop: "1px solid var(--c-bg-muted)" }}>
                       <Td>
-                        <span style={{ fontWeight: 800, color: "var(--c-text)" }}>{row.path}</span>
+                        <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{row.path}</span>
                       </Td>
                       <Td align="right">{formatNumber(row.views)}</Td>
                       <Td align="right">{formatNumber(row.users)}</Td>
@@ -449,7 +449,7 @@ function InsightsContent() {
                   {data.mockSubjects.map((row) => (
                     <tr key={row.subject || "unclassified"} style={{ borderTop: "1px solid var(--c-bg-muted)" }}>
                       <Td>
-                        <span style={{ fontWeight: 800, color: "var(--c-text)" }}>{row.label}</span>
+                        <span style={{ fontWeight: 700, color: "var(--c-text)" }}>{row.label}</span>
                       </Td>
                       <Td>{row.groupLabel}</Td>
                       <Td align="right">{formatNumber(row.answers)}</Td>
@@ -482,8 +482,8 @@ function InsightsContent() {
 function SummaryCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div style={{ borderRadius: 14, border: "1px solid var(--c-border)", background: "var(--c-bg)", padding: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-      <p style={{ fontSize: 12, color: "var(--c-text-4)", fontWeight: 800 }}>{label}</p>
-      <p style={{ marginTop: 8, fontSize: 22, color: "var(--c-text)", fontWeight: 900, lineHeight: 1.2 }}>{value}</p>
+      <p style={{ fontSize: 12, color: "var(--c-text-4)", fontWeight: 700 }}>{label}</p>
+      <p style={{ marginTop: 8, fontSize: 22, color: "var(--c-text)", fontWeight: 700, lineHeight: 1.2 }}>{value}</p>
       <p style={{ marginTop: 6, fontSize: 12, color: "var(--c-text-4c)" }}>{hint}</p>
     </div>
   );
@@ -519,7 +519,7 @@ function SectionCard({
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           {icon ? <span style={{ color: "var(--c-brand)", display: "flex", flexShrink: 0 }}>{icon}</span> : null}
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-2)" }}>{title}</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-2)" }}>{title}</h2>
             {desc ? <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 3, lineHeight: 1.5 }}>{desc}</p> : null}
           </div>
         </div>
@@ -532,7 +532,7 @@ function SectionCard({
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>
+    <span style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
       {children}
     </span>
   );
@@ -551,10 +551,10 @@ function BarList({ rows }: { rows: { key: string; label: string; value: number; 
       {rows.map((row, index) => (
         <div key={row.key} style={{ marginBottom: index < rows.length - 1 ? 14 : 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {row.label}
             </span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "var(--c-brand)", flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand)", flexShrink: 0 }}>
               {formatNumber(row.value)}회 <span style={{ color: "var(--c-text-4)", fontWeight: 700 }}>· {row.caption}</span>
             </span>
           </div>
@@ -584,9 +584,9 @@ function SetTable({ rows }: { rows: SetRow[] }) {
           <tr key={row.id} style={{ borderTop: "1px solid var(--c-bg-muted)" }}>
             <Td>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 20, flexShrink: 0, fontSize: 12, fontWeight: 900, color: "var(--c-text-4c)" }}>{index + 1}</span>
+                <span style={{ width: 20, flexShrink: 0, fontSize: 12, fontWeight: 700, color: "var(--c-text-4c)" }}>{index + 1}</span>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontWeight: 800, color: "var(--c-text)", whiteSpace: "normal" }}>{row.title}</p>
+                  <p style={{ fontWeight: 700, color: "var(--c-text)", whiteSpace: "normal" }}>{row.title}</p>
                   <p style={{ marginTop: 3, fontSize: 11, color: "var(--c-text-4)" }}>{row.categoryName}</p>
                 </div>
               </div>
@@ -619,7 +619,7 @@ function QuestionTable({ rows, emptyText }: { rows: QuestionRow[]; emptyText: st
           <tr key={row.id} style={{ borderTop: "1px solid var(--c-bg-muted)" }}>
             <Td>
               <div style={{ display: "flex", gap: 8 }}>
-                <span style={{ width: 20, flexShrink: 0, fontSize: 12, fontWeight: 900, color: "var(--c-text-4c)" }}>{index + 1}</span>
+                <span style={{ width: 20, flexShrink: 0, fontSize: 12, fontWeight: 700, color: "var(--c-text-4c)" }}>{index + 1}</span>
                 <p style={{ maxWidth: 420, whiteSpace: "normal", color: "var(--c-text)", fontWeight: 700, lineHeight: 1.5 }}>{row.question}</p>
               </div>
             </Td>
@@ -634,7 +634,7 @@ function QuestionTable({ rows, emptyText }: { rows: QuestionRow[]; emptyText: st
                 padding: "3px 9px",
                 borderRadius: 999,
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: 700,
                 background: row.correctRate >= 70 ? "var(--c-success-line)" : row.correctRate >= 40 ? "var(--c-warn-soft-2)" : "var(--c-danger-soft-3)",
                 color: row.correctRate >= 70 ? "var(--c-success-b)" : row.correctRate >= 40 ? "var(--c-warn-b)" : "var(--c-danger-c)",
               }}>
@@ -658,7 +658,7 @@ function TableWrap({ minWidth, children }: { minWidth: number; children: React.R
 
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th style={{ textAlign: align, padding: "11px 14px", color: "var(--c-text-4)", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>
+    <th style={{ textAlign: align, padding: "11px 14px", color: "var(--c-text-4)", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
       {children}
     </th>
   );

@@ -201,7 +201,7 @@ export default function AdminPaymentsPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--c-text-2)", margin: "0 0 4px" }}>결제 관리</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--c-text-2)", margin: "0 0 4px" }}>결제 관리</h1>
       <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 22px" }}>프리미엄 구독 결제 내역 — 안드로이드·앱스토어 인앱결제(IAP) 두 채널.</p>
 
       {loading ? (
@@ -214,7 +214,7 @@ export default function AdminPaymentsPage() {
             {summaryCards.map((c) => (
               <div key={c.label} style={cardStyle}>
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: MUTED }}>{c.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: "var(--c-text-2)", marginTop: 8, letterSpacing: "-0.02em" }}>{c.value}</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: "var(--c-text-2)", marginTop: 8, letterSpacing: "-0.02em" }}>{c.value}</div>
               </div>
             ))}
           </div>
@@ -228,7 +228,7 @@ export default function AdminPaymentsPage() {
                     전월({data.churn.monthLabel}) 구독 대비 해지
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 30, fontWeight: 800, color: data.churn.ratePct >= 30 ? "#D63A3A" : "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                    <span style={{ fontSize: 30, fontWeight: 700, color: data.churn.ratePct >= 30 ? "#D63A3A" : "var(--c-text-2)", letterSpacing: "-0.02em" }}>
                       {data.churn.ratePct}%
                     </span>
                     <span style={{ fontSize: 13, color: MUTED, fontWeight: 600 }}>
@@ -265,13 +265,13 @@ export default function AdminPaymentsPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <div>
                       <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>정산 예상 (수수료 {feePct}%)</div>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
                         {won(Math.round(data.revenue.grossKrw * (1 - feePct / 100)))}
                       </div>
                     </div>
                     <div>
                       <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>총 결제액 (차감 전)</div>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
                         {won(data.revenue.grossKrw)}
                       </div>
                     </div>
@@ -326,21 +326,21 @@ export default function AdminPaymentsPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginTop: 14 }}>
                 <div>
                   <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>이번 달 내 몫</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: ACCENT, letterSpacing: "-0.02em" }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: ACCENT, letterSpacing: "-0.02em" }}>
                     {won(data.settlement.months[0].shareKrw)}
                   </div>
                   <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{data.settlement.months[0].month}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>누적 내 몫</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
                     {won(data.settlement.totalShareKrw)}
                   </div>
                   <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>정산액 {won(data.settlement.totalNetKrw)}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11.5, color: MUTED, fontWeight: 600, marginBottom: 4 }}>월 평균</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "var(--c-text-2)", letterSpacing: "-0.02em" }}>
                     {won(Math.round(data.settlement.totalShareKrw / data.settlement.months.length))}
                   </div>
                   <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{data.settlement.months.length}개월 기준</div>
@@ -367,7 +367,7 @@ export default function AdminPaymentsPage() {
                         <td style={{ ...tdStyle, textAlign: "right" }}>{won(m.grossKrw)}</td>
                         <td style={{ ...tdStyle, textAlign: "right", color: MUTED }}>-{won(m.storeFeeKrw)}</td>
                         <td style={{ ...tdStyle, textAlign: "right" }}>{won(m.netKrw)}</td>
-                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 800, color: ACCENT }}>{won(m.shareKrw)}</td>
+                        <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: ACCENT }}>{won(m.shareKrw)}</td>
                       </tr>
                     ))}
                   </tbody>

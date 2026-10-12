@@ -130,7 +130,7 @@ function RetestContent() {
   if (items.length === 0) {
     return (
       <Centered>
-        <p style={{ fontSize: 17, fontWeight: 800, color: "var(--c-text)", marginBottom: 6 }}>
+        <p style={{ fontSize: 17, fontWeight: 700, color: "var(--c-text)", marginBottom: 6 }}>
           {source === "bookmark" ? "찜한 문제가 없어요" : "틀린 문제가 없어요"}
         </p>
         <p style={{ fontSize: 13, color: "var(--c-text-4c)", marginBottom: 20 }}>
@@ -163,7 +163,7 @@ function RetestContent() {
           </svg>
         </button>
         <div className="flex-1" style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 900, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <h1 style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-c)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {headerTitle}
           </h1>
           <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 1 }}>
@@ -174,7 +174,7 @@ function RetestContent() {
           type="button"
           onClick={() => setShowResult(true)}
           className="press"
-          style={{ height: 32, padding: "0 12px", borderRadius: 999, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2c)", fontSize: 13, fontWeight: 800 }}
+          style={{ height: 32, padding: "0 12px", borderRadius: 999, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2c)", fontSize: 13, fontWeight: 700 }}
         >
           결과
         </button>
@@ -201,7 +201,7 @@ function RetestContent() {
         {current && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <span style={{ display: "inline-flex", padding: "3px 9px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 11, fontWeight: 800 }}>
+              <span style={{ display: "inline-flex", padding: "3px 9px", borderRadius: 999, background: "var(--c-brand-soft-2)", color: "var(--c-brand)", fontSize: 11, fontWeight: 700 }}>
                 {TYPE_LABEL[current.type]}
               </span>
               <span style={{ fontSize: 13, color: "var(--c-text-4c)" }}>{index + 1} / {items.length}</span>
@@ -215,7 +215,7 @@ function RetestContent() {
             {current.passageImage && <img src={current.passageImage} alt="지문" style={imgStyle} />}
             {current.questionImage && <img src={current.questionImage} alt="문제" style={imgStyle} />}
 
-            <h2 style={{ fontSize: current.type === "ox" ? 20 : 18, fontWeight: 800, color: "var(--c-text)", lineHeight: 1.5, marginBottom: 20 }}>
+            <h2 style={{ fontSize: current.type === "ox" ? 20 : 18, fontWeight: 700, color: "var(--c-text)", lineHeight: 1.5, marginBottom: 20 }}>
               {current.type === "ox" ? "Q. " : ""}{current.prompt}
             </h2>
 
@@ -273,7 +273,7 @@ function RetestContent() {
                       style={{
                         display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
                         padding: "14px 14px", borderRadius: 14, background: bg, border, color,
-                        fontSize: 15, fontWeight: isAnswer && answered ? 800 : 600,
+                        fontSize: 15, fontWeight: isAnswer && answered ? 700 : 600,
                       }}
                     >
                       <span style={{
@@ -281,7 +281,7 @@ function RetestContent() {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         background: answered && isAnswer ? "var(--c-brand)" : answered && isSelected ? "var(--c-danger-b)" : "var(--c-border)",
                         color: answered && (isAnswer || isSelected) ? "#fff" : "var(--c-text-3)",
-                        fontSize: 12, fontWeight: 800,
+                        fontSize: 12, fontWeight: 700,
                       }}>
                         {num}
                       </span>
@@ -295,7 +295,7 @@ function RetestContent() {
             {/* Result + explanation */}
             {answered && (
               <div style={{ marginTop: 22, animation: "retestFadeUp 0.35s cubic-bezier(0.16,1,0.3,1)" }}>
-                <p style={{ textAlign: "center", fontSize: 24, fontWeight: 900, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
+                <p style={{ textAlign: "center", fontSize: 24, fontWeight: 700, color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)" }}>
                   {answered.isCorrect ? "정답" : "오답"}
                 </p>
                 {current.explanation && (
@@ -369,8 +369,8 @@ function ResultOverlay({
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={onReview} />
       <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "var(--c-bg)", borderRadius: 22, padding: 24, animation: "retestPop 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: "0 12px 48px rgba(0,0,0,0.2)" }}>
         <p style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--c-text-4)" }}>모아풀기 결과</p>
-        <p style={{ textAlign: "center", fontSize: 44, fontWeight: 900, color: "var(--c-brand)", lineHeight: 1.2, marginTop: 4 }}>
-          {correct}<span style={{ fontSize: 20, color: "var(--c-text-4c)", fontWeight: 800 }}> / {total}</span>
+        <p style={{ textAlign: "center", fontSize: 44, fontWeight: 700, color: "var(--c-brand)", lineHeight: 1.2, marginTop: 4 }}>
+          {correct}<span style={{ fontSize: 20, color: "var(--c-text-4c)", fontWeight: 700 }}> / {total}</span>
         </p>
         <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 8, marginBottom: 20 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand)" }}>정답 {correct}</span>
@@ -378,10 +378,10 @@ function ResultOverlay({
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-3)" }}>정답률 {rate}%</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button type="button" onClick={onRetry} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 16, fontWeight: 800 }}>
+          <button type="button" onClick={onRetry} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 16, fontWeight: 700 }}>
             처음부터 다시 풀기
           </button>
-          <button type="button" onClick={onReview} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", border: "none", fontSize: 16, fontWeight: 800 }}>
+          <button type="button" onClick={onReview} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", border: "none", fontSize: 16, fontWeight: 700 }}>
             틀린 문제 다시 보기
           </button>
           <button type="button" onClick={onClose} className="press" style={{ width: "100%", height: 44, background: "none", color: "var(--c-text-4c)", border: "none", fontSize: 14, fontWeight: 700 }}>
@@ -403,8 +403,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 const imgStyle: CSSProperties = { width: "100%", display: "block", borderRadius: 12, border: "1px solid var(--c-bg-muted-9)", marginBottom: 12 };
-const primaryBtn: CSSProperties = { padding: "10px 18px", borderRadius: 12, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 14, fontWeight: 800 };
-const navBtn: CSSProperties = { flex: 1, height: 48, borderRadius: 14, background: "var(--c-bg)", border: "1px solid var(--c-border)", color: "var(--c-text-2c)", fontSize: 15, fontWeight: 800 };
+const primaryBtn: CSSProperties = { padding: "10px 18px", borderRadius: 12, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700 };
+const navBtn: CSSProperties = { flex: 1, height: 48, borderRadius: 14, background: "var(--c-bg)", border: "1px solid var(--c-border)", color: "var(--c-text-2c)", fontSize: 15, fontWeight: 700 };
 
 export default function RetestPage() {
   return (

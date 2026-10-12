@@ -61,7 +61,7 @@ export default function PaymentsLogPage() {
                     </p>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <p style={{ fontSize: 15, fontWeight: 800, color: failed ? "var(--c-danger)" : "var(--c-text-2)", margin: 0 }}>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: failed ? "var(--c-danger)" : "var(--c-text-2)", margin: 0 }}>
                       {it.amount.toLocaleString()}원
                     </p>
                     <p style={{ fontSize: 12, fontWeight: 600, margin: "4px 0 0", color: failed ? "var(--c-danger)" : "var(--c-success-e)" }}>

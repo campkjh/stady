@@ -205,7 +205,7 @@ function CategoryContent() {
                     style={{
                       position: "absolute", top: 6, left: 6, display: "inline-flex", alignItems: "center", gap: 3,
                       background: "rgba(17,24,39,0.72)", color: "#fff", borderRadius: 999, padding: "3px 7px",
-                      fontSize: 10, fontWeight: 800,
+                      fontSize: 10, fontWeight: 700,
                     }}
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">

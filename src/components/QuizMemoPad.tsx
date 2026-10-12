@@ -220,7 +220,7 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
               border: "1px solid rgba(138,106,0,0.25)",
               background: mode === "draw" ? "var(--c-warn-c)" : "var(--c-bg-a70)",
               color: mode === "draw" ? "#fff" : "var(--c-warn-deep)",
-              fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap",
+              fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
             }}
           >
             {mode === "write" ? <><img src="/icons/toss/pencil.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />쓰기</> : <><img src="/icons/toss/signature.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />그리기</>}
@@ -266,7 +266,7 @@ function iconBtn(active: boolean): React.CSSProperties {
     border: "1px solid rgba(138,106,0,0.22)",
     background: active ? "var(--c-warn-c)" : "var(--c-bg-a70)",
     color: active ? "#fff" : "var(--c-warn-deep)",
-    fontSize: 13, fontWeight: 800, lineHeight: 1,
+    fontSize: 13, fontWeight: 700, lineHeight: 1,
   };
 }
 

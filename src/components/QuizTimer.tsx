@@ -37,7 +37,7 @@ export default function QuizTimer({ startAt, paused = false }: { startAt: number
         background: "var(--c-bg-soft-13)",
         color: "var(--c-text-2)",
         fontSize: 13.5,
-        fontWeight: 800,
+        fontWeight: 700,
         fontVariantNumeric: "tabular-nums",
         letterSpacing: "-0.2px",
         flexShrink: 0,

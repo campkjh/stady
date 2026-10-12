@@ -103,7 +103,7 @@ export default function NicknameGate() {
         }}
       >
         <img src="/icons/toss/pencil.svg" alt="" style={{ width: 40, height: 40, display: "block", marginBottom: 12 }} />
-        <h2 style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 900, color: "var(--c-text-b)" }}>
+        <h2 style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: "var(--c-text-b)" }}>
           닉네임을 바꿔주세요
         </h2>
         <p style={{ margin: "0 0 18px", fontSize: 13.5, lineHeight: 1.6, color: "var(--c-text-2d)" }}>
@@ -153,7 +153,7 @@ export default function NicknameGate() {
             background: "var(--c-brand)",
             color: "#fff",
             fontSize: 15.5,
-            fontWeight: 900,
+            fontWeight: 700,
             cursor: saving ? "default" : "pointer",
             opacity: saving ? 0.65 : 1,
           }}

@@ -223,7 +223,7 @@ function HiddenList({
 }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--c-text-4b)", marginBottom: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-4b)", marginBottom: 6 }}>
         {title} {items.length > 0 && `(${items.length})`}
       </div>
       {items.length === 0 ? (

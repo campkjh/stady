@@ -590,7 +590,7 @@ export default function SolvePage() {
           }}>
             <div style={{ padding: "calc(18px + env(safe-area-inset-top, 0px)) 18px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-c)" }}>문제 목록</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-c)" }}>문제 목록</h3>
                 <button onClick={() => setShowDrawer(false)} style={{ background: "none", border: "none" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>

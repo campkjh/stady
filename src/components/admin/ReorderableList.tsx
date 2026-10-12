@@ -106,6 +106,6 @@ const smallButtonStyle = {
   borderRadius: 6,
   background: "var(--c-bg)",
   color: "var(--c-text-2c)",
-  fontWeight: 800,
+  fontWeight: 700,
   cursor: "pointer",
 } as const;

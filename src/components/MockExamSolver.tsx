@@ -427,12 +427,12 @@ function Styles() {
       .solver-progress-bar { height: 100%; background: linear-gradient(90deg, #7DC4FF, #3787FF); border-radius: 999px;
         transition: width .25s ease; }
       .solver-sheet-btn { flex-shrink: 0; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--c-border);
-        background: var(--c-bg); color: var(--c-text-3b); font-size: 12.5px; font-weight: 800; cursor: pointer; }
+        background: var(--c-bg); color: var(--c-text-3b); font-size: 12.5px; font-weight: 700; cursor: pointer; }
 
       .solver-qhead { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px 8px; }
-      .solver-qnum { font-size: 20px; font-weight: 900; color: var(--c-text-b); }
+      .solver-qnum { font-size: 20px; font-weight: 700; color: var(--c-text-b); }
       .solver-qtitle { font-size: 13px; color: var(--c-text-4b); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .solver-qtitle-main { font-size: 16.5px; font-weight: 800; color: var(--c-text-b); line-height: 1.4; }
+      .solver-qtitle-main { font-size: 16.5px; font-weight: 700; color: var(--c-text-b); line-height: 1.4; }
 
       /* 문항 이미지는 가로 폭을 꽉 채운다. 세로가 길면 스크롤해서 본다. */
       .solver-image { padding: 0 12px; }
@@ -441,7 +441,7 @@ function Styles() {
       /* 공유 지문 */
       .solver-passage { margin: 0 12px 10px; border: 1px solid var(--c-bg-muted-6); border-radius: 12px; overflow: hidden; background: var(--c-bg-soft-9); }
       .solver-passage-toggle { display: flex; align-items: center; gap: 5px; width: 100%; padding: 10px 14px;
-        border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--c-text-3b); font-family: inherit; }
+        border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 700; color: var(--c-text-3b); font-family: inherit; }
       .solver-passage img { width: 100%; height: auto; display: block; border-top: 1px solid var(--c-bg-muted-2); background: var(--c-bg); }
 
       /* 분리된 선택지 — 실제 문장을 탭해서 고른다 */
@@ -469,25 +469,25 @@ function Styles() {
       .solver-short input { flex: 1; height: 52px; border-radius: 14px; border: 1.5px solid var(--c-border); padding: 0 14px;
         font-size: 16px; font-weight: 700; color: var(--c-text-b); background: var(--c-bg); }
       .solver-short button { flex-shrink: 0; padding: 0 20px; height: 52px; border-radius: 14px; border: none;
-        background: var(--c-brand); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
+        background: var(--c-brand); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
       .solver-short button:disabled { background: var(--c-border-strong-5); }
 
       .solver-nav { display: flex; gap: 8px; margin-top: 10px; }
       .solver-nav button { flex: 1; height: 46px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-bg);
-        color: var(--c-text-3b); font-size: 15px; font-weight: 800; cursor: pointer; }
+        color: var(--c-text-3b); font-size: 15px; font-weight: 700; cursor: pointer; }
       .solver-nav button:disabled { color: var(--c-text-5h); }
       .solver-submit { background: var(--c-inverse-2) !important; border-color: var(--c-inverse-2) !important; color: #fff !important; }
-      .solver-submit.wide { width: 100%; height: 50px; margin-top: 12px; border-radius: 14px; border: none; font-size: 15.5px; font-weight: 900; cursor: pointer; }
+      .solver-submit.wide { width: 100%; height: 50px; margin-top: 12px; border-radius: 14px; border: none; font-size: 15.5px; font-weight: 700; cursor: pointer; }
       .solver-msg { margin: 8px 2px 0; font-size: 13px; color: var(--c-danger-d); font-weight: 600; }
 
       .solver-sheet-dim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60;
         background: rgba(15,23,42,0.5); display: flex; align-items: flex-end; }
       .solver-sheet { width: 100%; background: var(--c-bg); border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); max-height: 76vh; overflow-y: auto; }
-      .solver-sheet-title { margin: 0 0 12px; font-size: 15px; font-weight: 800; color: var(--c-text-b); }
+      .solver-sheet-title { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--c-text-b); }
 
       .solver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; padding: 0 16px; }
       .solver-cell { height: 44px; border-radius: 12px; border: 1.5px solid var(--c-border); background: var(--c-bg);
-        font-size: 14px; font-weight: 800; color: var(--c-text-4b); cursor: pointer; }
+        font-size: 14px; font-weight: 700; color: var(--c-text-4b); cursor: pointer; }
       .solver-cell.is-done { background: var(--c-brand-soft-3); border-color: var(--c-brand-line-9); color: var(--c-brand-deep); }
       .solver-cell.is-cur { outline: 2px solid var(--c-brand); outline-offset: 1px; }
       .solver-cell.is-ok { background: var(--c-success-soft); border-color: var(--c-success-line-2); color: var(--c-success-b); }
@@ -496,22 +496,22 @@ function Styles() {
 
       .solver-score { padding: 30px 20px 22px; text-align: center; }
       .solver-score-label { margin: 0; font-size: 13.5px; color: var(--c-text-4b); font-weight: 700; }
-      .solver-score-main { margin: 8px 0 0; font-size: 40px; font-weight: 900; color: var(--c-text-b); }
+      .solver-score-main { margin: 8px 0 0; font-size: 40px; font-weight: 700; color: var(--c-text-b); }
       .solver-score-main b { color: var(--c-brand); }
       .solver-score-sub { margin: 6px 0 0; font-size: 13.5px; color: var(--c-text-4b); font-weight: 600; }
       .solver-retry { margin-top: 16px; height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--c-border);
-        background: var(--c-bg); color: var(--c-text-3b); font-size: 14px; font-weight: 800; cursor: pointer; }
+        background: var(--c-bg); color: var(--c-text-3b); font-size: 14px; font-weight: 700; cursor: pointer; }
 
       .solver-review { padding: 26px 16px 0; }
-      .solver-review-title { font-size: 15px; font-weight: 800; color: var(--c-text-b); margin: 0 0 12px; }
+      .solver-review-title { font-size: 15px; font-weight: 700; color: var(--c-text-b); margin: 0 0 12px; }
       .solver-review-item { margin-bottom: 18px; }
       .solver-review-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
-      .solver-review-num { font-size: 15px; font-weight: 900; color: var(--c-text-b); }
+      .solver-review-num { font-size: 15px; font-weight: 700; color: var(--c-text-b); }
       .solver-review-ans { font-size: 12.5px; color: var(--c-text-4b); font-weight: 600; }
       .solver-review-ans b { color: var(--c-success-b); }
       .solver-review-item img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--c-bg-muted-6); }
       .solver-solution { margin-top: 8px; border-radius: 12px; background: var(--c-bg-soft-4); }
-      .solver-solution summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 800; color: var(--c-brand-deep); }
+      .solver-solution summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 700; color: var(--c-brand-deep); }
       .solver-solution summary::-webkit-details-marker { display: none; }
       .solver-solution summary::before { content: "▸ "; }
       .solver-solution[open] summary::before { content: "▾ "; }

@@ -163,8 +163,8 @@ export default function NoticePopup() {
             />
           )}
           <div style={{ padding: "18px 20px 16px" }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 6, padding: "2px 7px" }}>공지</span>
-            <h2 style={{ margin: "10px 0 8px", fontSize: 18, fontWeight: 800, color: "var(--c-text-b)", lineHeight: 1.35 }}>{notice.title}</h2>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 6, padding: "2px 7px" }}>공지</span>
+            <h2 style={{ margin: "10px 0 8px", fontSize: 18, fontWeight: 700, color: "var(--c-text-b)", lineHeight: 1.35 }}>{notice.title}</h2>
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--c-text-2d)", whiteSpace: "pre-wrap" }}>{notice.body}</p>
             <p style={{ margin: "12px 0 0", fontSize: 12.5, color: "var(--c-brand)", fontWeight: 700 }}>공지사항에서 자세히 보기 ›</p>
           </div>
@@ -175,14 +175,14 @@ export default function NoticePopup() {
           <button
             type="button"
             onClick={hideForDays}
-            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14.5, fontWeight: 800, cursor: "pointer", borderRadius: "0 0 0 20px" }}
+            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14.5, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 0 20px" }}
           >
             {hideDays}일 동안 안보기
           </button>
           <button
             type="button"
             onClick={closeSession}
-            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14.5, fontWeight: 900, cursor: "pointer", borderRadius: "0 0 20px 0" }}
+            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14.5, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 20px 0" }}
           >
             닫기
           </button>
