@@ -325,7 +325,7 @@ const BANNER_ITEMS: BannerItem[] = [
     href: "/vocab-quiz-intro",
   },
   {
-    title: "적중\n모의고사",
+    title: "기출\n모의고사",
     image: "/images/home/shortcut-mock.webp",
     bg: "#FFF1E3",
     href: "/mock-exam",
