@@ -281,8 +281,8 @@ export default function MyPage() {
           background: var(--mpx-bg); min-height: 100vh;
           padding-top: env(safe-area-inset-top, 0px);
           /* 하단 네비 여백(main 레이아웃 pb)까지 같은 바탕이 이어지게 — 다른 색 띠가 비치지 않도록 */
-          margin-bottom: calc(-58px - env(safe-area-inset-bottom, 0px));
-          padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+          margin-bottom: calc(-82px - env(safe-area-inset-bottom, 0px));
+          padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
         }
         [data-theme="dark"] .mpx {
           --mpx-bg: #101116; --mpx-card: #1B1C23; --mpx-ink: #F2F4F8; --mpx-sub: #8E96A3; --mpx-line: rgba(255, 255, 255, 0.07);

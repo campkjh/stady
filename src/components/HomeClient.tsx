@@ -351,6 +351,17 @@ export default function HomeClient({
   const router = useRouter();
   // 프리티풀 퀵매칭 등장 — 홈에 들어올 때만(뒤로가기·30초 안 재진입은 생략)
   const enter = useEntrance("home");
+  // 종 아이콘 빨간 점 — 안 읽은 알림이 있을 때만(로그인한 사용자만 묻는다)
+  const [unreadNotif, setUnreadNotif] = useState(0);
+  useEffect(() => {
+    if (!userName) return;
+    let alive = true;
+    fetch("/api/notifications/unread", { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d && typeof d.unread === "number") setUnreadNotif(d.unread); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [userName]);
   // '새로운 문제집' 말풍선 자리 계산용 — 바로가기 묶음(기준 칸)과 가리킬 '엘리트 모의고사' 카드.
   const shortcutsRef = useRef<HTMLDivElement>(null);
   const eliteCardRef = useRef<HTMLButtonElement>(null);
@@ -527,6 +538,13 @@ export default function HomeClient({
               로그인
             </button>
           )}
+          <button type="button" onClick={() => router.push("/notifications")} className="press home-search-btn home-bell-btn" aria-label={unreadNotif > 0 ? `알림 ${unreadNotif}개` : "알림"}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+              <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+            </svg>
+            {unreadNotif > 0 && <span className="home-bell-dot" aria-hidden="true" />}
+          </button>
           <button type="button" onClick={() => router.push("/search")} className="press home-search-btn" aria-label="검색">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ensureDailyQuizTable } from "@/lib/daily-quiz";
+import { notify } from "@/lib/notifications";
 
 export interface CommunityCategoryGroupRow {
   id: string;
@@ -1643,6 +1644,102 @@ async function assertActiveCommunityPost(postId: string) {
   }
 }
 
+
+/* ------------------------------- 알림 만들기 ------------------------------- */
+// 댓글·공감이 달렸을 때 글/댓글 주인에게 알림을 남긴다. 본 기능을 절대 깨지 않도록 전부 try/catch.
+async function actorNickname(userId: string): Promise<string> {
+  const rows = await prisma.$queryRawUnsafe<{ nickname: string | null }[]>(`SELECT "nickname" FROM "User" WHERE "id" = $1 LIMIT 1`, userId);
+  return rows[0]?.nickname || "누군가";
+}
+async function postBrief(postId: string): Promise<{ ownerId: string | null; title: string } | null> {
+  const rows = await prisma.$queryRawUnsafe<{ user_id: string | null; title: string }[]>(
+    `SELECT "user_id", "title" FROM "CommunityPost" WHERE "id" = $1 LIMIT 1`,
+    postId
+  );
+  return rows[0] ? { ownerId: rows[0].user_id, title: rows[0].title } : null;
+}
+const clip = (t: string, n: number) => (t.length > n ? t.slice(0, n) + "…" : t);
+
+async function notifyNewComment(input: { postId: string; commentId: string; actorId: string; parentId: string | null; content: string }) {
+  try {
+    const [post, actor] = await Promise.all([postBrief(input.postId), actorNickname(input.actorId)]);
+    if (!post) return;
+    const link = `/community/${input.postId}`;
+    const body = `${actor}: ${clip(input.content.replace(/\s+/g, " ").trim(), 140)}`;
+    let parentAuthor: string | null = null;
+    if (input.parentId) {
+      const rows = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(`SELECT "user_id" FROM "CommunityComment" WHERE "id" = $1 LIMIT 1`, input.parentId);
+      parentAuthor = rows[0]?.user_id ?? null;
+      await notify({
+        userId: parentAuthor,
+        actorId: input.actorId,
+        type: "reply",
+        title: "내 댓글에 답글이 달렸어요",
+        body,
+        link,
+        actorName: actor,
+        groupKey: `reply:${input.parentId}`,
+        dedupeKey: `reply:${input.commentId}`,
+      });
+    }
+    // 글쓴이에게도(이미 답글 알림을 받은 사람이면 중복으로 보내지 않는다)
+    if (post.ownerId && post.ownerId !== parentAuthor) {
+      await notify({
+        userId: post.ownerId,
+        actorId: input.actorId,
+        type: "comment",
+        title: `"${clip(post.title, 24)}"에 댓글이 달렸어요`,
+        body,
+        link,
+        actorName: actor,
+        groupKey: `comment:${input.postId}`,
+        dedupeKey: `comment:${input.commentId}`,
+      });
+    }
+  } catch (e) {
+    console.error("notifyNewComment failed:", e);
+  }
+}
+
+async function notifyPostReaction(postId: string, actorId: string) {
+  try {
+    const [post, actor] = await Promise.all([postBrief(postId), actorNickname(actorId)]);
+    if (!post) return;
+    await notify({
+      userId: post.ownerId,
+      actorId,
+      type: "reaction",
+      title: `"${clip(post.title, 24)}"에 공감이 달렸어요`,
+      body: `${actor}님이 공감했어요`,
+      link: `/community/${postId}`,
+      actorName: actor,
+      groupKey: `reaction:${postId}`,
+      dedupeKey: `reaction:${postId}:${actorId}`,
+    });
+  } catch (e) {
+    console.error("notifyPostReaction failed:", e);
+  }
+}
+
+async function notifyCommentLike(commentId: string, postId: string, ownerId: string | null, actorId: string) {
+  try {
+    const actor = await actorNickname(actorId);
+    await notify({
+      userId: ownerId,
+      actorId,
+      type: "comment_like",
+      title: "내 댓글에 좋아요가 달렸어요",
+      body: `${actor}님이 좋아요를 눌렀어요`,
+      link: `/community/${postId}`,
+      actorName: actor,
+      groupKey: `clike:${commentId}`,
+      dedupeKey: `clike:${commentId}:${actorId}`,
+    });
+  } catch (e) {
+    console.error("notifyCommentLike failed:", e);
+  }
+}
+
 export async function createCommunityComment(input: {
   postId: string;
   userId: string;
@@ -1681,6 +1778,7 @@ export async function createCommunityComment(input: {
     input.userId,
     input.content
   );
+  await notifyNewComment({ postId: input.postId, commentId: id, actorId: input.userId, parentId, content: input.content });
   return id;
 }
 
@@ -1717,9 +1815,9 @@ export async function toggleCommunityPostLike(postId: string, userId: string) {
 
 export async function toggleCommunityCommentLike(commentId: string, userId: string) {
   await ensureCommunityTables();
-  const comments = await prisma.$queryRawUnsafe<{ id: string }[]>(
+  const comments = await prisma.$queryRawUnsafe<{ id: string; user_id: string | null; post_id: string }[]>(
     `
-      SELECT c."id"
+      SELECT c."id", c."user_id", c."post_id"
       FROM "CommunityComment" c
       JOIN "CommunityPost" p ON p."id" = c."post_id"
       JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id"
@@ -1745,6 +1843,7 @@ export async function toggleCommunityCommentLike(commentId: string, userId: stri
       commentId,
       userId
     );
+    await notifyCommentLike(commentId, comments[0].post_id, comments[0].user_id, userId);
   } else {
     await prisma.$executeRawUnsafe(
       `DELETE FROM "CommunityCommentLike" WHERE "comment_id" = $1 AND "user_id" = $2`,
@@ -1979,6 +2078,7 @@ export async function setCommunityPostReaction(
       userId,
       t
     );
+    await notifyPostReaction(postId, userId);
   }
   const r = await getPostReactions(postId, userId);
   // `liked`/`likeCount` kept for backward compatibility with older callers.
