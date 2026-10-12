@@ -40,6 +40,8 @@ interface ResultToastData {
   guest: boolean;
   rate: number;
   total: number;
+  /** 정답을 맞힌 사람 수 */
+  correctCount: number;
 }
 
 /**
@@ -116,11 +118,8 @@ function ResultToast({ data, onClose }: { data: ResultToastData; onClose: () => 
         <div className="qm-bubble-body">
           <span className="qm-bubble-ic" aria-hidden="true">
             <span className={`dqt-medal ${ok ? "is-ok" : "is-no"}`}>
-              {ok ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round"><path d="M12 6v7M12 18v.5" /></svg>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={ok ? "/images/ox/disc-o-sm.webp" : "/images/ox/disc-x-sm.webp"} alt="" width={38} height={38} />
             </span>
             {ok && (
               <span className="dqt-burst">
@@ -136,11 +135,8 @@ function ResultToast({ data, onClose }: { data: ResultToastData; onClose: () => 
           </div>
           <p className="qm-bubble-sub dqt-sub">
             정답률 <b>{rate}%</b>
-            {data.total > 0 && <span> · {data.total.toLocaleString()}명이 풀었어요</span>}
+            {data.total > 0 && <span> · {data.correctCount.toLocaleString()}명이 맞혔어요</span>}
           </p>
-          <div className="dqt-track" aria-hidden="true">
-            <div className="dqt-fill" style={{ width: `${data.rate}%` }} />
-          </div>
           {data.guest && <p className="dqt-guest">로그인하면 정답 시 경험치가 쌓여요.</p>}
         </div>
       </div>
@@ -161,25 +157,22 @@ function ResultToast({ data, onClose }: { data: ResultToastData; onClose: () => 
         .dqt-sub { font-variant-numeric: tabular-nums; }
         .dqt-sub b { font-weight: 700; color: #191F28; }
         [data-theme="dark"] .dqt-sub b { color: #E7EAF0; }
-        .dqt-track { height: 5px; margin-top: 10px; border-radius: 999px; background: rgba(23, 35, 58, 0.09); overflow: hidden; animation: qmBubbleContent 1s linear both; }
-        [data-theme="dark"] .dqt-track { background: rgba(255, 255, 255, 0.14); }
-        .dqt-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7DC4FF, #3787FF 55%, #7A5CFF); transform-origin: left center; animation: dqtBar 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both; }
         .dqt-guest { margin: 8px 0 0; font-size: 12px; color: #8B95A1; animation: qmBubbleContent 1s linear both; }
         /* 아이콘 메달 */
-        .qm-bubble.dqt-bubble .qm-bubble-ic { width: 34px; height: 34px; }
-        .dqt-medal { position: relative; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 12px -4px rgba(47, 123, 255, 0.55); animation: dqtMedal 0.7s cubic-bezier(0.22, 1.7, 0.36, 1) 0.28s both; }
-        .dqt-medal.is-ok { background: linear-gradient(135deg, #7DB8FF, #2F7BFF); }
-        .dqt-medal.is-no { background: linear-gradient(135deg, #FF9C9C, #EE4A4A); box-shadow: 0 6px 12px -4px rgba(238, 74, 74, 0.5); }
-        .dqt-medal.is-ok::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgba(47, 123, 255, 0.55); animation: dqtRing 1s ease-out 0.5s both; }
+        .qm-bubble.dqt-bubble .qm-bubble-ic { left: 11px; width: 38px; height: 38px; margin-top: -21px; }
+        .dqt-medal { position: relative; display: block; width: 38px; height: 38px; animation: dqtMedal 0.7s cubic-bezier(0.22, 1.7, 0.36, 1) 0.28s both; filter: drop-shadow(0 6px 8px rgba(30, 70, 160, 0.3)); }
+        .dqt-medal.is-no { filter: drop-shadow(0 6px 8px rgba(200, 40, 40, 0.3)); animation-name: dqtMedalNo; animation-duration: 0.6s; }
+        .dqt-medal img { display: block; width: 100%; height: 100%; }
+        .dqt-medal.is-ok::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 2px solid rgba(47, 123, 255, 0.55); animation: dqtRing 1s ease-out 0.5s both; }
         /* 맞히면 반짝이가 사방으로 터진다 */
         .dqt-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
         .dqt-burst i { position: absolute; left: -2.5px; top: -2.5px; width: 5px; height: 5px; border-radius: 50%; background: var(--c); opacity: 0; animation: dqtBurst 0.85s cubic-bezier(0.2, 0.8, 0.3, 1) 0.45s both; }
+        @keyframes dqtMedalNo { 0% { opacity: 0; transform: scale(0.4) rotate(-30deg); } 55% { opacity: 1; transform: scale(1.12) rotate(8deg); } 70% { transform: translateX(-3px); } 85% { transform: translateX(3px); } 100% { opacity: 1; transform: none; } }
         @keyframes dqtMedal { from { opacity: 0; transform: scale(0.3) rotate(-40deg); } to { opacity: 1; transform: none; } }
         @keyframes dqtRing { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.7); } }
         @keyframes dqtBurst { 0% { opacity: 1; transform: rotate(var(--a)) translateY(-8px) scale(1); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-30px) scale(0.3); } }
         @keyframes dqtPop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
-        @keyframes dqtBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @media (prefers-reduced-motion: reduce) { .dqt-medal, .dqt-medal::after, .dqt-burst i, .dqt-xp, .dqt-fill { animation: none !important; } .dqt-burst { display: none; } }
+        @media (prefers-reduced-motion: reduce) { .dqt-medal, .dqt-medal::after, .dqt-burst i, .dqt-xp { animation: none !important; } .dqt-burst { display: none; } }
       `}</style>
     </div>,
     document.body
@@ -322,6 +315,7 @@ export default function DailyQuizCard() {
           guest: !!r.guest,
           rate: r.stats?.correctRate ?? 0,
           total: r.stats?.total ?? 0,
+          correctCount: r.stats?.correct ?? 0,
         });
         setData((prev) => {
           if (!prev) return prev;
