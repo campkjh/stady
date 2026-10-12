@@ -138,7 +138,9 @@ export default function OxQuizListPage() {
       </div>
 
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
-        <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }} className="quiz-list-scroll">
+        {/* 스크롤 칸(overflow)은 안쪽 그림자를 가장자리에서 잘라낸다 — 카드 그림자(blur 28)만큼
+            위·좌우에 여백을 주고 같은 만큼 음수 마진으로 되돌려 카드 자리는 그대로 둔다. */}
+        <div style={{ maxHeight: 392, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, margin: "-32px -32px 0", padding: "32px 32px 24px" }} className="quiz-list-scroll">
           {!selectedGroup && groups.map((group, index) => {
             // 그룹 합계도 세트 카드와 **같은 분모 규칙**을 써야 한다.
             // 여기만 비정규화 totalQuestions 를 쓰면, 실제 문항이 30개인데 컬럼이 25인 세트에서
