@@ -263,8 +263,7 @@ export default function DailyQuizCard() {
   const stagger = (i: number) => ({ ["--i" as string]: i } as React.CSSProperties);
 
   return (
-    <section className={playEntrance.current ? "dq-anim" : undefined}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>데일리 퀴즈</h2>
+    <section className={playEntrance.current ? "dq-anim" : undefined} aria-label="데일리 퀴즈">
       <div
         className={`dq-card${pressing ? " is-pressing" : ""}`}
         onPointerDown={lpDown}
