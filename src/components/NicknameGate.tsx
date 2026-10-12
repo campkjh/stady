@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 // 닉네임이 다른 사용자와 중복인 사람에게 접속 시 강제로 뜨는 변경 팝업.
 // 닫기 없음 — 유일한 닉네임을 저장해야만 사라진다. (기존 중복자 정리 + 이후 중복 방지의 마지막 관문)
@@ -71,6 +72,7 @@ export default function NicknameGate() {
     }
   }
 
+  useBodyScrollLock(mounted && open);
   if (!mounted || !open) return null;
 
   const overlay = (

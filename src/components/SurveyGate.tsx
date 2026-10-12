@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 // 첫 진입 시 평생 1회 노출되는 온보딩 설문(만족도 + 원하는 기능).
 // 응답/건너뛰기 시 서버에 1행 기록되어 다시는 뜨지 않는다.
@@ -56,6 +57,7 @@ export default function SurveyGate() {
     setBusy(false);
   }
 
+  useBodyScrollLock(open);
   if (!open) return null;
 
   return (

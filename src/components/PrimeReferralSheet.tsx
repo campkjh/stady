@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 // 커뮤니티 진입 시 하단에서 올라오는 친구초대 시트.
 // "일주일 동안 안보기"를 누르면 7일간 뜨지 않는다. 닫기는 이번 세션만.
@@ -63,12 +65,14 @@ export default function PrimeReferralSheet() {
     router.push("/referral-event");
   }
 
+  const { leaving, exit } = useModalExit();
+  useBodyScrollLock(mounted && open);
   if (!mounted || !open) return null;
 
   const sheet = (
-    <div className="prs-dim" onClick={closeSession}>
-      <div className="prs" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="친구 초대하면 프라임 2주 무료">
-        <button type="button" className="prs-banner" onClick={goInvite}>
+    <div className={`prs-dim${leaving ? " is-leaving" : ""}`} onClick={() => exit(closeSession)}>
+      <div className={`prs${leaving ? " is-leaving" : ""}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="친구 초대하면 프라임 2주 무료">
+        <button type="button" className="prs-banner" onClick={() => exit(goInvite)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="prs-img" src="/banners/prime-referral-banner.webp" alt="친구 초대하면 프라임 2주 무료" />
           <span className="prs-glass">
@@ -80,8 +84,8 @@ export default function PrimeReferralSheet() {
         </button>
 
         <div className="prs-foot">
-          <button type="button" className="prs-btn prs-week" onClick={hideForWeek}>일주일 동안 안보기</button>
-          <button type="button" className="prs-btn prs-close" onClick={closeSession}>닫기</button>
+          <button type="button" className="prs-btn prs-week" onClick={() => exit(hideForWeek)}>일주일 동안 안보기</button>
+          <button type="button" className="prs-btn prs-close" onClick={() => exit(closeSession)}>닫기</button>
         </div>
       </div>
 
@@ -100,9 +104,12 @@ export default function PrimeReferralSheet() {
           border-radius: 24px 24px 0 0;
           padding: 14px 14px calc(12px + env(safe-area-inset-bottom, 0px));
           box-sizing: border-box;
-          animation: prs-up 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: prs-up 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
         }
-        @keyframes prs-up { from { transform: translateY(14px); } to { transform: translateY(0); } }
+        @keyframes prs-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .prs-dim { animation: mdlFade 0.2s ease-out backwards; }
+        .prs-dim.is-leaving { animation: mdlFadeOut 0.22s ease-in forwards; pointer-events: none; }
+        .prs.is-leaving { animation: mdlSheetOut 0.24s cubic-bezier(0.4, 0, 1, 1) forwards; }
         .prs-banner {
           position: relative; display: block; width: 100%; border: none; padding: 0; margin: 0;
           background: none; cursor: pointer; border-radius: 20px; overflow: hidden;

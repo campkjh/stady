@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 interface Notice {
   id: string;
@@ -58,6 +60,7 @@ export function isNoticePopupActive(n: { id: string; popupVersion?: number }): b
 
 export default function NoticePopup() {
   const router = useRouter();
+  const { leaving, exit } = useModalExit();
   const [notice, setNotice] = useState<Notice | null>(null);
   // 포털은 마운트 후에만(서버 렌더 시 document 가 없다).
   const [mounted, setMounted] = useState(false);
@@ -116,19 +119,20 @@ export default function NoticePopup() {
     router.push(`/notice?focus=${encodeURIComponent(notice.id)}`);
   }
 
+  useBodyScrollLock(!!notice);
   if (!mounted || !notice) return null;
   const img = notice.imageUrls?.[0];
 
   const overlay = (
     <div
       data-gate="notice"
-      className="mdl-root"
+      className={`mdl-root${leaving ? " is-leaving" : ""}`}
       style={{ zIndex: 2000, padding: 20 }}
     >
-      <div className="mdl-dim" onClick={closeSession} />
+      <div className="mdl-dim" onClick={() => exit(closeSession)} />
       <div className="mdl-card is-wide">
         {/* 내용(탭하면 공지 전체 보기) */}
-        <div className="mdl-scroll" style={{ cursor: "pointer" }} onClick={openFull}>
+        <div className="mdl-scroll" style={{ cursor: "pointer" }} onClick={() => exit(openFull)}>
           {img && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -147,10 +151,10 @@ export default function NoticePopup() {
 
         {/* 하단 버튼 */}
         <div className="mdl-actions is-tight" style={{ flexShrink: 0 }}>
-          <button type="button" className="mdl-btn is-sub" onClick={hideForDays}>
+          <button type="button" className="mdl-btn is-sub" onClick={() => exit(hideForDays)}>
             {hideDays}일 동안 안보기
           </button>
-          <button type="button" className="mdl-btn is-main" onClick={closeSession}>
+          <button type="button" className="mdl-btn is-main" onClick={() => exit(closeSession)}>
             닫기
           </button>
         </div>

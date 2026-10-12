@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 // 가입 직후 초대코드를 물어보는 시트.
 // 초대 링크는 브라우저에서 열고 가입은 앱(웹뷰)에서 하는 경우가 많은데, 둘은 저장소가 달라
@@ -96,6 +97,7 @@ export default function InviteCodeGate() {
     }
   }
 
+  useBodyScrollLock(mounted && open);
   if (!mounted || !open) return null;
 
   const sheet = (

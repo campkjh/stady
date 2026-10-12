@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 interface CommunityGateModalProps {
   open: boolean;
@@ -16,6 +18,8 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const { leaving, exit } = useModalExit();
+  useBodyScrollLock(open);
   if (!open) return null;
 
   function close() {
@@ -39,8 +43,8 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
   }
 
   return (
-    <div role="dialog" aria-modal="true" className="mdl-root" style={{ zIndex: 120, padding: 20 }}>
-      <div className="mdl-dim" />
+    <div role="dialog" aria-modal="true" className={`mdl-root${leaving ? " is-leaving" : ""}`} style={{ zIndex: 120, padding: 20 }}>
+      <div className="mdl-dim" onClick={() => exit(close)} />
       <div className="mdl-card is-wide">
         <div className="mdl-text" style={{ textAlign: "center" }}>
           <h2 className="mdl-title" style={{ fontSize: 22 }}>
@@ -81,7 +85,7 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
           )}
         </div>
         <div className="mdl-textrow" style={{ justifyContent: "center", paddingTop: 12 }}>
-          <button type="button" className="mdl-textbtn is-muted" onClick={close}>
+          <button type="button" className="mdl-textbtn is-muted" onClick={() => exit(close)}>
             닫기
           </button>
         </div>

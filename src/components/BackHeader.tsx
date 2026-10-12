@@ -1,9 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEntrance } from "@/lib/entrance";
 
 export default function BackHeader({ title }: { title: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const play = useEntrance(`header:${pathname}`);
 
   return (
     <div
@@ -47,7 +50,7 @@ export default function BackHeader({ title }: { title: string }) {
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
-      <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)" }}>
+      <h1 className={play ? "qd-a-title" : undefined} style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)" }}>
         {title}
       </h1>
     </div>

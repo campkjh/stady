@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 interface RankingEntry {
   userId: string;
@@ -59,6 +61,8 @@ export default function WorkbookDetailPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const reviewExit = useModalExit();
+  useBodyScrollLock(showReviewModal);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewContent, setReviewContent] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -427,8 +431,8 @@ export default function WorkbookDetailPage() {
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="mdl-root" style={{ zIndex: 9998, padding: 20 }}>
-          <div className="mdl-dim" onClick={() => setShowReviewModal(false)} />
+        <div className={`mdl-root${reviewExit.leaving ? " is-leaving" : ""}`} style={{ zIndex: 9998, padding: 20 }}>
+          <div className="mdl-dim" onClick={() => reviewExit.exit(() => setShowReviewModal(false))} />
           <div className="mdl-card is-wide">
             <div className="mdl-scroll mdl-text">
               <h3 className="mdl-title">후기 작성</h3>
@@ -460,7 +464,7 @@ export default function WorkbookDetailPage() {
 
             {/* Buttons */}
             <div className="mdl-actions is-tight">
-              <button type="button" className="mdl-btn is-sub" onClick={() => setShowReviewModal(false)}>
+              <button type="button" className="mdl-btn is-sub" onClick={() => reviewExit.exit(() => setShowReviewModal(false))}>
                 취소
               </button>
               <button

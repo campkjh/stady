@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 export interface StudyCheck {
   id: string;
@@ -21,6 +23,8 @@ export default function StudyCheckPopup({
   check: StudyCheck;
   onDone: (result: "answered" | "expired") => void;
 }) {
+  useBodyScrollLock(true);
+  const { leaving, exit } = useModalExit();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ correct: boolean; answer?: boolean; explanation?: string | null } | null>(null);
   // 카운트다운 대신 "언제까지" 를 보여준다 — props 만 쓰는 순수 계산이라
@@ -46,7 +50,7 @@ export default function StudyCheckPopup({
   }
 
   const overlay = (
-    <div data-gate="study-check" className="mdl-root" style={{ zIndex: 2600, padding: 20 }}>
+    <div data-gate="study-check" className={`mdl-root${leaving ? " is-leaving" : ""}`} style={{ zIndex: 2600, padding: 20 }}>
       <div className="mdl-dim" style={{ background: "rgba(0,0,0,0.58)" }} />
       <div className="mdl-card is-wide">
         <div className="mdl-text">
@@ -77,7 +81,7 @@ export default function StudyCheckPopup({
 
         {result ? (
           <div className="mdl-actions">
-            <button type="button" className="mdl-btn is-main" onClick={() => onDone("answered")}>
+            <button type="button" className="mdl-btn is-main" onClick={() => exit(() => onDone("answered"))}>
               계속 공부하기
             </button>
           </div>

@@ -3,6 +3,8 @@
 import { forwardRef, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
 
@@ -828,6 +830,8 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
   const [width, setWidth] = useState(3);
   const [eraserWidth, setEraserWidth] = useState(22);
   const [ocrText, setOcrText] = useState<string | null>(null);
+  const ocrExit = useModalExit();
+  useBodyScrollLock(ocrText !== null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   // 현재 보고 있는 페이지의 되돌리기/앞으로 가능 여부(버튼 활성 표시용).
@@ -1374,8 +1378,8 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
       {/* OCR 결과 모달 */}
       {ocrText !== null && (
-        <div className="mdl-root" style={{ zIndex: 100, padding: 20 }}>
-          <div className="mdl-dim" onClick={() => !ocrBusy && setOcrText(null)} />
+        <div className={`mdl-root${ocrExit.leaving ? " is-leaving" : ""}`} style={{ zIndex: 100, padding: 20 }}>
+          <div className="mdl-dim" onClick={() => !ocrBusy && ocrExit.exit(() => setOcrText(null))} />
           <div className="mdl-card is-wider">
             <div className="mdl-scroll mdl-text">
               <h3 className="mdl-title">OCR 결과</h3>
@@ -1389,7 +1393,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
               {!ocrBusy && (
                 <button type="button" className="mdl-btn is-sub" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }}>복사</button>
               )}
-              <button type="button" className="mdl-btn is-main" disabled={ocrBusy} onClick={() => setOcrText(null)}>닫기</button>
+              <button type="button" className="mdl-btn is-main" disabled={ocrBusy} onClick={() => ocrExit.exit(() => setOcrText(null))}>닫기</button>
             </div>
           </div>
         </div>

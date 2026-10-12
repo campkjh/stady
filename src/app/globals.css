@@ -1594,7 +1594,7 @@ label {
 .mdl-card {
   position: relative; width: 100%; max-width: 311px; max-height: 86%; box-sizing: border-box;
   display: flex; flex-direction: column; background: var(--mdl-card); border-radius: 24px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18); animation: mdlPop 0.32s cubic-bezier(0.2, 1.2, 0.3, 1) backwards;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18); animation: mdlPop 0.42s cubic-bezier(0.2, 1.25, 0.3, 1) backwards;
 }
 .mdl-card.is-wide { max-width: 360px; }
 .mdl-card.is-wider { max-width: 460px; }
@@ -1602,7 +1602,7 @@ label {
   position: relative; width: 100%; max-width: 520px; max-height: 88%; box-sizing: border-box;
   display: flex; flex-direction: column; background: var(--mdl-card); border-radius: 24px 24px 0 0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.16); animation: mdlSheet 0.38s cubic-bezier(0.2, 1, 0.3, 1) backwards;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.16); animation: mdlSheet 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 .mdl-handle { flex-shrink: 0; width: 36px; height: 4px; border-radius: 2px; background: var(--mdl-line); margin: 10px auto 0; }
 .mdl-scroll { overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
@@ -1645,5 +1645,57 @@ textarea.mdl-field { height: auto; padding: 16px 18px; line-height: 1.5; resize:
 .mdl-textbtn.is-muted { color: var(--mdl-sub); }
 @keyframes mdlFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mdlPop { from { opacity: 0; transform: translateY(14px) scale(0.94); } to { opacity: 1; transform: none; } }
-@keyframes mdlSheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .mdl-dim, .mdl-card, .mdl-sheet { animation: none !important; } }
+@keyframes mdlSheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes mdlFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes mdlPopOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(12px) scale(0.95); } }
+@keyframes mdlSheetOut { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes mdlRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes mdlSlide { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+
+/* 닫을 때 — 뚝 사라지지 않고 내려간다(useModalExit 이 .is-leaving 을 붙인 뒤 닫기 동작을 실행) */
+.mdl-root.is-leaving .mdl-dim { animation: mdlFadeOut 0.22s ease-in forwards; }
+.mdl-root.is-leaving .mdl-card { animation: mdlPopOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards; }
+.mdl-root.is-leaving .mdl-sheet { animation: mdlSheetOut 0.24s cubic-bezier(0.4, 0, 1, 1) forwards; }
+.mdl-root.is-leaving { pointer-events: none; }
+
+/* 열릴 때 안의 것들이 차례로 — 프리티풀 퀵매칭 곡선(제목 아래→위, 설명이 뒤따르고, 버튼·목록은 오른쪽→왼쪽 순차).
+   fill-mode backwards 라 끝나면 평소 상태로 돌아가 눌림 효과(transform)와 안 부딪힌다. */
+.mdl-text > * { animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+.mdl-text > :nth-child(1) { animation-delay: 0.1s; }
+.mdl-text > :nth-child(2) { animation-delay: 0.18s; }
+.mdl-text > :nth-child(3) { animation-delay: 0.26s; }
+.mdl-text > :nth-child(4) { animation-delay: 0.34s; }
+.mdl-text > :nth-child(n+5) { animation-delay: 0.42s; }
+.mdl-actions > * { animation: mdlSlide 0.46s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+.mdl-actions > :nth-child(1) { animation-delay: 0.28s; }
+.mdl-actions > :nth-child(2) { animation-delay: 0.34s; }
+.mdl-actions > :nth-child(n+3) { animation-delay: 0.4s; }
+.mdl-textrow > * { animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s backwards; }
+.mdl-list > * { animation: mdlSlide 0.46s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+.mdl-list > :nth-child(1) { animation-delay: 0.2s; }
+.mdl-list > :nth-child(2) { animation-delay: 0.25s; }
+.mdl-list > :nth-child(3) { animation-delay: 0.3s; }
+.mdl-list > :nth-child(4) { animation-delay: 0.35s; }
+.mdl-list > :nth-child(5) { animation-delay: 0.4s; }
+.mdl-list > :nth-child(6) { animation-delay: 0.45s; }
+.mdl-list > :nth-child(n+7) { animation-delay: 0.5s; }
+@media (prefers-reduced-motion: reduce) { .mdl-dim, .mdl-card, .mdl-sheet, .mdl-text > *, .mdl-actions > *, .mdl-textrow > *, .mdl-list > * { animation: none !important; } }
+
+/* ─── 프리티풀 퀵매칭 등장(qd) — 화면에 들어올 때 차례로 떠오른다 ──────────────────────
+   사용: 제목에 .qd-a-title, 부제에 .qd-a-sub(0.18s 뒤), 목록/카드에 .qd-a-item(+ style animationDelay),
+   본문 칸 묶음에 .qd-body(직계 칸이 오른쪽→왼쪽으로 0.3s + i*0.07s). 이 클래스는 lib/entrance 의 useEntrance 로
+   '화면 이동 때만' 붙인다(뒤로가기·30초 안 재진입은 생략).
+   ⚠ .qd-a-title/.qd-a-sub 는 fill-mode both — 눌림(transform) 효과가 있는 요소에는 걸지 말 것. */
+.qd-a-title { animation: qdFadeUp 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.qd-a-sub { animation: qdFadeUp 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.18s both; }
+.qd-a-item, .qd-body > * { animation: qdSlideIn 0.46s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+.qd-body > :nth-child(1) { animation-delay: 0.3s; }
+.qd-body > :nth-child(2) { animation-delay: 0.37s; }
+.qd-body > :nth-child(3) { animation-delay: 0.44s; }
+.qd-body > :nth-child(4) { animation-delay: 0.51s; }
+.qd-body > :nth-child(5) { animation-delay: 0.58s; }
+.qd-body > :nth-child(6) { animation-delay: 0.65s; }
+.qd-body > :nth-child(n+7) { animation-delay: 0.72s; }
+@keyframes qdFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes qdSlideIn { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .qd-a-title, .qd-a-sub, .qd-a-item, .qd-body > * { animation: none !important; } }

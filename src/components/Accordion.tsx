@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useEntrance } from "@/lib/entrance";
 
 interface AccordionItem {
   id: string | number;
@@ -13,11 +14,14 @@ function AccordionRow({
   isOpen,
   onToggle,
   autoScroll,
+  enterDelay,
 }: {
   item: AccordionItem;
   isOpen: boolean;
   onToggle: () => void;
   autoScroll?: boolean;
+  /** 화면에 들어올 때 이 줄이 뜨는 지연(초). 없으면 등장 연출 없음 */
+  enterDelay?: number;
 }) {
   const innerRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -45,7 +49,7 @@ function AccordionRow({
   }, [autoScroll]);
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className={enterDelay != null ? "qd-a-item" : undefined} style={enterDelay != null ? { animationDelay: `${enterDelay}s` } : undefined}>
       <button
         type="button"
         className="press"
@@ -103,6 +107,7 @@ export default function Accordion({
   items: AccordionItem[];
   defaultOpenId?: string | number | null;
 }) {
+  const play = useEntrance("accordion");
   // 홈에서 특정 공지로 들어오면 그 항목을 처음부터 펼쳐 둔다.
   const [openId, setOpenId] = useState<string | number | null>(
     defaultOpenId != null && items.some((it) => it.id === defaultOpenId) ? defaultOpenId : null
@@ -110,9 +115,10 @@ export default function Accordion({
 
   return (
     <div style={{ padding: "0 20px" }}>
-      {items.map((item) => (
+      {items.map((item, i) => (
         <AccordionRow
           key={item.id}
+          enterDelay={play && i < 12 ? 0.26 + i * 0.05 : undefined}
           item={item}
           isOpen={openId === item.id}
           autoScroll={defaultOpenId != null && item.id === defaultOpenId}

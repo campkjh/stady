@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
 import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
+import { useEntrance } from "@/lib/entrance";
 
 const bmKey = (tab: string) => `bookmarks:${tab}`;
 
@@ -158,6 +159,7 @@ function SwipeableVocabBookmarkItem({
 
 export default function BookmarksPage() {
   const router = useRouter();
+  const enter = useEntrance("bookmarks");
   const [activeTab, setActiveTab] = useState("");
   const [oxCategory, setOxCategory] = useState(""); // OX 분류(카테고리) 필터
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => clientCache.get<Bookmark[]>(bmKey("")) ?? []);
@@ -285,7 +287,7 @@ export default function BookmarksPage() {
   })();
 
   return (
-    <div className="px-4 pt-6">
+    <div className={`px-4 pt-6${enter ? " qd-body" : ""}`}>
       <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
           <h1 className="text-xl font-bold" style={{ margin: 0 }}>책갈피</h1>

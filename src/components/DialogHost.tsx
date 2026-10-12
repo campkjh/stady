@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AlertModal from "@/components/AlertModal";
+import { markEntranceReady } from "@/lib/entrance";
 import { settleDialog, subscribeDialogs, uiAlert, type DialogRequest } from "@/lib/dialog";
 
 /**
@@ -14,6 +15,11 @@ export default function DialogHost() {
   const [queue, setQueue] = useState<DialogRequest[]>([]);
 
   useEffect(() => subscribeDialogs(setQueue), []);
+
+  // 첫 하이드레이션이 끝났음을 알린다 — 이후 화면 이동부터 등장 연출 생략 규칙(lib/entrance)이 적용된다.
+  useEffect(() => {
+    markEntranceReady();
+  }, []);
 
   useEffect(() => {
     const original = window.alert;

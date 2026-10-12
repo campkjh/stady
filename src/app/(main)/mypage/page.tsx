@@ -7,6 +7,7 @@ import MyActivityCard from "@/components/MyActivityCard";
 import StadyPrimeBanner from "@/components/StadyPrimeBanner";
 import { getTheme, setTheme, type ThemePreference } from "@/lib/theme";
 import { primeRemainingShort } from "@/lib/primeRemaining";
+import { useEntrance } from "@/lib/entrance";
 
 interface Entitlement {
   active: boolean;
@@ -110,6 +111,7 @@ function ThemeRow() {
 }
 
 export default function MyPage() {
+  const enter = useEntrance("mypage");
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function MyPage() {
     <div style={{ background: "var(--c-bg)", minHeight: "100vh", paddingTop: "env(safe-area-inset-top, 0px)" }}>
       {/* 태블릿(744px+)은 2단: 왼쪽 프로필·경험치, 오른쪽 배너·메뉴. 모바일은 그대로 한 줄 흐름. */}
       <div className="mp-layout">
-      <div className="mp-left">
+      <div className={`mp-left${enter ? " qd-body" : ""}`}>
       {/* Profile settings */}
       <Link href="/mypage/profile" className="press" style={{ ...rowStyle, marginTop: 8 }}>
         <span style={iconBox}>
@@ -170,7 +172,7 @@ export default function MyPage() {
       <div style={dividerStyle} className="mp-left-end" />
       </div>
 
-      <div className="mp-right">
+      <div className={`mp-right${enter ? " qd-body" : ""}`}>
 
       {/* 프리미엄 = 스타디 프라임 배너(티어 뱃지 아래). 구독하기 버튼 없음. 미구독은 기존 구독 유도 */}
       {/* 스타디 프라임 배너 — 구독 중이면 버튼 없음(관리 링크), 미구독이면 글래스 '구독하기' 버튼 */}

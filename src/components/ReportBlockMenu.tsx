@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 // 커뮤니티 신고·차단 메뉴 (App Store 가이드라인 1.2 — UGC 앱 필수 요건).
 //  · 신고: 사유를 골라 접수하면 운영자 화면(관리자 > 신고)에 쌓인다.
@@ -47,6 +49,8 @@ export default function ReportBlockMenu({
   const [step, setStep] = useState<Step | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const { leaving, exit } = useModalExit();
+  useBodyScrollLock(!!step);
 
   // 내 글/댓글이거나 작성자를 알 수 없으면(탈퇴 등) 메뉴 자체를 숨긴다.
   if (!targetUserId || (currentUserId && currentUserId === targetUserId)) return null;
@@ -155,17 +159,17 @@ export default function ReportBlockMenu({
       </button>
 
       {step && (
-        <div role="dialog" aria-modal="true" className="mdl-root is-sheet" style={{ zIndex: 600 }}>
-          <div className="mdl-dim" onClick={close} />
+        <div role="dialog" aria-modal="true" className={`mdl-root is-sheet${leaving ? " is-leaving" : ""}`} style={{ zIndex: 600 }}>
+          <div className="mdl-dim" onClick={() => exit(close)} />
           <div className="mdl-sheet" style={{ maxWidth: 480 }}>
             <div className="mdl-handle" />
-            <div className="mdl-scroll" style={{ padding: "18px 16px 16px" }}>
+            <div className="mdl-scroll mdl-list" style={{ padding: "18px 16px 16px" }}>
               {step === "menu" && (
                 <>
                   <SheetTitle text={`${targetNickname}님의 ${targetType === "post" ? "게시글" : "댓글"}`} />
                   <SheetItem label="신고하기" onClick={() => setStep("reason")} />
                   <SheetItem label="이 사용자 차단하기" onClick={() => setStep("blockConfirm")} />
-                  <SheetItem label="취소" muted onClick={close} />
+                  <SheetItem label="취소" muted onClick={() => exit(close)} />
                 </>
               )}
 
@@ -175,7 +179,7 @@ export default function ReportBlockMenu({
                   {REASONS.map((reason) => (
                     <SheetItem key={reason} label={reason} disabled={busy} onClick={() => submitReport(reason)} />
                   ))}
-                  <SheetItem label="취소" muted onClick={close} />
+                  <SheetItem label="취소" muted onClick={() => exit(close)} />
                 </>
               )}
 
@@ -188,14 +192,14 @@ export default function ReportBlockMenu({
                     차단은 상대에게 알려지지 않고, 마이페이지에서 해제할 수 있어요.
                   </p>
                   <SheetItem label={busy ? "처리 중…" : "차단하기"} danger disabled={busy} onClick={submitBlock} />
-                  <SheetItem label="취소" muted onClick={close} />
+                  <SheetItem label="취소" muted onClick={() => exit(close)} />
                 </>
               )}
 
               {step === "done" && (
                 <>
                   <SheetTitle text={message} />
-                  <SheetItem label="확인" main onClick={close} />
+                  <SheetItem label="확인" main onClick={() => exit(close)} />
                 </>
               )}
             </div>

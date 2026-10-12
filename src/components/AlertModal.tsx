@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 /*
  * 스타디 알럿·컨펌 — 디자인 시안(Kind=Alert / Kind=Confirm). 스타일은 globals 의 공용 모달(.mdl-*)을 쓴다.
@@ -32,22 +34,28 @@ function isDanger(bg?: string) {
 }
 
 export default function AlertModal({ title, subtitle, buttons, onClose }: AlertModalProps) {
+  // 뒤 화면 스크롤 잠금 + 닫을 때 '뚝' 사라지지 않고 내려가는 연출(프리티풀 모달 인터랙션)
+  useBodyScrollLock(true);
+  const { leaving, exit } = useModalExit();
+  const close = onClose ? () => exit(onClose) : undefined;
+  const press = (fn: () => void) => () => exit(fn);
+
   useEffect(() => {
-    if (!onClose) return;
+    if (!close) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  });
 
   const hasBody = subtitle != null && subtitle !== "";
   const [primary, secondary] = buttons;
   const mainClass = (btn: AlertButton) => `mdl-btn ${isDanger(btn.bgColor) ? "is-danger" : "is-main"}`;
 
   return (
-    <div className="mdl-root" role="presentation">
-      <div className="mdl-dim" onClick={onClose} />
+    <div className={`mdl-root${leaving ? " is-leaving" : ""}`} role="presentation">
+      <div className="mdl-dim" onClick={close} />
       <div className="mdl-card" role="alertdialog" aria-modal="true" aria-label={title}>
         <div className="mdl-text">
           <h2 className="mdl-title" style={{ whiteSpace: "pre-line" }}>{title}</h2>
@@ -56,7 +64,7 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
 
         {buttons.length === 1 && (
           <div className="mdl-textrow">
-            <button type="button" className="mdl-textbtn" onClick={primary.onClick}>
+            <button type="button" className="mdl-textbtn" onClick={press(primary.onClick)}>
               {primary.label}
             </button>
           </div>
@@ -64,10 +72,10 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
 
         {buttons.length === 2 && (
           <div className="mdl-actions">
-            <button type="button" className="mdl-btn is-sub" onClick={secondary.onClick}>
+            <button type="button" className="mdl-btn is-sub" onClick={press(secondary.onClick)}>
               {secondary.label}
             </button>
-            <button type="button" className={mainClass(primary)} onClick={primary.onClick}>
+            <button type="button" className={mainClass(primary)} onClick={press(primary.onClick)}>
               {primary.label}
             </button>
           </div>
@@ -81,7 +89,7 @@ export default function AlertModal({ title, subtitle, buttons, onClose }: AlertM
                 type="button"
                 className={idx === 0 ? mainClass(btn) : "mdl-btn is-sub"}
                 style={idx === 0 ? { order: -1 } : undefined}
-                onClick={btn.onClick}
+                onClick={press(btn.onClick)}
               >
                 {btn.label}
               </button>

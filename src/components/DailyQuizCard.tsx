@@ -4,6 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
 import { TossBubbleGlass } from "@/components/TossBubble";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 const CACHE_KEY = "daily-quiz";
 
@@ -209,6 +211,8 @@ export default function DailyQuizCard() {
   const [prefSelected, setPrefSelected] = useState<string[]>([]);
   const [prefSaving, setPrefSaving] = useState(false);
   const [prefError, setPrefError] = useState(false);
+  const prefExit = useModalExit();
+  useBodyScrollLock(prefOpen);
 
   // 과목 목록·선택값 로드. 카드가 뜰 때 미리 한 번 받아 두고(시트를 열자마자 목록이 보이게),
   // 시트를 열 때 한 번 더 갱신한다. 실패하면 시트 안에 "다시 시도"를 띄운다.
@@ -485,8 +489,8 @@ export default function DailyQuizCard() {
           transform/animation 이 하나라도 있는 순간 fixed 가 그 조상 기준이 되어 시트가 카드 안에
           갇힌다 — 갤럭시(안드로이드 WebView)에서 "과목 목록이 안 뜨고 안 바뀐다"던 원인. */}
       {prefOpen && typeof document !== "undefined" && createPortal(
-        <div className="mdl-root is-sheet" style={{ zIndex: 400 }}>
-          <div className="mdl-dim" onClick={() => !prefSaving && setPrefOpen(false)} />
+        <div className={`mdl-root is-sheet${prefExit.leaving ? " is-leaving" : ""}`} style={{ zIndex: 400 }}>
+          <div className="mdl-dim" onClick={() => !prefSaving && prefExit.exit(() => setPrefOpen(false))} />
           {/* 높이에 vh 를 쓰지 않는다 — 안드로이드 WebView 는 vh 가 0/엉뚱한 값으로 잡혀 목록만 사라진 적이 있다.
               오버레이(top/bottom:0)의 % 와 플렉스 컬럼으로만 높이를 정한다(.mdl-sheet 가 그렇게 짜여 있다). */}
           <div className="mdl-sheet" style={{ maxWidth: 520 }}>
@@ -496,7 +500,7 @@ export default function DailyQuizCard() {
               <p className="mdl-body is-sm">원하는 과목을 눌러 고른 뒤 <b>저장</b>을 눌러주세요. 여러 개 고를 수 있어요.</p>
             </div>
 
-            <div className="mdl-scroll" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 16px", flex: "1 1 auto" }}>
+            <div className="mdl-scroll mdl-list" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 16px", flex: "1 1 auto" }}>
               {prefOptions.length === 0 ? (
                 prefError ? (
                   <div style={{ textAlign: "center", padding: "14px 0" }}>

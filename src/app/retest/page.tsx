@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 
 interface RetestItem {
   id: string;
@@ -362,11 +364,13 @@ function ResultOverlay({
   total: number; answeredCount: number; correct: number;
   onRetry: () => void; onClose: () => void; onReview: () => void;
 }) {
+  useBodyScrollLock(true);
+  const { leaving, exit } = useModalExit();
   const rate = answeredCount > 0 ? Math.round((correct / answeredCount) * 100) : 0;
   const wrong = answeredCount - correct;
   return (
-    <div className="mdl-root" style={{ zIndex: 400, padding: 20 }}>
-      <div className="mdl-dim" onClick={onReview} />
+    <div className={`mdl-root${leaving ? " is-leaving" : ""}`} style={{ zIndex: 400, padding: 20 }}>
+      <div className="mdl-dim" onClick={() => exit(onReview)} />
       <div className="mdl-card is-wide">
         <div className="mdl-text" style={{ textAlign: "center" }}>
           <h2 className="mdl-title">모아풀기 결과</h2>
@@ -380,9 +384,9 @@ function ResultOverlay({
           </div>
         </div>
         <div className="mdl-actions is-stack is-tight" style={{ gap: 8 }}>
-          <button type="button" className="mdl-btn is-main" style={{ flex: "none" }} onClick={onRetry}>처음부터 다시 풀기</button>
-          <button type="button" className="mdl-btn is-sub" style={{ flex: "none" }} onClick={onReview}>틀린 문제 다시 보기</button>
-          <button type="button" className="mdl-textbtn is-muted" style={{ alignSelf: "center" }} onClick={onClose}>닫기</button>
+          <button type="button" className="mdl-btn is-main" style={{ flex: "none" }} onClick={() => exit(onRetry)}>처음부터 다시 풀기</button>
+          <button type="button" className="mdl-btn is-sub" style={{ flex: "none" }} onClick={() => exit(onReview)}>틀린 문제 다시 보기</button>
+          <button type="button" className="mdl-textbtn is-muted" style={{ alignSelf: "center" }} onClick={() => exit(onClose)}>닫기</button>
         </div>
       </div>
     </div>
