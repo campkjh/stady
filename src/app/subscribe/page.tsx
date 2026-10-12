@@ -6,6 +6,7 @@ import { useIap, detectPlatform } from "@/lib/iap/client";
 import type { PlanId } from "@/lib/iap/types";
 import { primeDaysLeft } from "@/lib/primeRemaining";
 import PrimeReviews from "@/components/PrimeReviews";
+import AlertModal from "@/components/AlertModal";
 
 // 스타디 프리미엄 — 페이지판.
 // 예전엔 마이페이지에서 팝업(SubscribePopup)으로 띄웠는데, 결제 흐름을 한 화면에서 차분히
@@ -192,36 +193,15 @@ export default function SubscribePage() {
 
       {/* 구독 해지 확인 모달 (WKWebView에서 window.confirm 미동작 → 인앱 모달) */}
       {showCancelConfirm && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setShowCancelConfirm(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.42)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
-        >
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: "24px 20px 16px", width: "100%", maxWidth: 320, boxSizing: "border-box" }}>
-            <div style={{ fontSize: 16.5, fontWeight: 700, color: "#191F28", textAlign: "center" }}>구독을 해지하시겠어요?</div>
-            <p style={{ fontSize: 13.5, color: "#6B7280", textAlign: "center", margin: "8px 0 18px", lineHeight: 1.55 }}>
-              남은 이용 기간까지는 그대로 이용할 수 있어요.
-              <br />
-              스토어 구독 관리 화면으로 이동합니다.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <button type="button" onClick={() => setShowCancelConfirm(false)} style={{ border: "none", borderRadius: 12, background: "#F2F4F6", color: "#4E5968", padding: "12px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
-                닫기
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCancelConfirm(false);
-                  openStoreManage();
-                }}
-                style={{ border: "none", borderRadius: 12, background: "#3182F6", color: "#fff", padding: "12px 0", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}
-              >
-                해지하러 가기
-              </button>
-            </div>
-          </div>
-        </div>
+        <AlertModal
+          title="구독을 해지하시겠어요?"
+          subtitle={"남은 이용 기간까지는 그대로 이용할 수 있어요.\n스토어 구독 관리 화면으로 이동합니다."}
+          onClose={() => setShowCancelConfirm(false)}
+          buttons={[
+            { label: "해지하러 가기", onClick: () => { setShowCancelConfirm(false); openStoreManage(); } },
+            { label: "닫기", onClick: () => setShowCancelConfirm(false) },
+          ]}
+        />
       )}
     </div>
   );

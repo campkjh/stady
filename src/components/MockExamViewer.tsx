@@ -1374,19 +1374,22 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
       {/* OCR 결과 모달 */}
       {ocrText !== null && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => !ocrBusy && setOcrText(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "var(--c-bg)", borderRadius: 18, padding: 20, border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "var(--c-text-b)" }}>OCR 결과</h3>
-            {ocrBusy ? (
-              <p style={{ color: "var(--c-text-4)", fontSize: 14 }}>글자를 인식하는 중이에요… (처음엔 엔진을 받느라 조금 걸려요)</p>
-            ) : (
-              <textarea readOnly value={ocrText} style={{ width: "100%", minHeight: 160, borderRadius: 12, border: "1px solid var(--c-border)", padding: 12, fontSize: 14, lineHeight: 1.6, color: "var(--c-text-b)", resize: "vertical", boxSizing: "border-box" }} />
-            )}
-            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              {!ocrBusy && (
-                <button type="button" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-brand)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>복사</button>
+        <div className="mdl-root" style={{ zIndex: 100, padding: 20 }}>
+          <div className="mdl-dim" onClick={() => !ocrBusy && setOcrText(null)} />
+          <div className="mdl-card is-wider">
+            <div className="mdl-scroll mdl-text">
+              <h3 className="mdl-title">OCR 결과</h3>
+              {ocrBusy ? (
+                <p className="mdl-body is-sm">글자를 인식하는 중이에요… (처음엔 엔진을 받느라 조금 걸려요)</p>
+              ) : (
+                <textarea className="mdl-field" readOnly value={ocrText} rows={7} style={{ marginTop: 14, fontSize: 15 }} />
               )}
-              <button type="button" disabled={ocrBusy} onClick={() => setOcrText(null)} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: ocrBusy ? "default" : "pointer", opacity: ocrBusy ? 0.6 : 1 }}>닫기</button>
+            </div>
+            <div className="mdl-actions is-tight">
+              {!ocrBusy && (
+                <button type="button" className="mdl-btn is-sub" onClick={() => { navigator.clipboard?.writeText(ocrText || ""); }}>복사</button>
+              )}
+              <button type="button" className="mdl-btn is-main" disabled={ocrBusy} onClick={() => setOcrText(null)}>닫기</button>
             </div>
           </div>
         </div>

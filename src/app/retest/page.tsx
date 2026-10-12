@@ -365,31 +365,26 @@ function ResultOverlay({
   const rate = answeredCount > 0 ? Math.round((correct / answeredCount) * 100) : 0;
   const wrong = answeredCount - correct;
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={onReview} />
-      <div style={{ position: "relative", width: "100%", maxWidth: 360, background: "var(--c-bg)", borderRadius: 22, padding: 24, animation: "retestPop 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: "0 12px 48px rgba(0,0,0,0.2)" }}>
-        <p style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--c-text-4)" }}>모아풀기 결과</p>
-        <p style={{ textAlign: "center", fontSize: 44, fontWeight: 700, color: "var(--c-brand)", lineHeight: 1.2, marginTop: 4 }}>
-          {correct}<span style={{ fontSize: 20, color: "var(--c-text-4c)", fontWeight: 700 }}> / {total}</span>
-        </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 8, marginBottom: 20 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-brand)" }}>정답 {correct}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-danger-b)" }}>오답 {wrong}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-3)" }}>정답률 {rate}%</span>
+    <div className="mdl-root" style={{ zIndex: 400, padding: 20 }}>
+      <div className="mdl-dim" onClick={onReview} />
+      <div className="mdl-card is-wide">
+        <div className="mdl-text" style={{ textAlign: "center" }}>
+          <h2 className="mdl-title">모아풀기 결과</h2>
+          <p style={{ margin: "14px 0 0", fontSize: 44, fontWeight: 700, color: "var(--mdl-accent)", lineHeight: 1.2 }}>
+            {correct}<span style={{ fontSize: 20, color: "var(--mdl-sub)", fontWeight: 700 }}> / {total}</span>
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--mdl-accent)" }}>정답 {correct}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--mdl-danger)" }}>오답 {wrong}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--mdl-bodyc)" }}>정답률 {rate}%</span>
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button type="button" onClick={onRetry} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-brand)", color: "#fff", border: "none", fontSize: 16, fontWeight: 700 }}>
-            처음부터 다시 풀기
-          </button>
-          <button type="button" onClick={onReview} className="press" style={{ width: "100%", height: 48, borderRadius: 14, background: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", border: "none", fontSize: 16, fontWeight: 700 }}>
-            틀린 문제 다시 보기
-          </button>
-          <button type="button" onClick={onClose} className="press" style={{ width: "100%", height: 44, background: "none", color: "var(--c-text-4c)", border: "none", fontSize: 14, fontWeight: 700 }}>
-            닫기
-          </button>
+        <div className="mdl-actions is-stack is-tight" style={{ gap: 8 }}>
+          <button type="button" className="mdl-btn is-main" style={{ flex: "none" }} onClick={onRetry}>처음부터 다시 풀기</button>
+          <button type="button" className="mdl-btn is-sub" style={{ flex: "none" }} onClick={onReview}>틀린 문제 다시 보기</button>
+          <button type="button" className="mdl-textbtn is-muted" style={{ alignSelf: "center" }} onClick={onClose}>닫기</button>
         </div>
       </div>
-      <style>{`@keyframes retestPop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }`}</style>
     </div>
   );
 }

@@ -39,110 +39,52 @@ export default function CommunityGateModal({ open, onClose, onUnlock }: Communit
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 120,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(17, 24, 39, 0.45)",
-        padding: 20,
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          borderRadius: 8,
-          background: "var(--c-bg)",
-          boxShadow: "0 18px 50px rgba(15,23,42,0.24)",
-          padding: 24,
-          textAlign: "center",
-        }}
-      >
-        <p style={{ margin: 0, color: "var(--c-text)", fontSize: 23, fontWeight: 700, letterSpacing: 0 }}>
-          준비
-          <button
-            type="button"
-            onClick={() => setPasswordOpen(true)}
-            aria-label="커뮤니티 암호 입력 열기"
-            style={{
-              appearance: "none",
-              border: "none",
-              background: "transparent",
-              color: "inherit",
-              padding: 0,
-              margin: 0,
-              font: "inherit",
-              lineHeight: "inherit",
-              cursor: "default",
-              textDecoration: "none",
-              outline: "none",
-            }}
-          >
-            중
-          </button>
-          입니다.
-        </p>
-        {passwordOpen && (
-          <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 18 }}>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setError("");
-              }}
-              placeholder="암호 입력"
-              autoFocus
-              style={{
-                width: "100%",
-                border: "1px solid var(--c-border-strong)",
-                borderRadius: 8,
-                padding: "12px 13px",
-                color: "var(--c-text)",
-                fontSize: 16,
-                boxSizing: "border-box",
-                textAlign: "center",
-              }}
-            />
-            {error && <span style={{ color: "var(--c-danger-c)", fontSize: 13, fontWeight: 500 }}>{error}</span>}
+    <div role="dialog" aria-modal="true" className="mdl-root" style={{ zIndex: 120, padding: 20 }}>
+      <div className="mdl-dim" />
+      <div className="mdl-card is-wide">
+        <div className="mdl-text" style={{ textAlign: "center" }}>
+          <h2 className="mdl-title" style={{ fontSize: 22 }}>
+            준비
             <button
-              type="submit"
+              type="button"
+              onClick={() => setPasswordOpen(true)}
+              aria-label="커뮤니티 암호 입력 열기"
               style={{
-                border: "none",
-                borderRadius: 8,
-                background: "var(--c-brand)",
-                color: "#fff",
-                padding: "12px 14px",
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: "pointer",
+                appearance: "none", border: "none", background: "transparent", color: "inherit",
+                padding: 0, margin: 0, font: "inherit", lineHeight: "inherit", cursor: "default",
+                textDecoration: "none", outline: "none",
               }}
             >
-              입장
+              중
             </button>
-          </form>
-        )}
-        <button
-          type="button"
-          onClick={close}
-          style={{
-            marginTop: 14,
-            border: "none",
-            background: "transparent",
-            color: "var(--c-text-3)",
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          닫기
-        </button>
+            입니다.
+          </h2>
+          {passwordOpen && (
+            <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 18 }}>
+              <input
+                type="password"
+                className={`mdl-field${error ? " is-error" : ""}`}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError("");
+                }}
+                placeholder="암호 입력"
+                autoFocus
+                style={{ textAlign: "center" }}
+              />
+              {error && <span className="mdl-error" style={{ marginTop: 0 }}>{error}</span>}
+              <button type="submit" className="mdl-btn is-main" style={{ flex: "none", width: "100%" }}>
+                입장
+              </button>
+            </form>
+          )}
+        </div>
+        <div className="mdl-textrow" style={{ justifyContent: "center", paddingTop: 12 }}>
+          <button type="button" className="mdl-textbtn is-muted" onClick={close}>
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );

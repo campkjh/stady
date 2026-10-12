@@ -74,92 +74,39 @@ export default function NicknameGate() {
   if (!mounted || !open) return null;
 
   const overlay = (
-    <div
-      data-gate="nickname"
-      style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 3000,
-        background: "rgba(15,23,42,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          background: "var(--c-bg)",
-          borderRadius: 20,
-          padding: "24px 20px 20px",
-          border: "1px solid rgba(15,23,42,0.06)",
-          boxSizing: "border-box",
-        }}
-      >
-        <img src="/icons/toss/pencil.svg" alt="" style={{ width: 40, height: 40, display: "block", marginBottom: 12 }} />
-        <h2 style={{ margin: "0 0 8px", fontSize: 19, fontWeight: 700, color: "var(--c-text-b)" }}>
-          닉네임을 바꿔주세요
-        </h2>
-        <p style={{ margin: "0 0 18px", fontSize: 13.5, lineHeight: 1.6, color: "var(--c-text-2d)" }}>
-          다른 사용자와 닉네임이 겹쳐요. 나만의 닉네임으로 바꿔야 계속 이용할 수 있어요.
-        </p>
-
-        <input
-          type="text"
-          value={value}
-          maxLength={MAX}
-          autoFocus
-          placeholder="새 닉네임 (2~16자)"
-          onChange={(e) => {
-            setValue(e.target.value);
-            if (error) setError("");
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !saving) save();
-          }}
-          style={{
-            width: "100%",
-            height: 50,
-            padding: "0 14px",
-            borderRadius: 12,
-            border: `1.5px solid ${error ? "#E5484D" : "var(--c-bg-muted-3)"}`,
-            background: "var(--c-bg-muted)",
-            fontSize: 16, // iOS 확대 방지
-            color: "var(--c-text-b)",
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-        />
-        <div style={{ minHeight: 18, marginTop: 7 }}>
-          {error && <span style={{ fontSize: 12.5, color: "#E5484D", fontWeight: 700 }}>{error}</span>}
+    <div data-gate="nickname" className="mdl-root" style={{ zIndex: 3000, padding: 20 }}>
+      <div className="mdl-dim" style={{ background: "rgba(0,0,0,0.55)" }} />
+      <div className="mdl-card is-wide">
+        <div className="mdl-text">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/toss/pencil.svg" alt="" className="mdl-icon" />
+          <h2 className="mdl-title">닉네임을 바꿔주세요</h2>
+          <p className="mdl-body is-sm">
+            다른 사용자와 닉네임이 겹쳐요. 나만의 닉네임으로 바꿔야 계속 이용할 수 있어요.
+          </p>
+          <input
+            type="text"
+            className={`mdl-field${error ? " is-error" : ""}`}
+            style={{ marginTop: 18 }}
+            value={value}
+            maxLength={MAX}
+            autoFocus
+            placeholder="새 닉네임 (2~16자)"
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (error) setError("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !saving) save();
+            }}
+          />
+          <div style={{ minHeight: 22 }}>{error && <span className="mdl-error">{error}</span>}</div>
         </div>
-
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          style={{
-            width: "100%",
-            height: 50,
-            marginTop: 6,
-            border: "none",
-            borderRadius: 12,
-            background: "var(--c-brand)",
-            color: "#fff",
-            fontSize: 15.5,
-            fontWeight: 700,
-            cursor: saving ? "default" : "pointer",
-            opacity: saving ? 0.65 : 1,
-          }}
-        >
-          {saving ? "저장 중…" : "이 닉네임으로 변경"}
-        </button>
+        <div className="mdl-actions is-tight">
+          <button type="button" className="mdl-btn is-main" onClick={save} disabled={saving}>
+            {saving ? "저장 중…" : "이 닉네임으로 변경"}
+          </button>
+        </div>
       </div>
     </div>
   );

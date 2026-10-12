@@ -2514,15 +2514,15 @@ function CommunityStyles() {
         display: flex;
         flex-direction: column;
         background: var(--c-bg);
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
         box-shadow: 0 -14px 40px rgba(15, 23, 42, 0.18);
         animation: communitySheetUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
         overflow: hidden;
       }
       @media (min-width: 720px) {
         .community-comment-modal { align-items: center; }
-        .community-comment-sheet { border-radius: 20px; height: auto; min-height: 50%; max-height: 74%; }
+        .community-comment-sheet { border-radius: 24px; height: auto; min-height: 50%; max-height: 74%; }
       }
       .ccs-head {
         display: flex;

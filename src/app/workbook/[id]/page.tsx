@@ -427,82 +427,47 @@ export default function WorkbookDetailPage() {
 
       {/* Review Modal */}
       {showReviewModal && (
-        <div style={{
-          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998,
-          padding: 16,
-        }}
-          onClick={() => setShowReviewModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 24,
-              width: "100%", maxWidth: 360,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 20, textAlign: "center" }}>
-              후기 작성
-            </h3>
+        <div className="mdl-root" style={{ zIndex: 9998, padding: 20 }}>
+          <div className="mdl-dim" onClick={() => setShowReviewModal(false)} />
+          <div className="mdl-card is-wide">
+            <div className="mdl-scroll mdl-text">
+              <h3 className="mdl-title">후기 작성</h3>
 
-            {/* Star Rating Selector */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setReviewRating(star)}
-                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
-                >
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill={star <= reviewRating ? "var(--c-warn-h)" : "var(--c-border)"} stroke="none">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </button>
-              ))}
+              {/* Star Rating Selector */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "18px 0" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                  >
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill={star <= reviewRating ? "var(--c-warn-h)" : "var(--c-border)"} stroke="none">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+
+              {/* Text Input */}
+              <textarea
+                className="mdl-field"
+                value={reviewContent}
+                onChange={(e) => setReviewContent(e.target.value)}
+                placeholder="후기를 작성해주세요..."
+                rows={4}
+              />
             </div>
 
-            {/* Text Input */}
-            <textarea
-              value={reviewContent}
-              onChange={(e) => setReviewContent(e.target.value)}
-              placeholder="후기를 작성해주세요..."
-              style={{
-                width: "100%",
-                minHeight: 100,
-                padding: 12,
-                borderRadius: 12,
-                border: "1px solid var(--c-border)",
-                fontSize: 14,
-                color: "var(--c-text-c)",
-                resize: "vertical",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
-
             {/* Buttons */}
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button
-                onClick={() => setShowReviewModal(false)}
-                className="press"
-                style={{
-                  flex: 1, padding: "12px 0", borderRadius: 12,
-                  backgroundColor: "var(--c-bg-muted)", border: "none",
-                  fontSize: 14, fontWeight: 600, color: "var(--c-text-3)", cursor: "pointer",
-                }}
-              >
+            <div className="mdl-actions is-tight">
+              <button type="button" className="mdl-btn is-sub" onClick={() => setShowReviewModal(false)}>
                 취소
               </button>
               <button
+                type="button"
+                className="mdl-btn is-main"
                 onClick={handleReviewSubmit}
                 disabled={reviewSubmitting || !reviewContent.trim()}
-                className="press"
-                style={{
-                  flex: 1, padding: "12px 0", borderRadius: 12,
-                  backgroundColor: reviewContent.trim() ? "var(--c-brand)" : "var(--c-brand-line-10)",
-                  border: "none",
-                  fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer",
-                  opacity: reviewSubmitting ? 0.6 : 1,
-                }}
               >
                 {reviewSubmitting ? "등록 중..." : "등록"}
               </button>

@@ -97,18 +97,18 @@ export default function PrimeReferralSheet() {
              배너가 밝은 이미지라 다크모드에서도 이 시트는 밝게 유지하고, 글자·버튼 색을
              테마 변수 대신 고정값으로 둬서 다크에서 글씨가 사라지지 않게 한다. */
           background: linear-gradient(165deg, #F4F7FE 0%, #DFE7F9 50%, #E4E0FC 100%);
-          border-radius: 20px 20px 0 0;
-          padding: 14px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+          border-radius: 24px 24px 0 0;
+          padding: 14px 14px calc(12px + env(safe-area-inset-bottom, 0px));
           box-sizing: border-box;
           animation: prs-up 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         @keyframes prs-up { from { transform: translateY(14px); } to { transform: translateY(0); } }
         .prs-banner {
           position: relative; display: block; width: 100%; border: none; padding: 0; margin: 0;
-          background: none; cursor: pointer; border-radius: 16px; overflow: hidden;
+          background: none; cursor: pointer; border-radius: 20px; overflow: hidden;
           -webkit-tap-highlight-color: transparent;
         }
-        .prs-img { display: block; width: 100%; height: auto; border-radius: 16px; }
+        .prs-img { display: block; width: 100%; height: auto; border-radius: 20px; }
         .prs-glass {
           position: absolute; right: 14px; bottom: 14px;
           display: inline-flex; align-items: center; gap: 5px;
@@ -123,11 +123,11 @@ export default function PrimeReferralSheet() {
         }
         .prs-foot { display: flex; gap: 8px; margin-top: 12px; }
         .prs-btn {
-          flex: 1; height: 48px; border: none; border-radius: 14px;
-          font-size: 14.5px; font-weight: 700; cursor: pointer;
+          flex: 1; height: 56px; border: none; border-radius: 17px;
+          font-size: 17px; font-weight: 700; letter-spacing: -0.3px; cursor: pointer;
         }
         .prs-week { background: rgba(255,255,255,0.72); color: #4E5968; }
-        .prs-close { background: #3787FF; color: #fff; }
+        .prs-close { background: #3182F6; color: #fff; }
         @media (max-width: 420px) {
           .prs-glass { right: 11px; bottom: 11px; padding: 8px 13px; font-size: 12.5px; }
         }

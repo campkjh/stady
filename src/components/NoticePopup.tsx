@@ -122,68 +122,35 @@ export default function NoticePopup() {
   const overlay = (
     <div
       data-gate="notice"
-        style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 2000,
-        background: "rgba(15,23,42,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-        boxSizing: "border-box",
-      }}
-      onClick={closeSession}
+      className="mdl-root"
+      style={{ zIndex: 2000, padding: 20 }}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          maxHeight: "86%",
-          background: "var(--c-bg)",
-          borderRadius: 20,
-          display: "flex",
-          flexDirection: "column",
-          border: "1px solid rgba(15,23,42,0.06)",
-          boxSizing: "border-box",
-        }}
-      >
+      <div className="mdl-dim" onClick={closeSession} />
+      <div className="mdl-card is-wide">
         {/* 내용(탭하면 공지 전체 보기) */}
-        <div style={{ overflowY: "auto", cursor: "pointer", minHeight: 0 }} onClick={openFull}>
+        <div className="mdl-scroll" style={{ cursor: "pointer" }} onClick={openFull}>
           {img && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={img}
               alt=""
-              style={{ width: "100%", display: "block", maxHeight: 240, objectFit: "cover", borderRadius: "20px 20px 0 0" }}
+              style={{ width: "100%", display: "block", maxHeight: 240, objectFit: "cover", borderRadius: "24px 24px 0 0" }}
             />
           )}
-          <div style={{ padding: "18px 20px 16px" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 6, padding: "2px 7px" }}>공지</span>
-            <h2 style={{ margin: "10px 0 8px", fontSize: 18, fontWeight: 700, color: "var(--c-text-b)", lineHeight: 1.35 }}>{notice.title}</h2>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--c-text-2d)", whiteSpace: "pre-wrap" }}>{notice.body}</p>
-            <p style={{ margin: "12px 0 0", fontSize: 12.5, color: "var(--c-brand)", fontWeight: 700 }}>공지사항에서 자세히 보기 ›</p>
+          <div className="mdl-text">
+            <span className="mdl-tag">공지</span>
+            <h2 className="mdl-title" style={{ marginTop: 10 }}>{notice.title}</h2>
+            <p className="mdl-body is-sm" style={{ whiteSpace: "pre-wrap" }}>{notice.body}</p>
+            <p className="mdl-cap" style={{ color: "var(--mdl-accent)", fontWeight: 600 }}>공지사항에서 자세히 보기 ›</p>
           </div>
         </div>
 
         {/* 하단 버튼 */}
-        <div style={{ display: "flex", borderTop: "1px solid var(--c-bg-muted-9)", flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={hideForDays}
-            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg-soft)", color: "var(--c-text-3)", fontSize: 14.5, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 0 20px" }}
-          >
+        <div className="mdl-actions is-tight" style={{ flexShrink: 0 }}>
+          <button type="button" className="mdl-btn is-sub" onClick={hideForDays}>
             {hideDays}일 동안 안보기
           </button>
-          <button
-            type="button"
-            onClick={closeSession}
-            style={{ flex: 1, height: 52, border: "none", background: "var(--c-bg)", color: "var(--c-text)", fontSize: 14.5, fontWeight: 700, cursor: "pointer", borderRadius: "0 0 20px 0" }}
-          >
+          <button type="button" className="mdl-btn is-main" onClick={closeSession}>
             닫기
           </button>
         </div>

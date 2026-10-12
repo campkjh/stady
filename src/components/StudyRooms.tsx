@@ -234,7 +234,7 @@ function RoomCompose({ onClose, onCreated }: { onClose: () => void; onCreated: (
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 560, background: "var(--c-bg-elevated, var(--c-bg))",
-          borderTopLeftRadius: 20, borderTopRightRadius: 20, boxSizing: "border-box",
+          borderTopLeftRadius: 24, borderTopRightRadius: 24, boxSizing: "border-box",
           padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
           maxHeight: "92%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
         }}
@@ -446,7 +446,7 @@ function RoomSheet({ roomId, onClose, onChanged }: { roomId: string; onClose: ()
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 560, background: "var(--c-bg-elevated, var(--c-bg))",
-          borderTopLeftRadius: 20, borderTopRightRadius: 20, boxSizing: "border-box",
+          borderTopLeftRadius: 24, borderTopRightRadius: 24, boxSizing: "border-box",
           padding: "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
           maxHeight: "80%", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
         }}

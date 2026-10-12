@@ -1567,3 +1567,83 @@ label {
   position: absolute; right: -8%; bottom: -6%; width: 84%; height: auto;
   object-fit: contain; pointer-events: none;
 }
+
+/* ─── 공용 모달 (알럿·컨펌 시안과 같은 결) ───────────────────────────────
+   흰 카드 반경 24 · 제목 20 굵게 · 설명 17 · 버튼 높이 56 반경 17 글자 17 · 입력칸도 56/17.
+   ⚠️ 안드로이드 구형 웹뷰 주의(NoticePopup 주석과 같은 이유) — 이 클래스들의 규칙이다:
+     · 카드에 overflow:hidden + border-radius + box-shadow 조합을 쓰지 않는다(통째로 안 그려지는 사례).
+     · 등장 애니메이션은 fill-mode backwards(끝 상태를 쥐지 않는다 — both 는 시작 상태 opacity:0 에 멈추는 사고가 있었다).
+     · inset 단축 대신 top/right/bottom/left. */
+.mdl-root {
+  --mdl-card: #FFFFFF; --mdl-title: rgba(0, 12, 30, 0.8); --mdl-bodyc: rgba(3, 18, 40, 0.7); --mdl-sub: rgba(3, 18, 40, 0.5);
+  --mdl-accent: #2272EB; --mdl-confirm: #3182F6; --mdl-danger: #F04452;
+  --mdl-btn-sub-bg: rgba(7, 25, 76, 0.05); --mdl-btn-sub-fg: rgba(2, 32, 71, 0.65);
+  --mdl-field: rgba(7, 25, 76, 0.05); --mdl-line: rgba(7, 25, 76, 0.1);
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 500; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; padding: 0 24px;
+}
+[data-theme="dark"] .mdl-root {
+  --mdl-card: #26272E; --mdl-title: rgba(255, 255, 255, 0.92); --mdl-bodyc: rgba(255, 255, 255, 0.66); --mdl-sub: rgba(255, 255, 255, 0.46);
+  --mdl-accent: #6FA8FF; --mdl-confirm: #3C8AFF; --mdl-danger: #F25A66;
+  --mdl-btn-sub-bg: rgba(255, 255, 255, 0.09); --mdl-btn-sub-fg: rgba(255, 255, 255, 0.72);
+  --mdl-field: rgba(255, 255, 255, 0.08); --mdl-line: rgba(255, 255, 255, 0.12);
+}
+.mdl-root.is-sheet { align-items: flex-end; padding: 0; }
+.mdl-root.is-float { align-items: flex-end; padding: 0 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.mdl-dim { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0, 0, 0, 0.5); animation: mdlFade 0.2s ease-out backwards; }
+.mdl-card {
+  position: relative; width: 100%; max-width: 311px; max-height: 86%; box-sizing: border-box;
+  display: flex; flex-direction: column; background: var(--mdl-card); border-radius: 24px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18); animation: mdlPop 0.32s cubic-bezier(0.2, 1.2, 0.3, 1) backwards;
+}
+.mdl-card.is-wide { max-width: 360px; }
+.mdl-card.is-wider { max-width: 460px; }
+.mdl-sheet {
+  position: relative; width: 100%; max-width: 520px; max-height: 88%; box-sizing: border-box;
+  display: flex; flex-direction: column; background: var(--mdl-card); border-radius: 24px 24px 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.16); animation: mdlSheet 0.38s cubic-bezier(0.2, 1, 0.3, 1) backwards;
+}
+.mdl-handle { flex-shrink: 0; width: 36px; height: 4px; border-radius: 2px; background: var(--mdl-line); margin: 10px auto 0; }
+.mdl-scroll { overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.mdl-text { padding: 24px 22px 0; }
+.mdl-title { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.4; letter-spacing: -0.4px; color: var(--mdl-title); word-break: keep-all; }
+.mdl-body { margin: 6px 0 0; font-size: 17px; font-weight: 400; line-height: 1.5; letter-spacing: -0.3px; color: var(--mdl-bodyc); word-break: keep-all; }
+.mdl-body.is-sm { font-size: 15px; line-height: 1.6; letter-spacing: -0.2px; }
+.mdl-cap { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: var(--mdl-sub); }
+.mdl-tag { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--mdl-accent); background: rgba(49, 130, 246, 0.12); }
+.mdl-icon { display: block; width: 40px; height: 40px; margin-bottom: 12px; }
+.mdl-field {
+  display: block; width: 100%; height: 56px; box-sizing: border-box; border: 0; border-radius: 17px; padding: 0 18px;
+  background: var(--mdl-field); color: var(--mdl-title); font-size: 17px; font-family: inherit; letter-spacing: -0.3px; outline: none;
+}
+.mdl-field::placeholder { color: var(--mdl-sub); }
+.mdl-field:focus { box-shadow: inset 0 0 0 2px rgba(49, 130, 246, 0.55); }
+.mdl-field.is-error { box-shadow: inset 0 0 0 2px var(--mdl-danger); }
+textarea.mdl-field { height: auto; padding: 16px 18px; line-height: 1.5; resize: none; }
+.mdl-error { display: block; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--mdl-danger); }
+.mdl-actions { display: flex; gap: 8px; padding: 24px 16px 16px; }
+.mdl-actions.is-tight { padding-top: 16px; }
+.mdl-actions.is-stack { flex-direction: column; }
+.mdl-btn {
+  flex: 1 1 0; min-width: 0; height: 56px; border: 0; border-radius: 17px; cursor: pointer;
+  font-size: 17px; font-weight: 700; letter-spacing: -0.3px; font-family: inherit;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), filter 0.2s, opacity 0.2s;
+}
+.mdl-btn:active:not(:disabled) { transform: scale(0.96); filter: brightness(0.94); }
+.mdl-btn:disabled { opacity: 0.5; cursor: default; }
+.mdl-btn.is-main { background: var(--mdl-confirm); color: #fff; }
+.mdl-btn.is-sub { background: var(--mdl-btn-sub-bg); color: var(--mdl-btn-sub-fg); }
+.mdl-btn.is-danger { background: var(--mdl-danger); color: #fff; }
+.mdl-textrow { display: flex; justify-content: flex-end; padding: 8px 12px 10px; }
+.mdl-textbtn {
+  height: 56px; padding: 0 18px; border: 0; background: transparent; border-radius: 17px; cursor: pointer;
+  font-size: 17px; font-weight: 700; letter-spacing: -0.3px; color: var(--mdl-accent); font-family: inherit;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+}
+.mdl-textbtn:active { transform: scale(0.94); background: rgba(34, 114, 235, 0.08); }
+.mdl-textbtn.is-muted { color: var(--mdl-sub); }
+@keyframes mdlFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mdlPop { from { opacity: 0; transform: translateY(14px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes mdlSheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mdl-dim, .mdl-card, .mdl-sheet { animation: none !important; } }

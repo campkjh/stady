@@ -99,73 +99,49 @@ export default function InviteCodeGate() {
   if (!mounted || !open) return null;
 
   const sheet = (
-    <div className="icg-dim" data-gate="invite">
-      <div className="icg" role="dialog" aria-label="초대코드 입력">
+    <div className="mdl-root is-sheet" data-gate="invite" style={{ zIndex: 2600 }}>
+      <div className="mdl-dim" />
+      <div className="mdl-sheet" role="dialog" aria-label="초대코드 입력">
+        <div className="mdl-handle" />
         {done ? (
-          <>
-            <img className="icg-icon" src="/icons/toss/gift.svg" alt="" />
-            <h2 className="icg-title">초대코드가 적용됐어요!</h2>
-            <p className="icg-desc">나와 친구 모두 스타디 프라임 2주 무료 이용권을 받았어요.</p>
-          </>
+          <div className="mdl-text" style={{ textAlign: "center", paddingBottom: 28 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="mdl-icon" style={{ width: 48, height: 48, margin: "0 auto 12px" }} src="/icons/toss/gift.svg" alt="" />
+            <h2 className="mdl-title">초대코드가 적용됐어요!</h2>
+            <p className="mdl-body is-sm">나와 친구 모두 스타디 프라임 2주 무료 이용권을 받았어요.</p>
+          </div>
         ) : (
           <>
-            <img className="icg-icon" src="/icons/toss/gift.svg" alt="" />
-            <h2 className="icg-title">초대코드가 있나요?</h2>
-            <p className="icg-desc">
-              친구에게 받은 초대코드를 넣으면 <b>나와 친구 모두</b> 프라임 2주 무료 이용권을 받아요.
-            </p>
-            <input
-              className={`icg-input${error ? " is-err" : ""}`}
-              value={code}
-              maxLength={20}
-              autoCapitalize="characters"
-              placeholder="STADY..."
-              onChange={(e) => { setCode(e.target.value); if (error) setError(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
-            />
-            <div className="icg-err">{error}</div>
-            <button type="button" className="icg-primary" onClick={apply} disabled={busy || !code.trim()}>
-              {busy ? "적용 중…" : "초대코드 적용하기"}
-            </button>
-            <button type="button" className="icg-skip" onClick={skip}>초대코드가 없어요</button>
+            <div className="mdl-text" style={{ textAlign: "center" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="mdl-icon" style={{ width: 48, height: 48, margin: "0 auto 12px" }} src="/icons/toss/gift.svg" alt="" />
+              <h2 className="mdl-title">초대코드가 있나요?</h2>
+              <p className="mdl-body is-sm">
+                친구에게 받은 초대코드를 넣으면 <b>나와 친구 모두</b> 프라임 2주 무료 이용권을 받아요.
+              </p>
+              <input
+                className={`mdl-field${error ? " is-error" : ""}`}
+                style={{ marginTop: 18, textAlign: "center", fontWeight: 700 }}
+                value={code}
+                maxLength={20}
+                autoCapitalize="characters"
+                placeholder="STADY..."
+                onChange={(e) => { setCode(e.target.value); if (error) setError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+              />
+              <div style={{ minHeight: 22 }}>{error && <span className="mdl-error">{error}</span>}</div>
+            </div>
+            <div className="mdl-actions is-stack is-tight" style={{ gap: 0 }}>
+              <button type="button" className="mdl-btn is-main" style={{ flex: "none", width: "100%" }} onClick={apply} disabled={busy || !code.trim()}>
+                {busy ? "적용 중…" : "초대코드 적용하기"}
+              </button>
+              <button type="button" className="mdl-textbtn is-muted" style={{ alignSelf: "center", marginTop: 4 }} onClick={skip}>
+                초대코드가 없어요
+              </button>
+            </div>
           </>
         )}
       </div>
-
-      <style>{`
-        .icg-dim {
-          position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 2600;
-          background: rgba(15,23,42,0.5);
-          display: flex; align-items: flex-end; justify-content: center;
-        }
-        .icg {
-          width: 100%; max-width: 520px;
-          background: var(--c-bg);
-          border-radius: 20px 20px 0 0;
-          padding: 24px 20px calc(16px + env(safe-area-inset-bottom, 0px));
-          box-sizing: border-box; text-align: center;
-        }
-        .icg-icon { width: 44px; height: 44px; display: block; margin: 0 auto 10px; }
-        .icg-title { margin: 0 0 8px; font-size: 19px; font-weight: 700; color: var(--c-text-b); }
-        .icg-desc { margin: 0 0 16px; font-size: 13.5px; line-height: 1.6; color: var(--c-text-2d); }
-        .icg-input {
-          width: 100%; height: 50px; border-radius: 12px;
-          border: 1.5px solid var(--c-border); background: var(--c-bg-muted);
-          padding: 0 14px; font-size: 16px; font-weight: 700; color: var(--c-text);
-          outline: none; box-sizing: border-box; text-align: center;
-        }
-        .icg-input.is-err { border-color: #E5484D; }
-        .icg-err { min-height: 18px; margin-top: 7px; font-size: 12.5px; font-weight: 700; color: #E5484D; }
-        .icg-primary {
-          width: 100%; height: 50px; border: none; border-radius: 12px;
-          background: var(--c-brand); color: #fff; font-size: 15.5px; font-weight: 700; cursor: pointer;
-        }
-        .icg-primary:disabled { opacity: 0.5; }
-        .icg-skip {
-          width: 100%; height: 44px; margin-top: 6px; border: none; background: none;
-          color: var(--c-text-4); font-size: 13.5px; font-weight: 700; cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 

@@ -59,135 +59,71 @@ export default function SurveyGate() {
   if (!open) return null;
 
   return (
-    <div
-      data-gate="survey"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        background: "rgba(15,23,42,0.45)",
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        padding: 16,
-      }}
-    >
-      <div
-        className="fade-in-up"
-        style={{
-          width: "100%",
-          maxWidth: 460,
-          background: "var(--c-bg)",
-          borderRadius: 22,
-          padding: "24px 20px 18px",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
-          marginBottom: "max(12px, env(safe-area-inset-bottom))",
-        }}
-      >
-        <h2 style={{ fontSize: 19, fontWeight: 700, color: "var(--c-text-b)", margin: 0, lineHeight: 1.35 }}>
-          스타디, 어떻게 쓰고 계신가요?
-        </h2>
-        <p style={{ fontSize: 13.5, color: "var(--c-text-4b)", margin: "8px 0 0", fontWeight: 500 }}>
-          처음 한 번만 여쭤봐요. 더 나은 스타디를 만드는 데 큰 힘이 됩니다 <img src="/icons/toss/folded-hands.svg" alt="" style={{ width: 15, height: 15, verticalAlign: "middle", display: "inline-block" }} />
-        </p>
+    <div data-gate="survey" className="mdl-root is-float" style={{ zIndex: 1000 }}>
+      <div className="mdl-dim" style={{ background: "rgba(0,0,0,0.45)" }} />
+      <div className="mdl-card is-wider">
+        <div className="mdl-scroll mdl-text" style={{ paddingBottom: 4 }}>
+          <h2 className="mdl-title">스타디, 어떻게 쓰고 계신가요?</h2>
+          <p className="mdl-body is-sm">
+            처음 한 번만 여쭤봐요. 더 나은 스타디를 만드는 데 큰 힘이 됩니다 <img src="/icons/toss/folded-hands.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "middle", display: "inline-block" }} />
+          </p>
 
-        {/* 만족도 */}
-        <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", margin: "20px 0 10px" }}>
-          만족도를 선택해주세요
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
-          {FACES.map((f) => {
-            const active = satisfaction === f.v;
-            return (
-              <button
-                key={f.v}
-                type="button"
-                className="daily-opt"
-                onClick={() => setSatisfaction(f.v)}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "10px 2px",
-                  borderRadius: 14,
-                  border: "none",
-                  background: active ? "var(--c-brand-soft)" : "var(--c-bg-soft-5)",
-                  boxShadow: active ? "inset 0 0 0 2px var(--c-brand)" : "none",
-                }}
-              >
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{f.emoji}</span>
-                <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, color: active ? "var(--c-brand-deep-2)" : "var(--c-text-4b)" }}>
-                  {f.label}
-                </span>
-              </button>
-            );
-          })}
+          {/* 만족도 */}
+          <p style={{ fontSize: 15, fontWeight: 700, color: "var(--mdl-title)", margin: "22px 0 10px" }}>만족도를 선택해주세요</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+            {FACES.map((f) => {
+              const active = satisfaction === f.v;
+              return (
+                <button
+                  key={f.v}
+                  type="button"
+                  className="daily-opt"
+                  onClick={() => setSatisfaction(f.v)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "11px 2px",
+                    borderRadius: 17, border: "none", fontFamily: "inherit",
+                    background: active ? "rgba(49,130,246,0.12)" : "var(--mdl-field)",
+                    boxShadow: active ? "inset 0 0 0 2px rgba(49,130,246,0.6)" : "none",
+                  }}
+                >
+                  <span style={{ fontSize: 24, lineHeight: 1 }}>{f.emoji}</span>
+                  <span style={{ fontSize: 11, fontWeight: active ? 700 : 600, color: active ? "var(--mdl-accent)" : "var(--mdl-sub)" }}>
+                    {f.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 원하는 기능 */}
+          <p style={{ fontSize: 15, fontWeight: 700, color: "var(--mdl-title)", margin: "22px 0 10px" }}>
+            추가됐으면 하는 기능이 있나요? <span style={{ color: "var(--mdl-sub)", fontWeight: 500, fontSize: 13 }}>(선택)</span>
+          </p>
+          <textarea
+            className="mdl-field"
+            value={feature}
+            onChange={(e) => setFeature(e.target.value)}
+            placeholder="예) 오답노트 복습 알림, 친구와 점수 비교 등"
+            rows={3}
+            style={{ fontSize: 16 }}
+          />
         </div>
 
-        {/* 원하는 기능 */}
-        <p style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", margin: "20px 0 10px" }}>
-          추가됐으면 하는 기능이 있나요? <span style={{ color: "var(--c-text-5)", fontWeight: 500, fontSize: 12 }}>(선택)</span>
-        </p>
-        <textarea
-          value={feature}
-          onChange={(e) => setFeature(e.target.value)}
-          placeholder="예) 오답노트 복습 알림, 친구와 점수 비교 등"
-          rows={3}
-          style={{
-            width: "100%",
-            resize: "none",
-            borderRadius: 14,
-            border: "1px solid var(--c-bg-muted-20)",
-            background: "var(--c-bg-soft-10)",
-            padding: "12px 14px",
-            fontSize: 14,
-            color: "var(--c-text-b)",
-            outline: "none",
-            fontFamily: "inherit",
-            boxSizing: "border-box",
-          }}
-        />
-
         {/* 버튼 */}
-        <button
-          type="button"
-          className="press-deep"
-          disabled={busy || satisfaction == null}
-          onClick={() => submit(false)}
-          style={{
-            width: "100%",
-            marginTop: 18,
-            height: 52,
-            borderRadius: 14,
-            border: "none",
-            background: satisfaction == null ? "var(--c-brand-line-5)" : "var(--c-brand)",
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: 700,
-            cursor: satisfaction == null ? "default" : "pointer",
-          }}
-        >
-          제출하기
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => submit(true)}
-          style={{
-            width: "100%",
-            marginTop: 8,
-            height: 40,
-            border: "none",
-            background: "none",
-            color: "var(--c-text-4b)",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          건너뛰기
-        </button>
+        <div className="mdl-actions is-stack is-tight" style={{ gap: 0 }}>
+          <button
+            type="button"
+            className="mdl-btn is-main"
+            style={{ flex: "none", width: "100%" }}
+            disabled={busy || satisfaction == null}
+            onClick={() => submit(false)}
+          >
+            제출하기
+          </button>
+          <button type="button" className="mdl-textbtn is-muted" style={{ alignSelf: "center", marginTop: 2 }} disabled={busy} onClick={() => submit(true)}>
+            건너뛰기
+          </button>
+        </div>
       </div>
     </div>
   );

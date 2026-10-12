@@ -485,53 +485,26 @@ export default function DailyQuizCard() {
           transform/animation 이 하나라도 있는 순간 fixed 가 그 조상 기준이 되어 시트가 카드 안에
           갇힌다 — 갤럭시(안드로이드 WebView)에서 "과목 목록이 안 뜨고 안 바뀐다"던 원인. */}
       {prefOpen && typeof document !== "undefined" && createPortal(
-        <div
-          onClick={() => !prefSaving && setPrefOpen(false)}
-          style={{
-            // 구형 안드로이드 웹뷰는 inset 단축을 모른다 — 오버레이가 화면을 못 덮어
-            // 과목 목록이 가려지고 스크롤도 먹지 않았다(NoticePopup 과 같은 규칙).
-            position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 400,
-            background: "rgba(15,23,42,0.5)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              // 높이에 vh 를 쓰지 않는다. 안드로이드 WebView 는 vh 가 0/엉뚱한 값으로 잡히는 일이 있어
-              // (웹뷰 높이 측정 문제) 목록만 높이 0 으로 사라지고 제목·버튼만 남았다.
-              // 오버레이(top/bottom:0)의 % 와 플렉스 컬럼으로만 높이를 정한다.
-              width: "100%", maxWidth: 520, maxHeight: "88%", boxSizing: "border-box",
-              display: "flex", flexDirection: "column",
-              background: "var(--c-bg-elevated, var(--c-bg))",
-              borderTopLeftRadius: 20, borderTopRightRadius: 20,
-              padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "var(--c-text-2)" }}>
-              데일리 퀴즈 과목
-            </p>
-            <p style={{ margin: "6px 0 16px", fontSize: 13, color: "var(--c-text-5)", lineHeight: 1.5 }}>
-              원하는 과목을 눌러 고른 뒤 <b>저장</b>을 눌러주세요. 여러 개 고를 수 있어요.
-            </p>
+        <div className="mdl-root is-sheet" style={{ zIndex: 400 }}>
+          <div className="mdl-dim" onClick={() => !prefSaving && setPrefOpen(false)} />
+          {/* 높이에 vh 를 쓰지 않는다 — 안드로이드 WebView 는 vh 가 0/엉뚱한 값으로 잡혀 목록만 사라진 적이 있다.
+              오버레이(top/bottom:0)의 % 와 플렉스 컬럼으로만 높이를 정한다(.mdl-sheet 가 그렇게 짜여 있다). */}
+          <div className="mdl-sheet" style={{ maxWidth: 520 }}>
+            <div className="mdl-handle" />
+            <div className="mdl-text" style={{ paddingBottom: 16 }}>
+              <h2 className="mdl-title">데일리 퀴즈 과목</h2>
+              <p className="mdl-body is-sm">원하는 과목을 눌러 고른 뒤 <b>저장</b>을 눌러주세요. 여러 개 고를 수 있어요.</p>
+            </div>
 
-            <div
-              style={{
-                display: "flex", flexDirection: "column", gap: 8,
-                flex: "1 1 auto", minHeight: 0, overflowY: "auto",
-                WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-              }}
-            >
+            <div className="mdl-scroll" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 16px", flex: "1 1 auto" }}>
               {prefOptions.length === 0 ? (
                 prefError ? (
                   <div style={{ textAlign: "center", padding: "14px 0" }}>
-                    <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--c-text-5)" }}>과목 목록을 불러오지 못했어요.</p>
-                    <button type="button" onClick={loadPref} className="press" style={{ height: 40, padding: "0 16px", borderRadius: 10, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2)", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>다시 시도</button>
+                    <p className="mdl-body is-sm" style={{ margin: "0 0 12px" }}>과목 목록을 불러오지 못했어요.</p>
+                    <button type="button" onClick={loadPref} className="mdl-btn is-sub" style={{ flex: "none", padding: "0 22px" }}>다시 시도</button>
                   </div>
                 ) : (
-                  <p style={{ fontSize: 14, color: "var(--c-text-5)", textAlign: "center", padding: "16px 0" }}>
-                    불러오는 중이에요.
-                  </p>
+                  <p className="mdl-body is-sm" style={{ textAlign: "center", padding: "16px 0" }}>불러오는 중이에요.</p>
                 )
               ) : (
                 prefOptions.map((opt) => {
@@ -547,23 +520,21 @@ export default function DailyQuizCard() {
                       }
                       className="press"
                       style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        width: "100%", minHeight: 52, padding: "0 16px", borderRadius: 14,
-                        border: `1.5px solid ${on ? "var(--c-brand)" : "var(--c-border)"}`,
-                        background: on ? "var(--c-brand-soft-2)" : "var(--c-bg)",
-                        cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+                        width: "100%", minHeight: 56, padding: "0 18px", borderRadius: 17, border: "none",
+                        background: on ? "rgba(49,130,246,0.12)" : "var(--mdl-field)",
+                        boxShadow: on ? "inset 0 0 0 2px rgba(49,130,246,0.6)" : "none",
+                        cursor: "pointer", fontFamily: "inherit",
                       }}
                     >
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: on ? "var(--c-brand)" : "var(--c-text-2)" }}>
+                        <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: -0.3, color: on ? "var(--mdl-accent)" : "var(--mdl-title)" }}>
                           {opt.name}
                         </span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-5)" }}>
-                          {opt.count}문항
-                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--mdl-sub)" }}>{opt.count}문항</span>
                       </span>
                       {on && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mdl-accent)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
@@ -573,31 +544,11 @@ export default function DailyQuizCard() {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginTop: 16, flexShrink: 0 }}>
-              <button
-                type="button"
-                onClick={() => savePref([])}
-                disabled={prefSaving}
-                className="press"
-                style={{
-                  flex: 1, height: 50, borderRadius: 14, border: "1px solid var(--c-border)",
-                  background: "var(--c-bg)", color: "var(--c-text-3)", fontSize: 15, fontWeight: 700,
-                  cursor: prefSaving ? "default" : "pointer",
-                }}
-              >
+            <div className="mdl-actions is-tight" style={{ flexShrink: 0 }}>
+              <button type="button" onClick={() => savePref([])} disabled={prefSaving} className="mdl-btn is-sub" style={{ flex: 1 }}>
                 전체 과목
               </button>
-              <button
-                type="button"
-                onClick={() => savePref(prefSelected)}
-                disabled={prefSaving}
-                className="press"
-                style={{
-                  flex: 2, height: 50, borderRadius: 14, border: "none",
-                  background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 700,
-                  cursor: prefSaving ? "default" : "pointer", opacity: prefSaving ? 0.6 : 1,
-                }}
-              >
+              <button type="button" onClick={() => savePref(prefSelected)} disabled={prefSaving} className="mdl-btn is-main" style={{ flex: 2 }}>
                 {prefSaving ? "저장 중…" : "저장"}
               </button>
             </div>
