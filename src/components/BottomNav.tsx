@@ -52,7 +52,6 @@ function NavIcon({ on, n, children }: { on: boolean; n: number; children: React.
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [showCommunityTip, setShowCommunityTip] = useState(false);
   const [hasNewCommunity, setHasNewCommunity] = useState(false);
   // 아래로 스크롤하면 라벨을 접어 네비를 낮추고, 위로 올리면 다시 펼친다.
   const [compact, setCompact] = useState(false);
@@ -61,16 +60,6 @@ export default function BottomNav() {
   const [pill, setPill] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   // 탭을 누르면 그 아이콘만 쫀득하게 튀도록(누를 때마다 다시 재생되게 카운터를 올린다).
   const [bounce, setBounce] = useState<{ href: string; n: number }>({ href: "", n: 0 });
-
-  // Show the floating "새로운 커뮤니티" tooltip only to users who have never
-  // opened the community. Visiting /community marks it as seen forever.
-  useEffect(() => {
-    const visited = localStorage.getItem(COMMUNITY_VISITED_KEY) === "true";
-    const onCommunity = pathname.startsWith("/community");
-    if (onCommunity && !visited) localStorage.setItem(COMMUNITY_VISITED_KEY, "true");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShowCommunityTip(!visited && !onCommunity);
-  }, [pathname]);
 
   // 안 본 새 글 인디케이터: 최신 글 시각이 마지막으로 본 시각보다 뒤면 빨간 점.
   // 커뮤니티 화면을 보고 있으면 본 것으로 표시하고 점을 끈다.
@@ -99,7 +88,6 @@ export default function BottomNav() {
   function markCommunityVisited() {
     localStorage.setItem(COMMUNITY_VISITED_KEY, "true");
     try { localStorage.setItem(COMMUNITY_SEEN_KEY, String(Date.now())); } catch {}
-    setShowCommunityTip(false);
     setHasNewCommunity(false);
   }
 
@@ -210,16 +198,6 @@ export default function BottomNav() {
             {tabIdx === 1 && (
               <>
               <li style={{ position: "relative" }}>
-                {showCommunityTip && (
-                  <div className="community-tip" aria-hidden="true">
-                    <div className="community-tip-bubble">
-                      <span className="community-tip-text">새로운 커뮤니티</span>
-                    </div>
-                    <svg className="community-tip-tail" width="39" height="12" viewBox="0 0 39 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M30.922 2.63L20.459 11C19.729 11.584 18.69 11.584 17.96 11L7.496 2.63C5.368 0.928001 2.725 0 0 0H38.418C35.693 0 33.05 0.928001 30.922 2.63Z" fill="white"/>
-                    </svg>
-                  </div>
-                )}
                 <Link
                   href="/community"
                   onClick={() => { markCommunityVisited(); pop("/community"); }}
@@ -307,55 +285,6 @@ export default function BottomNav() {
           </React.Fragment>
         ))}
       </ul>
-      <style>{`
-        .community-tip {
-          position: absolute;
-          left: 50%;
-          bottom: calc(100% - 12px);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          pointer-events: none;
-          z-index: 60;
-          will-change: transform;
-          animation: communityTipFloat 2.6s ease-in-out infinite;
-        }
-        .community-tip-bubble {
-          background: var(--c-bg);
-          border-radius: 16px;
-          padding: 7px 14px;
-          box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
-          white-space: nowrap;
-        }
-        .community-tip-text {
-          font-size: 14px;
-          font-weight: 700;
-          letter-spacing: -0.2px;
-          background: linear-gradient(110deg, #8B95A1 0%, #8B95A1 26%, #3182F6 42%, #333D4B 58%, #333D4B 100%);
-          background-size: 230% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          color: transparent;
-          animation: communityTipText 2.8s ease-in-out infinite;
-        }
-        .community-tip-tail {
-          margin-top: -1px;
-          filter: drop-shadow(0 6px 4px rgba(15, 23, 42, 0.10));
-        }
-        @keyframes communityTipFloat {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-5px); }
-        }
-        @keyframes communityTipText {
-          0% { background-position: 150% 0; }
-          100% { background-position: -50% 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .community-tip { animation: none; transform: translateX(-50%); }
-          .community-tip-text { animation: none; }
-        }
-      `}</style>
     </nav>
     </>
   );
