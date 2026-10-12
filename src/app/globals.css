@@ -1420,7 +1420,7 @@ label {
 /* 글 길이에 딱 맞는 폭(좌우 여백은 NewWorkbookBubble 이 maxWidth 로 막는다) */
 .qm-bubble.is-fit { width: max-content; }
 .qm-bubble.is-fit .qm-bubble-body { padding: 12px 40px 11px 58px; }
-.qm-bubble.is-fit .qm-bubble-ic { left: 17px; }
+.qm-bubble.is-fit .qm-bubble-ic { left: 12px; width: 34px; height: 34px; margin-top: -17px; }
 .qm-bubble.is-tail-down { transform-origin: var(--tail-x, 64px) 100%; animation-name: qmBubblePopDown; }
 .qm-bubble-shadow, .qm-bubble-glass { animation: qmBubbleFade 1s linear both; }
 .qm-bubble.is-out { animation: qmBubbleOut 0.18s cubic-bezier(0.4, 0, 1, 1) both; pointer-events: none; }
@@ -1456,18 +1456,16 @@ label {
 .qm-bubble.is-tail-down .qm-bubble-ic { margin-top: -20px; }
 .qm-bubble-ic svg { display: block; }
 .qm-bubble-title, .qm-bubble-sub, .qm-bubble-x { animation: qmBubbleContent 1s linear both; }
-/* 제목 — 앞쪽은 파랑에서 남색으로 짙어지다 44~48% 에서 검은 본문으로 */
+/* 제목 — 살짝 금색(밝은 배경에선 글씨가 묻히지 않게 짙은 금, 다크에선 밝은 금) */
 .qm-bubble-title {
   width: fit-content; max-width: 100%; margin: 0;
   font-size: 17px; font-weight: 700; line-height: 1.42; letter-spacing: -0.3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  background: linear-gradient(90deg,
-    #2955B5 0%, #2851AA 4%, #274B9C 8%, #254692 12%, #25438C 16%, #223E7C 20%, #20396F 24%,
-    #1F3565 28%, #1D2F57 32%, #1C2E50 36%, #1C2943 40%, #1B2535 44%, #191F28 48%, #191F28 100%);
+  background: linear-gradient(90deg, #C9971A 0%, #B8860B 55%, #A87A12 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
 }
 [data-theme="dark"] .qm-bubble-title {
-  background: linear-gradient(90deg, #7FB0FF 0%, #9CC3FF 30%, #E7EAF0 48%, #E7EAF0 100%);
+  background: linear-gradient(90deg, #F8DB80 0%, #EBC258 55%, #E0B04A 100%);
   -webkit-background-clip: text; background-clip: text;
 }
 .qm-bubble-sub { margin: 4.5px 0 0; font-size: 15px; font-weight: 500; line-height: 1.42; letter-spacing: -0.2px; color: #6B7684; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

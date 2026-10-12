@@ -6,6 +6,9 @@ import { clientCache } from "@/lib/clientCache";
 
 const CACHE_KEY = "daily-quiz";
 
+/** 등장 연출은 앱을 연 뒤 **처음 보일 때 한 번만** 재생한다(탭을 오갈 때마다 다시 뛰면 산만하다). */
+let dqEntrancePlayed = false;
+
 interface DailyQuestion {
   id: string;
   text: string;
@@ -44,6 +47,15 @@ export default function DailyQuizCard() {
   const [xpGained, setXpGained] = useState(0);
   const [isGuest, setIsGuest] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 처음 보이는 순간 재생할지(마운트 때 한 번 정한다) — 재방문·캐시 복귀는 조용히 보여 준다.
+  const playEntrance = useRef(!dqEntrancePlayed);
+  // 카드를 꾹 누르면 과목 변경 시트가 열린다(버튼 대신).
+  const lpTimer = useRef<number | null>(null);
+  const lpStart = useRef<{ x: number; y: number } | null>(null);
+  const lpFired = useRef(false);
+  const [pressing, setPressing] = useState(false);
+  // 정답률 숫자 카운트업(0 → 실제 값)
+  const [rateShown, setRateShown] = useState(0);
 
   // ── 과목 설정 ──────────────────────────────────────────────
   // 예전엔 전체 문항에서 뽑아 그날그날 과목이 달라졌다("사문이랑 생윤이 랜덤하게 나온다").
@@ -73,6 +85,10 @@ export default function DailyQuizCard() {
   useEffect(() => {
     loadPref();
   }, [loadPref]);
+
+  useEffect(() => () => {
+    if (lpTimer.current) window.clearTimeout(lpTimer.current);
+  }, []);
 
   function openPref() {
     setPrefOpen(true);
@@ -116,6 +132,27 @@ export default function DailyQuizCard() {
 
   const answered = !!data?.answered;
   const hasQuestion = !!data?.question;
+  const targetRate = answered ? data?.stats?.correctRate ?? 0 : 0;
+
+  useEffect(() => {
+    if (loaded && hasQuestion) dqEntrancePlayed = true;
+  }, [loaded, hasQuestion]);
+
+  useEffect(() => {
+    if (!targetRate) {
+      setRateShown(0);
+      return;
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / 900);
+      setRateShown(Math.round(targetRate * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [targetRate]);
 
   // 미응답 동안 경과 시간 카운트업(이미지의 우상단 타이머).
   useEffect(() => {
@@ -178,169 +215,154 @@ export default function DailyQuizCard() {
   const myCorrect = data.myCorrect;
   const stats = data.stats;
 
-  // 응답 후 각 버튼의 스타일 결정.
-  function optionStyle(optValue: boolean): React.CSSProperties {
-    const base: React.CSSProperties = {
-      width: "100%",
-      textAlign: "left",
-      padding: "0 18px",
-      height: 54,
-      borderRadius: 16,
-      border: "none",
-      fontSize: 16,
-      fontWeight: 600,
-      color: "var(--c-text-2e)",
-      background: "var(--c-bg-muted-13)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      cursor: answered ? "default" : "pointer",
-    };
-    if (!answered) return base;
-    const isCorrectOpt = correctAnswer === optValue;
-    const isMine = mySelected === optValue;
-    if (isCorrectOpt) {
-      return { ...base, background: "var(--c-brand-soft)", boxShadow: "inset 0 0 0 2px var(--c-brand)", color: "var(--c-brand-deep-2)" };
-    }
-    if (isMine && !isCorrectOpt) {
-      return { ...base, background: "var(--c-danger-soft-6)", boxShadow: "inset 0 0 0 2px var(--c-danger-b)", color: "var(--c-danger-j)" };
-    }
-    return { ...base, background: "var(--c-bg-soft-12)", color: "var(--c-text-4c)" };
+  // 응답 후 각 보기의 상태 클래스.
+  function optClass(optValue: boolean): string {
+    if (!answered) return "dq-opt";
+    if (correctAnswer === optValue) return "dq-opt is-correct";
+    if (mySelected === optValue) return "dq-opt is-wrong";
+    return "dq-opt is-dim";
   }
 
+  // ── 꾹 누르기 ──
+  const LONG_PRESS_MS = 550;
+  function lpCancel() {
+    if (lpTimer.current) {
+      window.clearTimeout(lpTimer.current);
+      lpTimer.current = null;
+    }
+    setPressing(false);
+  }
+  function lpDown(e: React.PointerEvent) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    lpFired.current = false;
+    lpStart.current = { x: e.clientX, y: e.clientY };
+    setPressing(true);
+    lpTimer.current = window.setTimeout(() => {
+      lpTimer.current = null;
+      lpFired.current = true;
+      setPressing(false);
+      try { navigator.vibrate?.(12); } catch { /* 진동 미지원 */ }
+      openPref();
+    }, LONG_PRESS_MS);
+  }
+  function lpMove(e: React.PointerEvent) {
+    const st = lpStart.current;
+    if (!st || !lpTimer.current) return;
+    // 스크롤하려는 손가락이면 취소
+    if (Math.hypot(e.clientX - st.x, e.clientY - st.y) > 10) lpCancel();
+  }
+  // 꾹 눌러 시트가 열린 뒤 손을 뗄 때 보기 버튼이 눌린 것으로 처리되지 않게 막는다.
+  function lpClickGuard(e: React.MouseEvent) {
+    if (lpFired.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      lpFired.current = false;
+    }
+  }
+
+  const stagger = (i: number) => ({ ["--i" as string]: i } as React.CSSProperties);
+
   return (
-    <section>
+    <section className={playEntrance.current ? "dq-anim" : undefined}>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>데일리 퀴즈</h2>
       <div
-        style={{
-          position: "relative",
-          background: "var(--c-bg)",
-          borderRadius: 18,
-          border: "1px solid var(--c-bg-muted-6)",
-          boxShadow: "0 6px 20px rgba(15,23,42,0.06)",
-          overflow: "hidden",
-        }}
+        className={`dq-card${pressing ? " is-pressing" : ""}`}
+        onPointerDown={lpDown}
+        onPointerMove={lpMove}
+        onPointerUp={lpCancel}
+        onPointerCancel={lpCancel}
+        onPointerLeave={lpCancel}
+        onClickCapture={lpClickGuard}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        {/* 상단 헤더 (라벨 + 타이머) */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "14px 18px 0",
-            background: "linear-gradient(180deg, var(--c-bg-soft-8) 0%, transparent 100%)",
-          }}
-        >
-          <span style={{ fontSize: 13, color: "var(--c-text-5e)", fontWeight: 500, letterSpacing: 0.2 }}>
-            오늘의 퀴즈
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, color: "var(--c-text-5e)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
-              {fmtTime(elapsed)}
-            </span>
-            <button
-              type="button"
-              aria-label="데일리 과목 변경"
-              onClick={openPref}
-              className="press"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                height: 28, borderRadius: 999, border: "1px solid var(--c-bg-muted-6)",
-                padding: "0 11px 0 8px", background: "var(--c-bg-soft-8)", cursor: "pointer",
-                color: "var(--c-text-5e)", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/community/machine.svg" alt="" width={16} height={16} style={{ display: "block" }} />
-              데일리 과목 변경
-            </button>
-          </span>
-        </div>
+        {/* ① 문제 — 카드 없이 배경 위에 그대로 */}
+        <div className="dq-qcard dq-in" style={stagger(0)}>
 
         {/* 카테고리 타이틀 */}
-        <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: 20, fontWeight: 600, color: "var(--c-text-2f)" }}>
-          {q.categoryName} <span style={{ fontWeight: 800, color: "var(--c-text-d)" }}>O/X</span>
+        <p className="dq-cat">
+          {q.categoryName}
         </p>
 
         {/* 문제 */}
-        <p
-          style={{
-            margin: "22px 0 0",
-            padding: "0 20px",
-            fontSize: 22,
-            fontWeight: 700,
-            lineHeight: 1.5,
-            color: "var(--c-text-2e)",
-            wordBreak: "keep-all",
-          }}
-        >
-          {q.text}
-        </p>
+        <p className="dq-q">{q.text}</p>
+        </div>
 
-        {/* 보기 */}
-        {/* 폰은 세로 2줄, 태블릿부터는 예/아니요를 가로로 나란히(globals.css) */}
-        <div className="daily-quiz-options" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "26px 16px 16px" }}>
+        {/* ② 보기 — 카드 둘 — 폰은 세로 2줄, 태블릿부터는 예/아니요를 가로로 나란히(globals.css) */}
+        <div className="daily-quiz-options dq-opts">
           <button
             type="button"
-            className="daily-opt"
+            className={`daily-opt ${optClass(true)} dq-in`}
+            style={stagger(1)}
             disabled={answered || submitting}
             onClick={() => submit(true)}
-            style={optionStyle(true)}
           >
-            <span>예</span>
-            {answered && correctAnswer === true && <span style={{ fontSize: 13, fontWeight: 700 }}>정답</span>}
+            <span className="dq-badge dq-badge-o" aria-hidden="true">
+              <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+                <circle cx="17" cy="17" r="17" fill="url(#dqO)" />
+                <circle cx="17" cy="17" r="7" stroke="#fff" strokeWidth="3.6" />
+                <ellipse cx="11.5" cy="8.5" rx="6" ry="3.2" fill="#fff" opacity=".28" transform="rotate(-28 11.5 8.5)" />
+                <defs>
+                  <linearGradient id="dqO" x1="6" y1="2" x2="28" y2="34" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#7DB8FF" /><stop offset="1" stopColor="#2F7BFF" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
+            <span className="dq-opt-t">예</span>
+            {answered && correctAnswer === true && <span className="dq-opt-tag">정답</span>}
+            {answered && mySelected === true && correctAnswer !== true && <span className="dq-opt-tag">내 선택</span>}
           </button>
           <button
             type="button"
-            className="daily-opt"
+            className={`daily-opt ${optClass(false)} dq-in`}
+            style={stagger(2)}
             disabled={answered || submitting}
             onClick={() => submit(false)}
-            style={optionStyle(false)}
           >
-            <span>아니요</span>
-            {answered && correctAnswer === false && <span style={{ fontSize: 13, fontWeight: 700 }}>정답</span>}
+            <span className="dq-badge dq-badge-x" aria-hidden="true">
+              <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+                <circle cx="17" cy="17" r="17" fill="url(#dqX)" />
+                <path d="M11.5 11.5l11 11M22.5 11.5l-11 11" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" />
+                <ellipse cx="11.5" cy="8.5" rx="6" ry="3.2" fill="#fff" opacity=".28" transform="rotate(-28 11.5 8.5)" />
+                <defs>
+                  <linearGradient id="dqX" x1="6" y1="2" x2="28" y2="34" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#FF9C9C" /><stop offset="1" stopColor="#EE4A4A" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
+            <span className="dq-opt-t">아니요</span>
+            {answered && correctAnswer === false && <span className="dq-opt-tag">정답</span>}
+            {answered && mySelected === false && correctAnswer !== false && <span className="dq-opt-tag">내 선택</span>}
           </button>
         </div>
 
+      {/* ③ 안내 + 타이머 — 보기(아니요) 바로 아래 */}
+      <div className="dq-head dq-in" style={stagger(3)}>
+        <span className="dq-hint">꾹 눌러 과목 변경</span>
+        <span className="dq-head-r">
+          <span className="dq-time">{fmtTime(elapsed)}</span>
+        </span>
+      </div>
+
         {/* 응답 후: 결과 + 정답률 */}
         {answered && stats && (
-          <div style={{ padding: "0 18px 18px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <span style={{ fontSize: 14, fontWeight: 800, color: myCorrect ? "var(--c-brand-deep-3)" : "var(--c-danger-b)" }}>
+          <div className="dq-rcard dq-in" style={stagger(4)}>
+            <div className="dq-result-row">
+              <span className={`dq-verdict ${myCorrect ? "is-ok" : "is-no"}`}>
                 {myCorrect ? "정답이에요!" : "아쉬워요"}
-                {myCorrect && xpGained > 0 && (
-                  <span style={{ marginLeft: 6, color: "var(--c-warn-e)", fontWeight: 800 }}>경험치 +{xpGained}</span>
-                )}
+                {myCorrect && xpGained > 0 && <span className="dq-xp">경험치 +{xpGained}</span>}
               </span>
-              <span style={{ fontSize: 13, color: "var(--c-text-4)", fontWeight: 600 }}>
-                정답률 {stats.correctRate}%
-                {stats.total > 0 && <span style={{ color: "var(--c-text-5e)" }}> · {stats.total.toLocaleString()}명</span>}
+              <span className="dq-rate">
+                정답률 <b>{rateShown}%</b>
+                {stats.total > 0 && <span className="dq-rate-n"> · {stats.total.toLocaleString()}명</span>}
               </span>
             </div>
-            {/* 정답률 바 */}
-            <div style={{ height: 8, borderRadius: 999, background: "var(--c-bg-muted-7)", overflow: "hidden" }}>
-              <div
-                style={{
-                  height: "100%",
-                  width: `${stats.correctRate}%`,
-                  background: "linear-gradient(90deg, #7DC4FF, #3787FF)",
-                  borderRadius: 999,
-                  transition: "width 0.5s ease",
-                }}
-              />
+            {/* 정답률 바 — 왼쪽에서 차오른다 */}
+            <div className="dq-track">
+              <div className="dq-fill" style={{ width: `${stats.correctRate}%` }} />
             </div>
-            {isGuest && (
-              <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--c-text-4c)" }}>
-                로그인하면 정답 시 경험치가 쌓여요.
-              </p>
-            )}
+            {isGuest && <p className="dq-guest">로그인하면 정답 시 경험치가 쌓여요.</p>}
           </div>
         )}
       </div>
@@ -470,6 +492,112 @@ export default function DailyQuizCard() {
         </div>,
         document.body
       )}
+
+      <style>{`
+        /* 오늘의 퀴즈 — 홈 카드(OX·단어·모의고사)와 같은 결: 옅은 푸른 흰 유리 + 빛 번짐.
+           색은 이 카드 전용 토큰으로 두고 다크에서 갈아끼운다. */
+        .dq-card {
+          --dq-bg1: #FFFFFF; --dq-bg2: #F3F8FF;
+          --dq-bd: rgba(40, 84, 170, 0.11);
+          --dq-sh: 0 14px 34px -12px rgba(40, 84, 170, 0.22), 0 2px 6px rgba(40, 84, 170, 0.05);
+          --dq-ink: #17233A; --dq-sub: rgba(23, 35, 58, 0.58);
+          --dq-accent: #2A6FE0;
+            --dq-pill-bg: rgba(23, 35, 58, 0.05);
+          --dq-opt-bg: rgba(255, 255, 255, 0.82); --dq-opt-bd: rgba(40, 84, 170, 0.14);
+          --dq-opt-sh: 0 8px 18px -10px rgba(40, 84, 170, 0.32);
+          --dq-ok: #12936A; --dq-ok-bg: rgba(31, 190, 140, 0.13); --dq-ok-bd: rgba(31, 190, 140, 0.55);
+          --dq-no: #D13C3C; --dq-no-bg: rgba(240, 80, 80, 0.10); --dq-no-bd: rgba(240, 80, 80, 0.5);
+          --dq-track: rgba(23, 35, 58, 0.08);
+          --dq-gold: #A9780D; --dq-gold-bg: rgba(255, 196, 80, 0.2);
+        }
+        /* 예전엔 문제·보기·결과가 한 카드에 묶여 있었다. 지금은 문제는 카드 없이 글만, 보기 둘과 결과만 각자 카드. */
+        .dq-qcard { padding: 2px 4px 6px; }
+        [data-theme="dark"] .dq-card {
+          --dq-bg1: #1D2030; --dq-bg2: #171A26;
+          --dq-bd: rgba(255, 255, 255, 0.09);
+          --dq-sh: 0 14px 34px -12px rgba(0, 0, 0, 0.6);
+          --dq-ink: #EEF1F8; --dq-sub: rgba(255, 255, 255, 0.58);
+          --dq-accent: #8FC0FF;
+            --dq-pill-bg: rgba(255, 255, 255, 0.08);
+          --dq-opt-bg: rgba(255, 255, 255, 0.06); --dq-opt-bd: rgba(255, 255, 255, 0.12);
+          --dq-opt-sh: 0 8px 18px -10px rgba(0, 0, 0, 0.6);
+          --dq-ok: #5BE0B4; --dq-ok-bg: rgba(60, 214, 160, 0.16); --dq-ok-bd: rgba(80, 224, 176, 0.55);
+          --dq-no: #FF8B8B; --dq-no-bg: rgba(255, 100, 100, 0.14); --dq-no-bd: rgba(255, 120, 120, 0.5);
+          --dq-track: rgba(255, 255, 255, 0.12);
+          --dq-gold: #F5CF72; --dq-gold-bg: rgba(255, 200, 90, 0.16);
+        }
+
+        .dq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 4px 0; }
+        .dq-head-r { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+        .dq-time {
+          padding: 4px 9px; border-radius: 999px; background: var(--dq-pill-bg);
+          font-size: 12px; font-weight: 700; color: var(--dq-sub); font-variant-numeric: tabular-nums; white-space: nowrap;
+        }
+
+        .dq-hint { font-size: 12px; font-weight: 600; color: var(--dq-sub); opacity: 0.8; white-space: nowrap; }
+        /* 꾹 누르는 동안 카드가 천천히 가라앉고 빛이 모인다 — 놓으면 빠르게 돌아온다 */
+        .dq-card { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .dq-card.is-pressing { transform: scale(0.982); transition: transform 0.55s cubic-bezier(0.3, 0, 0.5, 1); }
+        .dq-cat { margin: 14px 0 0; text-align: left; font-size: 15px; font-weight: 700; color: var(--dq-sub); letter-spacing: -0.2px; }
+        .dq-q { margin: 8px 0 0; padding: 0; font-size: 21px; font-weight: 800; line-height: 1.5; letter-spacing: -0.4px; color: var(--dq-ink); word-break: keep-all; }
+
+        .dq-opts { display: flex; flex-direction: column; gap: 10px; padding: 18px 0 0; }
+        .dq-opt {
+          position: relative; display: flex; align-items: center; gap: 12px; width: 100%; height: 60px; padding: 0 16px 0 12px;
+          border-radius: 18px; border: 1px solid var(--dq-opt-bd); background: var(--dq-opt-bg); box-shadow: var(--dq-opt-sh);
+          color: var(--dq-ink); font-size: 17px; font-weight: 800; text-align: left; letter-spacing: -0.2px;
+        }
+        .dq-opt:disabled { cursor: default; }
+        .dq-badge { display: block; width: 34px; height: 34px; flex-shrink: 0; filter: drop-shadow(0 4px 6px rgba(30, 60, 140, 0.28)); transition: transform 0.35s cubic-bezier(0.22, 1.5, 0.36, 1); }
+        .dq-badge svg { display: block; }
+        .dq-badge-x { filter: drop-shadow(0 4px 6px rgba(200, 40, 40, 0.28)); }
+        .dq-opt:active:not(:disabled) .dq-badge { transform: scale(0.88) rotate(-6deg); }
+        .dq-opt-tag {
+          margin-left: auto; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap;
+          color: var(--dq-ok); background: var(--dq-ok-bg);
+        }
+        .dq-opt.is-correct { border-color: var(--dq-ok-bd); background: var(--dq-ok-bg); color: var(--dq-ok); box-shadow: 0 0 0 3px var(--dq-ok-bg), var(--dq-opt-sh); animation: dqCorrect 0.55s cubic-bezier(0.22, 1.5, 0.36, 1) both; }
+        .dq-opt.is-correct .dq-badge { animation: dqBadgePop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) both; }
+        .dq-opt.is-wrong { border-color: var(--dq-no-bd); background: var(--dq-no-bg); color: var(--dq-no); animation: dqShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .dq-opt.is-wrong .dq-opt-tag { color: var(--dq-no); background: var(--dq-no-bg); }
+        .dq-opt.is-dim { opacity: 0.5; box-shadow: none; }
+
+        .dq-rcard {
+          margin-top: 12px; padding: 16px 18px 18px; border-radius: 22px;
+          background: var(--dq-opt-bg); border: 1px solid var(--dq-opt-bd); box-shadow: var(--dq-opt-sh);
+        }
+        .dq-result-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; animation: dqUp 0.45s ease-out both; }
+        .dq-verdict { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; font-weight: 800; }
+        .dq-verdict.is-ok { color: var(--dq-ok); }
+        .dq-verdict.is-no { color: var(--dq-no); }
+        .dq-xp { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; color: var(--dq-gold); background: var(--dq-gold-bg); animation: dqXp 0.7s cubic-bezier(0.22, 1.6, 0.36, 1) 0.25s both; }
+        .dq-rate { font-size: 13px; font-weight: 600; color: var(--dq-sub); white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .dq-rate b { font-size: 15px; font-weight: 800; color: var(--dq-ink); }
+        .dq-rate-n { opacity: 0.8; }
+        .dq-track { height: 8px; border-radius: 999px; background: var(--dq-track); overflow: hidden; }
+        .dq-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7DC4FF, #3787FF 55%, #7A5CFF); transform-origin: left center; animation: dqBar 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+        .dq-guest { margin: 10px 0 0; font-size: 12px; color: var(--dq-sub); }
+
+        /* 처음 보일 때 — 카드가 떠오르고, 안의 것들이 차례로 들어온다(앱을 연 뒤 한 번만) */
+        .dq-anim .dq-card { animation: dqCardIn 0.75s cubic-bezier(0.2, 1.15, 0.3, 1) backwards; }
+        .dq-anim .dq-in:not(.is-correct):not(.is-wrong):not(.is-dim) { animation: dqUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(0.18s + var(--i, 0) * 0.08s); }
+        .dq-anim .dq-opt.dq-in:not(.is-correct):not(.is-wrong):not(.is-dim) { animation-name: dqOptIn; }
+        .dq-anim .dq-opt:not(.is-correct) .dq-badge { animation: dqBadgeIn 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) both; animation-delay: calc(0.4s + var(--i, 0) * 0.08s); }
+
+        @keyframes dqCardIn { from { opacity: 0; transform: translateY(30px) scale(0.955); } to { opacity: 1; transform: none; } }
+        @keyframes dqUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes dqOptIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+        @keyframes dqBadgeIn { from { opacity: 0; transform: scale(0.3) rotate(-30deg); } to { opacity: 1; transform: none; } }
+        @keyframes dqBadgePop { 0% { transform: scale(1); } 45% { transform: scale(1.28) rotate(-8deg); } 100% { transform: scale(1); } }
+        @keyframes dqCorrect { 0% { transform: scale(0.97); } 60% { transform: scale(1.025); } 100% { transform: scale(1); } }
+        @keyframes dqShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(3px); } 30%, 50%, 70% { transform: translateX(-5px); } 40%, 60% { transform: translateX(5px); } }
+        @keyframes dqBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes dqXp { from { opacity: 0; transform: translateY(6px) scale(0.6); } to { opacity: 1; transform: none; } }
+        @keyframes dqGlow { 0%, 100% { opacity: 0.75; transform: translate(0, 0) scale(1); } 50% { opacity: 1; transform: translate(-8px, 6px) scale(1.12); } }
+        @media (prefers-reduced-motion: reduce) {
+          .dq-card, .dq-in, .dq-opt, .dq-badge, .dq-fill, .dq-xp, .dq-result-row { animation: none !important; }
+        }
+      `}</style>
     </section>
   );
 }
