@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { ChartBarIcon, ExcelImportIcon } from "@/components/admin/admin-icons";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Category {
   id: string;
@@ -416,7 +417,7 @@ export default function VocabQuizManagement() {
                       </button>
                       <button
                         onClick={async () => {
-                          if (!confirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 단어와 기록도 모두 삭제됩니다.`)) return;
+                          if (!(await uiConfirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 단어와 기록도 모두 삭제됩니다.`, { danger: true }))) return;
                           const res = await fetch(`/api/vocab-quiz/${set.id}`, { method: "DELETE", credentials: "include" });
                           if (res.ok) fetchQuizSets();
                           else alert("삭제 실패");
@@ -789,7 +790,7 @@ export default function VocabQuizManagement() {
                           <button
                             onClick={async () => {
                               if (!selectedSet) return;
-                              if (!confirm(`"${q.word}" 단어를 삭제하시겠습니까?`)) return;
+                              if (!(await uiConfirm(`"${q.word}" 단어를 삭제하시겠습니까?`, { danger: true }))) return;
                               const res = await fetch(`/api/vocab-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
                               if (res.ok) {
                                 openQuestions(selectedSet);

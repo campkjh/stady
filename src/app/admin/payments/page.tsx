@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { primeDaysLeft } from "@/lib/primeRemaining";
+import { uiConfirm } from "@/lib/dialog";
 
 interface IapPayment {
   id: string;
@@ -132,7 +133,7 @@ export default function AdminPaymentsPage() {
   // 무료 지급 개별 회수 — 결제와 무관, PremiumGrant 삭제.
   async function revokeFree(g: FreeGrant) {
     if (revoking) return;
-    if (!confirm(`${g.nickname || g.email || "이 사용자"}의 무료 이용권을 회수할까요?\n(${grantSourceLabel(g.source)} · ${fmtDate(g.expiresAt)}까지)`)) return;
+    if (!(await uiConfirm(`${g.nickname || g.email || "이 사용자"}의 무료 이용권을 회수할까요?\n(${grantSourceLabel(g.source)} · ${fmtDate(g.expiresAt)}까지)`, { danger: true }))) return;
     setRevoking(g.userId);
     try {
       const res = await fetch("/api/admin/premium-grant", {

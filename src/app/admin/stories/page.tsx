@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 // 스타디 사용 후기(인스타 하이라이트형) 관리 — 커버 1장 + 후기 이미지 여러 장.
 interface Slide { id: string; imageUrl: string }
@@ -123,7 +124,7 @@ export default function AdminStoriesPage() {
     await load();
   }
   async function remove(it: Highlight) {
-    if (!confirm(`"${it.title}" 후기를 삭제할까요?`)) return;
+    if (!(await uiConfirm(`"${it.title}" 후기를 삭제할까요?`, { danger: true }))) return;
     await fetch(`/api/admin/stories/${it.id}`, { method: "DELETE", credentials: "include" });
     await load();
   }

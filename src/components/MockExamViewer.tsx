@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import AlertModal from "@/components/AlertModal";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
 
@@ -1360,19 +1361,15 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
       {/* 페이지 지우기 확인 모달 (WebView는 window.confirm 미동작 → 인앱 모달) */}
       {showClearConfirm && (
-        <div
-          onClick={() => setShowClearConfirm(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 110, background: "rgba(15,23,42,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
-        >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 320, background: "var(--c-bg)", borderRadius: 18, padding: "22px 20px 16px", border: "1px solid var(--mv-pop-border)", boxShadow: "var(--mv-card-shadow)" }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text-b)", margin: "0 0 6px", textAlign: "center" }}>페이지 지우기</p>
-            <p style={{ fontSize: 14, color: "var(--c-text-3)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.5 }}>이 페이지의 필기를 모두 지울까요?</p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => setShowClearConfirm(false)} style={{ flex: 1, height: 48, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>취소</button>
-              <button type="button" onClick={() => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); }} style={{ flex: 1, height: 48, borderRadius: 12, border: "none", background: "var(--c-danger)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>확인</button>
-            </div>
-          </div>
-        </div>
+        <AlertModal
+          title="페이지 지우기"
+          subtitle="이 페이지의 필기를 모두 지울까요?"
+          onClose={() => setShowClearConfirm(false)}
+          buttons={[
+            { label: "확인", bgColor: "var(--c-danger)", onClick: () => { pageRefs.current[activePage.current]?.clear(); setShowClearConfirm(false); } },
+            { label: "취소", onClick: () => setShowClearConfirm(false) },
+          ]}
+        />
       )}
 
       {/* OCR 결과 모달 */}

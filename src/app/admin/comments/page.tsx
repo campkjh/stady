@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface AdminComment {
   id: string;
@@ -56,7 +57,7 @@ export default function AdminCommentsPage() {
   };
 
   const remove = async (c: AdminComment) => {
-    if (!window.confirm("이 댓글을 영구 삭제할까요? 대댓글도 함께 삭제되며 되돌릴 수 없습니다.")) return;
+    if (!(await uiConfirm("이 댓글을 영구 삭제할까요? 대댓글도 함께 삭제되며 되돌릴 수 없습니다.", { danger: true }))) return;
     setBusyId(c.id);
     setMessage("");
     try {

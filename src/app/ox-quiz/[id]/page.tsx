@@ -1420,19 +1420,14 @@ export default function OxQuizSolvePage() {
       )}
 
       {showExitConfirm && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowExitConfirm(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
-            <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말로 나가시겠습니까?</h2>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
-              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
-            </div>
-          </div>
-          <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
-        </div>
+        <AlertModal
+          title="정말로 나가시겠습니까?"
+          onClose={() => setShowExitConfirm(false)}
+          buttons={[
+            { label: "계속 풀기", onClick: () => setShowExitConfirm(false) },
+            { label: "나가기", onClick: () => router.back() },
+          ]}
+        />
       )}
 
       {pendingProgress && quiz && (
@@ -1471,26 +1466,15 @@ export default function OxQuizSolvePage() {
 
       {/* 완료 결과: 정답률 + 상위 % */}
       {result && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.45)" }} onClick={() => setResult(null)} />
-          <div style={{ position: "relative", width: "100%", maxWidth: 340, background: "var(--c-bg)", borderRadius: 22, padding: "26px 22px 18px", textAlign: "center", boxShadow: "0 16px 48px rgba(15,23,42,0.2)", animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-4)" }}>퀴즈 완료!</p>
-            <p style={{ margin: "10px 0 2px", fontSize: 44, fontWeight: 700, color: "var(--c-brand)", lineHeight: 1 }}>{result.scorePct}%</p>
-            <p style={{ margin: "0 0 18px", fontSize: 14, fontWeight: 600, color: "var(--c-text-2d)" }}>정답률 · {result.correct}/{result.total}개 정답</p>
-            {result.topPercent != null && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 999, background: "var(--c-warn-soft-4)", marginBottom: 20 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/fire-hard.svg" alt="" style={{ width: 18, height: 18 }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--c-warn-g)" }}>상위 {result.topPercent}%</span>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => setResult(null)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 16, fontWeight: 700, border: "none" }}>다시 보기</button>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 16, fontWeight: 700, border: "none" }}>목록으로</button>
-            </div>
-          </div>
-          <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
-        </div>
+        <AlertModal
+          title="퀴즈 완료!"
+          subtitle={`정답률 ${result.scorePct}% · ${result.correct}/${result.total}개 정답${result.topPercent != null ? `\n상위 ${result.topPercent}%` : ""}`}
+          onClose={() => setResult(null)}
+          buttons={[
+            { label: "목록으로", onClick: () => router.back() },
+            { label: "다시 보기", onClick: () => setResult(null) },
+          ]}
+        />
       )}
     </div>
   );

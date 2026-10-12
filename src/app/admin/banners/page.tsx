@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Banner {
   id: string;
@@ -90,7 +91,7 @@ export default function AdminBannersPage() {
   };
 
   const remove = async (banner: Banner) => {
-    if (!confirm(`"${banner.title}" 배너를 삭제할까요?`)) return;
+    if (!(await uiConfirm(`"${banner.title}" 배너를 삭제할까요?`, { danger: true }))) return;
     try {
       const res = await fetch(`/api/banners?id=${banner.id}`, {
         method: "DELETE",

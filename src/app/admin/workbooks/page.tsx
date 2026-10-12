@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Category {
   id: string;
@@ -594,7 +595,7 @@ export default function WorkbookManagement() {
                         </button>
                         <button
                           onClick={async () => {
-                            if (!confirm(`"${wb.title}" 문제집을 삭제하시겠습니까? 관련 문제와 풀이 기록도 모두 삭제됩니다.`)) return;
+                            if (!(await uiConfirm(`"${wb.title}" 문제집을 삭제하시겠습니까? 관련 문제와 풀이 기록도 모두 삭제됩니다.`, { danger: true }))) return;
                             const res = await fetch(`/api/workbooks/${wb.id}`, { method: "DELETE", credentials: "include" });
                             if (res.ok) fetchWorkbooks();
                             else alert("삭제 실패");
@@ -896,7 +897,7 @@ export default function WorkbookManagement() {
                       <button
                         onClick={async () => {
                           if (!selectedWorkbook) return;
-                          if (!confirm(`${p.order}번 문제를 삭제하시겠습니까?`)) return;
+                          if (!(await uiConfirm(`${p.order}번 문제를 삭제하시겠습니까?`, { danger: true }))) return;
                           const res = await fetch(`/api/workbooks/${selectedWorkbook.id}/problems/${p.id}`, { method: "DELETE", credentials: "include" });
                           if (res.ok) {
                             openProblems(selectedWorkbook);

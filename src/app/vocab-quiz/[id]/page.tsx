@@ -724,19 +724,14 @@ export default function VocabQuizSolvePage() {
 
       {/* Exit Confirm */}
       {showExitConfirm && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowExitConfirm(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, animation: "slideUpAlert 0.3s cubic-bezier(0.16, 1, 0.3, 1)", boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
-            <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말로 나가시겠습니까?</h2>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" onClick={() => router.back()} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 18, fontWeight: 700, border: "none" }}>나가기</button>
-              <button type="button" onClick={() => setShowExitConfirm(false)} className="press" style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-brand)", color: "#fff", fontSize: 18, fontWeight: 700, border: "none" }}>계속 풀기</button>
-            </div>
-          </div>
-          <style>{`@keyframes slideUpAlert { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
-        </div>
+        <AlertModal
+          title="정말로 나가시겠습니까?"
+          onClose={() => setShowExitConfirm(false)}
+          buttons={[
+            { label: "계속 풀기", onClick: () => setShowExitConfirm(false) },
+            { label: "나가기", onClick: () => router.back() },
+          ]}
+        />
       )}
 
       {/* Result Modal */}

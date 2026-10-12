@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Item {
   id: string;
@@ -141,7 +142,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   }
 
   async function remove(it: Item) {
-    if (!window.confirm(`"${it.title}"을(를) 삭제할까요?`)) return;
+    if (!(await uiConfirm(`"${it.title}"을(를) 삭제할까요?`, { danger: true }))) return;
     await fetch(`/api/admin/site-content/${it.id}`, { method: "DELETE", credentials: "include" });
     await load();
   }

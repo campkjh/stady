@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Category {
   id: string;
@@ -152,7 +153,7 @@ export default function OxQuizManagement() {
 
   const handleSyncOxData = async () => {
     if (syncingOx) return;
-    if (!confirm("생활과윤리 OX 퀴즈를 1013문항 기준으로 다시 동기화할까요? 기존 풀이 기록과 책갈피는 가능한 한 보존됩니다.")) return;
+    if (!(await uiConfirm("생활과윤리 OX 퀴즈를 1013문항 기준으로 다시 동기화할까요? 기존 풀이 기록과 책갈피는 가능한 한 보존됩니다."))) return;
 
     setSyncingOx(true);
     try {
@@ -469,7 +470,7 @@ export default function OxQuizManagement() {
                           </button>
                           <button
                             onClick={async () => {
-                              if (!confirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 문제와 기록도 모두 삭제됩니다.`)) return;
+                              if (!(await uiConfirm(`"${set.title}"을(를) 삭제하시겠습니까? 관련 문제와 기록도 모두 삭제됩니다.`, { danger: true }))) return;
                               const res = await fetch(`/api/ox-quiz/${set.id}`, { method: "DELETE", credentials: "include" });
                               if (res.ok) fetchQuizSets();
                               else alert("삭제 실패");
@@ -869,7 +870,7 @@ export default function OxQuizManagement() {
                           <button
                             onClick={async () => {
                               if (!selectedSet) return;
-                              if (!confirm(`${q.order}번 문제를 삭제하시겠습니까?`)) return;
+                              if (!(await uiConfirm(`${q.order}번 문제를 삭제하시겠습니까?`, { danger: true }))) return;
                               const res = await fetch(`/api/ox-quiz/${selectedSet.id}/questions/${q.id}`, { method: "DELETE", credentials: "include" });
                               if (res.ok) {
                                 openQuestions(selectedSet);

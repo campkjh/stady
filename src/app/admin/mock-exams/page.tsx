@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SUBJECT_GROUPS, EXAM_MONTHS } from "@/lib/examSubjects";
+import { uiConfirm } from "@/lib/dialog";
 
 interface Exam {
   id: string;
@@ -89,7 +90,7 @@ export default function AdminMockExamsPage() {
   }
 
   async function remove(ex: Exam) {
-    if (!window.confirm(`"${ex.title}" 모의고사를 삭제할까요?`)) return;
+    if (!(await uiConfirm(`"${ex.title}" 모의고사를 삭제할까요?`, { danger: true }))) return;
     await fetch(`/api/admin/mock-exams/${ex.id}`, { method: "DELETE", credentials: "include" });
     await load();
   }

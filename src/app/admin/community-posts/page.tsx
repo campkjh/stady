@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { uiConfirm } from "@/lib/dialog";
 
 interface AdminPost {
   id: string;
@@ -92,7 +93,7 @@ export default function AdminCommunityPostsPage() {
   };
 
   const removePost = async (post: AdminPost) => {
-    if (!window.confirm(`"${post.title}" 게시글을 영구 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    if (!(await uiConfirm(`"${post.title}" 게시글을 영구 삭제할까요? 되돌릴 수 없습니다.`, { danger: true }))) return;
     setBusyId(post.id);
     setMessage("");
     try {

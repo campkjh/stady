@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import AlertModal from "@/components/AlertModal";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -232,28 +233,16 @@ export default function ProfilePage() {
 
       {/* Withdraw Modal */}
       {showWithdraw && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }} onClick={() => setShowWithdraw(false)} />
-          <div style={{ position: "relative", width: "calc(100% - 32px)", maxWidth: 375, backgroundColor: "var(--c-bg)", borderRadius: 20, padding: 12, boxShadow: "0 4px 40px rgba(0,0,0,0.15)" }}>
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-2)" }}>정말 탈퇴하시겠습니까?</h2>
-              <p style={{ fontSize: 14, color: "var(--c-text-4)", marginTop: 6, lineHeight: 1.5 }}>
-                탈퇴 시 모든 데이터가 삭제되며<br/>복구할 수 없습니다.
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => setShowWithdraw(false)}
-                className="press"
-                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-bg-muted-3)", color: "var(--c-text-3c)", fontSize: 16, fontWeight: 700, border: "none" }}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={withdrawing}
-                onClick={async () => {
+        <AlertModal
+          title="정말 탈퇴하시겠습니까?"
+          subtitle={"탈퇴 시 모든 데이터가 삭제되며\n복구할 수 없습니다."}
+          onClose={() => { if (!withdrawing) setShowWithdraw(false); }}
+          buttons={[
+            {
+              label: withdrawing ? "처리 중..." : "탈퇴하기",
+              bgColor: "var(--c-danger)",
+              onClick: async () => {
+                if (withdrawing) return;
                   setWithdrawing(true);
                   try {
                     await fetch("/api/profile", { method: "DELETE", credentials: "include" });
@@ -263,15 +252,11 @@ export default function ProfilePage() {
                     alert("탈퇴 처리 중 오류가 발생했습니다.");
                     setWithdrawing(false);
                   }
-                }}
-                className="press"
-                style={{ flex: 1, height: 48, borderRadius: 12, backgroundColor: "var(--c-danger)", color: "#fff", fontSize: 16, fontWeight: 700, border: "none", opacity: withdrawing ? 0.6 : 1 }}
-              >
-                {withdrawing ? "처리 중..." : "탈퇴하기"}
-              </button>
-            </div>
-          </div>
-        </div>
+              },
+            },
+            { label: "취소", onClick: () => setShowWithdraw(false) },
+          ]}
+        />
       )}
 
       {/* Save button */}

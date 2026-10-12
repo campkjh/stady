@@ -4,6 +4,7 @@ import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
 import PageViewTracker from "@/components/PageViewTracker";
+import DialogHost from "@/components/DialogHost";
 import IapAutoRestore from "@/components/IapAutoRestore";
 import NicknameGate from "@/components/NicknameGate";
 import InviteCodeGate from "@/components/InviteCodeGate";
@@ -73,6 +74,7 @@ export default function RootLayout({
             문제집·구독 등)이 그 레이아웃 밖이라 한 건도 안 잡힌다 — 반드시 루트에 둔다.
             /admin·/api 는 서버·클라이언트 양쪽에서 제외한다. */}
         <PageViewTracker />
+        <DialogHost />
         {/* 앱 실행 시 조용한 자동 구매복원 — 구글 검증 미구성 기간에 지급 안 된 안드
             결제분을, 사용자가 '구매 복원'을 누르지 않아도 앱만 켜면 살아나게 한다. */}
         <IapAutoRestore />
