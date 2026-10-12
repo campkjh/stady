@@ -1221,6 +1221,18 @@ label {
   flex-shrink: 0;
 }
 
+/* 홈 머리줄 검색 아이콘·로그인 — 프리티풀 홈 머리줄(로고 · 돋보기 · 구독)처럼 가볍게 */
+.home-search-btn {
+  width: 40px; height: 40px; border: 0; background: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--c-text-c); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-login-btn {
+  height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  background: var(--c-bg-muted); color: var(--c-text-c); font-size: 13px; font-weight: 700; font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* 답변왕 뱃지 — 왕관 + "답변왕"(빨강→주황/인디언옐로우 그라데이션이 반짝이는 글자). */
 .answer-king-badge {
   display: inline-flex;

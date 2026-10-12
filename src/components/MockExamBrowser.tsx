@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import MockExamCover from "@/components/MockExamCover";
 import { SUBJECT_GROUPS, EXAM_MONTHS, findSubject } from "@/lib/examSubjects";
+import { useEntrance } from "@/lib/entrance";
 
 export interface BrowserExam {
   id: string;
@@ -37,12 +38,16 @@ export default function MockExamBrowser({
   embedded = false,
   // 모의고사는 전부 프리미엄 전용. 비구독자면 카드가 잠기고 구독 화면으로 보낸다.
   isPremiumUser = false,
+  // 홈 미리보기: 앞에서 이만큼만 보여 주고 나머지는 "전체보기"로 보낸다(프리티풀 홈처럼 한 화면이 끝없이 길어지지 않게)
+  limit,
 }: {
   exams: BrowserExam[];
   years: number[];
   embedded?: boolean;
   isPremiumUser?: boolean;
+  limit?: number;
 }) {
+  const play = useEntrance(embedded ? "home-mock" : "mock-list");
   const [year, setYear] = useState<number | typeof ALL>(ALL);
   const [month, setMonth] = useState<number | typeof ALL>(ALL);
   const [subject, setSubject] = useState<string>(ALL);
@@ -165,14 +170,15 @@ export default function MockExamBrowser({
         {filtered.length === 0 ? (
           <p className="mx-empty">{exams.length === 0 ? "등록된 모의고사가 없습니다." : "조건에 맞는 모의고사가 없어요."}</p>
         ) : (
+          <>
           <div className="mx-grid">
-            {filtered.map((ex) => {
+            {(limit ? filtered.slice(0, limit) : filtered).map((ex, i) => {
               const hit = findSubject(ex.subject);
               const locked = !isPremiumUser;
               return (
                 // 카드 전체(→ 필기 뷰어)와 "문제 풀기"(→ 문항 풀이)는 형제 링크로 둔다.
                 // 링크 안에 링크를 넣으면 안 되기 때문.
-                <div key={ex.id} className="mx-item-wrap">
+                <div key={ex.id} className={`mx-item-wrap${play && i < 10 ? " qd-a-item" : ""}`} style={play && i < 10 ? { animationDelay: `${0.12 + i * 0.05}s` } : undefined}>
                   <Link href={locked ? "/subscribe" : `/mock-exam/${ex.id}`} className="hover-lift mx-item">
                     <div className="mx-thumb">
                       {/* 시험지 1쪽 대신 봉투 표지를 그린다(연도=색, 과목=무늬).
@@ -219,6 +225,12 @@ export default function MockExamBrowser({
               );
             })}
           </div>
+          {limit != null && filtered.length > limit && (
+            <Link href="/mock-exam" className="press mx-more">
+              모의고사 {filtered.length}개 전체보기
+            </Link>
+          )}
+          </>
         )}
       </div>
 
@@ -297,6 +309,12 @@ function BrowserStyles() {
 
       /* ── 결과 ── */
       .mx-result-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 8px; }
+      /* 홈 미리보기 아래 "전체보기" — 모달·알럿 버튼과 같은 규격(56·r17·17) */
+      .mx-more {
+        display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 14px; border-radius: 17px;
+        background: rgba(49, 130, 246, 0.1); color: #2272EB; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; text-decoration: none;
+      }
+      [data-theme="dark"] .mx-more { background: rgba(111, 168, 255, 0.14); color: #6FA8FF; }
       .mx-count { font-size: 13px; color: var(--c-text-4b); font-weight: 600; }
       .mx-count b { color: var(--c-text-b); font-weight: 700; }
       .mx-reset-wide { display: none; }

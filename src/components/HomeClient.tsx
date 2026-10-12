@@ -13,6 +13,7 @@ import DailyQuizCard from "@/components/DailyQuizCard";
 import MockExamBrowser, { type BrowserExam } from "@/components/MockExamBrowser";
 import { scheduleHomeRatingOnce } from "@/lib/appReview";
 import { clientCache } from "@/lib/clientCache";
+import { useEntrance } from "@/lib/entrance";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
 // 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
@@ -347,6 +348,8 @@ export default function HomeClient({
   isPremiumUser,
 }: HomeClientProps) {
   const router = useRouter();
+  // 프리티풀 퀵매칭 등장 — 홈에 들어올 때만(뒤로가기·30초 안 재진입은 생략)
+  const enter = useEntrance("home");
   // '새로운 문제집' 말풍선 자리 계산용 — 바로가기 묶음(기준 칸)과 가리킬 '엘리트 모의고사' 카드.
   const shortcutsRef = useRef<HTMLDivElement>(null);
   const eliteCardRef = useRef<HTMLButtonElement>(null);
@@ -484,11 +487,12 @@ export default function HomeClient({
           { image: "/banners/community-answer-king.jpg", alt: "답변왕에게 스타디 프라임 7일 제공" },
         ]}
       />
-      {/* Header */}
-      <div className="fade-in-up" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "calc(20px + env(safe-area-inset-top, 0px)) 10px 12px" }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--c-text-c)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {userName ? `${userName}님 안녕하세요!` : "로그인이 필요합니다."}
-        </h1>
+      {/* Header — 프리티풀 홈 머리줄: 로고 · 검색 · 구독. 인사말 대신 로고, 비로그인이면 로그인 버튼 */}
+      <div className="home-head" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "calc(14px + env(safe-area-inset-top, 0px)) 14px 10px" }}>
+        <Link href="/" aria-label="스타디 홈" className={enter ? "qd-a-title" : undefined} style={{ display: "inline-flex", alignItems: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/stady-logo.svg" alt="Stady" style={{ height: 26, width: "auto", display: "block" }} />
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {isAdmin && (
             <button
@@ -517,6 +521,17 @@ export default function HomeClient({
               관리자
             </button>
           )}
+          {!userName && (
+            <button type="button" onClick={() => router.push("/login")} className="press home-login-btn">
+              로그인
+            </button>
+          )}
+          <button type="button" onClick={() => router.push("/search")} className="press home-search-btn" aria-label="검색">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="20.5" y1="20.5" x2="16.2" y2="16.2" />
+            </svg>
+          </button>
           {/* 스타디 프라임 — 미구독은 '구독하기', 구독중이면 '구독중'(그라데이션 알약). */}
           <button
             type="button"
@@ -539,7 +554,7 @@ export default function HomeClient({
       <div className="home-body">
       {/* Shortcut Cards (태블릿=좌측 스티키 컬럼) */}
       <div className="home-side">
-      <div ref={shortcutsRef} className="fade-in-up fade-in-up-1 home-shortcuts" style={{ position: "relative", padding: "0 10px 20px" }}>
+      <div ref={shortcutsRef} className={`home-shortcuts${enter ? " qd-a-item" : ""}`} style={{ position: "relative", padding: "0 10px 20px", animationDelay: "0.12s" }}>
         {freshWorkbook && (
           <NewWorkbookBubble
             containerRef={shortcutsRef}
@@ -581,14 +596,14 @@ export default function HomeClient({
 
 
       {/* 데일리 퀴즈 (카테고리 아이콘 아래) */}
-      <div className="fade-in-up fade-in-up-2" style={{ padding: "0 10px 20px" }}>
+      <div className={enter ? "qd-a-item" : undefined} style={{ padding: "0 10px 20px", animationDelay: "0.22s" }}>
         <DailyQuizCard />
       </div>
 
       {/* Slide Banner */}
       {slideBanners.length > 0 && (
         <div
-          className="fade-in-up fade-in-up-3"
+          className={enter ? "qd-a-item" : undefined}
           style={{
             overflowX: "auto",
             overflowY: "hidden",
@@ -725,10 +740,10 @@ export default function HomeClient({
       )}
 
       {/* Content */}
-      <div className="fade-in-up fade-in-up-4" style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <div className={enter ? "qd-a-item" : undefined} style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 28, animationDelay: "0.32s" }}>
         {newQuizzes.length > 0 && (
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.4, color: "var(--c-text-c)", marginBottom: 16 }}>
               새로운 퀴즈
             </h2>
             <div className="home-quiz-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
@@ -755,7 +770,7 @@ export default function HomeClient({
         )}
         {SHOW_STORE_SECTION && (
         <section>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.4, color: "var(--c-text-c)", marginBottom: 16 }}>
             스타디 교재
           </h2>
           <button
@@ -813,12 +828,12 @@ export default function HomeClient({
         {mockExams.length > 0 && (
           <section>
             <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text-c)", margin: 0 }}>모의고사</h2>
-              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "var(--c-text-4)", textDecoration: "none" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.4, color: "var(--c-text-c)", margin: 0 }}>모의고사</h2>
+              <Link href="/mock-exam" style={{ marginLeft: "auto", fontSize: 14, fontWeight: 600, color: "var(--c-text-4)", textDecoration: "none" }}>
                 전체보기 ›
               </Link>
             </div>
-            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded isPremiumUser={isPremiumUser} />
+            <MockExamBrowser exams={mockExams} years={mockExamYears} embedded limit={6} isPremiumUser={isPremiumUser} />
           </section>
         )}
       </div>
