@@ -1226,13 +1226,10 @@ label {
 
 /* 홈 머리줄 검색 아이콘·로그인 — 프리티풀 홈 머리줄(로고 · 돋보기 · 구독)처럼 가볍게 */
 .home-search-btn {
-  width: 40px; height: 40px; border: 0; background: none; border-radius: 50%;
+  width: 44px; height: 44px; padding: 0; border: 0; background: none; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center; color: var(--c-text-c); cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.home-bell-btn { position: relative; }
-.home-bell-dot { position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: #F04452; border: 1.5px solid var(--c-bg); animation: bellDotPop 0.5s cubic-bezier(0.2, 1.6, 0.3, 1) backwards; }
-@keyframes bellDotPop { from { transform: scale(0); } to { transform: scale(1); } }
 .home-login-btn {
   height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap;
   background: var(--c-bg-muted); color: var(--c-text-c); font-size: 13px; font-weight: 700; font-family: inherit;
