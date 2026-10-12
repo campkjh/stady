@@ -118,7 +118,7 @@ export default function OxQuizListPage() {
         className="press"
         style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top, 0px))", left: 16, background: "none", border: "none", zIndex: 10 }}
       >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--oxi-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
       </button>
@@ -129,10 +129,10 @@ export default function OxQuizListPage() {
           <OxHeroScene />
         </div>
 
-        <h1 style={{ fontSize: 30, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--oxi-ink)", textAlign: "center", marginBottom: 12 }}>
           하루에 한 번 OX퀴즈
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.9)", textAlign: "center" }}>
+        <p style={{ fontSize: 15, color: "var(--oxi-ink-soft)", textAlign: "center" }}>
           {isLoggedIn ? dailyMessage : "로그인하고 오늘의 퀴즈를 열어보세요."}
         </p>
       </div>
@@ -163,11 +163,11 @@ export default function OxQuizListPage() {
                   {allDone && (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                       <img src="/icons/quiz-allclear.svg" alt="" width={18} height={18} style={{ display: "block" }} />
-                      <span style={{ fontSize: 12, fontWeight: 800, color: "#8FC0FF" }}>전체 완료</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "var(--oxi-accent)" }}>전체 완료</span>
                     </span>
                   )}
                 </span>
-                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.62)" }}>
+                <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--oxi-sub)" }}>
                   {group.items.length}개 중분류 · {totalQuestions}문항
                   {doneCount > 0 && (
                     <span style={{ color: "var(--c-brand)", fontWeight: 800 }}>
@@ -182,7 +182,7 @@ export default function OxQuizListPage() {
           {selectedGroup && (
             <div>
               <p style={{
-                fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.95)",
+                fontSize: 13, fontWeight: 700, color: "var(--oxi-ink-soft)",
                 margin: "4px 4px 8px", letterSpacing: 0.2,
               }}>
                 {selectedGroup.name}
@@ -216,28 +216,28 @@ export default function OxQuizListPage() {
                       <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 15, fontWeight: 800, textAlign: "center", opacity: locked ? 0.85 : 1 }}>
                         {locked && (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" />
-                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="rgba(255,255,255,0.6)" />
+                            <path d="M7 10V8a5 5 0 0110 0v2" stroke="var(--oxi-sub)" strokeWidth="2" strokeLinecap="round" />
+                            <rect x="5" y="10" width="14" height="9" rx="2.5" fill="var(--oxi-sub)" />
                           </svg>
                         )}
                         <span>{qs.title}</span>
                         {locked && (
-                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#FFD88A", background: "rgba(255,200,90,0.18)", border: "1px solid rgba(255,200,90,0.36)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
+                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "var(--oxi-prem-fg)", background: "var(--oxi-prem-bg)", border: "1px solid var(--oxi-prem-bd)", borderRadius: 999, padding: "2px 7px" }}>프리미엄</span>
                         )}
                         {completed && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                             <img src="/icons/quiz-clear.svg" alt="" width={16} height={16} style={{ display: "block" }} />
-                            <span style={{ fontSize: 12, fontWeight: 800, color: "#8FC0FF" }}>완료</span>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--oxi-accent)" }}>완료</span>
                           </span>
                         )}
                       </span>
-                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.62)", textAlign: "center" }}>
+                      <span style={{ display: "block", marginTop: 5, fontSize: 12, fontWeight: 600, color: "var(--oxi-sub)", textAlign: "center" }}>
                         {sections.length > 0 ? `${sections.length}개 소분류 · ` : ""}{denom}문항
                         {completed && stat?.bestPct != null && (
-                          <span style={{ color: "#8FC0FF", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
+                          <span style={{ color: "var(--oxi-accent)", fontWeight: 800 }}>{` · 최고 ${stat.bestPct}%`}</span>
                         )}
                         {inProgress && (
-                          <span style={{ color: "#8FC0FF", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
+                          <span style={{ color: "var(--oxi-accent)", fontWeight: 800 }}>{` · ${answered}/${denom} 진행 중`}</span>
                         )}
                       </span>
                       {sections.length > 0 && (
@@ -249,9 +249,9 @@ export default function OxQuizListPage() {
                                 padding: "4px 8px",
                                 borderRadius: 999,
                                 // 완료 카드는 배경이 이미 brand-soft-2 라 칩이 묻힌다 → 카드 면색으로 뒤집는다.
-                                backgroundColor: "rgba(143,192,255,0.16)",
-                                border: "1px solid rgba(143,192,255,0.28)",
-                                color: "#8FC0FF",
+                                backgroundColor: "var(--oxi-chip-bg)",
+                                border: "1px solid var(--oxi-chip-bd)",
+                                color: "var(--oxi-accent)",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -264,8 +264,8 @@ export default function OxQuizListPage() {
                               padding: "4px 8px",
                               borderRadius: 999,
                               // 넘침 칩도 일반 칩과 같은 completed 분기 → 완료 카드에서 배경에 묻히지 않는다.
-                              backgroundColor: "rgba(255,255,255,0.1)",
-                              color: "rgba(255,255,255,0.66)",
+                              backgroundColor: "var(--oxi-chip2-bg)",
+                              color: "var(--oxi-chip2-fg)",
                               fontSize: 11,
                               fontWeight: 700,
                             }}>
@@ -277,11 +277,11 @@ export default function OxQuizListPage() {
                       {inProgress && (
                         <span style={{
                           position: "absolute", left: 0, right: 0, bottom: 0, height: 4,
-                          display: "block", backgroundColor: "rgba(255,255,255,0.14)",
+                          display: "block", backgroundColor: "var(--oxi-track)",
                         }}>
                           <span style={{
                             display: "block", height: "100%", width: `${progressPct}%`,
-                            background: "linear-gradient(90deg, #8FC0FF 0%, #4A86E8 100%)",
+                            background: "var(--oxi-bar)",
                           }} />
                         </span>
                       )}
@@ -292,41 +292,91 @@ export default function OxQuizListPage() {
             </div>
           )}
           {quizSets.length === 0 && (
-            <p style={{ textAlign: "center", color: "rgba(255,255,255,0.85)", fontSize: 14 }}>등록된 OX 퀴즈가 없습니다.</p>
+            <p style={{ textAlign: "center", color: "var(--oxi-sub)", fontSize: 14 }}>등록된 OX 퀴즈가 없습니다.</p>
           )}
         </div>
-        <div style={{
-          position: "absolute", bottom: 40, left: 20, right: 20, height: 48,
-          background: "linear-gradient(to top, var(--ox-intro-bg), transparent)",
-          pointerEvents: "none",
-        }} />
+        <div className="oxi-fade" aria-hidden="true" />
       </div>
 
       <style>{`
-        /* 인트로는 브랜드 화면이라 테마와 상관없이 한 벌로 간다(짙은 잉크 + 유리).
-           카드도 테마 토큰 대신 이 화면 전용 유리 값을 쓴다 — 밝은 테마에서 흰 카드가
-           짙은 배경 위에 떠서 부딪히던 문제가 애초에 안 생긴다.
-           --ox-intro-bg 는 아래쪽 페이드가 배경과 같은 색이어야 해서 남겨 둔다. */
-        :root, [data-theme="dark"] { --ox-intro-bg: #0A1420; }
-        .oxi-bg {
-          background:
+        /* 인트로 전용 색 한 벌. 카드가 유리라 테마 토큰(흰 면/검은 글씨)으로는 안 맞아
+           이 화면에서만 쓰는 값을 따로 둔다. 기본=라이트, [data-theme="dark"] 에서 갈아끼운다.
+           --oxi-paint 는 배경 그림 자체 — 아래쪽 페이드가 **같은 그림**을 쓰려고 변수로 뺐다
+           (단색으로 덮으면 배경이 그라데이션이라 끝에 띠가 생긴다). */
+        :root {
+          --oxi-paint:
+            radial-gradient(60% 42% at 24% 16%, rgba(90, 160, 255, 0.30) 0%, rgba(90, 160, 255, 0) 70%),
+            radial-gradient(56% 40% at 78% 20%, rgba(255, 122, 122, 0.22) 0%, rgba(255, 122, 122, 0) 70%),
+            radial-gradient(92% 58% at 50% 108%, rgba(176, 206, 245, 0.60) 0%, rgba(246, 249, 255, 0) 70%),
+            linear-gradient(168deg, #F7FAFF 0%, #E9F1FB 46%, #F8FAFE 100%);
+          --oxi-ink: #15233A;
+          --oxi-ink-soft: rgba(21, 35, 58, 0.72);
+          --oxi-sub: rgba(21, 35, 58, 0.56);
+          --oxi-accent: #2A6FE0;
+          --oxi-card-bg: rgba(255, 255, 255, 0.66);
+          --oxi-card-bd: rgba(16, 38, 72, 0.10);
+          --oxi-card-sh: 0 10px 28px rgba(26, 52, 94, 0.12);
+          --oxi-done-bg: rgba(58, 126, 230, 0.13);
+          --oxi-done-bd: rgba(58, 126, 230, 0.36);
+          --oxi-chip-bg: rgba(42, 111, 224, 0.12);
+          --oxi-chip-bd: rgba(42, 111, 224, 0.22);
+          --oxi-chip2-bg: rgba(16, 38, 72, 0.07);
+          --oxi-chip2-fg: rgba(21, 35, 58, 0.55);
+          --oxi-track: rgba(16, 38, 72, 0.12);
+          --oxi-prem-fg: #A9790B;
+          --oxi-prem-bg: rgba(255, 196, 80, 0.20);
+          --oxi-prem-bd: rgba(255, 196, 80, 0.48);
+          --oxi-bar: linear-gradient(90deg, #5A9BFF 0%, #2A6FE0 100%);
+        }
+        [data-theme="dark"] {
+          --oxi-paint:
             radial-gradient(60% 42% at 24% 16%, rgba(66, 146, 255, 0.30) 0%, rgba(66, 146, 255, 0) 70%),
             radial-gradient(56% 40% at 78% 20%, rgba(255, 86, 86, 0.22) 0%, rgba(255, 86, 86, 0) 70%),
             radial-gradient(90% 60% at 50% 108%, rgba(24, 68, 110, 0.55) 0%, rgba(10, 20, 32, 0) 70%),
             linear-gradient(168deg, #0C1A2B 0%, #12293C 46%, #0A1420 100%);
+          --oxi-ink: #EEF4FB;
+          --oxi-ink-soft: rgba(255, 255, 255, 0.92);
+          --oxi-sub: rgba(255, 255, 255, 0.62);
+          --oxi-accent: #8FC0FF;
+          --oxi-card-bg: rgba(255, 255, 255, 0.07);
+          --oxi-card-bd: rgba(255, 255, 255, 0.13);
+          --oxi-card-sh: 0 10px 30px rgba(0, 0, 0, 0.34);
+          --oxi-done-bg: rgba(104, 172, 255, 0.16);
+          --oxi-done-bd: rgba(150, 198, 255, 0.46);
+          --oxi-chip-bg: rgba(143, 192, 255, 0.16);
+          --oxi-chip-bd: rgba(143, 192, 255, 0.28);
+          --oxi-chip2-bg: rgba(255, 255, 255, 0.10);
+          --oxi-chip2-fg: rgba(255, 255, 255, 0.66);
+          --oxi-track: rgba(255, 255, 255, 0.14);
+          --oxi-prem-fg: #FFD88A;
+          --oxi-prem-bg: rgba(255, 200, 90, 0.18);
+          --oxi-prem-bd: rgba(255, 200, 90, 0.36);
+          --oxi-bar: linear-gradient(90deg, #8FC0FF 0%, #4A86E8 100%);
+        }
+        .oxi-bg { background: var(--oxi-paint); }
+        /* 목록 끝 페이드 — 배경과 **같은 그림**을 같은 자리에 그린 뒤 위쪽만 깎는다.
+           단색으로 덮으면 배경이 그라데이션이라 경계에 띠가 보인다.
+           (이 요소는 카드의 조상이 아니라서 mask 를 걸어도 카드 유리가 안 깨진다.) */
+        .oxi-fade {
+          position: absolute; left: 0; right: 0; bottom: 0; height: 88px; pointer-events: none;
+          background: var(--oxi-paint);
+          background-size: 100% 100vh;
+          background-position: 50% 100%;
+          -webkit-mask-image: linear-gradient(to top, #000 45%, transparent 100%);
+          mask-image: linear-gradient(to top, #000 45%, transparent 100%);
         }
         /* 유리 카드 — 뒤 배경(번짐)이 비쳐 보이게 */
         .oxi-card {
-          background: rgba(255, 255, 255, 0.07);
-          border: 1px solid rgba(255, 255, 255, 0.13);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
+          background: var(--oxi-card-bg);
+          border: 1px solid var(--oxi-card-bd);
+          box-shadow: var(--oxi-card-sh);
           -webkit-backdrop-filter: blur(16px) saturate(1.15);
           backdrop-filter: blur(16px) saturate(1.15);
-          color: #EEF4FB;
+          color: var(--oxi-ink);
         }
         .oxi-card.is-done {
-          background: rgba(104, 172, 255, 0.16);
-          border-color: rgba(150, 198, 255, 0.46);
+          background: var(--oxi-done-bg);
+          border-color: var(--oxi-done-bd);
         }
         @keyframes quizItemFadeUp {
           from { opacity: 0; transform: translateY(20px); }

@@ -56,6 +56,10 @@ export default function OxHeroScene() {
         }
         .oxh-glow-o { background: #58B6FF; }
         .oxh-glow-x { background: #FF6B6B; }
+        /* 밝은 배경에선 번짐이 세면 지저분해 보인다 — 어두울 때만 더 태운다. */
+        [data-theme="dark"] .oxh-glow { opacity: 0.62; }
+        [data-theme="dark"] .oxh-floor { background: rgba(0, 0, 0, 0.4); }
+        .oxh-glow { opacity: 0.4; }
 
         /* 자리 — 책은 아래 가운데, 판 둘은 책 위로 조금 겹쳐 올린다 */
         .oxh-in-book { left: 0; right: 0; bottom: 0; z-index: 3; }
@@ -65,7 +69,7 @@ export default function OxHeroScene() {
         /* 바닥 그림자 */
         .oxh-floor {
           position: absolute; left: 14%; right: 14%; bottom: 2px; height: 14px;
-          border-radius: 50%; background: rgba(13, 48, 66, 0.22); filter: blur(9px);
+          border-radius: 50%; background: rgba(26, 52, 94, 0.16); filter: blur(9px);
           animation: oxhFloor 4.4s ease-in-out infinite;
         }
 
