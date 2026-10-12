@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
       >
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Image
-            src="/icons/stady-logo.svg"
+            src="/icons/stady-logo-3d.webp"
             alt="Stady"
             width={100}
             height={36}

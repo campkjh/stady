@@ -9,6 +9,7 @@ import { getTheme, setTheme, type ThemePreference } from "@/lib/theme";
 import { primeRemainingShort } from "@/lib/primeRemaining";
 import { useEntrance } from "@/lib/entrance";
 import { uiConfirm } from "@/lib/dialog";
+import StadyLogo from "@/components/StadyLogo";
 
 /*
  * 마이페이지 — 프리티풀 마이 구성(토스 '전체' 탭 어법)으로.
@@ -263,8 +264,7 @@ export default function MyPage() {
 
         {/* Footer */}
         <section className="mpx-foot">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/stady-logo.svg" alt="Stady" style={{ width: 64, height: "auto", filter: "grayscale(100%)", opacity: 0.25, marginBottom: 12 }} />
+          <StadyLogo height={24} style={{ filter: "grayscale(100%)", opacity: 0.3, marginBottom: 12 }} />
           <div style={{ fontSize: 11, lineHeight: 1.8, color: "var(--mpx-sub)" }}>
             <p>스타디 | 우 06314  경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
             <p>T 01047269276 | E tlsdml0507@naver.com</p>

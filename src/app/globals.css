@@ -1714,3 +1714,7 @@ textarea.mdl-field { height: auto; padding: 16px 18px; line-height: 1.5; resize:
 @keyframes qdFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes qdSlideIn { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .qd-a-title, .qd-a-sub, .qd-a-item, .qd-body > * { animation: none !important; } }
+
+/* 스타디 로고 — 라이트/다크 판 전환(StadyLogo) */
+[data-theme="dark"] .stady-logo .sl-light { display: none !important; }
+[data-theme="dark"] .stady-logo .sl-dark { display: block !important; }

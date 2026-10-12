@@ -16,6 +16,7 @@ import { clientCache } from "@/lib/clientCache";
 import { useEntrance } from "@/lib/entrance";
 import PrimeFab from "@/components/PrimeFab";
 import { HeaderBellIcon, HeaderSearchIcon } from "@/components/HeaderIcons";
+import StadyLogo from "@/components/StadyLogo";
 
 // 홈 "스타디 교재"(한국사 3,900원 PDF) 상품 카드 노출 여부.
 // 임시 숨김 상태. 다시 노출하려면 true 로 바꾸세요.
@@ -503,8 +504,7 @@ export default function HomeClient({
       {/* Header — 프리티풀 홈 머리줄: 로고 · 검색 · 구독. 인사말 대신 로고, 비로그인이면 로그인 버튼 */}
       <div className="home-head" style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "calc(14px + env(safe-area-inset-top, 0px)) 14px 10px" }}>
         <Link href="/" aria-label="스타디 홈" className={enter ? "qd-a-title" : undefined} style={{ display: "inline-flex", alignItems: "center" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/stady-logo.svg" alt="Stady" style={{ height: 26, width: "auto", display: "block" }} />
+          <StadyLogo height={30} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {isAdmin && (

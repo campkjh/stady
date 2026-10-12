@@ -189,7 +189,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Logo */}
           <div style={{ padding: "26px 22px 18px" }}>
             {/* 흰 배경이므로 로고 반전 필터를 걷어낸다(로고 자체가 브랜드 블루). */}
-            <Image src="/icons/stady-logo.svg" alt="Stady" width={80} height={28} unoptimized />
+            <Image src="/icons/stady-logo-3d.webp" alt="Stady" width={76} height={28} unoptimized />
             <p style={{ fontSize: 12, fontWeight: 400, color: MUTED, marginTop: 8 }}>관리자 패널</p>
           </div>
 
@@ -347,7 +347,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <MenuIcon size={24} />
           </button>
-          <Image src="/icons/stady-logo.svg" alt="Stady" width={60} height={20} unoptimized />
+          <Image src="/icons/stady-logo-3d.webp" alt="Stady" width={54} height={20} unoptimized />
           <Link
             href="/admin/capture"
             className="press"

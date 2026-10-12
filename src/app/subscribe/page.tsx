@@ -7,6 +7,7 @@ import type { PlanId } from "@/lib/iap/types";
 import { primeDaysLeft } from "@/lib/primeRemaining";
 import PrimeReviews from "@/components/PrimeReviews";
 import AlertModal from "@/components/AlertModal";
+import StadyLogo from "@/components/StadyLogo";
 
 // 스타디 프리미엄 — 페이지판.
 // 예전엔 마이페이지에서 팝업(SubscribePopup)으로 띄웠는데, 결제 흐름을 한 화면에서 차분히
@@ -85,7 +86,7 @@ export default function SubscribePage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {/* 워드마크 로고가 곧 제목 역할을 한다(별도 '스타디 프라임' 텍스트 없음).
               654x240 비율이라 높이만 고정하고 폭은 비율대로 둔다. */}
-          <img src="/icons/stady-logo-3d.webp" alt="스타디 프라임" style={{ height: 52, width: "auto", display: "block", margin: "0 auto" }} />
+          <StadyLogo height={52} alt="스타디 프라임" style={{ display: "flex", justifyContent: "center", margin: "0 auto" }} />
           <p style={{ margin: "8px 0 0", fontSize: 14.5, color: "var(--c-text-4b)", fontWeight: 500 }}>
             1등급을 위한 학습자료를 제한 없이
           </p>
