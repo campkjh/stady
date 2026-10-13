@@ -13,6 +13,11 @@ import ReportBlockMenu from "@/components/ReportBlockMenu";
 import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
+import EmojiBar from "@/components/community/EmojiBar";
+import { renderWithMention } from "@/components/community/mention";
+import { ReplyArrowIcon, SortArrowsIcon, SendUpIcon } from "@/components/community/TossIcons";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useModalExit } from "@/lib/useModalExit";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -172,7 +177,9 @@ export default function CommunityClient() {
   const [topbarHeight, setTopbarHeight] = useState(0);
   const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
   const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
-  const [weeklyAtEnd, setWeeklyAtEnd] = useState(false);
+  // 자동 전환을 직접 이징해서 굴리므로(브라우저 기본 smooth 는 뚝뚝 끊겨 보임) 진행 중 애니메이션·사용자 개입 시각을 기억한다.
+  const weeklyAnimRef = useRef<{ raf: number | null }>({ raf: null });
+  const weeklyTouchedAtRef = useRef(0);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
   // 오늘 아직 글을 안 썼을 때만 글쓰기 말풍선을 띄운다(서버 렌더 깜빡임 방지로 기본 false).
@@ -652,7 +659,6 @@ export default function CommunityClient() {
       if (d < min) { min = d; nearest = i; }
     });
     setWeeklyActiveIndex(nearest);
-    setWeeklyAtEnd(track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
   }
 
   // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 방향을 뒤집어(핑퐁) 순환.
@@ -697,10 +703,48 @@ export default function CommunityClient() {
         target = stepTo(track, cards, cur, dir);
         if (Math.abs(target - track.scrollLeft) < EPS) return; // 이동할 곳이 없으면(카드 1~2개) 대기
       }
-      track.scrollTo({ left: target, behavior: "smooth" });
-    }, 2400);
+      // 손가락/휠로 막 만졌다면 잠깐 쉰다(만지는 중에 카드가 달아나지 않게).
+      if (Date.now() - weeklyTouchedAtRef.current < 4500) return;
+      animateWeeklyScroll(track, target);
+    }, 3200);
     return () => window.clearInterval(id);
   }, [weeklyPosts.length]);
+
+  // 자동 전환용 이징 스크롤(easeInOutCubic 0.9초). 진행 중엔 scroll-snap 을 잠시 꺼서 스냅이 애니메이션을 끊지 않게 하고,
+  // 끝나면 되돌린다. 사용자가 만지면 즉시 멈춘다.
+  function stopWeeklyAnim(track: HTMLElement | null) {
+    const anim = weeklyAnimRef.current;
+    if (anim.raf !== null) {
+      cancelAnimationFrame(anim.raf);
+      anim.raf = null;
+    }
+    if (track) track.style.scrollSnapType = "";
+  }
+  function animateWeeklyScroll(track: HTMLElement, target: number) {
+    stopWeeklyAnim(track);
+    const from = track.scrollLeft;
+    const dist = target - from;
+    if (Math.abs(dist) < 1) return;
+    const DURATION = 900;
+    const t0 = performance.now();
+    track.style.scrollSnapType = "none";
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / DURATION);
+      track.scrollLeft = from + dist * ease(t);
+      if (t < 1) {
+        weeklyAnimRef.current.raf = requestAnimationFrame(tick);
+      } else {
+        weeklyAnimRef.current.raf = null;
+        track.style.scrollSnapType = "";
+      }
+    };
+    weeklyAnimRef.current.raf = requestAnimationFrame(tick);
+  }
+  function onWeeklyTouch() {
+    weeklyTouchedAtRef.current = Date.now();
+    stopWeeklyAnim(weeklyTrackRef.current);
+  }
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId),
@@ -830,7 +874,14 @@ export default function CommunityClient() {
               {!mineFilter && (
               <>
               <div className="weekly-popular-viewport">
-                <div className="weekly-popular-track" ref={weeklyTrackRef} onScroll={handleWeeklyScroll}>
+                <div
+                  className="weekly-popular-track"
+                  ref={weeklyTrackRef}
+                  onScroll={handleWeeklyScroll}
+                  onPointerDown={onWeeklyTouch}
+                  onTouchStart={onWeeklyTouch}
+                  onWheel={onWeeklyTouch}
+                >
                 {weeklyPosts.map((post, index) => (
                   <button
                     key={post.id}
@@ -862,7 +913,6 @@ export default function CommunityClient() {
                   </button>
                 ))}
                 </div>
-                <div className="weekly-edge weekly-edge-right" aria-hidden="true" style={{ opacity: weeklyAtEnd ? 0 : 1 }} />
               </div>
               {weeklyPosts.length > 1 && (
                 <div className="weekly-popular-dots" aria-hidden="true">
@@ -1606,14 +1656,22 @@ function CommentRow({
   c,
   depth = 0,
   meId,
+  activeReplyId,
   onEdit,
   onDelete,
+  onToggleLike,
+  onReply,
+  onBlocked,
 }: {
   c: FeedComment;
   depth?: number;
   meId: string | null;
+  activeReplyId: string;
   onEdit: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onToggleLike: (id: string) => void;
+  onReply: (c: FeedComment) => void;
+  onBlocked: () => void;
 }) {
   const mine = !!meId && c.userId === meId;
   const [editing, setEditing] = useState(false);
@@ -1644,65 +1702,104 @@ function CommentRow({
   }
 
   return (
-    <div style={{ paddingLeft: depth ? 14 : 0, marginTop: depth ? 10 : 0 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <span className="ccs-av" aria-hidden="true">
-          {c.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.avatar} alt="" referrerPolicy="no-referrer" />
-          ) : (
-            c.nickname.slice(0, 1)
-          )}
-        </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="ccs-item">
-            <span className="ccs-name">{c.nickname}</span>
-            <span className="ccs-time">{formatRelativeTime(c.createdAt)}</span>
-            {mine && !editing && !confirmDel && (
-              <span className="ccs-actions">
-                <button type="button" className="ccs-action" onClick={() => { setDraft(c.content); setEditing(true); }}>수정</button>
-                <span className="ccs-action-dot">·</span>
-                <button type="button" className="ccs-action" onClick={() => setConfirmDel(true)}>삭제</button>
-              </span>
-            )}
-          </div>
-          {editing ? (
-            <div className="ccs-editbox">
-              <textarea
-                className="ccs-edit"
-                value={draft}
-                rows={2}
-                onChange={(e) => setDraft(e.target.value)}
-                onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 160) + "px"; }}
-                aria-label="댓글 수정"
-                autoFocus
-              />
-              <div className="ccs-editbtns">
-                <button type="button" className="ccs-action" onClick={() => setEditing(false)} disabled={busy}>취소</button>
-                <button type="button" className="ccs-action is-primary" onClick={saveEdit} disabled={busy || !draft.trim()}>{busy ? "저장 중…" : "저장"}</button>
-              </div>
-            </div>
-          ) : (
-            <p className="ccs-content">{c.content}</p>
-          )}
-          {confirmDel && (
-            // 인앱 확인 — 안드로이드 WebView 는 window.confirm 이 동작하지 않는다.
-            <div className="ccs-confirm">
-              <span>댓글을 삭제할까요?</span>
-              <button type="button" className="ccs-action" onClick={() => setConfirmDel(false)} disabled={busy}>취소</button>
-              <button type="button" className="ccs-action is-danger" onClick={doDelete} disabled={busy}>{busy ? "삭제 중…" : "삭제"}</button>
-            </div>
-          )}
+    <div className={`ccs-c${depth > 0 ? " is-reply" : ""}${activeReplyId === c.id ? " is-active" : ""}`}>
+      <span className={`ccs-av${depth > 0 ? " is-sm" : ""}`} aria-hidden="true">
+        {c.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={c.avatar} alt="" referrerPolicy="no-referrer" />
+        ) : (
+          c.nickname.slice(0, 1)
+        )}
+      </span>
+      <div className="ccs-c-main">
+        <div className="ccs-item">
+          <span className="ccs-name">{c.nickname}</span>
+          <span className="ccs-time" title={formatExactTime(c.createdAt)}>· {formatRelativeTime(c.createdAt)}</span>
         </div>
+        {editing ? (
+          <div className="ccs-editbox">
+            <textarea
+              className="ccs-edit"
+              value={draft}
+              rows={2}
+              onChange={(e) => setDraft(e.target.value)}
+              onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 160) + "px"; }}
+              aria-label="댓글 수정"
+              autoFocus
+            />
+            <div className="ccs-editbtns">
+              <button type="button" className="ccs-action" onClick={() => setEditing(false)} disabled={busy}>취소</button>
+              <button type="button" className="ccs-action is-primary" onClick={saveEdit} disabled={busy || !draft.trim()}>{busy ? "저장 중…" : "저장"}</button>
+            </div>
+          </div>
+        ) : (
+          <p className="ccs-content">{renderWithMention(c.content)}</p>
+        )}
+        {confirmDel && (
+          // 인앱 확인 — 안드로이드 WebView 는 window.confirm 이 동작하지 않는다.
+          <div className="ccs-confirm">
+            <span>댓글을 삭제할까요?</span>
+            <button type="button" className="ccs-action" onClick={() => setConfirmDel(false)} disabled={busy}>취소</button>
+            <button type="button" className="ccs-action is-danger" onClick={doDelete} disabled={busy}>{busy ? "삭제 중…" : "삭제"}</button>
+          </div>
+        )}
+        {!editing && !confirmDel && (
+          <div className="ccs-c-acts">
+            <button type="button" className={`ccs-like${c.likedByMe ? " is-liked" : ""}`} aria-label="공감" aria-pressed={c.likedByMe} onClick={() => onToggleLike(c.id)}>
+              <TossHeartIcon filled={c.likedByMe} />
+              {c.likeCount > 0 && <span>{formatCount(c.likeCount)}</span>}
+            </button>
+            <button type="button" className="ccs-reply" onClick={() => onReply(c)}>
+              <ReplyArrowIcon />
+              답글 달기
+            </button>
+            {mine && (
+              <>
+                <button type="button" className="ccs-action" onClick={() => { setDraft(c.content); setEditing(true); }}>수정</button>
+                <button type="button" className="ccs-action is-danger-soft" onClick={() => setConfirmDel(true)}>삭제</button>
+              </>
+            )}
+            <span className="ccs-more">
+              <ReportBlockMenu
+                targetType="comment"
+                commentId={c.id}
+                targetUserId={c.userId}
+                targetNickname={c.nickname}
+                currentUserId={meId}
+                onBlocked={onBlocked}
+                variant="dots"
+              />
+            </span>
+          </div>
+        )}
+        {(c.replies || []).length > 0 && (
+          <div className="ccs-replies">
+            {c.replies.map((r) => (
+              <CommentRow
+                key={r.id}
+                c={r}
+                depth={depth + 1}
+                meId={meId}
+                activeReplyId={activeReplyId}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onToggleLike={onToggleLike}
+                onReply={onReply}
+                onBlocked={onBlocked}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      {(c.replies || []).map((r) => (
-        <CommentRow key={r.id} c={r} depth={depth + 1} meId={meId} onEdit={onEdit} onDelete={onDelete} />
-      ))}
     </div>
   );
 }
 
-// 목록에서 상세 진입 없이 여는 댓글 모달(바텀시트) — 댓글 보기 + 작성.
+function updateFeedComment(list: FeedComment[], id: string, fn: (c: FeedComment) => FeedComment): FeedComment[] {
+  return list.map((c) => (c.id === id ? fn(c) : { ...c, replies: updateFeedComment(c.replies || [], id, fn) }));
+}
+
+// 목록에서 상세 진입 없이 여는 댓글 모달(바텀시트) — 글 상세와 같은 토스 톤. 스프링으로 올라오고, 내려가며 닫히고, 아래로 끌어 닫는다.
 function CommentModal({
   post,
   onClose,
@@ -1718,18 +1815,29 @@ function CommentModal({
   const [posting, setPosting] = useState(false);
   const [msg, setMsg] = useState("");
   const [sort, setSort] = useState<CommentSortKey>("popular");
-  const [meId, setMeId] = useState<string | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [me, setMe] = useState<{ id: string; nickname: string; avatar: string | null } | null>(null);
+  const meId = me?.id ?? null;
+  const [replyTo, setReplyTo] = useState<{ id: string; nickname: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   // 안드로이드 WebView 는 키보드가 떠도 fixed 기준 화면을 줄이지 않아 입력창이 키보드 뒤로 숨는다.
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
   const keyboardInset = useKeyboardInset(true, overlayRef);
+  // 뒤 화면 스크롤 잠금 + 닫을 때 '뚝' 사라지지 않고 내려가는 연출(공용 모달과 같은 규칙)
+  useBodyScrollLock(true);
+  const { leaving, exit } = useModalExit();
+  const [dragged, setDragged] = useState(false);
+  const close = () => exit(onClose);
 
-  // 내 댓글에만 수정·삭제를 보이기 위해 내 id 를 받는다.
+  // 내 댓글에만 수정·삭제를 보이고, 입력창 옆에 내 프로필을 보이기 위해 내 정보를 받는다.
   useEffect(() => {
     let alive = true;
     fetch("/api/auth/me", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive) setMeId(d?.user?.id ?? null); })
+      .then((d) => {
+        if (alive && d?.user) setMe({ id: d.user.id, nickname: d.user.nickname ?? "나", avatar: d.user.avatar ?? null });
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -1756,6 +1864,18 @@ function CommentModal({
     await load();
   }
 
+  async function toggleCommentLike(id: string) {
+    setMsg("");
+    try {
+      const res = await fetch(`/api/community/comments/${encodeURIComponent(id)}/like`, { method: "POST", credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "공감을 처리하지 못했습니다.");
+      setComments((cur) => updateFeedComment(cur, id, (c) => ({ ...c, likedByMe: !!data.liked, likeCount: data.likeCount ?? c.likeCount })));
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "공감을 처리하지 못했습니다.");
+    }
+  }
+
   async function load(s: CommentSortKey = sort) {
     try {
       const res = await fetch(
@@ -1777,14 +1897,16 @@ function CommentModal({
   }, [post.id, sort]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") exit(onClose); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, exit]);
 
   async function submit() {
-    const content = text.trim();
-    if (!content || posting) return;
+    const typed = text.trim();
+    if (!typed || posting) return;
+    // 답글이면 '@닉네임 ' 을 앞에 붙여 저장한다(상세와 같은 규칙).
+    const content = replyTo ? `@${replyTo.nickname} ${typed}` : typed;
     setPosting(true);
     setMsg("");
     try {
@@ -1792,12 +1914,12 @@ function CommentModal({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(replyTo ? { content, parentId: replyTo.id } : { content }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "댓글을 저장하지 못했습니다.");
       setText("");
-      if (inputRef.current) inputRef.current.style.height = "auto";
+      setReplyTo(null);
       onCountChange(1);
       await load();
     } catch (e) {
@@ -1807,42 +1929,116 @@ function CommentModal({
     }
   }
 
+  function startReply(c: FeedComment) {
+    setReplyTo({ id: c.id, nickname: c.nickname });
+    setText("");
+    inputRef.current?.focus();
+  }
+
+  // 이모지 줄을 누르면 입력칸의 커서 자리에 넣는다.
+  function insertEmoji(emoji: string) {
+    const input = inputRef.current;
+    const start = input?.selectionStart ?? text.length;
+    const end = input?.selectionEnd ?? text.length;
+    setText(text.slice(0, start) + emoji + text.slice(end));
+    const caret = start + emoji.length;
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      try { el.setSelectionRange(caret, caret); } catch { /* 일부 WebView 는 지원 안 함 */ }
+    });
+  }
+
+  // 위쪽 손잡이 영역을 아래로 끌어 닫기(좁은 화면 바텀시트에서만). 손가락을 따라 내려오고, 충분히 내렸거나 빠르게 밀면 닫힌다.
+  const dragRef = useRef<{ y: number; t: number; id: number } | null>(null);
+  function onGrabDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (window.innerWidth >= 720) return;
+    dragRef.current = { y: e.clientY, t: Date.now(), id: e.pointerId };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const sheet = sheetRef.current;
+    if (sheet) sheet.style.transition = "none";
+  }
+  function onGrabMove(e: React.PointerEvent<HTMLDivElement>) {
+    const d = dragRef.current;
+    const sheet = sheetRef.current;
+    if (!d || !sheet) return;
+    const dy = Math.max(0, e.clientY - d.y);
+    sheet.style.transform = `translateY(${dy}px)`;
+  }
+  function onGrabUp(e: React.PointerEvent<HTMLDivElement>) {
+    const d = dragRef.current;
+    const sheet = sheetRef.current;
+    dragRef.current = null;
+    if (!d || !sheet) return;
+    const dy = Math.max(0, e.clientY - d.y);
+    const speed = dy / Math.max(1, Date.now() - d.t); // px/ms
+    if (dy > 110 || (dy > 40 && speed > 0.6)) {
+      // 끌어 내린 자리에서 이어서 내려가 닫는다(처음 위치로 튀지 않게 키프레임 대신 transition).
+      setDragged(true);
+      sheet.style.transition = "transform 0.22s cubic-bezier(0.4, 0, 1, 1)";
+      sheet.style.transform = "translateY(100%)";
+      exit(onClose);
+    } else {
+      sheet.style.transition = "transform 0.42s cubic-bezier(0.22, 1.25, 0.36, 1)";
+      sheet.style.transform = "";
+    }
+  }
+
   const total = countComments(comments);
 
   return (
-    <div ref={overlayRef} className="community-comment-modal" style={{ paddingBottom: keyboardInset }} onClick={onClose}>
+    <div
+      ref={overlayRef}
+      className={`community-comment-modal${leaving ? " is-leaving" : ""}${dragged ? " is-dragged" : ""}`}
+      style={{ paddingBottom: keyboardInset }}
+      onClick={close}
+    >
       {/* 키보드가 뜨면 남은 영역을 꽉 채운다 — 고정 높이로 두면 입력창이 시트 밖으로 밀려 잘린다. */}
       <div
+        ref={sheetRef}
         className="community-comment-sheet"
         style={keyboardInset > 0 ? { height: "100%" } : undefined}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="댓글"
       >
-        <div className="ccs-head">
-          <div style={{ minWidth: 0 }}>
+        <div className="ccs-grab" onPointerDown={onGrabDown} onPointerMove={onGrabMove} onPointerUp={onGrabUp} onPointerCancel={onGrabUp}>
+          <span className="ccs-handle" aria-hidden="true" />
+          <div className="ccs-head">
             <p className="ccs-title">댓글 {total}</p>
-            <p className="ccs-sub">{post.title}</p>
-          </div>
-          <button type="button" className="ccs-close" onClick={onClose} aria-label="닫기">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div className="ccs-sorts" role="tablist" aria-label="댓글 정렬">
-          {COMMENT_SORTS.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              className={`ccs-sort${sort === s.key ? " is-on" : ""}`}
-              aria-selected={sort === s.key}
-              onClick={() => setSort(s.key)}
-            >
-              {s.label}
+            <button type="button" className="ccs-close" onClick={close} onPointerDown={(e) => e.stopPropagation()} aria-label="닫기">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
             </button>
-          ))}
+          </div>
+        </div>
+        <div className="ccs-sortwrap">
+          <button type="button" className="ccs-sortbtn" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
+            {COMMENT_SORTS.find((x) => x.key === sort)?.label}
+            <SortArrowsIcon />
+          </button>
+          {sortOpen && (
+            <>
+              <div className="ccs-sort-backdrop" onClick={() => setSortOpen(false)} />
+              <div className="ccs-sort-menu" role="listbox">
+                {COMMENT_SORTS.map((x) => (
+                  <button
+                    key={x.key}
+                    type="button"
+                    role="option"
+                    aria-selected={sort === x.key}
+                    className={`ccs-sort-item${sort === x.key ? " on" : ""}`}
+                    onClick={() => { setSortOpen(false); setSort(x.key); }}
+                  >
+                    {x.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         <div className="ccs-list">
           {loading ? (
@@ -1854,31 +2050,53 @@ function CommentModal({
               <p>댓글이 자고있나봐요<br />깨워주세요!</p>
             </div>
           ) : (
-            comments.map((c) => <CommentRow key={c.id} c={c} meId={meId} onEdit={editComment} onDelete={deleteComment} />)
+            comments.map((c) => (
+              <CommentRow
+                key={c.id}
+                c={c}
+                meId={meId}
+                activeReplyId={replyTo?.id ?? ""}
+                onEdit={editComment}
+                onDelete={deleteComment}
+                onToggleLike={toggleCommentLike}
+                onReply={startReply}
+                onBlocked={() => load()}
+              />
+            ))
           )}
         </div>
         {msg && <p className="ccs-msg">{msg}</p>}
-        <div className="ccs-compose">
-          {/* 글자가 너비를 넘으면 줄바꿈되며 높이가 늘어난다(최대 120px, 그 뒤는 스크롤). Enter=등록, Shift+Enter=줄바꿈 */}
-          <textarea
-            ref={inputRef}
-            value={text}
-            rows={1}
-            onChange={(e) => setText(e.target.value)}
-            onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            placeholder="댓글을 입력하세요"
-            className="ccs-input"
-            aria-label="댓글 입력"
-          />
-          <button type="button" className="ccs-submit" onClick={submit} disabled={posting || !text.trim()}>
-            등록
-          </button>
+        <div className="ccs-dock">
+          <EmojiBar className="ccs-react-bar" onPick={insertEmoji} />
+          <form className="ccs-compose" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+            <span className="ccs-av is-me" aria-hidden="true">
+              {me?.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={me.avatar} alt="" referrerPolicy="no-referrer" />
+              ) : (
+                (me?.nickname ?? "나").slice(0, 1)
+              )}
+            </span>
+            <div className="ccs-bar">
+              {replyTo && (
+                <button type="button" className="ccs-mention" onClick={() => setReplyTo(null)} aria-label={`${replyTo.nickname}님 답글 취소`}>
+                  @{replyTo.nickname}
+                </button>
+              )}
+              <input
+                ref={inputRef}
+                className="ccs-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={replyTo ? "" : "댓글로 의견을 남겨보세요"}
+                enterKeyHint="send"
+                aria-label={replyTo ? `${replyTo.nickname}님에게 답글` : "댓글 입력"}
+              />
+              <button type="submit" className="ccs-send" disabled={posting || !text.trim()} aria-label="등록">
+                <SendUpIcon />
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -2255,21 +2473,16 @@ function CommunityStyles() {
       }
       .wp-tab.is-on { color: var(--c-text); }
 
+      /* 가로 카드 줄: 칼로 자른 듯 끊기지 않게 양끝이 스르륵 사라지는 마스크.
+         트랙을 화면 가장자리까지 내밀고(--wp-b, 페이지 좌우 여백만큼) 그 여백 구간에서만 옅어지게 해서,
+         멈춰 있을 땐 첫 카드가 그대로 보이고 스크롤하면 카드가 가장자리에서 자연스럽게 녹는다. */
       .weekly-popular-viewport {
+        --wp-b: 16px;
         position: relative;
-      }
-      .weekly-edge {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 34px;
-        pointer-events: none;
-        z-index: 2;
-        transition: opacity 0.3s ease;
-      }
-      .weekly-edge-right {
-        right: 0;
-        background: linear-gradient(to left, var(--c-bg) 0%, transparent 100%);
+        margin-left: calc(var(--wp-b) * -1);
+        margin-right: calc(var(--wp-b) * -1);
+        -webkit-mask-image: linear-gradient(to right, transparent 0, rgba(0,0,0,0.12) calc(var(--wp-b) * 0.3), rgba(0,0,0,0.5) calc(var(--wp-b) * 0.65), #000 var(--wp-b), #000 calc(100% - var(--wp-b)), rgba(0,0,0,0.5) calc(100% - var(--wp-b) * 0.65), rgba(0,0,0,0.12) calc(100% - var(--wp-b) * 0.3), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0, rgba(0,0,0,0.12) calc(var(--wp-b) * 0.3), rgba(0,0,0,0.5) calc(var(--wp-b) * 0.65), #000 var(--wp-b), #000 calc(100% - var(--wp-b)), rgba(0,0,0,0.5) calc(100% - var(--wp-b) * 0.65), rgba(0,0,0,0.12) calc(100% - var(--wp-b) * 0.3), transparent 100%);
       }
       .weekly-popular-track {
         display: flex;
@@ -2277,9 +2490,10 @@ function CommunityStyles() {
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
-        scroll-padding-left: 2px;
-        /* 메달이 카드 위로 살짝 걸쳐지므로(위로 삐져나옴) 트랙 상단 여백을 줘서 안 잘리게 */
-        padding: 20px 0 10px;
+        /* 내민 여백만큼 안쪽 여백을 줘서 시작·끝 카드가 원래 줄에 맞게 선다 */
+        padding: 20px var(--wp-b) 10px;
+        scroll-padding-left: var(--wp-b);
+        scroll-padding-right: var(--wp-b);
         scrollbar-width: none;
       }
       .weekly-popular-track::-webkit-scrollbar { display: none; }
@@ -2297,7 +2511,7 @@ function CommunityStyles() {
         border: 1px solid var(--c-bg-muted-6);
         background: var(--c-bg);
         cursor: pointer;
-        transition: opacity 0.35s ease;
+        transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
       }
       /* 마지막 카드는 왼쪽 끝에 못 붙으므로(뒤 콘텐츠 없음) 오른쪽 끝 정렬로 스냅 →
          스크롤 최대치가 유효한 스냅 지점이 돼 끝에서 되당겨지는 '뚜둑'이 사라진다. */
@@ -2723,7 +2937,8 @@ function CommunityStyles() {
           color: var(--c-text);
         }
       }
-      /* ── 목록 댓글 모달(바텀시트) ── */
+      /* ── 목록 댓글 모달(바텀시트) — 글 상세와 같은 토스 톤 ──
+         열릴 때: 딤 페이드 + 시트가 스프링으로 올라오고 목록이 차례로 떠오른다. 닫을 때(.is-leaving): 내려가며 사라진다. */
       .community-comment-modal {
         position: fixed;
         top: 0; right: 0; bottom: 0; left: 0; /* inset 단축은 구형 안드로이드 WebView 가 모른다 */
@@ -2733,7 +2948,7 @@ function CommunityStyles() {
         display: flex;
         align-items: flex-end;
         justify-content: center;
-        animation: communityPanelFade 0.16s ease;
+        animation: mdlFade 0.24s ease-out backwards;
       }
       .community-comment-sheet {
         width: 100%;
@@ -2748,37 +2963,40 @@ function CommunityStyles() {
         border-top-left-radius: 24px;
         border-top-right-radius: 24px;
         box-shadow: 0 -14px 40px rgba(15, 23, 42, 0.18);
-        animation: communitySheetUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-        overflow: hidden;
+        animation: mdlSheet 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+        /* WebView 에서 border-radius + overflow:hidden 이 자식 레이어를 깨는 일이 있어 자식에 라운드를 직접 준다 */
       }
+      .community-comment-modal.is-leaving { pointer-events: none; animation: mdlFadeOut 0.24s ease-in forwards; }
+      .community-comment-modal.is-leaving .community-comment-sheet { animation: mdlSheetOut 0.26s cubic-bezier(0.4, 0, 1, 1) forwards; }
+      /* 끌어서 닫을 땐 손가락이 놓은 자리에서 이어 내려가야 하므로 키프레임 대신 인라인 transition 을 쓴다. */
+      .community-comment-modal.is-leaving.is-dragged .community-comment-sheet { animation: none; }
       @media (min-width: 720px) {
         .community-comment-modal { align-items: center; }
-        .community-comment-sheet { border-radius: 24px; height: auto; min-height: 50%; max-height: 74%; }
+        .community-comment-sheet { border-radius: 24px; height: auto; min-height: 50%; max-height: 74%; animation-name: mdlPop; animation-duration: 0.42s; }
+        .community-comment-modal.is-leaving .community-comment-sheet { animation-name: mdlPopOut; animation-duration: 0.22s; }
+        .ccs-handle { display: none; }
       }
+      @media (prefers-reduced-motion: reduce) {
+        .community-comment-modal, .community-comment-sheet, .ccs-c { animation: none !important; }
+      }
+      /* 위쪽 손잡이+제목 줄 — 여기를 아래로 끌면 닫힌다 */
+      .ccs-grab { flex-shrink: 0; touch-action: none; cursor: grab; }
+      .ccs-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--c-bg-muted-8, #d1d6db); margin: 10px auto 0; }
       .ccs-head {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 16px 16px 12px;
-        border-bottom: 1px solid var(--c-bg-muted-6);
+        padding: 10px 12px 4px 20px;
       }
-      .ccs-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--c-text); }
-      .ccs-sub {
-        margin: 3px 0 0;
-        font-size: 13px;
-        color: var(--c-text-4);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+      .ccs-title { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-text); }
       .ccs-close {
         flex-shrink: 0;
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
         border: none;
-        background: var(--c-bg-muted);
+        background: transparent;
         color: var(--c-text-3);
         cursor: pointer;
         display: inline-flex;
@@ -2786,6 +3004,14 @@ function CommunityStyles() {
         justify-content: center;
         -webkit-tap-highlight-color: transparent;
       }
+      /* 정렬 드롭다운 '인기순 ⇅' */
+      .ccs-sortwrap { position: relative; flex-shrink: 0; padding: 0 20px; }
+      .ccs-sortbtn { display: inline-flex; align-items: center; gap: 4px; padding: 8px 0; border: none; background: none; color: var(--c-text-3, #6b7684); font-size: 16px; font-weight: 500; letter-spacing: -0.3px; cursor: pointer; font-family: inherit; }
+      .ccs-sort-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; }
+      .ccs-sort-menu { position: absolute; top: calc(100% - 2px); left: 14px; z-index: 2; min-width: 150px; display: grid; padding: 8px; background: var(--c-bg, #fff); border-radius: 18px; box-shadow: 0 16px 48px rgba(15, 23, 42, 0.16), 0 2px 10px rgba(15, 23, 42, 0.06); animation: ccsMenuIn 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; transform-origin: top left; }
+      .ccs-sort-item { display: flex; align-items: center; padding: 11px 12px; border: none; background: none; border-radius: 12px; color: var(--c-text-2c, #333d4b); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; font-family: inherit; }
+      .ccs-sort-item.on { color: #3182f6; font-weight: 700; }
+      @keyframes ccsMenuIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
       .ccs-list {
         flex: 1 1 auto;
         /* 0 까지 줄어들 수 있어야 좁은 화면에서 입력창이 밀려나지 않는다. */
@@ -2793,10 +3019,9 @@ function CommunityStyles() {
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
-        padding: 12px 16px;
+        padding: 4px 20px 12px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
       }
       .ccs-empty-sleep { display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .ccs-empty-sleep img { display: block; }
@@ -2809,125 +3034,91 @@ function CommunityStyles() {
         font-size: 14px;
         font-weight: 500;
       }
-      .ccs-item { display: flex; align-items: center; gap: 6px; }
-      .ccs-name { font-size: 13px; font-weight: 700; color: var(--c-text); }
-      /* 댓글 아바타(사진 or 첫 글자) */
+      /* 댓글 한 줄: 아바타 · 이름·시간 / 본문 / 하트·답글 달기·⋯ (답글은 본문 칸 안에 들여써서 이어진다) */
+      .ccs-c { display: flex; gap: 12px; padding: 14px 0 10px; animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+      .ccs-c:nth-child(1) { animation-delay: 0.16s; }
+      .ccs-c:nth-child(2) { animation-delay: 0.21s; }
+      .ccs-c:nth-child(3) { animation-delay: 0.26s; }
+      .ccs-c:nth-child(4) { animation-delay: 0.31s; }
+      .ccs-c:nth-child(n+5) { animation-delay: 0.36s; }
+      .ccs-c.is-reply { padding: 10px 0 4px; animation: none; }
+      .ccs-c-main { min-width: 0; flex: 1; }
+      .ccs-item { display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
+      .ccs-name { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--c-text-3, #6b7684); }
+      .ccs-time { margin-left: 5px; font-size: 15px; font-weight: 500; color: var(--c-text-4c, #8b95a1); }
+      /* 댓글 아바타(사진 or 첫 글자 — 사진이 없을 땐 연한 쿨그레이) */
       .ccs-av {
         flex-shrink: 0;
-        width: 30px;
-        height: 30px;
+        width: 44px;
+        height: 44px;
         border-radius: 999px;
         overflow: hidden;
         background: var(--c-bg-muted);
-        color: var(--c-text);
-        font-size: 13px;
+        color: #a3acb8;
+        font-size: 19px;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
+      .ccs-av.is-sm { width: 34px; height: 34px; font-size: 15px; }
       .ccs-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      /* 댓글 정렬 탭 */
-      .ccs-sorts {
-        display: flex;
-        gap: 6px;
-        padding: 10px 16px 2px;
-        flex-wrap: wrap;
-      }
-      .ccs-sort {
-        border: 1px solid var(--c-bg-muted-8);
-        background: transparent;
-        color: var(--c-text-3);
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .ccs-sort.is-on {
-        background: var(--c-inverse);
-        border-color: var(--c-inverse);
-        color: #fff;
-      }
-      .ccs-time { font-size: 12px; font-weight: 500; color: var(--c-text-4); }
       .ccs-content {
-        margin: 3px 0 0;
-        font-size: 14px;
-        line-height: 1.55;
-        color: var(--c-text-2d);
+        margin: 4px 0 0;
+        font-size: 17px;
+        line-height: 1.6;
+        letter-spacing: -0.3px;
+        color: var(--c-text);
         white-space: pre-wrap;
         word-break: break-word;
+        overflow-wrap: anywhere;
       }
+      .ccs-c.is-active > .ccs-c-main > .ccs-content { background: rgba(49, 130, 246, 0.07); border-radius: 8px; }
+      .ccs-c-acts { display: flex; align-items: center; gap: 16px; margin-top: 6px; color: #6b7684; }
+      .ccs-like, .ccs-reply { display: inline-flex; align-items: center; gap: 5px; padding: 4px 2px; border: none; background: none; color: inherit; font-size: 15px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      .ccs-like.is-liked { color: #f04452; }
+      .ccs-more { margin-left: auto; display: inline-flex; }
+      .ccs-replies { margin-top: 2px; }
       .ccs-msg {
         margin: 0;
-        padding: 6px 16px;
+        padding: 6px 20px;
         color: var(--c-brand-deep-2);
         font-size: 13px;
         font-weight: 600;
       }
-      .ccs-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
       .ccs-action {
-        border: none; background: none; padding: 0; font-size: 12px; font-weight: 600;
-        color: var(--c-text-4); cursor: pointer; -webkit-tap-highlight-color: transparent;
+        border: none; background: none; padding: 4px 2px; font-size: 14px; font-weight: 600;
+        color: #6b7684; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
       }
       .ccs-action:disabled { opacity: 0.5; cursor: default; }
       .ccs-action.is-primary { color: var(--c-brand); font-weight: 700; }
       .ccs-action.is-danger { color: #D63A3A; font-weight: 700; }
-      .ccs-action-dot { font-size: 12px; color: var(--c-text-5); }
+      .ccs-action.is-danger-soft { color: var(--c-danger-b, #e8544e); }
       .ccs-editbox { margin-top: 6px; }
       .ccs-edit {
         width: 100%; box-sizing: border-box; min-height: 60px; max-height: 160px; resize: none;
-        border: 1px solid var(--c-brand); border-radius: 10px; padding: 9px 12px;
-        font-size: 16px; line-height: 1.45; color: var(--c-text); background: var(--c-bg); outline: none;
+        border: 1px solid var(--c-brand); border-radius: 12px; padding: 10px 12px;
+        font-size: 16px; line-height: 1.45; color: var(--c-text); background: var(--c-bg); outline: none; font-family: inherit;
       }
       .ccs-editbtns { display: flex; justify-content: flex-end; gap: 14px; margin-top: 6px; }
       .ccs-confirm {
         margin-top: 8px; display: flex; align-items: center; gap: 12px;
-        padding: 8px 12px; border-radius: 10px; background: var(--c-bg-muted); font-size: 12.5px; color: var(--c-text-3);
+        padding: 8px 12px; border-radius: 12px; background: var(--c-bg-muted); font-size: 13.5px; color: var(--c-text-3);
       }
       .ccs-confirm span { flex: 1; }
-      .ccs-compose {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        border-top: 1px solid var(--c-bg-muted-6);
-        background: var(--c-bg);
-      }
-      .ccs-input {
-        flex: 1;
-        min-width: 0;
-        min-height: 44px;
-        max-height: 120px;
-        box-sizing: border-box;
-        border: 1px solid var(--c-border);
-        border-radius: 12px;
-        padding: 11px 14px;
-        font-size: 16px;
-        line-height: 1.4;
-        font-family: inherit;
-        color: var(--c-text);
-        background: var(--c-bg);
-        outline: none;
-        resize: none;
-        overflow-y: auto;
-      }
-      .ccs-input:focus { border-color: var(--c-brand); }
-      .ccs-submit {
-        flex-shrink: 0;
-        height: 44px;
-        padding: 0 18px;
-        border: none;
-        border-radius: 12px;
-        background: var(--c-inverse);
-        color: #fff;
-        font-size: 15px;
-        font-weight: 700;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .ccs-submit:disabled { opacity: 0.5; cursor: default; }
+      /* 아래 고정 입력 영역: 이모지 줄 + 내 아바타 + 회색 입력창(답글이면 파란 @닉네임) */
+      .ccs-dock { flex-shrink: 0; background: var(--c-bg); padding: 6px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+      .ccs-react-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 8px; }
+      .emoji-bar-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: none; border-radius: 14px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .emoji-bar-btn:active { transform: scale(0.86); }
+      .ccs-compose { display: flex; align-items: center; gap: 10px; }
+      .ccs-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
+      .ccs-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
+      .ccs-input { flex: 1; min-width: 0; height: 36px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
+      .ccs-input::placeholder { color: var(--c-text-5, #b0b8c1); }
+      .ccs-send { flex: none; width: 48px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 18px; background: #3182f6; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease; }
+      .ccs-send:active:not(:disabled) { transform: scale(0.94); }
+      .ccs-send:disabled { background: #d1d6db; cursor: default; }
       @keyframes communitySheetUp {
         from { transform: translateY(28px); opacity: 0.6; }
         to { transform: translateY(0); opacity: 1; }
