@@ -638,7 +638,6 @@ export default function OxQuizSolvePage() {
           paddingTop: "env(safe-area-inset-top, 0px)",
           background: "var(--c-bg-a92)",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-          boxShadow: "0 1px 12px rgba(15,23,42,0.04)",
         }}
       >
         {/* 1행: 나가기 · 제목/소분류 · 타이머 · 목록 */}
