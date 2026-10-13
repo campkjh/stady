@@ -150,12 +150,19 @@ export default function BottomNav() {
 
   const activeColor = pathname.startsWith("/timer") ? TIMER_ACTIVE_COLOR : ACTIVE_COLOR;
 
+  // 커뮤니티 글 상세·글쓰기(/community/...)에서는 하단 네비를 숨긴다. 레이아웃이 네비만큼 비워 둔 아래 여백도 같이 거둔다.
+  const hidden = pathname.startsWith("/community/");
+  useEffect(() => {
+    document.body.classList.toggle("nav-hidden", hidden);
+    return () => document.body.classList.remove("nav-hidden");
+  }, [hidden]);
+
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
 
-  if (pathname.startsWith("/community/write")) {
+  if (hidden) {
     return null;
   }
 

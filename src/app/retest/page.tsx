@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
+import { uiConfirm } from "@/lib/dialog";
 
 interface RetestItem {
   id: string;
@@ -22,6 +23,16 @@ interface RetestItem {
 }
 
 type Answer = { selected: number | boolean; isCorrect: boolean };
+
+/** Fisher-Yates 셔플(원본은 그대로 두고 새 배열을 돌려준다) */
+function shuffleArray<T>(src: T[]): T[] {
+  const arr = [...src];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 const TYPE_LABEL: Record<RetestItem["type"], string> = {
   workbook: "문제집",
@@ -42,6 +53,10 @@ function RetestContent() {
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [showResult, setShowResult] = useState(false);
   const [nonce, setNonce] = useState(0); // bump to restart
+  // 섞기 — 모아풀기는 열 때마다 처음부터라 앞부분만 풀게 된다는 의견. 켜 두면(기기에 저장) 열 때마다 새로 섞어서 시작한다.
+  const shuffleKey = `retest_shuffle_${source}`;
+  const [shuffleOn, setShuffleOn] = useState(false);
+  const baseItems = useRef<RetestItem[]>([]);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -67,12 +82,19 @@ function RetestContent() {
         }
         return res.json();
       })
-      .then((data) => setItems((data.items as RetestItem[]) ?? []))
+      .then((data) => {
+        const list = (data.items as RetestItem[]) ?? [];
+        baseItems.current = list;
+        let on = false;
+        try { on = localStorage.getItem(shuffleKey) === "1"; } catch {}
+        setShuffleOn(on && list.length > 1);
+        setItems(on && list.length > 1 ? shuffleArray(list) : list);
+      })
       .catch((err) =>
         setError(err.message === "login" ? "로그인이 필요합니다." : "문제를 불러오지 못했습니다.")
       )
       .finally(() => setLoading(false));
-  }, [source, type, nonce]);
+  }, [source, type, nonce, shuffleKey]);
 
   const current = items[index] ?? null;
   const answered = current ? answers.get(current.id) ?? null : null;
@@ -80,6 +102,20 @@ function RetestContent() {
     () => Array.from(answers.values()).filter((a) => a.isCorrect).length,
     [answers]
   );
+
+  async function toggleShuffle() {
+    if (answers.size > 0 && !(await uiConfirm("순서를 바꾸면 지금까지 푼 기록이 초기화되고 처음부터 시작해요.", { confirmLabel: "바꾸기" }))) return;
+    const next = !shuffleOn;
+    try {
+      if (next) localStorage.setItem(shuffleKey, "1");
+      else localStorage.removeItem(shuffleKey);
+    } catch {}
+    setShuffleOn(next);
+    setItems(next ? shuffleArray(baseItems.current) : baseItems.current);
+    setAnswers(new Map());
+    setIndex(0);
+    setShowResult(false);
+  }
 
   function pick(selected: number | boolean) {
     if (!current || answers.get(current.id)) return;
@@ -172,6 +208,27 @@ function RetestContent() {
             {answers.size}/{items.length} 풀이 · {correctCount}개 정답
           </p>
         </div>
+        <button
+          type="button"
+          aria-label={shuffleOn ? "원래 순서로 되돌리기" : "문제 순서 섞기"}
+          aria-pressed={shuffleOn}
+          onClick={toggleShuffle}
+          className="press"
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 10, padding: 0, flexShrink: 0, cursor: "pointer",
+            border: `1px solid ${shuffleOn ? "transparent" : "var(--c-bg-muted-8)"}`,
+            background: shuffleOn ? "var(--c-brand-soft-3)" : "var(--c-bg)",
+            color: shuffleOn ? "var(--c-brand)" : "var(--c-text-4b)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="16 3 21 3 21 8" />
+            <line x1="4" y1="20" x2="21" y2="3" />
+            <polyline points="21 16 21 21 16 21" />
+            <line x1="15" y1="15" x2="21" y2="21" />
+            <line x1="4" y1="4" x2="9" y2="9" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={() => setShowResult(true)}

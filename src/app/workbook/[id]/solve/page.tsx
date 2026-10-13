@@ -67,6 +67,32 @@ export default function SolvePage() {
   const progressKey = bookmarkMode.enabled ? null : `workbook:${id}`;
 
   const enterTimeRef = useRef<number>(Date.now());
+  // 태블릿(넓은 화면)에서는 세로로 긴 문제 이미지가 한 화면에 다 안 들어가 아래(보기 박스 등)가 잘려 보였다
+  // (엘리트 16번처럼 1400×2079). 문제 영역 높이를 재서 이미지가 그 안에 통째로 들어가게 줄인다. 폰은 그대로.
+  const [wide, setWide] = useState(false);
+  const [areaH, setAreaH] = useState(0);
+  const areaObserver = useRef<ResizeObserver | null>(null);
+  const areaRef = useCallback((el: HTMLDivElement | null) => {
+    areaObserver.current?.disconnect();
+    areaObserver.current = null;
+    if (!el) return;
+    // 하단 바(position:absolute)가 문제 영역 아랫부분을 덮으므로, 실제로 보이는 높이 = 영역 위 ~ 하단 바 위.
+    const measure = () => {
+      const bar = el.parentElement?.querySelector<HTMLElement>("[data-solve-bar]");
+      const top = el.getBoundingClientRect().top;
+      setAreaH(bar ? Math.max(0, bar.getBoundingClientRect().top - top) : el.clientHeight);
+    };
+    measure();
+    areaObserver.current = new ResizeObserver(measure);
+    areaObserver.current.observe(el);
+  }, []);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 744px)");
+    const sync = () => setWide(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -364,16 +390,16 @@ export default function SolvePage() {
       />
 
       {/* Problem area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
+      <div ref={areaRef} style={{ flex: 1, overflowY: "auto", padding: "16px 16px 120px" }}>
         {currentProblem.passageImage && (
           <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-bg-muted)", position: "relative", zIndex: 10 }}>
-            <img src={currentProblem.passageImage} alt="지문" style={{ width: "100%", display: "block" }} />
+            <img src={currentProblem.passageImage} alt="지문" style={{ display: "block", margin: "0 auto", ...(wide && areaH > 0 ? { width: "auto", maxWidth: "100%", height: "auto", maxHeight: Math.max(240, areaH - 16 - 14 - 8) } : { width: "100%" }) }} />
           </div>
         )}
 
         {currentProblem.questionImage && (
           <div style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-bg-muted)", position: "relative", zIndex: 10 }}>
-            <img src={currentProblem.questionImage} alt="문제" style={{ width: "100%", display: "block" }} />
+            <img src={currentProblem.questionImage} alt="문제" style={{ display: "block", margin: "0 auto", ...(wide && areaH > 0 ? { width: "auto", maxWidth: "100%", height: "auto", maxHeight: Math.max(240, areaH - 16 - 14 - 8) } : { width: "100%" }) }} />
           </div>
         )}
 
@@ -457,7 +483,7 @@ export default function SolvePage() {
       )}
 
       {/* Bottom bar */}
-      <div style={{
+      <div data-solve-bar style={{
         position: "absolute", left: 0, right: 0, bottom: 0,
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom, 0px))",
         borderTop: "1px solid var(--c-bg-muted)", background: "var(--c-bg)",

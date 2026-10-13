@@ -170,6 +170,15 @@ export default function OxQuizSolvePage() {
             totalQuestions: bookmarkedIds.size,
             questions: nextQuiz.questions.filter((question) => bookmarkedIds.has(question.id)),
           };
+          // 책갈피 문제는 열 때마다 처음부터라 앞부분만 풀게 된다는 의견 → 섞기 지원.
+          // '섞기'를 켜 두면(기기에 저장) 열 때마다 새로 섞어서 시작한다. 원래 순서는 되돌리기용으로 보관.
+          originalQuestionsRef.current = nextQuiz.questions;
+          try {
+            if (localStorage.getItem("ox_bookmark_shuffle") === "1" && nextQuiz.questions.length > 1) {
+              nextQuiz = { ...nextQuiz, questions: shuffleArray(nextQuiz.questions) };
+              setShuffleOn(true);
+            }
+          } catch {}
         } else {
           // 저장된 셔플 순서가 있으면 복원(이어풀기의 currentIndex 정합 유지).
           originalQuestionsRef.current = nextQuiz.questions;
@@ -399,18 +408,16 @@ export default function OxQuizSolvePage() {
     if (!quiz || !original) return;
     setShowShuffleConfirm(false);
     if (shuffleOn) {
-      // 원래 순서로 복원
-      try { localStorage.removeItem(`ox_shuffle_${id}`); } catch {}
+      // 원래 순서로 복원(책갈피 모드는 '항상 섞기' 선호만 끄고, 본 세트의 저장 순서는 건드리지 않는다)
+      try { localStorage.removeItem(bookmarkMode.enabled ? "ox_bookmark_shuffle" : `ox_shuffle_${id}`); } catch {}
       setQuiz({ ...quiz, questions: original });
       setShuffleOn(false);
     } else {
-      // Fisher-Yates 셔플
-      const arr = [...original];
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      try { localStorage.setItem(`ox_shuffle_${id}`, JSON.stringify(arr.map((q) => q.id))); } catch {}
+      const arr = shuffleArray(original);
+      try {
+        if (bookmarkMode.enabled) localStorage.setItem("ox_bookmark_shuffle", "1");
+        else localStorage.setItem(`ox_shuffle_${id}`, JSON.stringify(arr.map((q) => q.id)));
+      } catch {}
       setQuiz({ ...quiz, questions: arr });
       setShuffleOn(true);
     }
@@ -427,7 +434,7 @@ export default function OxQuizSolvePage() {
     if (progressKey) {
       fetch(`/api/quiz-progress?quizKey=${encodeURIComponent(progressKey)}`, { method: "DELETE" }).catch(() => {});
     }
-  }, [quiz, shuffleOn, id, progressKey]);
+  }, [quiz, shuffleOn, id, progressKey, bookmarkMode.enabled]);
 
   // 책갈피 토글(서버는 memo 없이 오면 토글 → 해제 시 노트가 담긴 row 자체가 삭제됨).
   const toggleBookmark = useCallback(async () => {
@@ -706,7 +713,7 @@ export default function OxQuizSolvePage() {
             <SideTapToggle
               onChange={(on) => showToast(on ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 화살표나 스와이프로 넘겨요", 2400)}
             />
-            {!bookmarkMode.enabled && (
+            {(!bookmarkMode.enabled || (quiz?.questions.length ?? 0) > 1) && (
               <button
                 type="button" aria-label="문제 순서 섞기"
                 onClick={() => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); }}
@@ -1501,6 +1508,16 @@ const hRoundBtn: React.CSSProperties = {
 };
 
 // 섞기/노트/책갈피 같은 토글형 도구 버튼(활성 시 색·배경 강조).
+/** Fisher-Yates 셔플(원본은 그대로 두고 새 배열을 돌려준다) */
+function shuffleArray<T>(src: T[]): T[] {
+  const arr = [...src];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function hToolBtn(active: boolean, tint: string, bg: string): React.CSSProperties {
   return {
     display: "inline-flex", alignItems: "center", justifyContent: "center",

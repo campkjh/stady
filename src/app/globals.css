@@ -1718,3 +1718,6 @@ textarea.mdl-field { height: auto; padding: 16px 18px; line-height: 1.5; resize:
 /* 스타디 로고 — 라이트/다크 판 전환(StadyLogo) */
 [data-theme="dark"] .stady-logo .sl-light { display: none !important; }
 [data-theme="dark"] .stady-logo .sl-dark { display: block !important; }
+
+/* 하단 네비를 숨기는 화면(커뮤니티 글 상세·글쓰기)은 네비 자리로 비워 둔 아래 여백도 없앤다 */
+body.nav-hidden .main-content-wrap { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }

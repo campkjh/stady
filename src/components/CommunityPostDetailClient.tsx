@@ -633,8 +633,27 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         )}
 
         {loading && !post ? (
-          <div style={panelStyle}>
-            <p style={{ margin: 0, color: "var(--c-text-3)", fontSize: 14 }}>게시글을 불러오는 중...</p>
+          // 글을 불러오는 동안 '불러오는 중...' 문구 대신 글 모양의 스켈레톤(분류·시간 / 제목 / 본문 줄 / 사진 / 공감·댓글 줄)을 보여 준다.
+          <div style={panelStyle} className="cpd-sk" role="status" aria-busy="true" aria-label="게시글을 불러오는 중">
+            <div className="cpd-sk-row">
+              <span className="cpd-sk-b" style={{ width: 74, height: 30, borderRadius: 999 }} />
+              <span className="cpd-sk-b" style={{ width: 54, height: 14 }} />
+            </div>
+            <span className="cpd-sk-b" style={{ width: "78%", height: 24, marginTop: 18 }} />
+            <span className="cpd-sk-b" style={{ width: "52%", height: 24, marginTop: 8 }} />
+            <div className="cpd-sk-row" style={{ justifyContent: "flex-start", gap: 8, marginTop: 18 }}>
+              <span className="cpd-sk-b" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+              <span className="cpd-sk-b" style={{ width: 84, height: 14 }} />
+            </div>
+            <span className="cpd-sk-b" style={{ width: "100%", height: 15, marginTop: 20 }} />
+            <span className="cpd-sk-b" style={{ width: "94%", height: 15, marginTop: 10 }} />
+            <span className="cpd-sk-b" style={{ width: "100%", height: 15, marginTop: 10 }} />
+            <span className="cpd-sk-b" style={{ width: "62%", height: 15, marginTop: 10 }} />
+            <span className="cpd-sk-b" style={{ width: "100%", height: 180, marginTop: 20, borderRadius: 14 }} />
+            <div className="cpd-sk-row" style={{ justifyContent: "flex-start", gap: 10, marginTop: 20 }}>
+              <span className="cpd-sk-b" style={{ width: 70, height: 34, borderRadius: 999 }} />
+              <span className="cpd-sk-b" style={{ width: 70, height: 34, borderRadius: 999 }} />
+            </div>
           </div>
         ) : post ? (
           <>
@@ -1108,6 +1127,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         )}
       </div>
       <style>{`
+        /* 글 불러오는 중 스켈레톤 — 천천히 숨 쉬듯 밝아졌다 어두워진다 */
+        .cpd-sk-row { display: flex; align-items: center; justify-content: space-between; }
+        .cpd-sk-b { display: block; border-radius: 8px; background: var(--c-bg-muted-6, rgba(0,0,0,0.06)); animation: cpdSkPulse 1.4s ease-in-out infinite; }
+        @keyframes cpdSkPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+        @media (prefers-reduced-motion: reduce) { .cpd-sk-b { animation: none; } }
         .community-detail-page {
           min-height: 100vh;
           background: var(--c-bg);

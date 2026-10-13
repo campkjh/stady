@@ -294,7 +294,7 @@ export default function MyPage() {
         .mpx-ava {
           width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
           display: flex; align-items: center; justify-content: center;
-          background: linear-gradient(135deg, #7DB8FF, #3182F6); color: #fff; font-size: 22px; font-weight: 700;
+          background: #3182F6; color: #fff; font-size: 22px; font-weight: 700;
         }
         .mpx-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .mpx-who { min-width: 0; flex: 1; }
