@@ -67,51 +67,62 @@ export default function NoticeHomeCard() {
   const img = notice.imageUrls?.[0];
 
   return (
-    <div style={{ padding: "0 10px 8px" }}>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={open}
-        className="press"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: 10,
-          borderRadius: 14,
-          background: "var(--c-bg-soft-11)",
-          border: "1px solid var(--c-bg-muted-7)",
-          cursor: "pointer",
-        }}
-      >
-        {img && (
+    <div style={{ padding: "2px 10px 10px" }}>
+      {/* 홈 말풍선(새 문제집 말풍선)과 같은 유리 말풍선 — 꼬리만 없다. */}
+      <div role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }} className="press nhc" aria-label={`공지: ${notice.title}`}>
+        {img ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={img}
-            alt=""
-            style={{ width: 46, height: 46, borderRadius: 10, objectFit: "cover", flexShrink: 0, display: "block" }}
-          />
+          <img src={img} alt="" className="nhc-thumb" />
+        ) : (
+          <span className="nhc-ic" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/mp-notice.svg" alt="" />
+          </span>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-brand)", background: "var(--c-brand-soft-9)", borderRadius: 5, padding: "1px 5px", flexShrink: 0 }}>공지</span>
-            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--c-text-b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {notice.title}
-            </p>
-          </div>
-          <p style={{ margin: 0, fontSize: 12, color: "var(--c-text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {notice.body}
-          </p>
+        <div className="nhc-text">
+          <p className="nhc-title">{notice.title}</p>
+          <p className="nhc-sub">{notice.body.replace(/\s+/g, " ").trim()}</p>
         </div>
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label="닫기"
-          style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 999, border: "none", background: "none", color: "var(--c-text-5)", fontSize: 18, lineHeight: 1, cursor: "pointer" }}
-        >
-          ×
+        <button type="button" onClick={dismiss} aria-label="닫기" className="nhc-x">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true">
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
         </button>
       </div>
+
+      <style>{`
+        .nhc {
+          position: relative; display: flex; align-items: center; gap: 13px; padding: 14px 16px 14px 14px; border-radius: 26px; cursor: pointer;
+          background: linear-gradient(180deg, rgba(250, 252, 255, 0.82) 0%, #FEFEFE 55%);
+          -webkit-backdrop-filter: blur(12px) saturate(1.2); backdrop-filter: blur(12px) saturate(1.2);
+          border: 1px solid rgba(40, 70, 130, 0.07);
+          box-shadow: 0 14px 30px -12px rgba(22, 38, 72, 0.16), 0 4px 14px -6px rgba(22, 38, 72, 0.07);
+          -webkit-tap-highlight-color: transparent; outline: none;
+          animation: nhcIn 0.6s cubic-bezier(0.2, 1.25, 0.3, 1) backwards;
+        }
+        [data-theme="dark"] .nhc { background: #2A2A33; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6); }
+        .nhc-ic { width: 40px; height: 40px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(55, 135, 255, 0.1); animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
+        .nhc-ic img { width: 24px; height: 24px; display: block; }
+        .nhc-thumb { width: 44px; height: 44px; border-radius: 14px; object-fit: cover; flex-shrink: 0; display: block; animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
+        .nhc-text { flex: 1; min-width: 0; animation: nhcFade 0.5s ease 0.2s backwards; }
+        .nhc-title {
+          margin: 0; width: fit-content; max-width: 100%; font-size: 16px; font-weight: 700; line-height: 1.4; letter-spacing: -0.3px;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          background: linear-gradient(90deg, #2F6FE0 0%, #254692 22%, #1C2943 42%, #191F28 55%, #191F28 100%);
+          -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+        }
+        [data-theme="dark"] .nhc-title { background: linear-gradient(90deg, #7FB0FF 0%, #9CC3FF 30%, #E7EAF0 50%, #E7EAF0 100%); -webkit-background-clip: text; background-clip: text; }
+        .nhc-sub { margin: 3px 0 0; font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: -0.2px; color: #6B7684; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        [data-theme="dark"] .nhc-sub { color: #A7ACB6; }
+        .nhc-x { flex-shrink: 0; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #E0E3E9; color: #9398A3; cursor: pointer; position: relative; }
+        .nhc-x::before { content: ""; position: absolute; top: -10px; right: -10px; bottom: -10px; left: -10px; }
+        [data-theme="dark"] .nhc-x { background: #3A3B45; color: #A7ACB6; }
+        @keyframes nhcIn { from { opacity: 0; transform: translateY(-10px) scale(0.94); } to { opacity: 1; transform: none; } }
+        @keyframes nhcPop { from { opacity: 0; transform: scale(0.5) rotate(-18deg); } to { opacity: 1; transform: none; } }
+        @keyframes nhcFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .nhc, .nhc-ic, .nhc-thumb, .nhc-text { animation: none; } }
+      `}</style>
     </div>
   );
 }
