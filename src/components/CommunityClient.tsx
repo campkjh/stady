@@ -924,7 +924,7 @@ export default function CommunityClient() {
                       {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{post.groupName.replace(/게시판$/, "") || post.groupName}</span>}
                     </div>
                     <div className="tc-who">
-                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: `linear-gradient(90deg, var(--c-text) 45%, ${boardTone(post.groupName).to} 100%)` }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
+                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: `linear-gradient(90deg, ${boardTone(post.groupName).to} 0%, var(--c-text) 55%)` }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
                         {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
                       </p>
@@ -2487,7 +2487,7 @@ function CommunityStyles() {
         opacity: 0.6;
         cursor: default;
       }
-      /* 닉네임 끝이 게시판 색으로 번지는 글자 그라데이션 */
+      /* 닉네임 앞(태그와 가까운 쪽)이 게시판 색에서 시작해 본래 글자색으로 풀리는 글자 그라데이션 */
       .tc-name {
         min-width: 0;
         overflow-wrap: anywhere;
