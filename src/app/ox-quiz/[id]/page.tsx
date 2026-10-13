@@ -768,9 +768,10 @@ export default function OxQuizSolvePage() {
         {/* 3행: 필터 칩(가운데 정렬) */}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
           {[
-            { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "var(--c-text-2)", bg: "var(--c-bg-muted-6)" },
-            { key: "correct" as TabFilter, label: "정답", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "var(--c-brand-deep)", bg: "var(--c-brand-soft-6)" },
-            { key: "wrong" as TabFilter, label: "오답", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "var(--c-danger-l)", bg: "var(--c-danger-soft-5)" },
+            // 칩 색은 테두리가 아니라 이모지 색에서 가져온다: 행성=보라, 정답(웃는 얼굴)=노랑, 오답(꼬깔)=빨강.
+          { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-all-planet.svg", count: answers.size, tint: "#6f61ff", onBg: "rgba(100,85,253,0.16)", offBg: "rgba(100,85,253,0.07)" },
+          { key: "correct" as TabFilter, label: "정답", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "#c98a00", onBg: "rgba(255,200,77,0.32)", offBg: "rgba(255,200,77,0.14)" },
+          { key: "wrong" as TabFilter, label: "오답", icon: "/icons/emoji-wrong-cone.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "#ee4a58", onBg: "rgba(237,68,82,0.15)", offBg: "rgba(237,68,82,0.07)" },
           ].map((tab) => {
             const on = tabFilter === tab.key;
             return (
@@ -781,9 +782,9 @@ export default function OxQuizSolvePage() {
                 className="press"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  height: 34, padding: "0 12px 0 9px", borderRadius: 999, cursor: "pointer",
-                  border: `1px solid ${on ? "transparent" : "var(--c-bg-muted-8)"}`,
-                  background: on ? tab.bg : "var(--c-bg)",
+                  height: 46, padding: "0 16px 0 12px", borderRadius: 999, cursor: "pointer",
+                  border: "none",
+                  background: on ? tab.onBg : tab.offBg,
                   color: on ? tab.tint : "var(--c-text-4b)",
                   fontSize: 14, fontWeight: 700, letterSpacing: "-0.3px",
                   transition: "background 0.16s ease, color 0.16s ease, opacity 0.16s ease",
@@ -793,7 +794,7 @@ export default function OxQuizSolvePage() {
                 <img
                   src={tab.icon}
                   alt=""
-                  style={{ width: 18, height: 18, display: "block", opacity: on ? 1 : 0.45, transition: "opacity 0.16s ease" }}
+                  style={{ width: 24, height: 24, display: "block", opacity: on ? 1 : 0.7, transition: "opacity 0.16s ease" }}
                 />
                 {tab.label}
                 <span style={{ fontSize: 14, fontWeight: 700, opacity: on ? 0.85 : 0.7, fontVariantNumeric: "tabular-nums" }}>
