@@ -720,7 +720,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
                 <div className="cpd-who">
                   <p className="cpd-name-row">
-                    <span className="cpd-name" style={{ backgroundImage: `linear-gradient(90deg, ${boardTone(post.groupName).to} 0%, var(--c-text) 55%)` }}>{post.nickname}</span>
+                    <span className="cpd-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span>
                     <TierBadge tier={post.authorTier} />
                     <KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} />
                   </p>

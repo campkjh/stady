@@ -927,7 +927,7 @@ export default function CommunityClient() {
                       {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{boardShortName(post.groupName)}</span>}
                     </div>
                     <div className="tc-who">
-                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: `linear-gradient(90deg, ${boardTone(post.groupName).to} 0%, var(--c-text) 55%)` }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
+                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
                         {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
                       </p>
@@ -2432,6 +2432,15 @@ function CommunityStyles() {
         flex: 1;
       }
       /* 아바타 오른쪽 아래에 겹치는 파란 알약(토스 '주주' 자리 = 게시판 이름) */
+      /* 닉네임 글자에 게시판 색 그라데이션(글자 모양으로만 칠한다) */
+      .tc-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+      }
       .tc-role {
         position: absolute;
         right: -8px;
