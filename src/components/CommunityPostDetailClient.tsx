@@ -176,13 +176,14 @@ function OXMark({ o, size = 22 }: { o: boolean; size?: number }) {
 }
 
 // 이모지 대신 아이콘셋(public/icons/community/*.svg)으로 통일한다.
-const REACTIONS: { key: string; icon: string; label: string }[] = [
-  { key: "heart", icon: "heart-red", label: "좋아요" },
-  { key: "sad", icon: "emoji-cry", label: "슬퍼요" },
-  { key: "laugh", icon: "emoji-grin", label: "웃겨요" },
-  { key: "smile", icon: "emoji-ok", label: "좋아요" },
-  { key: "devil", icon: "emoji-fire", label: "화나요" },
-  { key: "skull", icon: "emoji-cold", label: "충격" },
+// emoji = 댓글 입력창 위 줄에서 눌렀을 때 입력칸에 들어가는 글자(아이콘 그림과 같은 모양).
+const REACTIONS: { key: string; icon: string; label: string; emoji: string }[] = [
+  { key: "heart", icon: "heart-red", label: "좋아요", emoji: "❤️" },
+  { key: "sad", icon: "emoji-cry", label: "슬퍼요", emoji: "😢" },
+  { key: "laugh", icon: "emoji-grin", label: "웃겨요", emoji: "😁" },
+  { key: "smile", icon: "emoji-ok", label: "좋아요", emoji: "👌" },
+  { key: "devil", icon: "emoji-fire", label: "화나요", emoji: "🔥" },
+  { key: "skull", icon: "emoji-cold", label: "충격", emoji: "🥶" },
 ];
 
 interface CommunityPostDetailClientProps {
@@ -433,6 +434,26 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     } finally {
       setCommentPosting(false);
     }
+  }
+
+  // 이모지 줄을 누르면 입력칸의 커서 자리에 넣는다(키보드는 내려가지 않게 유지).
+  function insertEmoji(emoji: string) {
+    const input = composerRef.current;
+    const start = input?.selectionStart ?? comment.length;
+    const end = input?.selectionEnd ?? comment.length;
+    const next = comment.slice(0, start) + emoji + comment.slice(end);
+    setComment(next);
+    const caret = start + emoji.length;
+    requestAnimationFrame(() => {
+      const el = composerRef.current;
+      if (!el) return;
+      el.focus();
+      try {
+        el.setSelectionRange(caret, caret);
+      } catch {
+        /* 일부 WebView 는 지원 안 함 */
+      }
+    });
   }
 
   function startReply(target: CommunityComment) {
@@ -1147,10 +1168,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     <button
                       key={r.key}
                       type="button"
-                      className={`cpd-react${post.myReaction === r.key ? " is-on" : ""}`}
-                      aria-label={r.label}
-                      aria-pressed={post.myReaction === r.key}
-                      onClick={() => react(r.key)}
+                      className="cpd-react"
+                      aria-label={`${r.emoji} 넣기`}
+                      // 누르는 순간 입력칸이 포커스를 잃어 키보드가 내려가지 않게 한다.
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => insertEmoji(r.emoji)}
                     >
                       <ReactionIcon name={r.icon} size={30} />
                     </button>
@@ -1353,7 +1375,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-react-bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; }
         .cpd-react { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: none; border-radius: 14px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease; }
         .cpd-react:active { transform: scale(0.86); }
-        .cpd-react.is-on { background: var(--c-bg-muted-2, #f2f4f6); transform: scale(1.08); }
         .cpd-compose { display: flex; align-items: center; gap: 10px; }
         .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
         .cpd-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
