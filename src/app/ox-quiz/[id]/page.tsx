@@ -638,7 +638,6 @@ export default function OxQuizSolvePage() {
           paddingTop: "env(safe-area-inset-top, 0px)",
           background: "var(--c-bg-a92)",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-          borderBottom: "1px solid var(--c-bg-muted-8)",
           boxShadow: "0 1px 12px rgba(15,23,42,0.04)",
         }}
       >
