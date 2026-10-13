@@ -10,10 +10,13 @@ export default function FollowButton({
   following,
   busy = false,
   onToggle,
+  block = false,
 }: {
   following: boolean;
   busy?: boolean;
   onToggle: () => void;
+  /** 한 줄 가득 차는 큰 버튼(프로필 화면) */
+  block?: boolean;
 }) {
   const [pop, setPop] = useState(false);
   function handle(event: MouseEvent<HTMLButtonElement>) {
@@ -27,7 +30,7 @@ export default function FollowButton({
   return (
     <button
       type="button"
-      className={`fbtn${following ? " is-on" : ""}${pop ? " is-pop" : ""}`}
+      className={`fbtn${following ? " is-on" : ""}${pop ? " is-pop" : ""}${block ? " is-block" : ""}`}
       aria-pressed={following}
       disabled={busy}
       onClick={handle}

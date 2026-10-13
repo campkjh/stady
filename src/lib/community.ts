@@ -2408,6 +2408,72 @@ export async function getCommunityFollowInfo(
   return info;
 }
 
+/** 유저 프로필 화면용 — 기본 정보·팔로워/팔로잉 수·최근 글/댓글(가볍게 30건씩). */
+export async function getCommunityUserProfile(userId: string, viewerId?: string | null) {
+  await ensureCommunityTables();
+  const users = await prisma.$queryRawUnsafe<{ id: string; nickname: string | null; has_avatar: boolean }[]>(
+    `SELECT "id", "nickname", ("avatar" IS NOT NULL) AS "has_avatar" FROM "User" WHERE "id" = $1`,
+    userId
+  );
+  const user = users[0];
+  if (!user) return null;
+
+  const [followers, following] = await Promise.all([
+    prisma.$queryRawUnsafe<{ c: number }[]>(`SELECT COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "followee_id" = $1`, userId),
+    prisma.$queryRawUnsafe<{ c: number }[]>(`SELECT COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "follower_id" = $1`, userId),
+  ]);
+  let isFollowing = false;
+  let isBlocked = false;
+  if (viewerId && viewerId !== userId) {
+    const [f, b] = await Promise.all([
+      prisma.$queryRawUnsafe<{ x: number }[]>(`SELECT 1 AS "x" FROM "CommunityFollow" WHERE "follower_id" = $1 AND "followee_id" = $2`, viewerId, userId),
+      prisma.$queryRawUnsafe<{ x: number }[]>(`SELECT 1 AS "x" FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`, viewerId, userId),
+    ]);
+    isFollowing = f.length > 0;
+    isBlocked = b.length > 0;
+  }
+
+  // 내가 차단한 사람이면 활동은 내 화면에서 숨긴다(차단 해제 판단은 마이페이지·이 화면의 버튼으로).
+  const hide = isBlocked;
+  const posts = hide
+    ? []
+    : await prisma.$queryRawUnsafe<
+        { id: string; title: string; content: string; created_at: Date; group_name: string; like_count: number; comment_count: number }[]
+      >(
+        `SELECT p."id", p."title", p."content", p."created_at", g."name" AS "group_name",
+                (SELECT COUNT(*)::int FROM "CommunityPostLike" l WHERE l."post_id" = p."id") AS "like_count",
+                (SELECT COUNT(*)::int FROM "CommunityComment" c WHERE c."post_id" = p."id" AND c."is_active" = true) AS "comment_count"
+         FROM "CommunityPost" p
+         JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id"
+         WHERE p."user_id" = $1 AND p."is_active" = true AND g."is_active" = true
+         ORDER BY p."created_at" DESC LIMIT 30`,
+        userId
+      );
+  const comments = hide
+    ? []
+    : await prisma.$queryRawUnsafe<
+        { id: string; post_id: string; content: string; created_at: Date; post_title: string | null; like_count: number }[]
+      >(
+        `SELECT c."id", c."post_id", c."content", c."created_at", p."title" AS "post_title",
+                (SELECT COUNT(*)::int FROM "CommunityCommentLike" l WHERE l."comment_id" = c."id") AS "like_count"
+         FROM "CommunityComment" c
+         JOIN "CommunityPost" p ON p."id" = c."post_id" AND p."is_active" = true
+         WHERE c."user_id" = $1 AND c."is_active" = true
+         ORDER BY c."created_at" DESC LIMIT 30`,
+        userId
+      );
+
+  return {
+    user,
+    followerCount: followers[0]?.c ?? 0,
+    followingCount: following[0]?.c ?? 0,
+    isFollowing,
+    isBlocked,
+    posts,
+    comments,
+  };
+}
+
 /** 내가 차단한 사용자 목록(해제 화면용) + 그 사람 때문에 숨겨진 글·댓글 수. */
 export async function listCommunityBlocks(blockerId: string) {
   await ensureCommunityTables();

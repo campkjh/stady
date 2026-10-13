@@ -627,6 +627,13 @@ export default function CommunityClient() {
             .map((p) => ({ ...p, topComment: { id: "mine-" + p.id, nickname: "내 댓글", content: myCommentByPost!.get(p.id) || "", likeCount: 0, pinned: false } }))
         : posts;
 
+  // 글 카드의 아바타·이름을 누르면 그 사람 프로필로(카드 자체의 '상세 열기'와 겹치지 않게 전파를 막는다).
+  function openProfile(event: { stopPropagation: () => void }, userId?: string | null) {
+    if (!userId) return;
+    event.stopPropagation();
+    router.push(`/community/user/${userId}`);
+  }
+
   function openPost(postId: string) {
     // 넓은 화면에서는 페이지를 갈아엎지 않고 우측 패널로 연다 — 목록 자리를 지킨 채
     // 글을 훑어볼 수 있다. 좁은 화면은 예전처럼 상세 페이지로 이동한다.
@@ -807,7 +814,7 @@ export default function CommunityClient() {
                   }}
                 >
                   <div className="community-post-head">
-                    <div className="tc-ava-wrap">
+                    <div className="tc-ava-wrap is-link" onClick={(event) => openProfile(event, post.userId)}>
                       <div className="community-avatar" aria-hidden="true">
                         {post.authorIsAdmin ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -822,7 +829,7 @@ export default function CommunityClient() {
                       </div>
                       {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{boardShortName(post.groupName)}</span>}
                     </div>
-                    <div className="tc-who">
+                    <div className="tc-who is-link" onClick={(event) => openProfile(event, post.userId)}>
                       <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
                         {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
@@ -1690,7 +1697,9 @@ function CommentRow({
   onReply: (c: FeedComment) => void;
   onBlocked: () => void;
 }) {
+  const router = useRouter();
   const mine = !!meId && c.userId === meId;
+  const goProfile = () => { if (c.userId) router.push(`/community/user/${c.userId}`); };
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(c.content);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -1720,7 +1729,7 @@ function CommentRow({
 
   return (
     <div className={`ccs-c${depth > 0 ? " is-reply" : ""}${activeReplyId === c.id ? " is-active" : ""}`}>
-      <span className={`ccs-av${depth > 0 ? " is-sm" : ""}`} aria-hidden="true">
+      <span className={`ccs-av${depth > 0 ? " is-sm" : ""}`} aria-hidden="true" onClick={goProfile} style={{ cursor: c.userId ? "pointer" : undefined }}>
         {c.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={c.avatar} alt="" referrerPolicy="no-referrer" />
@@ -1730,7 +1739,7 @@ function CommentRow({
       </span>
       <div className="ccs-c-main">
         <div className="ccs-item">
-          <span className="ccs-name">{c.nickname}</span>
+          <span className="ccs-name" onClick={goProfile} style={{ cursor: c.userId ? "pointer" : undefined }}>{c.nickname}</span>
           <span className="ccs-time" title={formatExactTime(c.createdAt)}>· {formatRelativeTime(c.createdAt)}</span>
         </div>
         {editing ? (
@@ -2676,6 +2685,7 @@ function CommunityStyles() {
         min-width: 0;
         flex: 1;
       }
+      .tc-ava-wrap.is-link, .tc-who.is-link { cursor: pointer; }
       /* 아바타 오른쪽 아래에 겹치는 파란 알약(토스 '주주' 자리 = 게시판 이름) */
       /* 닉네임 글자에 게시판 색 그라데이션(글자 모양으로만 칠한다) */
       .tc-name {

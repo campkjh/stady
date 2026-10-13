@@ -745,7 +745,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           <>
             <article className="community-detail-panel cpd-post">
               <div className="cpd-head">
-                <div className="cpd-ava-wrap">
+                <div className="cpd-ava-wrap is-link" onClick={() => post.userId && router.push(`/community/user/${post.userId}`)}>
                   <MiniAvatar nickname={post.nickname} avatar={post.avatar} size={52} />
                   {post.groupName && (
                     <span className="cpd-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>
@@ -753,7 +753,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     </span>
                   )}
                 </div>
-                <div className="cpd-who">
+                <div className="cpd-who is-link" onClick={() => post.userId && router.push(`/community/user/${post.userId}`)}>
                   <p className="cpd-name-row">
                     <span className="cpd-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span>
                     <TierBadge tier={post.authorTier} />
@@ -1357,6 +1357,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-ava-wrap { position: relative; flex: none; width: 52px; height: 52px; }
         .cpd-role { position: absolute; right: -8px; bottom: -3px; max-width: 64px; height: 20px; padding: 0 7px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 20px; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 0 0 2px var(--c-bg, #fff); }
         .cpd-who { min-width: 0; flex: 1; }
+        .cpd-ava-wrap.is-link, .cpd-who.is-link { cursor: pointer; }
         .cpd-name-row { margin: 0; display: flex; align-items: center; flex-wrap: wrap; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
         .cpd-name { min-width: 0; overflow-wrap: anywhere; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
         .cpd-meta { margin: 3px 0 0; color: var(--c-text-4c); font-size: 14.5px; font-weight: 500; letter-spacing: -0.2px; }
@@ -1500,11 +1501,15 @@ function CommentItem({
   onBlocked,
   depth = 0,
 }: CommentItemProps) {
+  const router = useRouter();
+  const goProfile = () => { if (comment.userId) router.push(`/community/user/${comment.userId}`); };
   const isEditing = editingCommentId === comment.id;
   const rowClass = `cpd-c${depth > 0 ? " is-reply" : ""}${isPinned ? " is-pinned" : ""}${activeReplyId === comment.id ? " is-active" : ""}`;
   return (
     <div className={rowClass}>
-      <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={depth > 0 ? 34 : 44} />
+      <span onClick={goProfile} style={{ cursor: comment.userId ? "pointer" : undefined, flexShrink: 0, display: "inline-flex", alignSelf: "flex-start" }}>
+        <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={depth > 0 ? 34 : 44} />
+      </span>
       <div className="cpd-c-main">
         {isPinned && (
           <div className="cpd-c-pin">
@@ -1514,7 +1519,7 @@ function CommentItem({
           </div>
         )}
         <div className="cpd-c-head">
-          <strong className="cpd-c-name">{comment.nickname}</strong>
+          <strong className="cpd-c-name" onClick={goProfile} style={{ cursor: comment.userId ? "pointer" : undefined }}>{comment.nickname}</strong>
           <TierBadge tier={comment.authorTier} />
           <KingBadges answer={comment.authorIsAnswerKing} pick={comment.authorIsPickKing} />
           <span className="cpd-c-time" title={formatExactTime(comment.createdAt)}>· {formatRelativeTime(comment.createdAt)}</span>
