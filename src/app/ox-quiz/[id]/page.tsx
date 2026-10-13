@@ -10,7 +10,9 @@ import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
-import SideTapToggle from "@/components/SideTapToggle";
+import QuizToolbox from "@/components/QuizToolbox";
+import { useSideTap } from "@/lib/useSideTap";
+import { TapIcon } from "@/components/icons/ToolIcons";
 import { ShuffleIcon, MemoIcon, BookmarkFillIcon, BookmarkLineIcon } from "@/components/icons/ToolIcons";
 
 interface OxQuestion {
@@ -85,6 +87,7 @@ export default function OxQuizSolvePage() {
   const originalQuestionsRef = useRef<OxQuestion[] | null>(null);
   // 퀴즈 노트(나만 보는 메모, 저장 시 해당 문제가 책갈피에 추가됨). 끄면 버튼 숨김.
   const [noteEnabled, setNoteEnabled] = useState(true);
+  const [sideTapOn, setSideTapOn] = useSideTap();
   const [noteOpen, setNoteOpen] = useState(false);
   // 메모 시트가 열려 있을 때만 키보드 높이를 잰다(그만큼 시트를 띄운다).
   const noteOverlayRef = useRef<HTMLDivElement>(null);
@@ -641,7 +644,7 @@ export default function OxQuizSolvePage() {
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
         }}
       >
-        {/* 1행: 나가기 · 제목/소분류 · 타이머 · 목록 */}
+        {/* 1행: 나가기 · 목록 (타이머·섞기·메모·북마크·양옆탭은 떠다니는 툴박스로) */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 6px" }}>
           <button
             type="button"
@@ -656,7 +659,6 @@ export default function OxQuizSolvePage() {
           </button>
           {/* 제목은 헤더에서 뺐다 — 남는 자리는 비워 타이머·목록 버튼을 오른쪽에 둔다 */}
           <div style={{ flex: 1, minWidth: 0 }} />
-          <QuizTimer startAt={startTime} paused={submitted} />
           <button
             type="button"
             aria-label="문제 목록"
@@ -670,56 +672,6 @@ export default function OxQuizSolvePage() {
               <line x1="4" y1="17" x2="20" y2="17" />
             </svg>
           </button>
-        </div>
-
-        {/* 2행: 섞기/노트/책갈피(오른쪽 정렬) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 8px" }}>
-          {/* 이전/다음·N/M 은 헤더에서 뺐다(페이지 번호는 소제목 줄에 있다) */}
-          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
-            <SideTapToggle
-              onChange={(on) => showToast(on ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 화살표나 스와이프로 넘겨요", 2400)}
-            />
-            {(!bookmarkMode.enabled || (quiz?.questions.length ?? 0) > 1) && (
-              <button
-                type="button" aria-label="문제 순서 섞기"
-                onClick={() => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); }}
-                className="press" style={hToolBtn(shuffleOn, "var(--c-brand)", "var(--c-brand-soft-3)")}
-              >
-                <ShuffleIcon size={20} />
-              </button>
-            )}
-            {noteEnabled && (
-              <button
-                type="button" aria-label="퀴즈 노트"
-                onClick={() => {
-                  if (!currentQuestion) return;
-                  setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
-                  setNoteOpen(true);
-                }}
-                className="press"
-                style={hToolBtn(
-                  !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
-                  "var(--c-warn-c)", "var(--c-warn-soft-3)"
-                )}
-              >
-                <MemoIcon size={20} />
-              </button>
-            )}
-            <button
-              type="button" aria-label="책갈피"
-              onClick={() => {
-                if (!currentQuestion) return;
-                if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
-                  setShowNoteLossConfirm(true);
-                  return;
-                }
-                toggleBookmark();
-              }}
-              className="press" style={hToolBtn(isBookmarked, "var(--c-brand)", "var(--c-brand-soft-3)")}
-            >
-              {isBookmarked ? <BookmarkFillIcon size={20} /> : <BookmarkLineIcon size={20} />}
-            </button>
-          </span>
         </div>
 
         {/* 3행: 필터 칩(가운데 정렬) */}
@@ -762,6 +714,61 @@ export default function OxQuizSolvePage() {
           })}
         </div>
       </header>
+
+      {/* 떠다니는 글래스 툴박스 — 시계(타이머)를 누르면 도구가 펼쳐지고, 끌어서 위치를 옮긴다 */}
+      <QuizToolbox
+        timer={<QuizTimer startAt={startTime} paused={submitted} bare />}
+        items={[
+          {
+            key: "sidetap",
+            label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
+            icon: <SideTapIcon on={sideTapOn} />,
+            active: sideTapOn,
+            onClick: () => {
+              const next = !sideTapOn;
+              setSideTapOn(next);
+              showToast(next ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 스와이프로 넘겨요", 2400);
+            },
+          },
+          ...(!bookmarkMode.enabled || (quiz?.questions.length ?? 0) > 1
+            ? [{
+                key: "shuffle",
+                label: shuffleOn ? "원래 순서로" : "문제 섞기",
+                icon: <ShuffleIcon size={22} />,
+                active: shuffleOn,
+                onClick: () => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); },
+              }]
+            : []),
+          ...(noteEnabled
+            ? [{
+                key: "note",
+                label: "퀴즈 노트",
+                icon: <MemoIcon size={22} />,
+                active: !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
+                tint: "var(--c-warn-c)",
+                onClick: () => {
+                  if (!currentQuestion) return;
+                  setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
+                  setNoteOpen(true);
+                },
+              }]
+            : []),
+          {
+            key: "bookmark",
+            label: isBookmarked ? "책갈피 해제" : "책갈피",
+            icon: isBookmarked ? <BookmarkFillIcon size={22} /> : <BookmarkLineIcon size={22} />,
+            active: isBookmarked,
+            onClick: () => {
+              if (!currentQuestion) return;
+              if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
+                setShowNoteLossConfirm(true);
+                return;
+              }
+              toggleBookmark();
+            },
+          },
+        ]}
+      />
 
       <SideTapNavigation
         onPrev={goPrev}
@@ -1466,6 +1473,21 @@ function shuffleArray<T>(src: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+// 양옆 탭 아이콘(손가락) — 꺼짐일 땐 빗금
+function SideTapIcon({ on }: { on: boolean }) {
+  return (
+    <span style={{ position: "relative", display: "inline-flex" }}>
+      <TapIcon size={22} />
+      {!on && (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0 }}>
+          <line x1="4" y1="3" x2="20" y2="21" stroke="rgba(255,255,255,0.9)" strokeWidth="5" />
+          <line x1="4" y1="3" x2="20" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      )}
+    </span>
+  );
 }
 
 function hToolBtn(active: boolean, tint: string, bg: string): React.CSSProperties {

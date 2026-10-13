@@ -12,7 +12,7 @@ function fmt(sec: number) {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export default function QuizTimer({ startAt, paused = false }: { startAt: number; paused?: boolean }) {
+export default function QuizTimer({ startAt, paused = false, bare = false }: { startAt: number; paused?: boolean; /** 배경·높이 없이 글자만(툴박스 안에 넣을 때) */ bare?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -32,10 +32,10 @@ export default function QuizTimer({ startAt, paused = false }: { startAt: number
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        height: 30,
-        padding: "0 11px 0 9px",
+        height: bare ? "auto" : 30,
+        padding: bare ? 0 : "0 11px 0 9px",
         borderRadius: 999,
-        background: "var(--c-bg-soft-13)",
+        background: bare ? "transparent" : "var(--c-bg-soft-13)",
         color: "var(--c-text-2)",
         fontSize: 14,
         fontWeight: 700,
