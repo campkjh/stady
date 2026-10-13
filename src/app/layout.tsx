@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
@@ -10,11 +10,6 @@ import NicknameGate from "@/components/NicknameGate";
 import InviteCodeGate from "@/components/InviteCodeGate";
 import ReferralApply from "@/components/ReferralApply";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 // viewport 는 반드시 이 export 로만 정의한다. <head> 에 <meta name="viewport"> 를 직접 쓰면
 // Next 가 기본 viewport 메타(viewport-fit 없음)를 **하나 더** 뒤에 꽂아 뒤의 것이 이기고,
@@ -42,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} h-full antialiased`}
+      className="h-full antialiased"
       style={{ WebkitTextSizeAdjust: "100%" }}
       // data-theme 은 아래 인라인 스크립트가 첫 페인트 전에 붙인다(서버 HTML 엔 없음) → 하이드레이션 경고 억제
       suppressHydrationWarning

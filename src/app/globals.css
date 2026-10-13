@@ -12,7 +12,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  /* Pretendard Variable(layout.tsx 에서 자체 호스팅 로드) → 없으면 시스템 한글 폰트 */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-primary: #3787FF;
   --color-primary-light: #E8F0FE;
@@ -529,6 +530,7 @@ html {
 body {
   overflow-x: clip;
   max-width: 100%;
+  font-family: var(--font-sans);
 }
 
 /* 폰: 500px 컬럼 고정. 아이패드 / 갤럭시탭(>=744px): 1024px까지 넓혀

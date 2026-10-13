@@ -660,17 +660,6 @@ export default function OxQuizSolvePage() {
             }}>
               {quiz.title}
             </p>
-            <p style={{
-              margin: "2px 0 0", fontSize: 14, fontWeight: 600, color: "var(--c-text-4c)", letterSpacing: "-0.3px",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {[
-                quiz.category?.name,
-                currentQuestion?.section && currentQuestion.section.trim() !== quiz.title.trim()
-                  ? currentQuestion.section
-                  : null,
-              ].filter(Boolean).join(" · ")}
-            </p>
           </div>
           <QuizTimer startAt={startTime} paused={submitted} />
           <button
@@ -827,6 +816,16 @@ export default function OxQuizSolvePage() {
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ position: "relative", zIndex: 10 }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  {/* 예전엔 헤더 제목 아래에 있던 소제목(분류) — 지문 위로 옮겼다 */}
+                  {quiz.category?.name && (
+                    <span style={{
+                      display: "inline-flex",
+                      fontSize: 12, fontWeight: 700, color: "var(--c-text-3)",
+                      background: "var(--c-bg-muted-2)", borderRadius: 6, padding: "3px 10px",
+                    }}>
+                      {quiz.category.name}
+                    </span>
+                  )}
                   {currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() && (
                     <span style={{
                       display: "inline-flex",
