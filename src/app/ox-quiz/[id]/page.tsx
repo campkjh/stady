@@ -769,8 +769,8 @@ export default function OxQuizSolvePage() {
         <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
           {[
             { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "var(--c-text-2)", bg: "var(--c-bg-muted-6)" },
-            { key: "correct" as TabFilter, label: "맞은 문제", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "var(--c-brand-deep)", bg: "var(--c-brand-soft-6)" },
-            { key: "wrong" as TabFilter, label: "틀린 문제", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "var(--c-danger-l)", bg: "var(--c-danger-soft-5)" },
+            { key: "correct" as TabFilter, label: "정답", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "var(--c-brand-deep)", bg: "var(--c-brand-soft-6)" },
+            { key: "wrong" as TabFilter, label: "오답", icon: "/icons/emoji-wrong.svg", count: Array.from(answers.values()).filter(a => !a.isCorrect).length, tint: "var(--c-danger-l)", bg: "var(--c-danger-soft-5)" },
           ].map((tab) => {
             const on = tabFilter === tab.key;
             return (
