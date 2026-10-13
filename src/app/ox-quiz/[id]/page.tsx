@@ -724,8 +724,8 @@ export default function OxQuizSolvePage() {
             label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
             icon: <SideTapIcon on={sideTapOn} />,
             active: sideTapOn,
-            tint: "#6b7684",
-            bg: "rgba(107,118,132,0.14)",
+            tint: "#03a94d",
+            bg: sideTapOn ? "rgba(3,169,77,0.14)" : "rgba(107,118,132,0.12)",
             onClick: () => {
               const next = !sideTapOn;
               setSideTapOn(next);
@@ -1486,7 +1486,7 @@ function shuffleArray<T>(src: T[]): T[] {
 function SideTapIcon({ on }: { on: boolean }) {
   return (
     <span style={{ position: "relative", display: "inline-flex" }}>
-      <TapIcon size={24} />
+      <TapIcon size={24} color={on ? "#03a94d" : "#8b95a1"} />
       {!on && (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0 }}>
           <line x1="4" y1="3" x2="20" y2="21" stroke="rgba(255,255,255,0.9)" strokeWidth="5" />
