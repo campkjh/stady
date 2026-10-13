@@ -1355,11 +1355,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-react:active { transform: scale(0.86); }
         .cpd-react.is-on { background: var(--c-bg-muted-2, #f2f4f6); transform: scale(1.08); }
         .cpd-compose { display: flex; align-items: center; gap: 10px; }
-        .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 6px 0 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
+        .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
         .cpd-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
-        .cpd-input { flex: 1; min-width: 0; height: 48px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
+        .cpd-input { flex: 1; min-width: 0; height: 36px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
         .cpd-input::placeholder { color: var(--c-text-5, #b0b8c1); }
-        .cpd-send { flex: none; width: 46px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 17px; background: #3182f6; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease; }
+        .cpd-send { flex: none; width: 48px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 18px; background: #3182f6; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease; }
         .cpd-send:active:not(:disabled) { transform: scale(0.94); }
         .cpd-send:disabled { background: #d1d6db; cursor: default; }
         .cpd-toast { position: fixed; left: 50%; bottom: calc(190px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 300; padding: 12px 18px; border-radius: 12px; background: rgba(25, 31, 40, 0.92); color: #fff; font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; }
