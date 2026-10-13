@@ -11,6 +11,7 @@ import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 import SideTapToggle from "@/components/SideTapToggle";
+import { ShuffleIcon, MemoIcon, BookmarkFillIcon, BookmarkLineIcon } from "@/components/icons/ToolIcons";
 
 interface OxQuestion {
   id: string;
@@ -653,14 +654,8 @@ export default function OxQuizSolvePage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{
-              margin: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", letterSpacing: "-0.3px",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {quiz.title}
-            </p>
-          </div>
+          {/* 제목은 헤더에서 뺐다 — 남는 자리는 비워 타이머·목록 버튼을 오른쪽에 둔다 */}
+          <div style={{ flex: 1, minWidth: 0 }} />
           <QuizTimer startAt={startTime} paused={submitted} />
           <button
             type="button"
@@ -706,13 +701,7 @@ export default function OxQuizSolvePage() {
                 onClick={() => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); }}
                 className="press" style={hToolBtn(shuffleOn, "var(--c-brand)", "var(--c-brand-soft-3)")}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 3 21 3 21 8" />
-                  <line x1="4" y1="20" x2="21" y2="3" />
-                  <polyline points="21 16 21 21 16 21" />
-                  <line x1="15" y1="15" x2="21" y2="21" />
-                  <line x1="4" y1="4" x2="9" y2="9" />
-                </svg>
+                <ShuffleIcon size={20} />
               </button>
             )}
             {noteEnabled && (
@@ -729,10 +718,7 @@ export default function OxQuizSolvePage() {
                   "var(--c-warn-c)", "var(--c-warn-soft-3)"
                 )}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
+                <MemoIcon size={20} />
               </button>
             )}
             <button
@@ -747,9 +733,7 @@ export default function OxQuizSolvePage() {
               }}
               className="press" style={hToolBtn(isBookmarked, "var(--c-brand)", "var(--c-brand-soft-3)")}
             >
-              <svg width="16" height="16" viewBox="0 0 30 30" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" />
-              </svg>
+              {isBookmarked ? <BookmarkFillIcon size={20} /> : <BookmarkLineIcon size={20} />}
             </button>
           </span>
         </div>
@@ -815,26 +799,17 @@ export default function OxQuizSolvePage() {
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ position: "relative", zIndex: 10 }}>
+                {/* 소제목(분류 · 소단원)은 태그가 아니라 글자로 풀어서 지문 위에 둔다 */}
+                {(() => {
+                  const sub = [
+                    quiz.category?.name,
+                    currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() ? currentQuestion.section : null,
+                  ].filter(Boolean).join(" · ");
+                  return sub ? (
+                    <p style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 500, color: "var(--c-text-4c)", letterSpacing: "-0.3px", lineHeight: 1.45 }}>{sub}</p>
+                  ) : null;
+                })()}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                  {/* 예전엔 헤더 제목 아래에 있던 소제목(분류) — 지문 위로 옮겼다 */}
-                  {quiz.category?.name && (
-                    <span style={{
-                      display: "inline-flex",
-                      fontSize: 12, fontWeight: 700, color: "var(--c-text-3)",
-                      background: "var(--c-bg-muted-2)", borderRadius: 6, padding: "3px 10px",
-                    }}>
-                      {quiz.category.name}
-                    </span>
-                  )}
-                  {currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() && (
-                    <span style={{
-                      display: "inline-flex",
-                      fontSize: 12, fontWeight: 700, color: "var(--c-brand)",
-                      background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "3px 10px",
-                    }}>
-                      {currentQuestion.section}
-                    </span>
-                  )}
                   {currentQuestion.examYearMonth && (
                     <span style={{
                       display: "inline-flex",

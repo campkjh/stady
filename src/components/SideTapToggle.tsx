@@ -1,6 +1,7 @@
 "use client";
 
 import { useSideTap } from "@/lib/useSideTap";
+import { TapIcon } from "@/components/icons/ToolIcons";
 
 /**
  * 퀴즈 헤더의 "양옆 화면 탭으로 넘기기" 켜기/끄기 버튼.
@@ -38,17 +39,16 @@ export default function SideTapToggle({
         transition: "background 0.16s ease, color 0.16s ease",
       }}
     >
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="16" rx="3" />
-        <polyline points="9.5 9 7 12 9.5 15" />
-        <polyline points="14.5 9 17 12 14.5 15" />
+      {/* 손가락 탭 아이콘 — 꺼짐일 땐 빗금을 얹는다 */}
+      <span style={{ position: "relative", display: "inline-flex" }}>
+        <TapIcon size={20} />
         {!on && (
-          <>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0 }}>
             <line x1="4" y1="3" x2="20" y2="21" stroke="var(--c-bg)" strokeWidth="5" />
-            <line x1="4" y1="3" x2="20" y2="21" />
-          </>
+            <line x1="4" y1="3" x2="20" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         )}
-      </svg>
+      </span>
     </button>
   );
 }

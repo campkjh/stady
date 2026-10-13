@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ClockIcon } from "@/components/icons/ToolIcons";
 
 // 퀴즈 경과 시간. 자체 틱으로 이 부분만 리렌더되므로 문제 화면 전체가 초당 리렌더되지 않는다.
 // 벽시계(startAt) 기준이라 앱을 백그라운드로 보냈다 와도 정확하다.
@@ -43,11 +44,7 @@ export default function QuizTimer({ startAt, paused = false }: { startAt: number
         flexShrink: 0,
       }}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4b)" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-        <circle cx="12" cy="13" r="8" />
-        <path d="M12 9v4l2.5 1.5" />
-        <path d="M9 2h6" />
-      </svg>
+      <span style={{ display: "inline-flex", color: "var(--c-text-4b)" }}><ClockIcon size={16} /></span>
       {fmt(elapsed)}
     </span>
   );

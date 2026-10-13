@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { BookmarkFillIcon } from "@/components/icons/ToolIcons";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
@@ -614,9 +615,7 @@ export default function VocabQuizSolvePage() {
                   transition: "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-                  <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z" fill="currentColor"/>
-                </svg>
+                <BookmarkFillIcon size={16} />
                 책갈피
               </button>
             </div>

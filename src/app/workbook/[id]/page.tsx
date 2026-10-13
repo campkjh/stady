@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { BookmarkFillIcon, BookmarkLineIcon } from "@/components/icons/ToolIcons";
 import { useParams, useRouter } from "next/navigation";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
@@ -497,9 +498,7 @@ export default function WorkbookDetailPage() {
             flexShrink: 0,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 30 30" fill={bookmarked ? "#fff" : "none"} stroke={bookmarked ? "#fff" : "var(--c-text-4c)"} strokeWidth="1.5">
-            <path d="M7.33325 7.63221C7.33325 6.73104 8.00454 6 8.83325 6H20.8333C21.6614 6 22.3333 6.73046 22.3333 7.63221V22.9103C22.3333 23.7481 21.4997 24.2713 20.8333 23.8526L15.5835 20.5546C15.1193 20.2631 14.5478 20.2631 14.0835 20.5546L8.83379 23.8526C8.1673 24.2713 7.33379 23.7481 7.33379 22.9103L7.33325 7.63221Z"/>
-          </svg>
+          <span style={{ display: "inline-flex", color: bookmarked ? "#fff" : "var(--c-text-4c)" }}>{bookmarked ? <BookmarkFillIcon size={22} /> : <BookmarkLineIcon size={22} />}</span>
         </button>
         <button
           onClick={() => router.push(`/workbook/${id}/solve`)}
