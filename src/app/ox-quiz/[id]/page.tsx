@@ -806,7 +806,13 @@ export default function OxQuizSolvePage() {
                     currentQuestion.section && currentQuestion.section.trim() !== quiz.title.trim() ? currentQuestion.section : null,
                   ].filter(Boolean).join(" · ");
                   return sub ? (
-                    <p style={{ margin: "0 0 10px", fontSize: 16, fontWeight: 500, color: "var(--c-text-4c)", letterSpacing: "-0.3px", lineHeight: 1.45 }}>{sub}</p>
+                    <p style={{ margin: "0 0 10px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, fontSize: 16, fontWeight: 500, color: "var(--c-text-4c)", letterSpacing: "-0.3px", lineHeight: 1.45 }}>
+                      <span style={{ minWidth: 0 }}>{sub}</span>
+                      {/* 지금 몇 번째 페이지인지(전체 중) */}
+                      <span style={{ flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                        {currentIndex + 1} / {filteredQuestions.length}
+                      </span>
+                    </p>
                   ) : null;
                 })()}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 10 }}>
