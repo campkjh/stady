@@ -657,13 +657,13 @@ export default function OxQuizSolvePage() {
           </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{
-              margin: 0, fontSize: 14.5, fontWeight: 700, color: "var(--c-text-b)", letterSpacing: "-0.3px",
+              margin: 0, fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", letterSpacing: "-0.3px",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {quiz.title}
             </p>
             <p style={{
-              margin: "1px 0 0", fontSize: 11.5, fontWeight: 600, color: "var(--c-text-4c)",
+              margin: "2px 0 0", fontSize: 14, fontWeight: 600, color: "var(--c-text-4c)", letterSpacing: "-0.3px",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
               {[
@@ -767,8 +767,8 @@ export default function OxQuizSolvePage() {
           </span>
         </div>
 
-        {/* 3행: 필터 칩 */}
-        <div style={{ display: "flex", gap: 6, padding: "0 12px 10px" }}>
+        {/* 3행: 필터 칩(가운데 정렬) */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
           {[
             { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-solved.svg", count: answers.size, tint: "var(--c-text-2)", bg: "var(--c-bg-muted-6)" },
             { key: "correct" as TabFilter, label: "맞은 문제", icon: "/icons/emoji-correct.svg", count: Array.from(answers.values()).filter(a => a.isCorrect).length, tint: "var(--c-brand-deep)", bg: "var(--c-brand-soft-6)" },
@@ -783,11 +783,11 @@ export default function OxQuizSolvePage() {
                 className="press"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  height: 30, padding: "0 11px 0 8px", borderRadius: 999, cursor: "pointer",
+                  height: 34, padding: "0 12px 0 9px", borderRadius: 999, cursor: "pointer",
                   border: `1px solid ${on ? "transparent" : "var(--c-bg-muted-8)"}`,
                   background: on ? tab.bg : "var(--c-bg)",
                   color: on ? tab.tint : "var(--c-text-4b)",
-                  fontSize: 12.5, fontWeight: 700, letterSpacing: "-0.2px",
+                  fontSize: 14, fontWeight: 700, letterSpacing: "-0.3px",
                   transition: "background 0.16s ease, color 0.16s ease, opacity 0.16s ease",
                 }}
               >
@@ -798,25 +798,12 @@ export default function OxQuizSolvePage() {
                   style={{ width: 18, height: 18, display: "block", opacity: on ? 1 : 0.45, transition: "opacity 0.16s ease" }}
                 />
                 {tab.label}
-                <span style={{ fontSize: 11.5, fontWeight: 700, opacity: on ? 0.85 : 0.7, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, opacity: on ? 0.85 : 0.7, fontVariantNumeric: "tabular-nums" }}>
                   {tab.count}
                 </span>
               </button>
             );
           })}
-        </div>
-
-        {/* 진행 게이지 */}
-        <div style={{ height: 3, background: "var(--c-bg-muted-4)" }}>
-          <div
-            style={{
-              height: "100%",
-              width: `${quiz.questions.length > 0 ? Math.min(100, (answers.size / quiz.questions.length) * 100) : 0}%`,
-              background: "linear-gradient(90deg, #7DC4FF, #3787FF)",
-              borderTopRightRadius: 3, borderBottomRightRadius: 3,
-              transition: "width 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
-          />
         </div>
       </header>
 
