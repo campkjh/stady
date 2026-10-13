@@ -672,25 +672,9 @@ export default function OxQuizSolvePage() {
           </button>
         </div>
 
-        {/* 2행: 진행도(N/M) · 이전/다음 · 섞기/노트/책갈피 */}
+        {/* 2행: 섞기/노트/책갈피(오른쪽 정렬) */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px 8px" }}>
-          <button type="button" aria-label="이전 문제" onClick={goPrev} disabled={currentIndex === 0} className="press hit-44"
-            style={{ ...hRoundBtn, opacity: currentIndex === 0 ? 0.28 : 1 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-b)", letterSpacing: "-0.3px", fontVariantNumeric: "tabular-nums" }}>
-            {currentIndex + 1}
-            <span style={{ color: "var(--c-text-5)", fontWeight: 700 }}> / {filteredQuestions.length}</span>
-          </span>
-          <button type="button" aria-label="다음 문제" onClick={goNext} disabled={currentIndex >= filteredQuestions.length - 1} className="press hit-44"
-            style={{ ...hRoundBtn, opacity: currentIndex >= filteredQuestions.length - 1 ? 0.28 : 1 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3b)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-
+          {/* 이전/다음·N/M 은 헤더에서 뺐다(페이지 번호는 소제목 줄에 있다) */}
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
             <SideTapToggle
               onChange={(on) => showToast(on ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 화살표나 스와이프로 넘겨요", 2400)}
