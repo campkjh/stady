@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
+import SideTapToggle from "@/components/SideTapToggle";
 
 interface Problem {
   id: string;
@@ -332,6 +333,7 @@ export default function SolvePage() {
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-2c)", fontVariantNumeric: "tabular-nums" }}>{formatMMSS(elapsed)}</span>
           </div>
           <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-brand)" }}>{score}점</span>
+          <SideTapToggle size={30} />
         </div>
 
         <button onClick={() => setShowDrawer(true)} className="press" style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none" }}>

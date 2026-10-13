@@ -6,6 +6,7 @@ import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import LoginRequired from "@/components/LoginRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
+import SideTapToggle from "@/components/SideTapToggle";
 
 interface VocabQuestion {
   id: string;
@@ -383,6 +384,7 @@ export default function VocabQuizSolvePage() {
         <span className="text-sm text-gray-400" style={{ marginRight: 8 }}>
           {answers.size}/{quiz.questions.length}
         </span>
+        <SideTapToggle size={32} />
         <button
           type="button"
           onClick={() => setShowList(true)}

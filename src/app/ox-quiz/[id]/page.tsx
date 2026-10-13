@@ -10,6 +10,7 @@ import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
+import SideTapToggle from "@/components/SideTapToggle";
 
 interface OxQuestion {
   id: string;
@@ -702,6 +703,9 @@ export default function OxQuizSolvePage() {
           </button>
 
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+            <SideTapToggle
+              onChange={(on) => showToast(on ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 화살표나 스와이프로 넘겨요", 2400)}
+            />
             {!bookmarkMode.enabled && (
               <button
                 type="button" aria-label="문제 순서 섞기"

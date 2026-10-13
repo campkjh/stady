@@ -1,5 +1,7 @@
 "use client";
 
+import { useSideTap } from "@/lib/useSideTap";
+
 interface SideTapNavigationProps {
   onPrev: () => void;
   onNext: () => void;
@@ -13,6 +15,9 @@ export default function SideTapNavigation({
   prevDisabled = false,
   nextDisabled = false,
 }: SideTapNavigationProps) {
+  // 사용자가 끈 경우(헤더의 "화면 탭 이동" 토글) 양옆 탭 영역을 아예 그리지 않는다 — 복사·해설 읽기 중 오작동 방지.
+  const [enabled] = useSideTap();
+  if (!enabled) return null;
   return (
     <div
       className="side-tap-nav"
