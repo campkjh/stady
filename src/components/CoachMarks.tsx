@@ -195,7 +195,7 @@ export default function CoachMarks({ id, steps }: { id: string; steps: TourStep[
       {/* 위 — 건너뛰기 / 아래 — 진행 점 + 이전·다음 */}
       <button
         type="button"
-        className="coach-skip"
+        className={`coach-skip${rect && rect.y < 84 && rect.x + rect.w > (typeof window !== "undefined" ? window.innerWidth : 412) - 130 ? " is-left" : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           finish();

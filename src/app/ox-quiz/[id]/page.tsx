@@ -6,6 +6,9 @@ import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import QuizMemoPad, { type MemoPadHandle } from "@/components/QuizMemoPad";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
+import { useModalExit } from "@/lib/useModalExit";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { OxQuizTour } from "@/components/tours";
 import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
@@ -94,6 +97,11 @@ export default function OxQuizSolvePage() {
   const noteKeyboardInset = useKeyboardInset(noteOpen, noteOverlayRef);
   const [noteText, setNoteText] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
+  // 메모 시트·문제 목록 서랍: 열릴 땐 스프링으로 올라오고, 닫을 땐 내려가며 사라진다(공용 모달과 같은 규칙).
+  const { leaving: noteLeaving, exit: noteExit } = useModalExit();
+  const { leaving: listLeaving, exit: listExit } = useModalExit();
+  useBodyScrollLock(noteOpen);
+  useBodyScrollLock(showList);
   const [showNoteLossConfirm, setShowNoteLossConfirm] = useState(false);
   const [drawingByQuestion, setDrawingByQuestion] = useState<Map<string, string>>(new Map());
   const memoPadRef = useRef<MemoPadHandle>(null);
@@ -488,7 +496,7 @@ export default function OxQuizSolvePage() {
     const drawing = memoPadRef.current?.exportDrawing() ?? null;
     // 글도 그림도 없이 저장하면 의미 없는 책갈피만 생기므로 그냥 닫는다.
     if (!noteText.trim() && !drawing && !hadNote) {
-      setNoteOpen(false);
+      noteExit(() => setNoteOpen(false));
       return;
     }
     setNoteSaving(true);
@@ -519,14 +527,14 @@ export default function OxQuizSolvePage() {
         return next;
       });
       setBookmarkedQuestionIds((prev) => new Set(prev).add(currentQuestion.id));
-      setNoteOpen(false);
+      noteExit(() => setNoteOpen(false));
       showToast(trimmed || drawing ? "노트가 저장됐어요 · 책갈피에서 볼 수 있어요" : "노트를 비웠어요", 2200);
     } catch {
       showToast("노트 저장에 실패했어요");
     } finally {
       setNoteSaving(false);
     }
-  }, [currentQuestion, quiz, noteText, noteSaving, memoByQuestion, drawingByQuestion, showToast]);
+  }, [currentQuestion, quiz, noteText, noteSaving, memoByQuestion, drawingByQuestion, showToast, noteExit]);
 
   const handleAnswer = (selected: boolean) => {
     if (!currentQuestion || answers.has(currentQuestion.id) || navigating) return;
@@ -662,6 +670,7 @@ export default function OxQuizSolvePage() {
           <button
             type="button"
             aria-label="문제 목록"
+            data-tour="ox-list"
             onClick={() => setShowList(true)}
             className="press"
             style={{ ...hIconBtn, background: "none", border: "none" }}
@@ -675,7 +684,7 @@ export default function OxQuizSolvePage() {
         </div>
 
         {/* 3행: 필터 칩(가운데 정렬) */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
+        <div data-tour="ox-chips" style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
           {[
             // 칩 색은 테두리가 아니라 이모지 색에서 가져온다: 행성=보라, 정답(웃는 얼굴)=노랑, 오답(꼬깔)=빨강.
           { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-all-planet.svg", count: answers.size, tint: "#6f61ff", onBg: "rgba(100,85,253,0.16)", offBg: "rgba(100,85,253,0.07)" },
@@ -715,8 +724,12 @@ export default function OxQuizSolvePage() {
         </div>
       </header>
 
+      {/* 처음 들어왔을 때 한 번: 어둡게 깔고 짚어 주는 사용 안내(스와이프 안내가 닫힌 뒤에 뜬다) */}
+      <OxQuizTour />
+
       {/* 떠다니는 글래스 툴박스 — 시계(타이머)를 누르면 도구가 펼쳐지고, 끌어서 위치를 옮긴다 */}
       <QuizToolbox
+        tourId="ox-toolbox"
         timer={<QuizTimer startAt={startTime} paused={submitted} bare />}
         items={[
           {
@@ -796,7 +809,7 @@ export default function OxQuizSolvePage() {
           <>
             {/* Question text + tap zones below */}
             <div className="mb-8 flex-1" style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ position: "relative", zIndex: 10 }}>
+              <div data-tour="ox-question" style={{ position: "relative", zIndex: 10 }}>
                 {/* 소제목(분류 · 소단원)은 태그가 아니라 글자로 풀어서 지문 위에 둔다 */}
                 {(() => {
                   const sub = [
@@ -901,7 +914,7 @@ export default function OxQuizSolvePage() {
             ) : (
             <>
             {/* Answer buttons */}
-            <div style={{ display: "flex", gap: 16, flexShrink: 0, width: "100%", position: "relative", zIndex: 10 }}>
+            <div data-tour="ox-answer" style={{ display: "flex", gap: 16, flexShrink: 0, width: "100%", position: "relative", zIndex: 10 }}>
               <button
                 onClick={() => handleAnswer(true)}
                 disabled={!!answered}
@@ -963,47 +976,31 @@ export default function OxQuizSolvePage() {
             </>
             )}
 
-            {/* Result + Explanation + Next */}
+            {/* 정답/오답 + 해설 — 카드가 톡 튀어나오고 해설 문단이 한 줄씩 떠오른다 */}
             {answered && (
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 24,
-                position: "relative",
-                zIndex: 10,
-                animation: "resultFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}>
-                <p style={{
-                  fontSize: 28,
-                  fontWeight: 700,
-                  color: answered.isCorrect ? "var(--c-brand)" : "var(--c-danger-b)",
-                }}>
-                  {answered.isCorrect ? "정답" : "오답"}
-                </p>
-                {currentQuestion.explanation && (
-                  <div style={{
-                    width: "100%",
-                    padding: "14px 16px",
-                    borderRadius: 12,
-                    backgroundColor: "var(--c-bg-soft)",
-                    marginTop: 4,
-                  }}>
-                    <p style={{ fontSize: 15.5, color: "var(--c-text-2d)", lineHeight: 1.65 }}>
-                      {currentQuestion.explanation}
+              <div className="oxr" key={currentQuestion.id}>
+                <div className={`oxr-badge ${answered.isCorrect ? "is-ok" : "is-no"}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={answered.isCorrect ? "/icons/emoji-correct.svg" : "/icons/emoji-wrong-cone.svg"} alt="" />
+                  <div style={{ minWidth: 0 }}>
+                    <p className="oxr-title">{answered.isCorrect ? "정답이에요!" : "아쉬워요, 오답이에요"}</p>
+                    <p className="oxr-sub">
+                      정답은 {currentQuestion.thinker ? currentQuestion.thinker.answer : currentQuestion.answer ? "O (그렇다)" : "X (아니다)"}예요
                     </p>
+                  </div>
+                </div>
+                {currentQuestion.explanation && (
+                  <div className="oxr-card">
+                    <p className="oxr-label">해설</p>
+                    <div className="oxr-text">
+                      {currentQuestion.explanation.split(/\n+/).filter((l) => l.trim()).map((line, i) => (
+                        <p key={i} style={{ ["--i" as string]: i } as React.CSSProperties}>{line}</p>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             )}
-
-            <style>{`
-              @keyframes resultFadeUp {
-                from { opacity: 0; transform: translateY(20px) scale(0.9); }
-                to { opacity: 1; transform: translateY(0) scale(1); }
-              }
-            `}</style>
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center">
@@ -1018,172 +1015,96 @@ export default function OxQuizSolvePage() {
         )}
       </div>
 
-      {/* Question List Drawer */}
-      {showList && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
-          <div
-            style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)" }}
-            onClick={() => setShowList(false)}
-          />
-          <div style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: "80%",
-            maxWidth: 320,
-            backgroundColor: "var(--c-bg)",
-            overflowY: "auto",
-            animation: "slideInRight 0.25s ease",
-            boxShadow: "-4px 0 24px rgba(0,0,0,0.1)",
-          }}>
-            {/* Drawer Header */}
-            <div style={{ padding: "calc(16px + env(safe-area-inset-top, 0px)) 16px 12px", borderBottom: "1px solid var(--c-bg-muted)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700 }}>문제 목록</h3>
-                <button type="button" onClick={() => setShowList(false)} style={{ background: "none", border: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-c)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
+      {/* 문제 목록 서랍 — 풀이 진행 링 + 정답/오답/남음 + 번호 격자(상태별 색). 열릴 때 번호가 차례로 톡톡 튀어나온다. */}
+      {showList && (() => {
+        const total = quiz.questions.length;
+        const okCount = Array.from(answers.values()).filter((a) => a.isCorrect).length;
+        const noCount = answers.size - okCount;
+        const pct = total > 0 ? Math.round((answers.size / total) * 100) : 0;
+        const closeList = (after?: () => void) => listExit(() => { setShowList(false); after?.(); });
+        return (
+          <div className={`mdl-root ql-root${listLeaving ? " is-leaving" : ""}`}>
+            <div className="mdl-dim" onClick={() => closeList()} />
+            <aside className="ql-drawer" role="dialog" aria-label="문제 목록">
+              <div className="ql-head">
+                <h3 className="ql-title">문제 목록</h3>
+                <button type="button" className="qn-close" aria-label="닫기" onClick={() => closeList()}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                     <line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="18" y1="6" x2="6" y2="18" />
                   </svg>
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => { setShowList(false); router.push("/ox-quiz-intro"); }}
-                className="press"
-                style={{
-                  width: "100%",
-                  height: 40,
-                  borderRadius: 10,
-                  backgroundColor: "var(--c-brand-soft-5)",
-                  border: "none",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--c-brand)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                다른 문제 풀러가기
-              </button>
-            </div>
-            <div ref={listScrollRef} style={{ padding: 8 }}>
-              {filteredQuestions.map((q, fIdx) => {
-                const idx = quiz.questions.findIndex((qq) => qq.id === q.id);
-                const ans = answers.get(q.id);
-                const status = ans ? (ans.isCorrect ? "correct" : "wrong") : "unanswered";
-                const prevSection = fIdx > 0 ? filteredQuestions[fIdx - 1].section : undefined;
-                // 셔플 중엔 섹션이 뒤섞여 헤더가 줄마다 반복되므로 숨긴다.
-                const showSectionHeader = !shuffleOn && !!q.section && q.section !== prevSection;
-                const sectionTotal = q.section
-                  ? filteredQuestions.filter((x) => x.section === q.section).length
-                  : 0;
-                return (
-                  <div key={q.id}>
-                    {showSectionHeader && (
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        padding: "10px 12px 4px", marginTop: fIdx === 0 ? 0 : 8,
-                      }}>
-                        <span style={{
-                          fontSize: 12, fontWeight: 700, color: "var(--c-brand)",
-                          background: "var(--c-brand-soft-2)", borderRadius: 6, padding: "3px 10px",
-                        }}>
-                          {q.section}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--c-text-4c)" }}>{sectionTotal}문항</span>
+              <div className="ql-sum">
+                <div className="ql-ring" aria-label={`${total}문제 중 ${answers.size}문제 풀이`}>
+                  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+                    <circle className="ql-ring-bg" cx="36" cy="36" r="30" strokeWidth="8" />
+                    <circle className="ql-ring-fg" cx="36" cy="36" r="30" strokeWidth="8" style={{ ["--p" as string]: pct } as React.CSSProperties} />
+                  </svg>
+                  <span className="ql-ring-num">{pct}%<small>{answers.size}/{total}</small></span>
+                </div>
+                <div className="ql-stats">
+                  <span className="ql-stat"><img src="/icons/emoji-correct.svg" alt="" />정답<b>{okCount}</b></span>
+                  <span className="ql-stat"><img src="/icons/emoji-wrong-cone.svg" alt="" />오답<b>{noCount}</b></span>
+                  <span className="ql-stat"><img src="/icons/emoji-all-planet.svg" alt="" />남음<b>{total - answers.size}</b></span>
+                </div>
+              </div>
+              <div className="ql-scroll" ref={listScrollRef}>
+                {(() => {
+                  // 섹션별로 묶어 번호 격자를 만든다(셔플 중엔 섹션이 뒤섞이므로 한 덩어리).
+                  const groups: { section?: string; items: { q: (typeof filteredQuestions)[number]; fIdx: number }[] }[] = [];
+                  filteredQuestions.forEach((q, fIdx) => {
+                    const sec = shuffleOn ? undefined : q.section || undefined;
+                    const last = groups[groups.length - 1];
+                    if (last && last.section === sec) last.items.push({ q, fIdx });
+                    else groups.push({ section: sec, items: [{ q, fIdx }] });
+                  });
+                  return groups.map((grp, gi) => (
+                    <div key={gi}>
+                      {grp.section && <p className="ql-sec">{grp.section}<small>{grp.items.length}문항</small></p>}
+                      <div className="ql-grid">
+                        {grp.items.map(({ q, fIdx }) => {
+                          const ans = answers.get(q.id);
+                          return (
+                            <button
+                              key={q.id}
+                              type="button"
+                              data-active={currentIndex === fIdx}
+                              aria-label={`${q.order}번 문제`}
+                              onClick={() => { setCurrentIndex(fIdx); closeList(); }}
+                              className={`ql-cell${ans ? (ans.isCorrect ? " is-ok" : " is-no") : ""}${currentIndex === fIdx ? " is-cur" : ""}`}
+                              style={{ ["--i" as string]: fIdx } as React.CSSProperties}
+                            >
+                              {q.order}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                    <button
-                      type="button"
-                      data-active={currentIndex === fIdx}
-                      onClick={() => { setCurrentIndex(fIdx); setShowList(false); }}
-                      className="press"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        width: "100%",
-                        padding: "12px",
-                        background: currentIndex === fIdx ? "var(--c-brand-soft-5)" : "none",
-                        border: "none",
-                        borderRadius: 10,
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#fff",
-                        backgroundColor: status === "correct" ? "var(--c-brand)" : status === "wrong" ? "var(--c-danger-b)" : "var(--c-border-strong)",
-                        flexShrink: 0,
-                      }}>
-                        {q.order}
-                      </span>
-                      <span style={{ fontSize: 13, color: "var(--c-text-c)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {q.question}
-                      </span>
-                      {ans && (
-                        <span style={{ fontSize: 12, color: ans.selected ? "var(--c-brand)" : "var(--c-danger-b)", fontWeight: 600, flexShrink: 0 }}>
-                          {ans.selected ? "O" : "X"}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Drawer Footer */}
-            <div style={{
-              padding: "12px 16px",
-              borderTop: "1px solid var(--c-bg-muted)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: 13,
-              color: "var(--c-text-4c)",
-            }}>
-              <span>풀은 문제 {answers.size}/{quiz.questions.length}</span>
-              <span style={{ color: "var(--c-brand)", fontWeight: 600 }}>
-                정답률 {answers.size > 0 ? Math.round(Array.from(answers.values()).filter(a => a.isCorrect).length / answers.size * 100) : 0}%
-              </span>
-            </div>
-            {/* 노트 기능 켜기/끄기(끈 상태에서 되돌릴 수 있는 유일한 자리) */}
-            <div style={{ padding: "10px 16px 16px", borderTop: "1px solid var(--c-bg-muted)" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !noteEnabled;
-                  setNoteEnabled(next);
-                  try { localStorage.setItem("quiz_note_off", next ? "0" : "1"); } catch {}
-                }}
-                style={{ background: "none", border: "none", fontSize: 13, fontWeight: 700, color: "var(--c-text-3)", cursor: "pointer", padding: 0 }}
-              >
-                {noteEnabled ? "퀴즈 노트 기능 끄기" : "퀴즈 노트 기능 켜기"}
-              </button>
-            </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+              <div className="ql-foot">
+                <button type="button" className="ql-link" onClick={() => closeList(() => router.push("/ox-quiz-intro"))}>
+                  다른 문제 풀러가기
+                </button>
+                {/* 노트 기능 켜기/끄기(끈 상태에서 되돌릴 수 있는 유일한 자리) */}
+                <button
+                  type="button"
+                  className="ql-note"
+                  onClick={() => {
+                    const next = !noteEnabled;
+                    setNoteEnabled(next);
+                    try { localStorage.setItem("quiz_note_off", next ? "0" : "1"); } catch {}
+                  }}
+                >
+                  {noteEnabled ? "퀴즈 노트 기능 끄기" : "퀴즈 노트 기능 켜기"}
+                </button>
+              </div>
+            </aside>
           </div>
-          <style>{`
-            @keyframes slideInRight {
-              from { transform: translateX(100%); }
-              to { transform: translateX(0); }
-            }
-          `}</style>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 첫 진입 조작 가이드 — 좌/우 영역을 실제로 갈라 보여준다.
           예전엔 화면 전체를 균일하게 덮고 가운데 손 아이콘만 흔들어서
@@ -1191,6 +1112,7 @@ export default function OxQuizSolvePage() {
           이제 두 반쪽을 다른 톤으로 딤 처리하고 각 반쪽 한가운데에 큰 화살표+라벨을 둔다. */}
       {showSwipeGuide && !pendingProgress && (
         <div
+          data-gate="swipe-guide"
           onClick={() => setShowSwipeGuide(false)}
           role="button"
           aria-label="가이드 닫기"
@@ -1323,44 +1245,42 @@ export default function OxQuizSolvePage() {
 
       {/* 퀴즈 노트 시트: 내 사고과정/연결 지식 메모(나만 보임, 저장 시 책갈피 추가) */}
       {noteOpen && currentQuestion && (
-        // inset 단축은 구형 안드로이드 WebView 가 모른다 → top/right/bottom/left 로 쓴다.
         // paddingBottom: 키보드가 덮은 높이. 이만큼 비워야 시트가 키보드 위로 올라온다.
-        <div ref={noteOverlayRef} style={{
-          position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 320,
-          display: "flex", alignItems: "flex-end", justifyContent: "center",
-          paddingBottom: noteKeyboardInset, boxSizing: "border-box",
-        }}>
-          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(15,23,42,0.5)" }} onClick={() => setNoteOpen(false)} />
-          <div style={{
-            position: "relative", width: "100%", maxWidth: 720, background: "var(--c-bg)",
-            borderRadius: "20px 20px 0 0",
-            padding: noteKeyboardInset > 0
-              ? "18px 18px 16px"
-              : "18px 18px calc(16px + env(safe-area-inset-bottom, 0px))",
-            boxSizing: "border-box",
-            // 남는 높이가 모자라면(작은 화면 + 키보드) 시트 안에서 스크롤되게 — 예전엔 스크롤이
-            // 아예 없어서 가려진 메모지를 끌어올릴 방법이 없었다.
-            maxHeight: "100%", overflowY: "auto",
-            WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
-            boxShadow: "0 -12px 40px rgba(0,0,0,0.18)",
-          }}>
-            <QuizMemoPad
-              ref={memoPadRef}
-              text={noteText}
-              onTextChange={setNoteText}
-              initialDrawing={drawingByQuestion.get(currentQuestion.id) ?? null}
-              placeholder={"메모..."}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button type="button" onClick={() => setNoteOpen(false)} style={{ flex: 1, height: 46, borderRadius: 12, border: "1px solid var(--c-border)", background: "var(--c-bg)", color: "var(--c-text-2d)", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+        <div
+          ref={noteOverlayRef}
+          className={`mdl-root is-sheet${noteLeaving ? " is-leaving" : ""}`}
+          style={{ zIndex: 320, paddingBottom: noteKeyboardInset }}
+        >
+          <div className="mdl-dim" onClick={() => noteExit(() => setNoteOpen(false))} />
+          <div className="mdl-sheet qn-sheet" role="dialog" aria-label="퀴즈 노트" style={noteKeyboardInset > 0 ? { maxHeight: "100%" } : undefined}>
+            <span className="mdl-handle" aria-hidden="true" />
+            <div className="qn-head">
+              <span className="qn-ico"><MemoIcon size={28} /></span>
+              <div style={{ minWidth: 0 }}>
+                <p className="qn-title">퀴즈 노트</p>
+                <p className="qn-sub">나만 볼 수 있어요 · 저장하면 책갈피에 담겨요</p>
+              </div>
+              <button type="button" className="qn-close" aria-label="닫기" onClick={() => noteExit(() => setNoteOpen(false))}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="mdl-scroll qn-body">
+              <QuizMemoPad
+                ref={memoPadRef}
+                text={noteText}
+                onTextChange={setNoteText}
+                initialDrawing={drawingByQuestion.get(currentQuestion.id) ?? null}
+                placeholder={"떠오르는 생각을 적어 보세요"}
+              />
+            </div>
+            <div className="qn-foot">
+              <button type="button" className="mdl-btn is-sub" onClick={() => noteExit(() => setNoteOpen(false))}>
                 닫기
               </button>
-              <button
-                type="button"
-                onClick={saveNote}
-                disabled={noteSaving}
-                style={{ flex: 2, height: 46, borderRadius: 12, border: "none", background: "var(--c-brand)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: noteSaving ? "default" : "pointer", opacity: noteSaving ? 0.6 : 1 }}
-              >
+              <button type="button" className="mdl-btn is-main" onClick={saveNote} disabled={noteSaving}>
                 {noteSaving ? "저장 중..." : "저장"}
               </button>
             </div>

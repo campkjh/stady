@@ -41,7 +41,7 @@ function readSaved(): Saved | null {
   return null;
 }
 
-export default function QuizToolbox({ timer, items }: { timer: ReactNode; items: ToolboxItem[] }) {
+export default function QuizToolbox({ timer, items, tourId }: { timer: ReactNode; items: ToolboxItem[]; /** 튜토리얼이 짚을 수 있게 data-tour 를 단다 */ tourId?: string }) {
   const fabRef = useRef<HTMLButtonElement | null>(null);
   const [side, setSide] = useState<Side>("r");
   const [yRatio, setYRatio] = useState(0.26); // 처음엔 오른쪽 위쪽
@@ -160,6 +160,7 @@ export default function QuizToolbox({ timer, items }: { timer: ReactNode; items:
           ref={fabRef}
           type="button"
           className="tb-fab"
+          data-tour={tourId}
           aria-label="도구 상자"
           aria-expanded={phase === "open"}
           onPointerDown={onDown}
@@ -184,6 +185,7 @@ export default function QuizToolbox({ timer, items }: { timer: ReactNode; items:
                   aria-pressed={it.active}
                   onClick={() => {
                     it.onClick();
+                    close(); // 고르면 상자는 접는다(메모 시트 등이 열릴 때 겹쳐 보이지 않게)
                   }}
                 >
                   <span className="tb-label">{it.label}</span>

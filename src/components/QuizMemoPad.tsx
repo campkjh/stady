@@ -4,10 +4,9 @@ import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardR
 
 // 노란 메모지 느낌의 퀴즈 노트. 줄노트 위에 글을 쓰고, '그리기'로 바꾸면
 // 같은 종이 위에 펜으로 그림/도식을 그릴 수 있다(그림은 dataURL로 저장).
-const PAD_H = 264; // 종이 높이(px). 캔버스 좌표 안정성을 위해 고정.
+const PAD_H = 250; // 종이 높이(px). 캔버스 좌표 안정성을 위해 고정(CSS .qmp-paper 높이와 같게).
 const LINE_H = 28; // 줄 간격 = textarea line-height
-const BAR_H = 38; // 종이 하단 도구 띠(글/그림 영역과 겹치지 않게 분리)
-const DRAW_H = PAD_H - BAR_H; // 실제 필기/그리기 영역 높이
+const DRAW_H = PAD_H; // 필기/그리기 영역 = 종이 전체(도구는 종이 위 줄로 뺐다)
 const PEN_COLORS = ["#1F2937", "#2563EB", "#DC2626", "#059669"];
 
 export interface MemoPadHandle {
@@ -158,88 +157,65 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
 
   return (
     <div>
-      {/* 노란 메모지(도구는 종이 안쪽 우상단에 최소한으로) */}
-      <div
-        ref={wrapRef}
-        style={{
-          position: "relative",
-          height: PAD_H,
-          borderRadius: "4px 4px 10px 10px",
-          overflow: "hidden",
-          background: "var(--c-warn-soft-5)",
-          backgroundImage:
-            `repeating-linear-gradient(180deg, transparent 0 ${LINE_H - 1}px, rgba(190,170,90,0.35) ${LINE_H - 1}px ${LINE_H}px)`,
-          backgroundPosition: `0 14px`,
-          boxShadow: "0 6px 18px rgba(150,130,40,0.22), inset 0 -18px 24px -18px rgba(150,130,40,0.35)",
-        }}
-      >
-        {/* 상단 테이프 */}
-        <span
-          aria-hidden
-          style={{
-            position: "absolute", top: -8, left: "50%", transform: "translateX(-50%) rotate(-1.5deg)",
-            width: 96, height: 22, background: "var(--c-bg-a55)",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)", zIndex: 3, pointerEvents: "none",
-          }}
-        />
-
-        {/* 도구: 쓰기/그리기 전환 + (그리기일 때) 색·지우개·되돌리기 */}
-        <div style={{
-          position: "absolute", left: 0, right: 0, bottom: 0, height: BAR_H, zIndex: 4,
-          display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4,
-          padding: "0 34px 0 10px",
-          borderTop: "1px solid rgba(190,170,90,0.45)",
-          background: "linear-gradient(180deg, rgba(255,248,184,0.75) 0%, #FFF6A8 60%)",
-        }}>
-          {mode === "draw" && (
-            <>
-              {PEN_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-label={`펜 색상 ${c}`}
-                  onClick={() => { setColor(c); setEraser(false); }}
-                  style={{
-                    width: 18, height: 18, borderRadius: "50%", background: c, cursor: "pointer", padding: 0,
-                    border: !eraser && color === c ? "2.5px solid var(--c-bg)" : "1.5px solid var(--c-bg-a75)",
-                    boxShadow: !eraser && color === c ? "0 0 0 1.5px var(--c-warn-deep-4)" : "0 1px 2px rgba(0,0,0,0.12)",
-                  }}
-                />
-              ))}
-              <button type="button" onClick={() => setEraser((v) => !v)} aria-label="지우개" style={iconBtn(eraser)}>⌫</button>
-              <button type="button" onClick={undo} aria-label="되돌리기" style={iconBtn(false)}>↺</button>
-              <button type="button" onClick={clearAll} aria-label="전체 지우기" style={iconBtn(false)}>✕</button>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setMode((m) => (m === "write" ? "draw" : "write"))}
-            aria-label={mode === "write" ? "그리기로 전환" : "쓰기로 전환"}
-            style={{
-              height: 26, padding: "0 10px", borderRadius: 999, cursor: "pointer",
-              border: "1px solid rgba(138,106,0,0.25)",
-              background: mode === "draw" ? "var(--c-warn-c)" : "var(--c-bg-a70)",
-              color: mode === "draw" ? "#fff" : "var(--c-warn-deep)",
-              fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
-            }}
-          >
-            {mode === "write" ? <><img src="/icons/toss/pencil.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />쓰기</> : <><img src="/icons/toss/signature.svg" alt="" style={{ width: 13, height: 13, verticalAlign: "middle", display: "inline-block", marginRight: 3 }} />그리기</>}
+      {/* 위: 쓰기/그리기 전환(토스식 세그먼트) + 그리기일 때만 펜 색·지우개·되돌리기·전체 지우기 */}
+      <div className="qmp-top">
+        <div className="qmp-seg" role="tablist" aria-label="메모 방식">
+          <span className="qmp-seg-thumb" style={{ transform: `translateX(${mode === "write" ? 0 : 100}%)` }} aria-hidden="true" />
+          <button type="button" role="tab" aria-selected={mode === "write"} className={`qmp-seg-btn${mode === "write" ? " on" : ""}`} onClick={() => setMode("write")}>
+            쓰기
+          </button>
+          <button type="button" role="tab" aria-selected={mode === "draw"} className={`qmp-seg-btn${mode === "draw" ? " on" : ""}`} onClick={() => setMode("draw")}>
+            그리기
           </button>
         </div>
+        {mode === "draw" && (
+          <div className="qmp-tools">
+            {PEN_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-label={`펜 색상 ${c}`}
+                className={`qmp-dot${!eraser && color === c ? " on" : ""}`}
+                onClick={() => { setColor(c); setEraser(false); }}
+                style={{ background: c, color: c }}
+              />
+            ))}
+            <button type="button" className={`qmp-ibtn${eraser ? " on" : ""}`} onClick={() => setEraser((v) => !v)} aria-label="지우개" aria-pressed={eraser}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m8 20-4.2-4.2a1.6 1.6 0 0 1 0-2.3l8.7-8.7a1.6 1.6 0 0 1 2.3 0l4.4 4.4a1.6 1.6 0 0 1 0 2.3L12 20H8Zm0 0h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button type="button" className="qmp-ibtn" onClick={undo} aria-label="되돌리기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 7 5 11l4 4M5 11h9a5 5 0 0 1 0 10h-2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button type="button" className="qmp-ibtn" onClick={clearAll} aria-label="전체 지우기">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 7h14M10 4h4M7 7l.8 12h8.4L17 7M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 노란 메모지 — 줄노트 위에 쓰거나 그린다 */}
+      <div
+        ref={wrapRef}
+        className="qmp-paper"
+        style={{
+          backgroundImage: `repeating-linear-gradient(180deg, transparent 0 ${LINE_H - 1}px, rgba(190,160,60,0.28) ${LINE_H - 1}px ${LINE_H}px)`,
+          backgroundPosition: "0 14px",
+        }}
+      >
         <textarea
+          className="qmp-text"
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
           placeholder={placeholder}
           maxLength={2000}
           readOnly={mode === "draw"}
-          style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: DRAW_H,
-            boxSizing: "border-box", padding: `14px 16px`,
-            background: "transparent", border: "none", outline: "none", resize: "none",
-            fontSize: 16, lineHeight: `${LINE_H}px`, color: "var(--c-warn-deep-3)",
-            fontFamily: "inherit", letterSpacing: "-0.1px",
-            zIndex: 1,
-          }}
+          style={{ lineHeight: `${LINE_H}px` }}
         />
         <canvas
           ref={canvasRef}
@@ -255,19 +231,10 @@ const QuizMemoPad = forwardRef<MemoPadHandle, Props>(function QuizMemoPad(
             cursor: mode === "draw" ? "crosshair" : "default",
           }}
         />
+        <span className="qmp-count">{text.length}/2000</span>
       </div>
     </div>
   );
 });
-
-function iconBtn(active: boolean): React.CSSProperties {
-  return {
-    width: 26, height: 26, borderRadius: 999, cursor: "pointer", padding: 0,
-    border: "1px solid rgba(138,106,0,0.22)",
-    background: active ? "var(--c-warn-c)" : "var(--c-bg-a70)",
-    color: active ? "#fff" : "var(--c-warn-deep)",
-    fontSize: 13, fontWeight: 700, lineHeight: 1,
-  };
-}
 
 export default QuizMemoPad;
