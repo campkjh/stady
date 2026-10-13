@@ -2468,7 +2468,7 @@ function CommunityStyles() {
         height: 52px;
         border-radius: 999px;
         background: var(--c-bg-muted);
-        color: var(--c-text);
+        color: #a3acb8; /* 사진이 없을 때 첫 글자: 연한 쿨그레이 */
         font-size: 19px;
         font-weight: 700;
         overflow: hidden;

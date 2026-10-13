@@ -76,7 +76,8 @@ function MiniAvatar({ nickname, avatar, size = 30 }: { nickname: string; avatar?
         borderRadius: 999,
         overflow: "hidden",
         background: "var(--c-bg-muted)",
-        color: "var(--c-text)",
+        // 사진이 없을 때 첫 글자는 진한 글자색이 아니라 연한 쿨그레이로.
+        color: "#a3acb8",
         fontSize: Math.round(size * 0.44),
         fontWeight: 700,
         display: "inline-flex",
