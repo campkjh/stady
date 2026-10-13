@@ -14,8 +14,10 @@ export interface ToolboxItem {
   icon: ReactNode;
   /** 켜짐 상태(색 강조) */
   active?: boolean;
-  /** 강조 색(기본 파랑) */
+  /** 강조 색(켜졌을 때 링·라벨 — 아이콘의 대표색) */
   tint?: string;
+  /** 아이콘 동그라미 배경(아이콘 색에 맞춘 연한 틴트) */
+  bg?: string;
   onClick: () => void;
 }
 
@@ -177,7 +179,7 @@ export default function QuizToolbox({ timer, items }: { timer: ReactNode; items:
                 <button
                   type="button"
                   className={`tb-item${it.active ? " is-on" : ""}`}
-                  style={it.tint ? ({ ["--tb-tint" as string]: it.tint } as React.CSSProperties) : undefined}
+                  style={{ ["--tb-tint" as string]: it.tint ?? "#3182f6", ["--tb-bg" as string]: it.bg ?? "transparent" } as React.CSSProperties}
                   aria-label={it.label}
                   aria-pressed={it.active}
                   onClick={() => {

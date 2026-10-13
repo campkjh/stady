@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { BookmarkFillIcon } from "@/components/icons/ToolIcons";
+import { BookmarkFillIcon, BookmarkLineIcon } from "@/components/icons/ToolIcons";
 import { useParams, useRouter } from "next/navigation";
 import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
@@ -603,9 +603,9 @@ export default function VocabQuizSolvePage() {
                   height: 32,
                   padding: "0 12px",
                   borderRadius: 999,
-                  border: `1px solid ${isBookmarked ? "var(--c-brand)" : "var(--c-border)"}`,
-                  background: isBookmarked ? "var(--c-brand)" : "var(--c-bg)",
-                  color: isBookmarked ? "#fff" : "var(--c-text-3)",
+                  border: `1px solid ${isBookmarked ? "transparent" : "var(--c-border)"}`,
+                  background: isBookmarked ? "var(--c-brand-soft-3)" : "var(--c-bg)",
+                  color: isBookmarked ? "var(--c-brand)" : "var(--c-text-3)",
                   fontSize: 13,
                   fontWeight: 700,
                   display: "inline-flex",
@@ -615,7 +615,7 @@ export default function VocabQuizSolvePage() {
                   transition: "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease",
                 }}
               >
-                <BookmarkFillIcon size={16} />
+                {isBookmarked ? <BookmarkFillIcon size={18} /> : <BookmarkLineIcon size={18} />}
                 책갈피
               </button>
             </div>

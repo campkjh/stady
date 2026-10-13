@@ -724,6 +724,8 @@ export default function OxQuizSolvePage() {
             label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
             icon: <SideTapIcon on={sideTapOn} />,
             active: sideTapOn,
+            tint: "#6b7684",
+            bg: "rgba(107,118,132,0.14)",
             onClick: () => {
               const next = !sideTapOn;
               setSideTapOn(next);
@@ -734,8 +736,10 @@ export default function OxQuizSolvePage() {
             ? [{
                 key: "shuffle",
                 label: shuffleOn ? "원래 순서로" : "문제 섞기",
-                icon: <ShuffleIcon size={22} />,
+                icon: <ShuffleIcon size={24} />,
                 active: shuffleOn,
+                tint: "#e02939",
+                bg: "rgba(224,41,57,0.11)",
                 onClick: () => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); },
               }]
             : []),
@@ -743,9 +747,10 @@ export default function OxQuizSolvePage() {
             ? [{
                 key: "note",
                 label: "퀴즈 노트",
-                icon: <MemoIcon size={22} />,
+                icon: <MemoIcon size={24} />,
+                bg: "rgba(255,195,58,0.28)",
                 active: !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
-                tint: "var(--c-warn-c)",
+                tint: "#f2a100",
                 onClick: () => {
                   if (!currentQuestion) return;
                   setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
@@ -756,8 +761,10 @@ export default function OxQuizSolvePage() {
           {
             key: "bookmark",
             label: isBookmarked ? "책갈피 해제" : "책갈피",
-            icon: isBookmarked ? <BookmarkFillIcon size={22} /> : <BookmarkLineIcon size={22} />,
+            icon: isBookmarked ? <BookmarkFillIcon size={24} /> : <BookmarkLineIcon size={24} />,
             active: isBookmarked,
+            tint: "#007ffa",
+            bg: isBookmarked ? "rgba(0,127,250,0.14)" : "rgba(107,118,132,0.12)",
             onClick: () => {
               if (!currentQuestion) return;
               if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
@@ -1479,7 +1486,7 @@ function shuffleArray<T>(src: T[]): T[] {
 function SideTapIcon({ on }: { on: boolean }) {
   return (
     <span style={{ position: "relative", display: "inline-flex" }}>
-      <TapIcon size={22} />
+      <TapIcon size={24} />
       {!on && (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0 }}>
           <line x1="4" y1="3" x2="20" y2="21" stroke="rgba(255,255,255,0.9)" strokeWidth="5" />

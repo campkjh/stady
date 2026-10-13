@@ -491,14 +491,14 @@ export default function WorkbookDetailPage() {
             height: 48,
             borderRadius: 14,
             border: bookmarked ? "none" : "1px solid var(--c-border)",
-            backgroundColor: bookmarked ? "var(--c-brand)" : "var(--c-bg)",
+            backgroundColor: bookmarked ? "var(--c-brand-soft-3)" : "var(--c-bg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <span style={{ display: "inline-flex", color: bookmarked ? "#fff" : "var(--c-text-4c)" }}>{bookmarked ? <BookmarkFillIcon size={22} /> : <BookmarkLineIcon size={22} />}</span>
+          <span style={{ display: "inline-flex" }}>{bookmarked ? <BookmarkFillIcon size={24} /> : <BookmarkLineIcon size={24} />}</span>
         </button>
         <button
           onClick={() => router.push(`/workbook/${id}/solve`)}
