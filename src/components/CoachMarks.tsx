@@ -34,6 +34,8 @@ export default function CoachMarks({ id, steps }: { id: string; steps: TourStep[
   const [i, setI] = useState(-1); // -1 = 아직 안 뜸
   const [rect, setRect] = useState<Rect | null>(null);
   const [vh, setVh] = useState(800);
+  // 떠 있는 동안 다른 팝업(data-gate)이 뜨면 잠시 물러났다가 닫히면 이어서 보여 준다.
+  const [paused, setPaused] = useState(false);
 
   // 시작 — 첫 칸이 그려지고(데이터 로딩) 다른 팝업(data-gate)이 모두 닫힌 뒤에 뜬다.
   useEffect(() => {
@@ -45,8 +47,9 @@ export default function CoachMarks({ id, steps }: { id: string; steps: TourStep[
       const gated = !!document.querySelector("[data-gate]:not([data-gate=\"coach\"])");
       const ready = steps.some((s) => document.querySelector(s.sel));
       calm = !gated && ready ? calm + 1 : 0;
-      // 두 번 연속(≈0.9초) 조용해야 뜬다 — 팝업이 닫히는 애니메이션·다음 팝업이 뜨는 사이를 건너뛰기 위해
-      if (calm >= 2) {
+      // 네 번 연속(≈1.8초) 조용해야 뜬다 — 소개 배너·공지 팝업은 화면이 열린 뒤 약 0.9초 뒤에 뜨고,
+      // 팝업이 닫히는 애니메이션과 다음 팝업이 뜨는 사이도 있어서, 그 틈에 겹쳐 뜨지 않도록 넉넉히 기다린다.
+      if (calm >= 4) {
         window.clearInterval(timer);
         setI(0);
       } else if (tries > 200) {
@@ -55,6 +58,15 @@ export default function CoachMarks({ id, steps }: { id: string; steps: TourStep[
     }, 450);
     return () => window.clearInterval(timer);
   }, [id, steps]);
+
+  useEffect(() => {
+    if (i < 0) return;
+    const timer = window.setInterval(() => {
+      const foreign = !!document.querySelector("[data-gate]:not([data-gate=\"coach\"])");
+      setPaused((cur) => (cur === foreign ? cur : foreign));
+    }, 300);
+    return () => window.clearInterval(timer);
+  }, [i]);
 
   const finish = useCallback(() => {
     markDone(id);
@@ -121,17 +133,17 @@ export default function CoachMarks({ id, steps }: { id: string; steps: TourStep[
     return () => cancelAnimationFrame(raf);
   }, [i, measure]);
 
-  // 튜토리얼 동안 뒤 화면 스크롤 잠금
+  // 튜토리얼 동안 뒤 화면 스크롤 잠금(다른 팝업에 양보 중일 땐 풀어 둔다)
   useEffect(() => {
-    if (i < 0) return;
+    if (i < 0 || paused) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [i]);
+  }, [i, paused]);
 
-  if (i < 0 || i >= steps.length || typeof document === "undefined") return null;
+  if (i < 0 || paused || i >= steps.length || typeof document === "undefined") return null;
   const s = steps[i];
   const last = i === steps.length - 1;
   const below = rect ? rect.y + rect.h / 2 < vh * 0.5 : true; // 칸이 위쪽이면 설명은 아래에
