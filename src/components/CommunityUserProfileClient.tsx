@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import FollowButton from "@/components/community/FollowButton";
-import { TossHeartIcon, TossCommentIcon, formatCount } from "@/components/community/TossIcons";
+import { TossHeartIcon, TossCommentIcon, TossRepostIcon, formatCount } from "@/components/community/TossIcons";
 import { boardShortName, boardTone } from "@/lib/boardTone";
 import { formatRelativeTime } from "@/lib/relativeTime";
 
@@ -30,6 +30,16 @@ interface ProfilePost {
   likeCount: number;
   commentCount: number;
 }
+interface ProfileRepost {
+  id: string;
+  title: string;
+  content: string;
+  groupName: string;
+  authorName: string;
+  createdAt: string; // 리포스트한 시각
+  likeCount: number;
+  commentCount: number;
+}
 interface ProfileComment {
   id: string;
   postId: string;
@@ -45,6 +55,7 @@ interface ProfileData {
   isFollowing: boolean;
   isBlocked: boolean;
   posts: ProfilePost[];
+  reposts: ProfileRepost[];
   comments: ProfileComment[];
 }
 
@@ -61,6 +72,7 @@ const TIER_LABELS: Record<string, string> = {
 
 type Activity =
   | { kind: "post"; at: string; post: ProfilePost }
+  | { kind: "repost"; at: string; repost: ProfileRepost }
   | { kind: "comment"; at: string; comment: ProfileComment };
 
 export default function CommunityUserProfileClient({ userId }: { userId: string }) {
@@ -69,7 +81,7 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"activity" | "badge">("activity");
-  const [chip, setChip] = useState<"all" | "post" | "comment">("all");
+  const [chip, setChip] = useState<"all" | "post" | "comment" | "repost">("all");
   const [followBusy, setFollowBusy] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
   const [toast, setToast] = useState("");
@@ -150,8 +162,9 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
   const activities = useMemo<Activity[]>(() => {
     if (!data) return [];
     const items: Activity[] = [];
-    if (chip !== "comment") data.posts.forEach((post) => items.push({ kind: "post", at: post.createdAt, post }));
-    if (chip !== "post") data.comments.forEach((comment) => items.push({ kind: "comment", at: comment.createdAt, comment }));
+    if (chip === "all" || chip === "post") data.posts.forEach((post) => items.push({ kind: "post", at: post.createdAt, post }));
+    if (chip === "all" || chip === "repost") (data.reposts || []).forEach((repost) => items.push({ kind: "repost", at: repost.createdAt, repost }));
+    if (chip === "all" || chip === "comment") data.comments.forEach((comment) => items.push({ kind: "comment", at: comment.createdAt, comment }));
     return items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   }, [data, chip]);
 
@@ -223,7 +236,7 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
           {tab === "activity" ? (
             <>
               <div className="up-chips">
-                {([["all", "전체"], ["post", "남긴 글"], ["comment", "남긴 댓글"]] as const).map(([key, label]) => (
+                {([["all", "전체"], ["post", "남긴 글"], ["comment", "남긴 댓글"], ["repost", "리포스트"]] as const).map(([key, label]) => (
                   <button key={key} type="button" className={`up-chip${chip === key ? " on" : ""}`} onClick={() => setChip(key)}>
                     {label}
                   </button>
@@ -252,6 +265,22 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
                         <span className="up-metrics">
                           <span><TossHeartIcon /> {a.post.likeCount}</span>
                           <span><TossCommentIcon /> {a.post.commentCount}</span>
+                        </span>
+                      </button>
+                    ) : a.kind === "repost" ? (
+                      <button key={`r-${a.repost.id}`} type="button" className="up-item" onClick={() => router.push(`/community/${a.repost.id}`)}>
+                        <span className="up-item-head">
+                          <span className="up-board is-repost" aria-hidden="true"><TossRepostIcon /></span>
+                          <span className="up-item-who">
+                            <span className="up-item-title">{a.repost.authorName}님의 글을 리포스트</span>
+                            <span className="up-item-time">{boardShortName(a.repost.groupName)} · {formatRelativeTime(a.at)}</span>
+                          </span>
+                        </span>
+                        <span className="up-post-title">{a.repost.title}</span>
+                        {a.repost.content && <span className="up-post-content">{a.repost.content}</span>}
+                        <span className="up-metrics">
+                          <span><TossHeartIcon /> {a.repost.likeCount}</span>
+                          <span><TossCommentIcon /> {a.repost.commentCount}</span>
                         </span>
                       </button>
                     ) : (
@@ -332,6 +361,7 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
         .up-item { display: grid; gap: 10px; text-align: left; width: 100%; padding: 20px 20px 16px; border: none; border-bottom: 1px solid var(--c-bg-muted-6, #f2f4f6); background: none; color: inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .up-item-head { display: flex; align-items: center; gap: 12px; }
         .up-board { flex: none; width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; letter-spacing: -0.2px; overflow: hidden; white-space: nowrap; }
+        .up-board.is-repost { background: #e6f7ee; color: #03a94d; }
         .up-board.is-comment { background: var(--c-bg-muted-2, #f2f4f6); color: var(--c-text-4c, #8b95a1); }
         .up-item-who { min-width: 0; display: grid; gap: 2px; }
         .up-item-title { color: var(--c-text-3, #6b7684); font-size: 16px; font-weight: 700; letter-spacing: -0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

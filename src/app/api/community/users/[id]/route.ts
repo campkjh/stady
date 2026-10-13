@@ -40,6 +40,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         likeCount: post.like_count,
         commentCount: post.comment_count,
       })),
+      reposts: profile.reposts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        groupName: post.group_name,
+        authorName: post.author_name || "익명",
+        createdAt: post.reposted_at,
+        likeCount: post.like_count,
+        commentCount: post.comment_count,
+      })),
       comments: profile.comments.map((comment) => ({
         id: comment.id,
         postId: comment.post_id,

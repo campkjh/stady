@@ -142,6 +142,8 @@ interface CommunityPostDetail {
   authorIsPickKing?: boolean;
   authorFollowerCount?: number;
   authorIsFollowing?: boolean;
+  repostCount?: number;
+  myReposted?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -505,6 +507,25 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
       }
     }
     await copyLink();
+  }
+
+  // 리포스트 토글(낙관적 → 서버 확정). 목록 캐시도 같이 비운다.
+  async function toggleRepost() {
+    if (!post) return;
+    const was = !!post.myReposted;
+    const base = post.repostCount || 0;
+    setPost((cur) => (cur ? { ...cur, myReposted: !was, repostCount: Math.max(0, base + (was ? -1 : 1)) } : cur));
+    try {
+      const response = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/repost`, { method: "POST", credentials: "include" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "리포스트하지 못했어요.");
+      setPost((cur) => (cur ? { ...cur, myReposted: !!data.reposted, repostCount: typeof data.repostCount === "number" ? data.repostCount : base } : cur));
+      clientCache.clearPrefix("community-");
+      showToast(data.reposted ? "내 프로필에 리포스트했어요" : "리포스트를 취소했어요");
+    } catch (error) {
+      setPost((cur) => (cur ? { ...cur, myReposted: was, repostCount: base } : cur));
+      showToast(error instanceof Error ? error.message : "리포스트하지 못했어요.");
+    }
   }
 
   // 팔로우 토글(낙관적 → 서버 확정). 목록 캐시도 같이 비운다.
@@ -1082,8 +1103,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                   <TossCommentIcon />
                   <span>{formatCount(post.commentCount || 0)}</span>
                 </button>
-                <button type="button" className="cpd-act" aria-label="링크 복사" onClick={copyLink}>
+                <button type="button" className={`cpd-act${post.myReposted ? " is-reposted" : ""}`} aria-label="리포스트" aria-pressed={!!post.myReposted} onClick={toggleRepost}>
                   <TossRepostIcon />
+                  {(post.repostCount || 0) > 0 && <span>{formatCount(post.repostCount || 0)}</span>}
                 </button>
                 <button type="button" className="cpd-act" aria-label="공유" onClick={sharePostLink}>
                   <TossShareIcon />
@@ -1369,6 +1391,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-actions { display: flex; align-items: center; gap: 22px; padding: 6px 0 16px; color: var(--c-text-3, #6b7684); }
         .cpd-act { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; border: none; background: none; color: inherit; font-size: 17px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
         .cpd-act.is-liked { color: #f04452; }
+        .cpd-act.is-reposted { color: #03a94d; }
+        .cpd-act.is-reposted svg { animation: repostSpin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes repostSpin { from { transform: rotate(-180deg) scale(0.7); } to { transform: none; } }
         .cpd-more { margin-left: auto; display: inline-flex; }
         .cpd-band { height: 10px; background: var(--c-bg-muted-2, #f2f4f6); }
         .cpd-comments { padding: 0 20px; }

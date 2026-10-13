@@ -21,8 +21,6 @@ import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
-import NudgeBubble from "@/components/NudgeBubble";
-import { WRITE_NUDGE_KEY, todayKey } from "@/lib/writeNudge";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
 
 // 게시글 목록 캐시 키(필터 조합별).
@@ -97,6 +95,8 @@ interface CommunityPost {
   authorIsPickKing?: boolean;
   authorFollowerCount?: number;
   authorIsFollowing?: boolean;
+  repostCount?: number;
+  myReposted?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -178,8 +178,6 @@ export default function CommunityClient() {
   const [topbarHeight, setTopbarHeight] = useState(0);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
-  // 오늘 아직 글을 안 썼을 때만 글쓰기 말풍선을 띄운다(서버 렌더 깜빡임 방지로 기본 false).
-  const [showWriteNudge, setShowWriteNudge] = useState(false);
   // 아래로 스크롤하면 카테고리 탭을 한 줄(아이콘+라벨)로 접어 헤더를 낮춘다.
   const [compactHeader, setCompactHeader] = useState(false);
   // 블라인드 노이즈를 탭해서 공개한 글 id 모음(피드에서 바로 걷기).
@@ -240,6 +238,29 @@ export default function CommunityClient() {
     }
     const ok = await copyText(url);
     showLinkToast(ok ? "링크를 복사했어요" : "공유하지 못했어요");
+  }
+
+  // 리포스트 토글(낙관적 → 서버 확정). 내 프로필 활동에 원글이 올라간다.
+  async function toggleRepost(post: CommunityPost) {
+    const was = !!post.myReposted;
+    const base = post.repostCount || 0;
+    const apply = (reposted: boolean, count: number) =>
+      setPosts((prev) => {
+        const next = prev.map((p) => (p.id === post.id ? { ...p, myReposted: reposted, repostCount: count } : p));
+        clientCache.set(postsKey(selectedGroupId, query), next);
+        return next;
+      });
+    apply(!was, Math.max(0, base + (was ? -1 : 1)));
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(post.id)}/repost`, { method: "POST", credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "리포스트하지 못했어요.");
+      apply(!!data.reposted, typeof data.repostCount === "number" ? data.repostCount : base);
+      showLinkToast(data.reposted ? "내 프로필에 리포스트했어요" : "리포스트를 취소했어요");
+    } catch (error) {
+      apply(was, base);
+      showLinkToast(error instanceof Error ? error.message : "리포스트하지 못했어요.");
+    }
   }
 
   // 팔로우 토글 — 같은 작성자의 글 카드가 모두 같이 바뀌도록 userId 로 갱신한다(낙관적 → 서버 확정).
@@ -399,14 +420,6 @@ export default function CommunityClient() {
   useEffect(() => {
     loadGroups();
     loadWeeklyPopular();
-  }, []);
-
-  useEffect(() => {
-    try {
-      setShowWriteNudge(localStorage.getItem(WRITE_NUDGE_KEY) !== todayKey());
-    } catch {
-      setShowWriteNudge(true);
-    }
   }, []);
 
   useEffect(() => {
@@ -831,7 +844,7 @@ export default function CommunityClient() {
                       {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{boardShortName(post.groupName)}</span>}
                     </div>
                     <div className="tc-who is-link" onClick={(event) => openProfile(event, post.userId)}>
-                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
+                      <p className="community-post-author" data-tour={postIndex === 0 ? "com-tier" : undefined}><span className="tc-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
                         {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
                       </p>
@@ -999,14 +1012,16 @@ export default function CommunityClient() {
                     </button>
                     <button
                       type="button"
-                      className="community-metric-btn"
-                      aria-label="링크 복사"
+                      className={`community-metric-btn${post.myReposted ? " is-reposted" : ""}`}
+                      aria-label="리포스트"
+                      aria-pressed={!!post.myReposted}
                       onClick={(event) => {
                         event.stopPropagation();
-                        copyPostLink(post);
+                        toggleRepost(post);
                       }}
                     >
                       <TossRepostIcon />
+                      {(post.repostCount || 0) > 0 && <span>{formatCount(post.repostCount || 0)}</span>}
                     </button>
                     <button
                       type="button"
@@ -1041,15 +1056,6 @@ export default function CommunityClient() {
       {linkToast && <div className="community-link-toast" role="status">{linkToast}</div>}
 
       <div style={floatingWriteDockStyle}>
-        {showWriteNudge && (
-          <NudgeBubble
-            icon="xp-write"
-            text="하루에 한번 커뮤니티 글 쓰기"
-            xp={10}
-            tailAlign="end"
-            tailInset={26}
-          />
-        )}
         <button
           type="button"
           className="community-floating-write"
@@ -2974,6 +2980,9 @@ function CommunityStyles() {
       .community-metric-btn:disabled {
         cursor: default;
       }
+      .community-metric-btn.is-reposted { color: #03a94d; }
+      .community-metric-btn.is-reposted svg { animation: repostSpin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      @keyframes repostSpin { from { transform: rotate(-180deg) scale(0.7); } to { transform: none; } }
       .community-metric-btn.is-liked {
         color: var(--c-danger-b, #e8544e);
       }

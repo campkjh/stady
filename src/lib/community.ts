@@ -314,6 +314,19 @@ export async function ensureCommunityTables() {
     CREATE INDEX IF NOT EXISTS "CommunityFollow_followee_idx" ON "CommunityFollow" ("followee_id")
   `);
 
+  // 리포스트: 남의 글을 내 프로필 활동에 올린다(글 복사 X, 원글을 가리키는 표시만). 한 글에 사람당 1번.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityRepost" (
+      "user_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+      "post_id" TEXT NOT NULL REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("user_id", "post_id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "CommunityRepost_post_idx" ON "CommunityRepost" ("post_id")
+  `);
+
   // --- Post type (normal | poll) and author-chosen image blind ---
   await prisma.$executeRawUnsafe(`
     ALTER TABLE "CommunityPost" ADD COLUMN IF NOT EXISTS "type" TEXT NOT NULL DEFAULT 'normal'
@@ -2463,8 +2476,27 @@ export async function getCommunityUserProfile(userId: string, viewerId?: string 
         userId
       );
 
+  // 이 사람이 리포스트한 글(원글 기준 정보 + 리포스트한 시각)
+  const reposts = hide
+    ? []
+    : await prisma.$queryRawUnsafe<
+        { id: string; title: string; content: string; created_at: Date; reposted_at: Date; group_name: string; author_name: string | null; like_count: number; comment_count: number }[]
+      >(
+        `SELECT p."id", p."title", p."content", p."created_at", r."created_at" AS "reposted_at", g."name" AS "group_name", u."nickname" AS "author_name",
+                (SELECT COUNT(*)::int FROM "CommunityPostLike" l WHERE l."post_id" = p."id") AS "like_count",
+                (SELECT COUNT(*)::int FROM "CommunityComment" c WHERE c."post_id" = p."id" AND c."is_active" = true) AS "comment_count"
+         FROM "CommunityRepost" r
+         JOIN "CommunityPost" p ON p."id" = r."post_id" AND p."is_active" = true
+         JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id" AND g."is_active" = true
+         LEFT JOIN "User" u ON u."id" = p."user_id"
+         WHERE r."user_id" = $1
+         ORDER BY r."created_at" DESC LIMIT 30`,
+        userId
+      );
+
   return {
     user,
+    reposts,
     followerCount: followers[0]?.c ?? 0,
     followingCount: following[0]?.c ?? 0,
     isFollowing,
@@ -2472,6 +2504,66 @@ export async function getCommunityUserProfile(userId: string, viewerId?: string 
     posts,
     comments,
   };
+}
+
+/** 리포스트 토글. 내 글은 리포스트할 수 없고, 결과로 현재 상태와 그 글의 리포스트 수를 돌려준다. */
+export async function toggleCommunityRepost(userId: string, postId: string) {
+  await ensureCommunityTables();
+  const posts = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+    `SELECT "user_id" FROM "CommunityPost" WHERE "id" = $1 AND "is_active" = true`,
+    postId
+  );
+  if (posts.length === 0) throw new Error("CommunityPostNotFound");
+  if (posts[0].user_id === userId) throw new Error("CommunityRepostSelf");
+  const removed = await prisma.$queryRawUnsafe<{ user_id: string }[]>(
+    `DELETE FROM "CommunityRepost" WHERE "user_id" = $1 AND "post_id" = $2 RETURNING "user_id"`,
+    userId,
+    postId
+  );
+  let reposted = false;
+  if (removed.length === 0) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "CommunityRepost" ("user_id", "post_id") VALUES ($1, $2) ON CONFLICT ("user_id", "post_id") DO NOTHING`,
+      userId,
+      postId
+    );
+    reposted = true;
+  }
+  const counts = await prisma.$queryRawUnsafe<{ c: number }[]>(
+    `SELECT COUNT(*)::int AS "c" FROM "CommunityRepost" WHERE "post_id" = $1`,
+    postId
+  );
+  return { reposted, repostCount: counts[0]?.c ?? 0 };
+}
+
+export interface CommunityRepostInfo {
+  counts: Record<string, number>;
+  mine: Set<string>;
+}
+
+/** 글들의 리포스트 수 + 보는 사람이 이미 리포스트했는지. 쿼리 2번(글 id 묶음). */
+export async function getCommunityRepostInfo(
+  postIds: (string | null | undefined)[],
+  viewerId?: string | null
+): Promise<CommunityRepostInfo> {
+  const ids = Array.from(new Set(postIds.filter((id): id is string => !!id)));
+  const info: CommunityRepostInfo = { counts: {}, mine: new Set() };
+  if (ids.length === 0) return info;
+  await ensureCommunityTables();
+  const rows = await prisma.$queryRawUnsafe<{ post_id: string; c: number }[]>(
+    `SELECT "post_id", COUNT(*)::int AS "c" FROM "CommunityRepost" WHERE "post_id" = ANY($1::text[]) GROUP BY "post_id"`,
+    ids
+  );
+  for (const row of rows) info.counts[row.post_id] = row.c;
+  if (viewerId) {
+    const mine = await prisma.$queryRawUnsafe<{ post_id: string }[]>(
+      `SELECT "post_id" FROM "CommunityRepost" WHERE "user_id" = $1 AND "post_id" = ANY($2::text[])`,
+      viewerId,
+      ids
+    );
+    for (const row of mine) info.mine.add(row.post_id);
+  }
+  return info;
 }
 
 /** 내가 차단한 사용자 목록(해제 화면용) + 그 사람 때문에 숨겨진 글·댓글 수. */

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, getAdminUserIds } from "@/lib/auth";
-import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getCommunityKings, getCommunityFollowInfo, mapTag, toNumber, QUIZ_MAX_QUESTIONS_PER_POST, QUIZ_MAX_POSTS_PER_DAY, type CommunityTier, type CommunityKings, type CommunityFollowInfo } from "@/lib/community";
+import { createCommunityPost, getCommunityPosts, getTags, getUserTiers, getCommunityKings, getCommunityFollowInfo, getCommunityRepostInfo, mapTag, toNumber, QUIZ_MAX_QUESTIONS_PER_POST, QUIZ_MAX_POSTS_PER_DAY, type CommunityTier, type CommunityKings, type CommunityFollowInfo, type CommunityRepostInfo } from "@/lib/community";
 
 function mapPost(
   post: Awaited<ReturnType<typeof getCommunityPosts>>[number],
   tiers: Record<string, CommunityTier>,
   adminIds: Set<string>,
   kings: CommunityKings,
-  follow: CommunityFollowInfo
+  follow: CommunityFollowInfo,
+  repost: CommunityRepostInfo
 ) {
   return {
     id: post.id,
@@ -20,6 +21,8 @@ function mapPost(
     authorIsPickKing: post.user_id ? kings.pick.has(post.user_id) : false,
     authorFollowerCount: post.user_id ? follow.counts[post.user_id] ?? 0 : 0,
     authorIsFollowing: post.user_id ? follow.mine.has(post.user_id) : false,
+    repostCount: repost.counts[post.id] ?? 0,
+    myReposted: repost.mine.has(post.id),
     groupId: post.group_id,
     groupName: post.group_name,
     groupSlug: post.group_slug,
@@ -62,7 +65,8 @@ export async function GET(request: NextRequest) {
       const popAdmins = await getAdminUserIds(popular.map((p) => p.user_id));
       const popKings = await getCommunityKings(popular.map((p) => p.user_id));
       const popFollow = await getCommunityFollowInfo(popular.map((p) => p.user_id), viewerId);
-      return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers, popAdmins, popKings, popFollow)) });
+      const popRepost = await getCommunityRepostInfo(popular.map((p) => p.id), viewerId);
+      return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers, popAdmins, popKings, popFollow, popRepost)) });
     }
     const posts = await getCommunityPosts({
       activeOnly: true,
@@ -75,7 +79,8 @@ export async function GET(request: NextRequest) {
     const adminIds = await getAdminUserIds(posts.map((p) => p.user_id));
     const kings = await getCommunityKings(posts.map((p) => p.user_id));
     const follow = await getCommunityFollowInfo(posts.map((p) => p.user_id), viewerId);
-    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds, kings, follow)) });
+    const repost = await getCommunityRepostInfo(posts.map((p) => p.id), viewerId);
+    return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds, kings, follow, repost)) });
   } catch (error) {
     console.error("Community posts GET error:", error);
     return NextResponse.json({ error: "게시글을 불러오지 못했습니다." }, { status: 500 });
