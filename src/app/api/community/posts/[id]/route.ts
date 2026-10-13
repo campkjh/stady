@@ -11,6 +11,7 @@ import {
   incrementCommunityPostView,
   getUserTiers,
   getCommunityKings,
+  getCommunityFollowInfo,
   type CommunityKings,
   mapTag,
   toNumber,
@@ -95,6 +96,7 @@ export async function GET(
     const allUserIds = [detail.post.user_id, ...commentUserIds];
     const tiers = await getUserTiers(allUserIds);
     const kings = await getCommunityKings(allUserIds);
+    const follow = await getCommunityFollowInfo([detail.post.user_id], user?.id);
 
     return NextResponse.json({
       post: {
@@ -105,6 +107,8 @@ export async function GET(
         authorTier: detail.post.user_id ? tiers[detail.post.user_id] ?? "iron" : "iron",
         authorIsAnswerKing: detail.post.user_id ? kings.answer.has(detail.post.user_id) : false,
         authorIsPickKing: detail.post.user_id ? kings.pick.has(detail.post.user_id) : false,
+        authorFollowerCount: detail.post.user_id ? follow.counts[detail.post.user_id] ?? 0 : 0,
+        authorIsFollowing: detail.post.user_id ? follow.mine.has(detail.post.user_id) : false,
         groupId: detail.post.group_id,
         groupName: detail.post.group_name,
         groupSlug: detail.post.group_slug,

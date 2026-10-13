@@ -10,6 +10,9 @@ import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
+import FollowButton from "@/components/community/FollowButton";
+import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, formatCount } from "@/components/community/TossIcons";
+import { boardTone, boardShortName } from "@/lib/boardTone";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -921,7 +924,7 @@ export default function CommunityClient() {
                           post.nickname.slice(0, 1)
                         )}
                       </div>
-                      {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{post.groupName.replace(/게시판$/, "") || post.groupName}</span>}
+                      {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{boardShortName(post.groupName)}</span>}
                     </div>
                     <div className="tc-who">
                       <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: `linear-gradient(90deg, ${boardTone(post.groupName).to} 0%, var(--c-text) 55%)` }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
@@ -930,17 +933,11 @@ export default function CommunityClient() {
                       </p>
                     </div>
                     {post.userId && post.userId !== meId && !post.authorIsAdmin && (
-                      <button
-                        type="button"
-                        className={`tc-follow${post.authorIsFollowing ? " is-on" : ""}`}
-                        disabled={followingBusy === post.userId}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleFollow(post);
-                        }}
-                      >
-                        {post.authorIsFollowing ? "팔로잉" : "팔로우"}
-                      </button>
+                      <FollowButton
+                        following={!!post.authorIsFollowing}
+                        busy={followingBusy === post.userId}
+                        onToggle={() => toggleFollow(post)}
+                      />
                     )}
                   </div>
                   <h2 className="community-post-title">
@@ -1318,68 +1315,6 @@ function SkeletonPost() {
       <div className="community-skeleton-line" style={{ width: "100%" }} />
       <div className="community-skeleton-line" style={{ width: "58%" }} />
     </div>
-  );
-}
-
-// 게시판별 배지 색(아바타에 겹치는 알약) — 사장 지정 팔레트(파랑·회색·빨강·주황·노랑·초록)의 살짝 번지는 그라데이션.
-// 정해진 게시판은 고정색, 새 게시판은 이름으로 팔레트에서 골라 늘 같은 색이 나온다. 밝은 색(노랑·회색)은 글자를 어둡게.
-interface BoardTone { bg: string; color: string; to: string }
-const tone = (from: string, to: string, color = "#fff"): BoardTone => ({ bg: `linear-gradient(135deg, ${from}, ${to})`, color, to });
-const TONE_BLUE = tone("#5a90f3", "#5087f0");
-const TONE_GRAY = tone("#b7bdc3", "#adb4bb", "#4e5968");
-const TONE_RED = tone("#e6767b", "#e56e73");
-const TONE_ORANGE = tone("#f3b14e", "#f3af49");
-const TONE_YELLOW = tone("#f8d575", "#f7d372", "#6b5300");
-const TONE_GREEN = tone("#77d4a5", "#74d2a2");
-const BOARD_TONES: Record<string, BoardTone> = {
-  자유: TONE_BLUE,
-  입시: TONE_GREEN,
-  질문: TONE_ORANGE,
-  공지: TONE_RED,
-};
-const BOARD_FALLBACK_TONES = [TONE_YELLOW, TONE_GRAY, TONE_GREEN, TONE_BLUE];
-function boardTone(groupName: string): BoardTone {
-  const key = groupName.replace(/게시판$/, "") || groupName;
-  if (BOARD_TONES[key]) return BOARD_TONES[key];
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-  return BOARD_FALLBACK_TONES[h % BOARD_FALLBACK_TONES.length];
-}
-
-// 토스 커뮤니티식 액션 아이콘(프리티풀 TossIcons 와 같은 선 그림) — 색은 currentColor.
-function formatCount(n: number): string {
-  if (n >= 10000) return `${(n / 10000).toFixed(1).replace(/\.0$/, "")}만`;
-  return String(n);
-}
-function TossHeartIcon({ filled }: { filled?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill={filled ? "currentColor" : "none"} aria-hidden="true">
-      <path d="M12 20.2s-7.6-4.5-7.6-10.1A4.35 4.35 0 0 1 12 7.4a4.35 4.35 0 0 1 7.6 2.7c0 5.6-7.6 10.1-7.6 10.1Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function TossCommentIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-      <path d="M12 4.3c4.4 0 7.9 3.2 7.9 7.2s-3.5 7.2-7.9 7.2c-1 0-2-.2-2.9-.5L5 19.6l1.1-3.3C4.9 15 4.1 13.3 4.1 11.5c0-4 3.5-7.2 7.9-7.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function TossRepostIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-      <path d="M16.2 4.6 18.8 7.2l-2.6 2.6M18.6 7.2H8.3A3.3 3.3 0 0 0 5 10.5v1M7.8 19.4 5.2 16.8l2.6-2.6M5.4 16.8h10.3a3.3 3.3 0 0 0 3.3-3.3v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function TossShareIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
-      <circle cx="17.5" cy="5.8" r="2.4" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="6.5" cy="12" r="2.4" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="17.5" cy="18.2" r="2.4" stroke="currentColor" strokeWidth="1.8" />
-      <path d="m8.6 10.8 6.8-3.8M8.6 13.2l6.8 3.8" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
   );
 }
 
@@ -1980,6 +1915,8 @@ function CommunityStyles() {
       }
       .community-panel-body {
         flex: 1;
+        display: flex;
+        flex-direction: column;
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
@@ -2004,6 +1941,37 @@ function CommunityStyles() {
          헤더 아래에 빈 줄이 하나 더 생겨 헤더가 두 개처럼 보인다 → 여백을 걷어낸다. */
       .community-panel .community-detail-shell {
         padding-top: 0;
+      }
+      /* 상세 하단 고정 입력창(.cpd-dock)은 뷰포트 기준 fixed 라 패널 밖으로 나온다 →
+         패널 안에서는 스크롤 칸 맨 아래에 붙는 sticky 로 바꾼다. */
+      .community-panel .cpd-dock-overlay {
+        position: sticky;
+        top: auto;
+        right: auto;
+        left: auto;
+        bottom: 0;
+        z-index: 5;
+        pointer-events: auto;
+      }
+      .community-panel .cpd-dock {
+        position: static;
+        transform: none;
+        width: 100%;
+      }
+      .community-panel .community-detail-page {
+        padding-bottom: 0;
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .community-panel .community-detail-shell {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .community-panel .cpd-dock-overlay {
+        margin-top: auto;
       }
       .community-panel-close {
         position: absolute;
@@ -2464,38 +2432,6 @@ function CommunityStyles() {
         flex: 1;
       }
       /* 아바타 오른쪽 아래에 겹치는 파란 알약(토스 '주주' 자리 = 게시판 이름) */
-      .tc-follow {
-        flex: none;
-        height: 38px;
-        padding: 0 16px;
-        border: none;
-        border-radius: 12px;
-        background: #3182f6;
-        color: #fff;
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: -0.2px;
-        font-family: inherit;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .tc-follow.is-on {
-        background: var(--c-bg-muted, #f2f4f6);
-        color: var(--c-text-3, #6b7684);
-      }
-      .tc-follow:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
-      /* 닉네임 앞(태그와 가까운 쪽)이 게시판 색에서 시작해 본래 글자색으로 풀리는 글자 그라데이션 */
-      .tc-name {
-        min-width: 0;
-        overflow-wrap: anywhere;
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        color: transparent;
-      }
       .tc-role {
         position: absolute;
         right: -8px;

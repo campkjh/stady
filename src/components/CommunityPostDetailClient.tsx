@@ -6,7 +6,10 @@ import AlertModal from "@/components/AlertModal";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
-import NudgeBubble from "@/components/NudgeBubble";
+import FollowButton from "@/components/community/FollowButton";
+import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, ReplyArrowIcon, SortArrowsIcon, SendUpIcon, formatCount } from "@/components/community/TossIcons";
+import { boardTone, boardShortName } from "@/lib/boardTone";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
@@ -134,6 +137,8 @@ interface CommunityPostDetail {
   authorTier?: string;
   authorIsAnswerKing?: boolean;
   authorIsPickKing?: boolean;
+  authorFollowerCount?: number;
+  authorIsFollowing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -192,9 +197,15 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [loading, setLoading] = useState(false);
   const [comment, setComment] = useState("");
   const [commentPosting, setCommentPosting] = useState(false);
-  const [replyTargetId, setReplyTargetId] = useState("");
-  const [replyContent, setReplyContent] = useState("");
-  const [replyPosting, setReplyPosting] = useState(false);
+  // 토스처럼 답글도 아래 고정 입력창 하나로 쓴다: '답글 달기'를 누르면 입력창에 파란 @닉네임이 붙는다.
+  const [replyTo, setReplyTo] = useState<{ id: string; nickname: string } | null>(null);
+  const composerRef = useRef<HTMLInputElement | null>(null);
+  const dockOverlayRef = useRef<HTMLDivElement | null>(null);
+  const keyboardInset = useKeyboardInset(true, dockOverlayRef);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef<number | null>(null);
   const [revealBlind, setRevealBlind] = useState(false);
   const [voting, setVoting] = useState(false);
   const [quizBusy, setQuizBusy] = useState<string | null>(null);
@@ -398,8 +409,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
   async function submitComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const content = comment.trim();
-    if (!content) return;
+    const typed = comment.trim();
+    if (!typed || commentPosting) return;
+    // 답글이면 '@닉네임 ' 을 앞에 붙여 저장한다(상세·알림에서 파랗게 보임).
+    const content = replyTo ? `@${replyTo.nickname} ${typed}` : typed;
 
     setCommentPosting(true);
     setMessage("");
@@ -408,11 +421,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(replyTo ? { content, parentId: replyTo.id } : { content }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "댓글을 저장하지 못했습니다.");
       setComment("");
+      setReplyTo(null);
       await loadDetail();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "댓글을 저장하지 못했습니다.");
@@ -421,31 +435,66 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  async function submitReply(event: FormEvent<HTMLFormElement>, parentId: string, mention?: string) {
-    event.preventDefault();
-    const typed = replyContent.trim();
-    if (!typed) return;
-    // 토스처럼 '@닉네임 ' 을 앞에 붙여 저장한다(목록·상세에서 파랗게 보임).
-    const content = mention ? `@${mention} ${typed}` : typed;
+  function startReply(target: CommunityComment) {
+    setReplyTo({ id: target.id, nickname: target.nickname });
+    setComment("");
+    // 키보드가 바로 뜨도록 같은 탭 안에서 포커스를 준다.
+    composerRef.current?.focus();
+  }
 
-    setReplyPosting(true);
-    setMessage("");
+  function showToast(text: string) {
+    setToast(text);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(""), 1800);
+  }
+
+  async function copyLink() {
+    const url = `${window.location.origin}/community/${postId}`;
     try {
-      const response = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`, {
+      await navigator.clipboard.writeText(url);
+      showToast("링크를 복사했어요");
+    } catch {
+      showToast("링크를 복사하지 못했어요");
+    }
+  }
+
+  async function sharePostLink() {
+    if (!post) return;
+    const url = `${window.location.origin}/community/${postId}`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: post.title, text: post.title, url });
+        return;
+      } catch (e) {
+        if ((e as { name?: string })?.name === "AbortError") return;
+      }
+    }
+    await copyLink();
+  }
+
+  // 팔로우 토글(낙관적 → 서버 확정). 목록 캐시도 같이 비운다.
+  async function toggleFollow() {
+    if (!post?.userId || followBusy) return;
+    const was = !!post.authorIsFollowing;
+    const base = post.authorFollowerCount || 0;
+    setFollowBusy(true);
+    setPost((cur) => (cur ? { ...cur, authorIsFollowing: !was, authorFollowerCount: Math.max(0, base + (was ? -1 : 1)) } : cur));
+    try {
+      const response = await fetch("/api/community/follows", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, parentId }),
+        body: JSON.stringify({ userId: post.userId }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "답글을 저장하지 못했습니다.");
-      setReplyTargetId("");
-      setReplyContent("");
-      await loadDetail();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "팔로우하지 못했어요.");
+      setPost((cur) => (cur ? { ...cur, authorIsFollowing: !!data.following, authorFollowerCount: typeof data.followerCount === "number" ? data.followerCount : base } : cur));
+      clientCache.clearPrefix("community-");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "답글을 저장하지 못했습니다.");
+      setPost((cur) => (cur ? { ...cur, authorIsFollowing: was, authorFollowerCount: base } : cur));
+      showToast(error instanceof Error ? error.message : "팔로우하지 못했어요.");
     } finally {
-      setReplyPosting(false);
+      setFollowBusy(false);
     }
   }
 
@@ -629,14 +678,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         </header>
 
         {message && (
-          <div style={{ border: "1px solid var(--c-brand-line-9)", background: "var(--c-brand-soft-4)", color: "var(--c-brand-deep-2)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
+          <div style={{ margin: "12px 20px 0", border: "1px solid var(--c-brand-line-9)", background: "var(--c-brand-soft-4)", color: "var(--c-brand-deep-2)", borderRadius: 8, padding: 12, fontSize: 14, fontWeight: 500 }}>
             {message}
           </div>
         )}
 
         {loading && !post ? (
           // 글을 불러오는 동안 '불러오는 중...' 문구 대신 글 모양의 스켈레톤(분류·시간 / 제목 / 본문 줄 / 사진 / 공감·댓글 줄)을 보여 준다.
-          <div style={panelStyle} className="cpd-sk" role="status" aria-busy="true" aria-label="게시글을 불러오는 중">
+          <div style={{ ...panelStyle, padding: "18px 20px" }} className="cpd-sk" role="status" aria-busy="true" aria-label="게시글을 불러오는 중">
             <div className="cpd-sk-row">
               <span className="cpd-sk-b" style={{ width: 74, height: 30, borderRadius: 999 }} />
               <span className="cpd-sk-b" style={{ width: 54, height: 14 }} />
@@ -659,22 +708,29 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           </div>
         ) : post ? (
           <>
-            <article className="community-detail-panel community-post-detail-card" style={panelStyle}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ borderRadius: 999, border: "1px solid var(--c-bg-muted-6)", background: "transparent", color: "var(--c-text-2c)", padding: "7px 10px", fontSize: 13, fontWeight: 700 }}>{post.groupName}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ color: "var(--c-text-4)", fontSize: 12 }} title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</span>
-                  <ReportBlockMenu
-                    targetType="post"
-                    postId={post.id}
-                    targetUserId={post.userId}
-                    targetNickname={post.nickname}
-                    currentUserId={currentUserId}
-                    // 차단하면 이 글 자체가 안 보이는 게 맞으므로 목록으로 되돌린다.
-                    onBlocked={() => router.push("/community")}
-                    variant="dots"
-                  />
-                </span>
+            <article className="community-detail-panel cpd-post">
+              <div className="cpd-head">
+                <div className="cpd-ava-wrap">
+                  <MiniAvatar nickname={post.nickname} avatar={post.avatar} size={52} />
+                  {post.groupName && (
+                    <span className="cpd-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>
+                      {boardShortName(post.groupName)}
+                    </span>
+                  )}
+                </div>
+                <div className="cpd-who">
+                  <p className="cpd-name-row">
+                    <span className="cpd-name" style={{ backgroundImage: `linear-gradient(90deg, ${boardTone(post.groupName).to} 0%, var(--c-text) 55%)` }}>{post.nickname}</span>
+                    <TierBadge tier={post.authorTier} />
+                    <KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} />
+                  </p>
+                  <p className="cpd-meta" title={formatExactTime(post.createdAt)}>
+                    {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
+                  </p>
+                </div>
+                {post.userId && post.userId !== currentUserId && (
+                  <FollowButton following={!!post.authorIsFollowing} busy={followBusy} onToggle={toggleFollow} />
+                )}
               </div>
               {editing ? (
                 <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>
@@ -794,15 +850,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               ) : (
                 <>
-                  <h2 style={{ margin: "10px 0 0", color: "var(--c-text)", fontSize: 24, lineHeight: 1.35, fontWeight: 700 }}>
-                    {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
-                    {post.title}
-                  </h2>
-                  <div style={{ margin: "10px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
-                    <MiniAvatar nickname={post.nickname} avatar={post.avatar} size={34} />
-                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 13, fontWeight: 500 }}>{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /> · 조회 {post.viewCount ?? 0}</p>
+                  <div className="cpd-body">
+                    <h2 className="cpd-title">
+                      {post.groupSlug === "qna" && <QBadge answered={post.commentCount > 0} />}
+                      {post.title}
+                    </h2>
+                    {post.content && <p className="cpd-content">{post.content}</p>}
                   </div>
-                  <p style={{ margin: "16px 0", color: "var(--c-text-2c)", fontSize: 16, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</p>
                   {(() => {
                     const isOwner = !!post.userId && currentUserId === post.userId;
                     if (!isOwner && !isAdmin) return null;
@@ -982,114 +1036,82 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               )}
 
-              <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
-                <NudgeBubble
-                  icon="xp-like"
-                  text="공감하면 작성자에게 경험치 +2"
-                  tailAlign="start"
-                  tailInset={18}
-                  compact
-                  style={{ justifySelf: "start", marginBottom: -4 }}
-                />
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", position: "relative" }}>
-                  <button
-                    type="button"
-                    className="community-action-button"
-                    onClick={() => react("heart")}
-                    style={actionButtonStyle(!!post.myReaction)}
-                  >
-                    <ReactionIcon name={post.myReaction ? reactionIcon(post.myReaction) : "heart-grey"} size={18} />
-                    {post.myReaction ? reactionLabel(post.myReaction) : "좋아요"} {post.likeCount}
-                  </button>
-                  <span style={{ color: "var(--c-text-3)", fontSize: 13, fontWeight: 600 }}>댓글 {post.commentCount}</span>
-                </div>
-                {post.likeCount > 0 && (
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {REACTIONS.filter((r) => (post.reactionCounts[r.key] || 0) > 0).map((r) => (
-                      <span key={r.key} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--c-text-3)", fontWeight: 500 }}>
-                        <ReactionIcon name={r.icon} size={15} /> {post.reactionCounts[r.key]}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div className="cpd-actions">
+                <button type="button" className={`cpd-act${post.myReaction ? " is-liked" : ""}`} aria-label="좋아요" aria-pressed={!!post.myReaction} onClick={() => react("heart")}>
+                  <TossHeartIcon filled={!!post.myReaction} />
+                  <span>{formatCount(post.likeCount || 0)}</span>
+                </button>
+                <button type="button" className="cpd-act" aria-label="댓글" onClick={() => composerRef.current?.focus()}>
+                  <TossCommentIcon />
+                  <span>{formatCount(post.commentCount || 0)}</span>
+                </button>
+                <button type="button" className="cpd-act" aria-label="링크 복사" onClick={copyLink}>
+                  <TossRepostIcon />
+                </button>
+                <button type="button" className="cpd-act" aria-label="공유" onClick={sharePostLink}>
+                  <TossShareIcon />
+                </button>
+                <span className="cpd-more">
+                  <ReportBlockMenu
+                    targetType="post"
+                    postId={post.id}
+                    targetUserId={post.userId}
+                    targetNickname={post.nickname}
+                    currentUserId={currentUserId}
+                    // 차단하면 이 글 자체가 안 보이는 게 맞으므로 목록으로 되돌린다.
+                    onBlocked={() => router.push("/community")}
+                    variant="dots"
+                  />
+                </span>
               </div>
             </article>
 
-            <section className="community-detail-panel" style={panelStyle}>
-              <h2 style={{ margin: 0, color: "var(--c-text)", fontSize: 18, fontWeight: 700 }}>댓글</h2>
-              <NudgeBubble
-                icon="xp-comment"
-                text="댓글 남기고 경험치 쌓기"
-                xp={3}
-                tailAlign="start"
-                tailInset={20}
-                style={{ justifySelf: "start", margin: "-6px 0 -8px" }}
-              />
-              <form onSubmit={submitComment} style={{ display: "grid", gap: 10 }}>
-                {me && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <MiniAvatar nickname={me.nickname} avatar={me.avatar} size={26} />
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--c-text-2c)" }}>{me.nickname}</span>
-                    <span style={{ fontSize: 12, color: "var(--c-text-5)" }}>(으)로 작성</span>
-                  </div>
-                )}
-                <textarea
-                  value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  placeholder="댓글을 입력해주세요"
-                  rows={3}
-                  style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
-                />
-                <button type="submit" className="community-primary-button" disabled={commentPosting || !comment.trim()} style={primaryButtonStyle}>
-                  {commentPosting ? "등록 중..." : "댓글 등록"}
+            <div className="cpd-band" aria-hidden="true" />
+            <section className="community-detail-panel cpd-comments">
+              <div className="cpd-sort-wrap">
+                <button type="button" className="cpd-sort" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
+                  {COMMENT_SORTS.find((x) => x.key === commentSort)?.label}
+                  <SortArrowsIcon />
                 </button>
-              </form>
+                {sortOpen && (
+                  <>
+                    <div className="cpd-sort-backdrop" onClick={() => setSortOpen(false)} />
+                    <div className="cpd-sort-menu" role="listbox">
+                      {COMMENT_SORTS.map((x) => (
+                        <button
+                          key={x.key}
+                          type="button"
+                          role="option"
+                          aria-selected={commentSort === x.key}
+                          className={`cpd-sort-item${commentSort === x.key ? " on" : ""}`}
+                          onClick={() => {
+                            setSortOpen(false);
+                            changeCommentSort(x.key);
+                          }}
+                        >
+                          {x.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
 
-              {comments.length > 0 && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {COMMENT_SORTS.map((s) => {
-                    const on = commentSort === s.key;
-                    return (
-                      <button
-                        key={s.key}
-                        type="button"
-                        onClick={() => changeCommentSort(s.key)}
-                        aria-selected={on}
-                        style={{
-                          border: `1px solid ${on ? "var(--c-inverse)" : "var(--c-border)"}`,
-                          background: on ? "var(--c-inverse)" : "transparent",
-                          color: on ? "#fff" : "var(--c-text-3)",
-                          borderRadius: 999,
-                          padding: "6px 12px",
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
+              {comments.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "36px 0 24px" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/icons/toss/sleeping.svg" alt="" width={44} height={44} style={{ display: "block", margin: "0 auto 8px" }} />
+                  <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>댓글이 자고있나봐요<br />깨워주세요!</p>
                 </div>
-              )}
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {comments.length === 0 ? (
-                  <div style={{ textAlign: "center" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/icons/toss/sleeping.svg" alt="" width={44} height={44} style={{ display: "block", margin: "0 auto 8px" }} />
-                    <p style={{ margin: 0, color: "var(--c-text-4)", fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>댓글이 자고있나봐요<br />깨워주세요!</p>
-                  </div>
-                ) : (
-                  comments.map((item) => (
+              ) : (
+                <div className="cpd-clist">
+                  {comments.map((item) => (
                     <CommentItem
                       key={item.id}
                       comment={item}
                       currentUserId={currentUserId}
                       onBlocked={() => loadDetail()}
-                      replyTargetId={replyTargetId}
-                      replyContent={replyContent}
-                      replyPosting={replyPosting}
+                      activeReplyId={replyTo?.id ?? ""}
                       isAdmin={isAdmin}
                       canPin={!!post && (isAdmin || (!!currentUserId && post.userId === currentUserId))}
                       isPinned={post?.pinnedCommentId === item.id}
@@ -1110,17 +1132,55 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       onSubmitEdit={submitCommentEdit}
                       onDelete={(id) => setDeleteCommentId(id)}
                       onToggleLike={toggleCommentLike}
-                      onOpenReply={(id) => {
-                        setReplyTargetId((current) => (current === id ? "" : id));
-                        setReplyContent("");
-                      }}
-                      onReplyChange={setReplyContent}
-                      onSubmitReply={submitReply}
+                      onReply={startReply}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
+
+            {/* 아래 고정: 감정 반응 줄 + 댓글 입력창(답글이면 파란 @닉네임). 안드 WebView 는 키보드가 가리지 않게 올려 준다. */}
+            <div ref={dockOverlayRef} className="cpd-dock-overlay">
+              <div className="cpd-dock" style={{ bottom: keyboardInset }}>
+                <div className="cpd-react-bar">
+                  {REACTIONS.map((r) => (
+                    <button
+                      key={r.key}
+                      type="button"
+                      className={`cpd-react${post.myReaction === r.key ? " is-on" : ""}`}
+                      aria-label={r.label}
+                      aria-pressed={post.myReaction === r.key}
+                      onClick={() => react(r.key)}
+                    >
+                      <ReactionIcon name={r.icon} size={30} />
+                    </button>
+                  ))}
+                </div>
+                <form className="cpd-compose" onSubmit={submitComment}>
+                  <MiniAvatar nickname={me?.nickname ?? "나"} avatar={me?.avatar ?? null} size={44} />
+                  <div className="cpd-bar">
+                    {replyTo && (
+                      <button type="button" className="cpd-mention" onClick={() => setReplyTo(null)} aria-label={`${replyTo.nickname}님 답글 취소`}>
+                        @{replyTo.nickname}
+                      </button>
+                    )}
+                    <input
+                      ref={composerRef}
+                      className="cpd-input"
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      placeholder={replyTo ? "" : "댓글로 의견을 남겨보세요"}
+                      enterKeyHint="send"
+                      aria-label={replyTo ? `${replyTo.nickname}님에게 답글` : "댓글"}
+                    />
+                    <button type="submit" className="cpd-send" disabled={commentPosting || !comment.trim()} aria-label="등록">
+                      <SendUpIcon />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            {toast && <div className="cpd-toast" role="status">{toast}</div>}
           </>
         ) : (
           <div style={panelStyle}>
@@ -1138,13 +1198,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           min-height: 100vh;
           background: var(--c-bg);
           color: var(--c-text);
-          padding: 0 16px calc(120px + env(safe-area-inset-bottom, 0px));
+          padding: 0 0 calc(176px + env(safe-area-inset-bottom, 0px));
         }
         .community-detail-shell {
           max-width: 760px;
           margin: 0 auto;
-          display: grid;
-          gap: 14px;
+          display: block;
           padding-top: calc(62px + env(safe-area-inset-top, 0px));
         }
         .community-detail-topbar {
@@ -1246,12 +1305,64 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           transform: scale(0.97);
         }
         .rp-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; border: none; background: none; color: #6B7684; font-size: 15px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
-        .rp-form { margin-top: 10px; }
-        .rp-bar { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 6px 0 16px; border-radius: 24px; background: var(--c-bg-muted-2, #F2F4F6); }
-        .rp-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #3182F6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; }
-        .rp-input { flex: 1; min-width: 0; height: 44px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182F6; padding: 0; }
-        .rp-send { flex: none; width: 44px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 16px; background: #3182F6; cursor: pointer; transition: background 0.15s ease; }
-        .rp-send:disabled { background: #D1D6DB; cursor: default; }
+        /* ── 토스식 글 상세(프리티풀 tdet 와 같은 문법) ── */
+        .cpd-post { padding: 18px 20px 0; display: grid; gap: 14px; }
+        .cpd-head { display: flex; align-items: center; gap: 12px; }
+        .cpd-ava-wrap { position: relative; flex: none; width: 52px; height: 52px; }
+        .cpd-role { position: absolute; right: -8px; bottom: -3px; max-width: 64px; height: 20px; padding: 0 7px; border-radius: 999px; font-size: 11.5px; font-weight: 700; line-height: 20px; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 0 0 2px var(--c-bg, #fff); }
+        .cpd-who { min-width: 0; flex: 1; }
+        .cpd-name-row { margin: 0; display: flex; align-items: center; flex-wrap: wrap; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+        .cpd-name { min-width: 0; overflow-wrap: anywhere; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+        .cpd-meta { margin: 3px 0 0; color: var(--c-text-4c); font-size: 14.5px; font-weight: 500; letter-spacing: -0.2px; }
+        .cpd-body { display: grid; gap: 10px; }
+        .cpd-title { margin: 0; color: var(--c-text); font-size: 19px; line-height: 1.5; font-weight: 700; letter-spacing: -0.3px; }
+        .cpd-content { margin: 0; color: var(--c-text); font-size: 17.5px; line-height: 1.7; letter-spacing: -0.3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .cpd-actions { display: flex; align-items: center; gap: 22px; padding: 6px 0 16px; color: var(--c-text-3, #6b7684); }
+        .cpd-act { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; border: none; background: none; color: inherit; font-size: 17px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+        .cpd-act.is-liked { color: #f04452; }
+        .cpd-more { margin-left: auto; display: inline-flex; }
+        .cpd-band { height: 10px; background: var(--c-bg-muted-2, #f2f4f6); }
+        .cpd-comments { padding: 0 20px; }
+        .cpd-sort-wrap { position: relative; display: inline-block; padding: 18px 0 8px; }
+        .cpd-sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: none; background: none; color: var(--c-text-3, #6b7684); font-size: 17px; font-weight: 500; letter-spacing: -0.3px; cursor: pointer; font-family: inherit; }
+        .cpd-sort-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 55; }
+        .cpd-sort-menu { position: absolute; top: calc(100% - 4px); left: 0; z-index: 60; min-width: 150px; display: grid; padding: 8px; background: var(--c-bg, #fff); border-radius: 18px; box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14), 0 2px 10px rgba(15, 23, 42, 0.05); animation: cpdMenuIn 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; transform-origin: top left; }
+        .cpd-sort-item { display: flex; align-items: center; padding: 11px 12px; border: none; background: none; border-radius: 12px; color: var(--c-text-2c, #333d4b); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; font-family: inherit; }
+        .cpd-sort-item.on { color: #3182f6; font-weight: 700; }
+        @keyframes cpdMenuIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+        .cpd-clist { display: grid; }
+        .cpd-c { display: flex; gap: 12px; padding: 18px 0 14px; }
+        .cpd-c.is-reply { padding: 14px 0 6px; }
+        .cpd-c.is-pinned { background: var(--c-warn-soft, transparent); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+        .cpd-c-main { min-width: 0; flex: 1; }
+        .cpd-c-pin { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 4px; font-size: 12px; font-weight: 700; color: var(--c-warn-d, #b45309); }
+        .cpd-c-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
+        .cpd-c-name { color: var(--c-text-3, #6b7684); font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+        .cpd-c-time { margin-left: 5px; color: var(--c-text-4c, #8b95a1); font-size: 15px; font-weight: 500; }
+        .cpd-c-text { margin: 4px 0 0; color: var(--c-text); font-size: 17px; line-height: 1.6; letter-spacing: -0.3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .cpd-c-acts { display: flex; align-items: center; gap: 16px; margin-top: 6px; color: #6b7684; }
+        .cpd-c-like { display: inline-flex; align-items: center; gap: 4px; padding: 4px 2px; border: none; background: none; color: inherit; font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .cpd-c-like.is-liked { color: #f04452; }
+        .cpd-c-text-btn { padding: 4px 2px; border: none; background: none; color: #6b7684; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
+        .cpd-c-text-btn.is-danger { color: var(--c-danger-b, #e8544e); }
+        .cpd-c-replies { margin-top: 2px; }
+        .cpd-c.is-active > .cpd-c-main > .cpd-c-text { background: rgba(49, 130, 246, 0.07); border-radius: 8px; }
+        /* 아래 고정 입력 영역 */
+        .cpd-dock-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 70; pointer-events: none; }
+        .cpd-dock { position: absolute; left: 50%; transform: translateX(-50%); width: min(100%, 760px); box-sizing: border-box; pointer-events: auto; background: var(--c-bg, #fff); padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+        .cpd-react-bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; }
+        .cpd-react { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: none; border-radius: 14px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease; }
+        .cpd-react:active { transform: scale(0.86); }
+        .cpd-react.is-on { background: var(--c-bg-muted-2, #f2f4f6); transform: scale(1.08); }
+        .cpd-compose { display: flex; align-items: center; gap: 10px; }
+        .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 6px 0 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
+        .cpd-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
+        .cpd-input { flex: 1; min-width: 0; height: 48px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
+        .cpd-input::placeholder { color: var(--c-text-5, #b0b8c1); }
+        .cpd-send { flex: none; width: 46px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 17px; background: #3182f6; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease; }
+        .cpd-send:active:not(:disabled) { transform: scale(0.94); }
+        .cpd-send:disabled { background: #d1d6db; cursor: default; }
+        .cpd-toast { position: fixed; left: 50%; bottom: calc(190px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 300; padding: 12px 18px; border-radius: 12px; background: rgba(25, 31, 40, 0.92); color: #fff; font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; }
         @keyframes communityDetailIn {
           from { opacity: 0; transform: translateY(7px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1309,9 +1420,8 @@ function renderWithMention(text: string) {
 
 interface CommentItemProps {
   comment: CommunityComment;
-  replyTargetId: string;
-  replyContent: string;
-  replyPosting: boolean;
+  /** 지금 아래 입력창이 답글을 달고 있는 댓글 id(강조용). */
+  activeReplyId: string;
   isAdmin: boolean;
   /** 글쓴이(또는 관리자)만 댓글을 고정할 수 있다. 답글은 대상이 아니다. */
   canPin?: boolean;
@@ -1327,19 +1437,17 @@ interface CommentItemProps {
   onSubmitEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleLike: (id: string) => void;
-  onOpenReply: (id: string) => void;
-  onReplyChange: (value: string) => void;
-  onSubmitReply: (event: FormEvent<HTMLFormElement>, parentId: string, mention?: string) => void;
+  onReply: (comment: CommunityComment) => void;
   currentUserId: string | null;
   /** 차단 후 댓글 목록을 다시 불러온다. */
   onBlocked: () => void;
+  depth?: number;
 }
 
+// 토스식 댓글 한 줄: 아바타 · 이름 · 시간 / 본문 / 하트 · 답글 달기 · ⋯ . 답글은 본문 칸 안에 들여써서 이어진다.
 function CommentItem({
   comment,
-  replyTargetId,
-  replyContent,
-  replyPosting,
+  activeReplyId,
   isAdmin,
   canPin = false,
   isPinned = false,
@@ -1354,153 +1462,115 @@ function CommentItem({
   onSubmitEdit,
   onDelete,
   onToggleLike,
-  onOpenReply,
-  onReplyChange,
-  onSubmitReply,
+  onReply,
   currentUserId,
   onBlocked,
+  depth = 0,
 }: CommentItemProps) {
   const isEditing = editingCommentId === comment.id;
+  const rowClass = `cpd-c${depth > 0 ? " is-reply" : ""}${isPinned ? " is-pinned" : ""}${activeReplyId === comment.id ? " is-active" : ""}`;
   return (
-    <div style={isPinned ? { ...commentBoxStyle, background: "var(--c-warn-soft)", border: "1px solid var(--c-warn-line)", borderRadius: 14, padding: 14 } : commentBoxStyle}>
-      {isPinned && (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/pin-star.svg" alt="" width={15} height={15} style={{ display: "block" }} />
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-warn-d)" }}>고정</span>
-        </div>
-      )}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={28} />
-          <strong style={{ color: "var(--c-text)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{comment.nickname}<TierBadge tier={comment.authorTier} /><KingBadges answer={comment.authorIsAnswerKing} pick={comment.authorIsPickKing} /></strong>
-        </span>
-        <span style={{ color: "var(--c-text-4c)", fontSize: 12, flexShrink: 0 }} title={formatExactTime(comment.createdAt)}>{formatRelativeTime(comment.createdAt)}</span>
-      </div>
-      {isEditing ? (
-        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-          <textarea
-            value={editCommentContent}
-            onChange={(event) => onEditChange(event.target.value)}
-            rows={3}
-            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
-          />
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button type="button" onClick={onCancelEdit} style={{ ...smallActionButtonStyle(false), cursor: "pointer" }}>취소</button>
-            <button
-              type="button"
-              onClick={() => onSubmitEdit(comment.id)}
-              disabled={commentActionBusy || !editCommentContent.trim()}
-              style={{ ...smallActionButtonStyle(true), cursor: "pointer", opacity: commentActionBusy ? 0.6 : 1 }}
-            >
-              {commentActionBusy ? "저장 중..." : "저장"}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p style={{ margin: "8px 0 0", color: "var(--c-text-2c)", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{renderWithMention(comment.content)}</p>
-      )}
-      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <button type="button" className="community-action-button" onClick={() => onToggleLike(comment.id)} style={smallActionButtonStyle(comment.likedByMe)}>
-          공감 {comment.likeCount}
-        </button>
-        <button type="button" className="rp-btn" onClick={() => onOpenReply(comment.id)}>
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-            <path d="M5 4.5v6.2a3.3 3.3 0 0 0 3.3 3.3H19m0 0-3.6-3.6M19 14l-3.6 3.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          답글 달기
-        </button>
-        <ReportBlockMenu
-          targetType="comment"
-          commentId={comment.id}
-          targetUserId={comment.userId}
-          targetNickname={comment.nickname}
-          currentUserId={currentUserId}
-          onBlocked={onBlocked}
-          compact
-        />
-        {canPin && (
-          <button
-            type="button"
-            onClick={() => onTogglePin?.(comment.id)}
-            disabled={pinBusy}
-            style={{
-              ...smallActionButtonStyle(isPinned),
-              display: "inline-flex", alignItems: "center", gap: 4,
-              cursor: pinBusy ? "default" : "pointer", opacity: pinBusy ? 0.6 : 1,
-            }}
-          >
+    <div className={rowClass}>
+      <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={depth > 0 ? 34 : 44} />
+      <div className="cpd-c-main">
+        {isPinned && (
+          <div className="cpd-c-pin">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/pin-star.svg" alt="" width={14} height={14} style={{ display: "block" }} />
-            {isPinned ? "고정 해제" : "고정"}
-          </button>
-        )}
-        {isAdmin && !isEditing && (
-          <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, alignItems: "center" }}>
-            <span style={{ padding: "2px 7px", borderRadius: 999, background: "var(--c-brand-soft-3)", color: "var(--c-brand-deep)", fontSize: 10.5, fontWeight: 700 }}>관리자</span>
-            <button type="button" onClick={() => onStartEdit(comment)} style={{ border: "none", background: "none", color: "var(--c-brand)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
-              수정
-            </button>
-            <button type="button" onClick={() => onDelete(comment.id)} style={{ border: "none", background: "none", color: "var(--c-danger-b)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "4px 2px" }}>
-              삭제
-            </button>
-          </span>
-        )}
-      </div>
-
-      {replyTargetId === comment.id && (
-        <form className="rp-form" onSubmit={(event) => onSubmitReply(event, comment.id, comment.nickname)}>
-          <div className="rp-bar">
-            <span className="rp-mention">@{comment.nickname}</span>
-            <input
-              className="rp-input"
-              autoFocus
-              value={replyContent}
-              onChange={(event) => onReplyChange(event.target.value)}
-              placeholder=""
-              enterKeyHint="send"
-              aria-label={`${comment.nickname}님에게 답글`}
-            />
-            <button type="submit" className="rp-send" disabled={replyPosting || !replyContent.trim()} aria-label="답글 등록">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-                <path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            고정
           </div>
-        </form>
-      )}
-
-      {comment.replies.length > 0 && (
-        <div style={{ display: "grid", gap: 8, marginTop: 10, paddingLeft: 12, borderLeft: "2px solid var(--c-border)" }}>
-          {comment.replies.map((reply) => (
-            <CommentItem
-              key={reply.id}
-              comment={reply}
+        )}
+        <div className="cpd-c-head">
+          <strong className="cpd-c-name">{comment.nickname}</strong>
+          <TierBadge tier={comment.authorTier} />
+          <KingBadges answer={comment.authorIsAnswerKing} pick={comment.authorIsPickKing} />
+          <span className="cpd-c-time" title={formatExactTime(comment.createdAt)}>· {formatRelativeTime(comment.createdAt)}</span>
+        </div>
+        {isEditing ? (
+          <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+            <textarea
+              value={editCommentContent}
+              onChange={(event) => onEditChange(event.target.value)}
+              rows={3}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" onClick={onCancelEdit} style={{ ...smallActionButtonStyle(false), cursor: "pointer" }}>취소</button>
+              <button
+                type="button"
+                onClick={() => onSubmitEdit(comment.id)}
+                disabled={commentActionBusy || !editCommentContent.trim()}
+                style={{ ...smallActionButtonStyle(true), cursor: "pointer", opacity: commentActionBusy ? 0.6 : 1 }}
+              >
+                {commentActionBusy ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="cpd-c-text">{renderWithMention(comment.content)}</p>
+        )}
+        <div className="cpd-c-acts">
+          <button type="button" className={`cpd-c-like${comment.likedByMe ? " is-liked" : ""}`} aria-label="공감" aria-pressed={comment.likedByMe} onClick={() => onToggleLike(comment.id)}>
+            <TossHeartIcon filled={comment.likedByMe} />
+            {comment.likeCount > 0 && <span>{formatCount(comment.likeCount)}</span>}
+          </button>
+          <button type="button" className="rp-btn" onClick={() => onReply(comment)}>
+            <ReplyArrowIcon />
+            답글 달기
+          </button>
+          {canPin && depth === 0 && (
+            <button type="button" className="cpd-c-text-btn" onClick={() => onTogglePin?.(comment.id)} disabled={pinBusy}>
+              {isPinned ? "고정 해제" : "고정"}
+            </button>
+          )}
+          {isAdmin && !isEditing && (
+            <>
+              <button type="button" className="cpd-c-text-btn" onClick={() => onStartEdit(comment)}>수정</button>
+              <button type="button" className="cpd-c-text-btn is-danger" onClick={() => onDelete(comment.id)}>삭제</button>
+            </>
+          )}
+          <span className="cpd-more">
+            <ReportBlockMenu
+              targetType="comment"
+              commentId={comment.id}
+              targetUserId={comment.userId}
+              targetNickname={comment.nickname}
               currentUserId={currentUserId}
               onBlocked={onBlocked}
-              replyTargetId={replyTargetId}
-              replyContent={replyContent}
-              replyPosting={replyPosting}
-              isAdmin={isAdmin}
-              editingCommentId={editingCommentId}
-              editCommentContent={editCommentContent}
-              commentActionBusy={commentActionBusy}
-              onStartEdit={onStartEdit}
-              onEditChange={onEditChange}
-              onCancelEdit={onCancelEdit}
-              onSubmitEdit={onSubmitEdit}
-              onDelete={onDelete}
-              onToggleLike={onToggleLike}
-              onOpenReply={onOpenReply}
-              onReplyChange={onReplyChange}
-              onSubmitReply={onSubmitReply}
+              variant="dots"
             />
-          ))}
+          </span>
         </div>
-      )}
+        {comment.replies.length > 0 && (
+          <div className="cpd-c-replies">
+            {comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                currentUserId={currentUserId}
+                onBlocked={onBlocked}
+                activeReplyId={activeReplyId}
+                isAdmin={isAdmin}
+                editingCommentId={editingCommentId}
+                editCommentContent={editCommentContent}
+                commentActionBusy={commentActionBusy}
+                onStartEdit={onStartEdit}
+                onEditChange={onEditChange}
+                onCancelEdit={onCancelEdit}
+                onSubmitEdit={onSubmitEdit}
+                onDelete={onDelete}
+                onToggleLike={onToggleLike}
+                onReply={onReply}
+                depth={depth + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function updateComment(
   items: CommunityComment[],
