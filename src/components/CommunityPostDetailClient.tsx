@@ -421,10 +421,12 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  async function submitReply(event: FormEvent<HTMLFormElement>, parentId: string) {
+  async function submitReply(event: FormEvent<HTMLFormElement>, parentId: string, mention?: string) {
     event.preventDefault();
-    const content = replyContent.trim();
-    if (!content) return;
+    const typed = replyContent.trim();
+    if (!typed) return;
+    // 토스처럼 '@닉네임 ' 을 앞에 붙여 저장한다(목록·상세에서 파랗게 보임).
+    const content = mention ? `@${mention} ${typed}` : typed;
 
     setReplyPosting(true);
     setMessage("");
@@ -1243,6 +1245,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .community-detail-icon-button:active {
           transform: scale(0.97);
         }
+        .rp-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; border: none; background: none; color: #6B7684; font-size: 15px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+        .rp-form { margin-top: 10px; }
+        .rp-bar { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 6px 0 16px; border-radius: 24px; background: var(--c-bg-muted-2, #F2F4F6); }
+        .rp-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #3182F6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; }
+        .rp-input { flex: 1; min-width: 0; height: 44px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182F6; padding: 0; }
+        .rp-send { flex: none; width: 44px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 16px; background: #3182F6; cursor: pointer; transition: background 0.15s ease; }
+        .rp-send:disabled { background: #D1D6DB; cursor: default; }
         @keyframes communityDetailIn {
           from { opacity: 0; transform: translateY(7px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1286,6 +1295,18 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   );
 }
 
+/** 본문 맨 앞 '@닉네임' 은 파랗게(토스 언급). */
+function renderWithMention(text: string) {
+  const m = /^@(\S+)/.exec(text);
+  if (!m) return text;
+  return (
+    <>
+      <span style={{ color: "#3182F6", fontWeight: 500 }}>{m[0]}</span>
+      {text.slice(m[0].length)}
+    </>
+  );
+}
+
 interface CommentItemProps {
   comment: CommunityComment;
   replyTargetId: string;
@@ -1308,7 +1329,7 @@ interface CommentItemProps {
   onToggleLike: (id: string) => void;
   onOpenReply: (id: string) => void;
   onReplyChange: (value: string) => void;
-  onSubmitReply: (event: FormEvent<HTMLFormElement>, parentId: string) => void;
+  onSubmitReply: (event: FormEvent<HTMLFormElement>, parentId: string, mention?: string) => void;
   currentUserId: string | null;
   /** 차단 후 댓글 목록을 다시 불러온다. */
   onBlocked: () => void;
@@ -1377,14 +1398,17 @@ function CommentItem({
           </div>
         </div>
       ) : (
-        <p style={{ margin: "8px 0 0", color: "var(--c-text-2c)", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{comment.content}</p>
+        <p style={{ margin: "8px 0 0", color: "var(--c-text-2c)", fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{renderWithMention(comment.content)}</p>
       )}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <button type="button" className="community-action-button" onClick={() => onToggleLike(comment.id)} style={smallActionButtonStyle(comment.likedByMe)}>
           공감 {comment.likeCount}
         </button>
-        <button type="button" className="community-reply-button" onClick={() => onOpenReply(comment.id)} style={smallActionButtonStyle(false)}>
-          답글
+        <button type="button" className="rp-btn" onClick={() => onOpenReply(comment.id)}>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M5 4.5v6.2a3.3 3.3 0 0 0 3.3 3.3H19m0 0-3.6-3.6M19 14l-3.6 3.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          답글 달기
         </button>
         <ReportBlockMenu
           targetType="comment"
@@ -1425,26 +1449,24 @@ function CommentItem({
       </div>
 
       {replyTargetId === comment.id && (
-        <form onSubmit={(event) => onSubmitReply(event, comment.id)} style={{ display: "grid", gap: 8, marginTop: 10 }}>
-          <NudgeBubble
-            icon="xp-comment"
-            text="답글도 경험치가 쌓여요"
-            xp={3}
-            tailAlign="start"
-            tailInset={16}
-            compact
-            style={{ justifySelf: "start", marginBottom: -6 }}
-          />
-          <textarea
-            value={replyContent}
-            onChange={(event) => onReplyChange(event.target.value)}
-            placeholder="답글을 입력해주세요"
-            rows={2}
-            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
-          />
-          <button type="submit" className="community-primary-button" disabled={replyPosting || !replyContent.trim()} style={{ ...primaryButtonStyle, padding: "10px 12px", justifySelf: "end" }}>
-            {replyPosting ? "등록 중..." : "답글 등록"}
-          </button>
+        <form className="rp-form" onSubmit={(event) => onSubmitReply(event, comment.id, comment.nickname)}>
+          <div className="rp-bar">
+            <span className="rp-mention">@{comment.nickname}</span>
+            <input
+              className="rp-input"
+              autoFocus
+              value={replyContent}
+              onChange={(event) => onReplyChange(event.target.value)}
+              placeholder=""
+              enterKeyHint="send"
+              aria-label={`${comment.nickname}님에게 답글`}
+            />
+            <button type="submit" className="rp-send" disabled={replyPosting || !replyContent.trim()} aria-label="답글 등록">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+                <path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </form>
       )}
 

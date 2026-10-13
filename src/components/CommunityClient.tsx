@@ -9,6 +9,7 @@ import IntroBanner from "@/components/IntroBanner";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
+import ReportBlockMenu from "@/components/ReportBlockMenu";
 import PullToRefresh from "@/components/PullToRefresh";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import NudgeBubble from "@/components/NudgeBubble";
@@ -186,6 +187,52 @@ export default function CommunityClient() {
   // 다른 화면(문제 오류 건의 등)에서 ?compose=1&text=...&group=... 로 들어오면
   // 글쓰기 화면을 미리 채워서 연다.
   const [composePreset, setComposePreset] = useState<{ text: string; group: string } | null>(null);
+
+  // 링크 복사·공유(토스 피드의 리포스트·공유 아이콘 자리). 복사하면 아래에 잠깐 토스트를 띄운다.
+  const [linkToast, setLinkToast] = useState("");
+  const linkToastTimer = useRef<number | null>(null);
+  function showLinkToast(text: string) {
+    setLinkToast(text);
+    if (linkToastTimer.current) window.clearTimeout(linkToastTimer.current);
+    linkToastTimer.current = window.setTimeout(() => setLinkToast(""), 1800);
+  }
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }
+  async function copyPostLink(post: CommunityPost) {
+    const ok = await copyText(`${window.location.origin}/community/${post.id}`);
+    showLinkToast(ok ? "링크를 복사했어요" : "링크를 복사하지 못했어요");
+  }
+  async function sharePost(post: CommunityPost) {
+    const url = `${window.location.origin}/community/${post.id}`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: post.title, text: post.title, url });
+        return;
+      } catch (e) {
+        if ((e as { name?: string })?.name === "AbortError") return;
+      }
+    }
+    const ok = await copyText(url);
+    showLinkToast(ok ? "링크를 복사했어요" : "공유하지 못했어요");
+  }
 
   // 목록에서 좋아요 토글(상세 진입 불필요). 낙관적 갱신 후 서버 결과로 확정.
   async function toggleLike(post: CommunityPost) {
@@ -824,23 +871,27 @@ export default function CommunityClient() {
                   }}
                 >
                   <div className="community-post-head">
-                    <div className="community-avatar" aria-hidden="true">
-                      {post.authorIsAdmin ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/icons/stady-app-icon.svg" alt="" className="community-avatar-img" />
-                      ) : post.avatar ? (
-                        // 카톡 등 프로필 사진. 없으면 닉네임 첫 글자.
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={post.avatar} alt="" className="community-avatar-photo" referrerPolicy="no-referrer" />
-                      ) : (
-                        post.nickname.slice(0, 1)
-                      )}
+                    <div className="tc-ava-wrap">
+                      <div className="community-avatar" aria-hidden="true">
+                        {post.authorIsAdmin ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src="/icons/stady-app-icon.svg" alt="" className="community-avatar-img" />
+                        ) : post.avatar ? (
+                          // 카톡 등 프로필 사진. 없으면 닉네임 첫 글자.
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={post.avatar} alt="" className="community-avatar-photo" referrerPolicy="no-referrer" />
+                        ) : (
+                          post.nickname.slice(0, 1)
+                        )}
+                      </div>
+                      {post.groupName && <span className="tc-role">{post.groupName}</span>}
                     </div>
-                    <div>
+                    <div className="tc-who">
                       <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
-                      <p className="community-post-date" title={formatExactTime(post.createdAt)}>{formatRelativeTime(post.createdAt)}</p>
+                      <p className="community-post-date" title={formatExactTime(post.createdAt)}>
+                        {formatRelativeTime(post.createdAt)} · 조회 {post.viewCount || 0}
+                      </p>
                     </div>
-                    <span className="community-group-badge">{post.groupName}</span>
                   </div>
                   <h2 className="community-post-title">
                     {post.type === "poll" && (
@@ -973,26 +1024,60 @@ export default function CommunityClient() {
                       type="button"
                       className={`community-metric-btn${post.myReaction ? " is-liked" : ""}`}
                       aria-pressed={!!post.myReaction}
+                      aria-label="좋아요"
                       disabled={likingPostId === post.id}
                       onClick={(event) => {
                         event.stopPropagation();
                         toggleLike(post);
                       }}
                     >
-                      <HeartIcon /> 좋아요 {post.likeCount || 0}
+                      <TossHeartIcon filled={!!post.myReaction} />
+                      <span>{formatCount(post.likeCount || 0)}</span>
                     </button>
                     <button
                       type="button"
                       className="community-metric-btn"
+                      aria-label="댓글"
                       onClick={(event) => {
                         event.stopPropagation();
                         setCommentModalPost(post);
                       }}
                     >
-                      <CommentIcon /> 댓글 {post.commentCount || 0}
+                      <TossCommentIcon />
+                      <span>{formatCount(post.commentCount || 0)}</span>
                     </button>
-                    <span>
-                      <EyeIcon /> 조회 {post.viewCount || 0}
+                    <button
+                      type="button"
+                      className="community-metric-btn"
+                      aria-label="링크 복사"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        copyPostLink(post);
+                      }}
+                    >
+                      <TossRepostIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="community-metric-btn"
+                      aria-label="공유"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        sharePost(post);
+                      }}
+                    >
+                      <TossShareIcon />
+                    </button>
+                    <span className="tc-more" onClick={(event) => event.stopPropagation()}>
+                      <ReportBlockMenu
+                        targetType="post"
+                        postId={post.id}
+                        targetUserId={post.userId}
+                        targetNickname={post.nickname}
+                        currentUserId={meId}
+                        onBlocked={() => setPosts((prev) => prev.filter((p) => p.userId !== post.userId))}
+                        variant="dots"
+                      />
                     </span>
                   </div>
                 </article>
@@ -1001,6 +1086,8 @@ export default function CommunityClient() {
           </div>
         </section>
       </div>
+
+      {linkToast && <div className="community-link-toast" role="status">{linkToast}</div>}
 
       <div style={floatingWriteDockStyle}>
         {showWriteNudge && (
@@ -1181,6 +1268,43 @@ function SkeletonPost() {
       <div className="community-skeleton-line" style={{ width: "100%" }} />
       <div className="community-skeleton-line" style={{ width: "58%" }} />
     </div>
+  );
+}
+
+// 토스 커뮤니티식 액션 아이콘(프리티풀 TossIcons 와 같은 선 그림) — 색은 currentColor.
+function formatCount(n: number): string {
+  if (n >= 10000) return `${(n / 10000).toFixed(1).replace(/\.0$/, "")}만`;
+  return String(n);
+}
+function TossHeartIcon({ filled }: { filled?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill={filled ? "currentColor" : "none"} aria-hidden="true">
+      <path d="M12 20.2s-7.6-4.5-7.6-10.1A4.35 4.35 0 0 1 12 7.4a4.35 4.35 0 0 1 7.6 2.7c0 5.6-7.6 10.1-7.6 10.1Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function TossCommentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+      <path d="M12 4.3c4.4 0 7.9 3.2 7.9 7.2s-3.5 7.2-7.9 7.2c-1 0-2-.2-2.9-.5L5 19.6l1.1-3.3C4.9 15 4.1 13.3 4.1 11.5c0-4 3.5-7.2 7.9-7.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function TossRepostIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+      <path d="M16.2 4.6 18.8 7.2l-2.6 2.6M18.6 7.2H8.3A3.3 3.3 0 0 0 5 10.5v1M7.8 19.4 5.2 16.8l2.6-2.6M5.4 16.8h10.3a3.3 3.3 0 0 0 3.3-3.3v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function TossShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true">
+      <circle cx="17.5" cy="5.8" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="6.5" cy="12" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="17.5" cy="18.2" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <path d="m8.6 10.8 6.8-3.8M8.6 13.2l6.8 3.8" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
   );
 }
 
@@ -2224,26 +2348,23 @@ function CommunityStyles() {
         display: grid;
         gap: 0;
       }
+      /* 토스 커뮤니티식 카드(프리티풀 .tcard 와 같은 문법). 눌러도 어두워지거나 줄어들지 않는다(딤·스케일 없음). */
       .community-post-card {
         display: grid;
-        gap: 10px;
+        gap: 12px;
         border-bottom: 1px solid var(--c-bg-muted-6);
         background: transparent;
-        padding: 17px 2px 18px;
+        padding: 20px 2px 14px;
         cursor: pointer;
         animation: communityCardIn 0.22s ease;
-        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, background 0.18s ease;
-        /* 모바일 탭 시 회색 플래시(눌린 듯 어두워짐) 제거 */
         -webkit-tap-highlight-color: transparent;
+        transform: none;
       }
-      /* 호버 반응(이동+음영)은 마우스가 있는 기기에서만. 터치에선 :hover 가 눌린 채로
-         남아 '어두워지고 살짝 밀리는' 잔상이 생겼다 → hover 가능 기기로 한정. */
-      @media (hover: hover) {
-        .community-post-card:hover {
-          transform: translateX(2px);
-          border-color: var(--c-border-strong-4);
-          background: var(--c-bg-soft-3);
-        }
+      .community-post-card:hover,
+      .community-post-card:active {
+        transform: none;
+        background: transparent;
+        opacity: 1;
       }
       .community-post-card:focus-visible,
       .community-icon-button:focus-visible,
@@ -2253,21 +2374,50 @@ function CommunityStyles() {
         outline-offset: 3px;
       }
       .community-post-head {
-        display: grid;
-        grid-template-columns: 38px minmax(0, 1fr) auto;
+        display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+      }
+      .tc-ava-wrap {
+        position: relative;
+        flex: none;
+        width: 52px;
+        height: 52px;
+      }
+      .tc-who {
+        min-width: 0;
+        flex: 1;
+      }
+      /* 아바타 오른쪽 아래에 겹치는 파란 알약(토스 '주주' 자리 = 게시판 이름) */
+      .tc-role {
+        position: absolute;
+        right: -8px;
+        bottom: -3px;
+        max-width: 64px;
+        height: 20px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: #3182f6;
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 20px;
+        letter-spacing: -0.2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-shadow: 0 0 0 2px var(--c-bg, #fff);
       }
       .community-avatar {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 38px;
-        height: 38px;
+        width: 52px;
+        height: 52px;
         border-radius: 999px;
         background: var(--c-bg-muted);
         color: var(--c-text);
-        font-size: 15px;
+        font-size: 19px;
         font-weight: 700;
         overflow: hidden;
       }
@@ -2326,14 +2476,19 @@ function CommunityStyles() {
       .community-post-author {
         margin: 0;
         color: var(--c-text);
-        font-size: 14px;
+        font-size: 17px;
         font-weight: 700;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
       }
       .community-post-date {
-        margin: 2px 0 0;
+        margin: 3px 0 0;
         color: var(--c-text-4c);
-        font-size: 12px;
+        font-size: 14.5px;
         font-weight: 500;
+        letter-spacing: -0.2px;
       }
       .community-group-badge {
         border-radius: 999px;
@@ -2346,14 +2501,16 @@ function CommunityStyles() {
       .community-post-title {
         margin: 0;
         color: var(--c-text);
-        font-size: 18px;
-        line-height: 1.35;
+        font-size: 17.5px;
+        line-height: 1.55;
         font-weight: 700;
+        letter-spacing: -0.3px;
       }
       .community-post-content {
         margin: 0;
-        color: var(--c-text-2d);
-        font-size: 14px;
+        color: var(--c-text);
+        font-size: 17.5px;
+        letter-spacing: -0.3px;
         line-height: 1.65;
         white-space: pre-wrap;
         display: -webkit-box;
@@ -2455,15 +2612,36 @@ function CommunityStyles() {
       }
       .community-post-metrics {
         display: flex;
-        gap: 12px;
+        align-items: center;
+        gap: 22px;
+        margin-top: 2px;
         color: var(--c-text-3);
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 17px;
+        font-weight: 500;
+        letter-spacing: -0.2px;
       }
       .community-post-metrics span {
         display: inline-flex;
         align-items: center;
         gap: 4px;
+      }
+      .community-post-metrics .tc-more {
+        margin-left: auto;
+      }
+      .community-link-toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        z-index: 300;
+        padding: 12px 18px;
+        border-radius: 12px;
+        background: rgba(25, 31, 40, 0.92);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
       }
       /* 목록에서 바로 누르는 좋아요/댓글 버튼 — 텍스트처럼 보이되 눌리는 티(축소/음영)는 없앤다. */
       .community-metric-btn {
@@ -2476,11 +2654,12 @@ function CommunityStyles() {
         color: inherit;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         transition: color 0.15s ease;
       }
+      .community-metric-btn:active { transform: none; opacity: 1; }
       .community-metric-btn:disabled {
         cursor: default;
       }
@@ -2776,7 +2955,7 @@ function CommunityStyles() {
           padding: 20px 4px 21px;
         }
         .community-post-title {
-          font-size: 19px;
+          font-size: 18.5px;
         }
       }
       /* 태블릿(>=744px): 좌측 세로 네비 알약(84px offset) + app-body 중앙 정렬 +
