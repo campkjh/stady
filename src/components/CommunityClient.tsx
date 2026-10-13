@@ -924,7 +924,7 @@ export default function CommunityClient() {
                       {post.groupName && <span className="tc-role" style={{ background: boardTone(post.groupName).bg, color: boardTone(post.groupName).color }}>{post.groupName.replace(/게시판$/, "") || post.groupName}</span>}
                     </div>
                     <div className="tc-who">
-                      <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
+                      <p className="community-post-author"><span className="tc-name" style={{ backgroundImage: `linear-gradient(90deg, var(--c-text) 45%, ${boardTone(post.groupName).to} 100%)` }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
                         {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
                       </p>
@@ -1323,8 +1323,8 @@ function SkeletonPost() {
 
 // 게시판별 배지 색(아바타에 겹치는 알약) — 사장 지정 팔레트(파랑·회색·빨강·주황·노랑·초록)의 살짝 번지는 그라데이션.
 // 정해진 게시판은 고정색, 새 게시판은 이름으로 팔레트에서 골라 늘 같은 색이 나온다. 밝은 색(노랑·회색)은 글자를 어둡게.
-interface BoardTone { bg: string; color: string }
-const tone = (from: string, to: string, color = "#fff"): BoardTone => ({ bg: `linear-gradient(135deg, ${from}, ${to})`, color });
+interface BoardTone { bg: string; color: string; to: string }
+const tone = (from: string, to: string, color = "#fff"): BoardTone => ({ bg: `linear-gradient(135deg, ${from}, ${to})`, color, to });
 const TONE_BLUE = tone("#5a90f3", "#5087f0");
 const TONE_GRAY = tone("#b7bdc3", "#adb4bb", "#4e5968");
 const TONE_RED = tone("#e6767b", "#e56e73");
@@ -2486,6 +2486,15 @@ function CommunityStyles() {
       .tc-follow:disabled {
         opacity: 0.6;
         cursor: default;
+      }
+      /* 닉네임 끝이 게시판 색으로 번지는 글자 그라데이션 */
+      .tc-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
       }
       .tc-role {
         position: absolute;
