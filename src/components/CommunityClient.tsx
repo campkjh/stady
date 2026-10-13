@@ -86,6 +86,8 @@ interface CommunityPost {
   authorIsAdmin?: boolean;
   authorIsAnswerKing?: boolean;
   authorIsPickKing?: boolean;
+  authorFollowerCount?: number;
+  authorIsFollowing?: boolean;
   groupName: string;
   groupSlug?: string;
   title: string;
@@ -232,6 +234,41 @@ export default function CommunityClient() {
     }
     const ok = await copyText(url);
     showLinkToast(ok ? "링크를 복사했어요" : "공유하지 못했어요");
+  }
+
+  // 팔로우 토글 — 같은 작성자의 글 카드가 모두 같이 바뀌도록 userId 로 갱신한다(낙관적 → 서버 확정).
+  const [followingBusy, setFollowingBusy] = useState<string | null>(null);
+  async function toggleFollow(post: CommunityPost) {
+    const targetId = post.userId;
+    if (!targetId || followingBusy) return;
+    setFollowingBusy(targetId);
+    const was = !!post.authorIsFollowing;
+    const base = post.authorFollowerCount || 0;
+    const apply = (following: boolean, count: number) =>
+      setPosts((prev) => {
+        const next = prev.map((p) =>
+          p.userId === targetId ? { ...p, authorIsFollowing: following, authorFollowerCount: count } : p
+        );
+        clientCache.set(postsKey(selectedGroupId, query), next);
+        return next;
+      });
+    apply(!was, Math.max(0, base + (was ? -1 : 1)));
+    try {
+      const res = await fetch("/api/community/follows", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: targetId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "팔로우하지 못했어요.");
+      apply(!!data.following, typeof data.followerCount === "number" ? data.followerCount : base);
+    } catch (error) {
+      apply(was, base);
+      showLinkToast(error instanceof Error ? error.message : "팔로우하지 못했어요.");
+    } finally {
+      setFollowingBusy(null);
+    }
   }
 
   // 목록에서 좋아요 토글(상세 진입 불필요). 낙관적 갱신 후 서버 결과로 확정.
@@ -884,14 +921,27 @@ export default function CommunityClient() {
                           post.nickname.slice(0, 1)
                         )}
                       </div>
-                      {post.groupName && <span className="tc-role">{post.groupName}</span>}
+                      {post.groupName && <span className="tc-role" style={{ background: boardColor(post.groupName) }}>{post.groupName.replace(/게시판$/, "") || post.groupName}</span>}
                     </div>
                     <div className="tc-who">
                       <p className="community-post-author">{post.nickname}<TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
-                        {formatRelativeTime(post.createdAt)} · 조회 {post.viewCount || 0}
+                        {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
                       </p>
                     </div>
+                    {post.userId && post.userId !== meId && !post.authorIsAdmin && (
+                      <button
+                        type="button"
+                        className={`tc-follow${post.authorIsFollowing ? " is-on" : ""}`}
+                        disabled={followingBusy === post.userId}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleFollow(post);
+                        }}
+                      >
+                        {post.authorIsFollowing ? "팔로잉" : "팔로우"}
+                      </button>
+                    )}
                   </div>
                   <h2 className="community-post-title">
                     {post.type === "poll" && (
@@ -1269,6 +1319,22 @@ function SkeletonPost() {
       <div className="community-skeleton-line" style={{ width: "58%" }} />
     </div>
   );
+}
+
+// 게시판별 배지 색(아바타에 겹치는 알약). 정해진 게시판은 고정색, 새 게시판은 이름으로 팔레트에서 골라 늘 같은 색이 나온다.
+const BOARD_COLORS: Record<string, string> = {
+  자유: "#3182f6",
+  입시: "#7c4dff",
+  질문: "#ff8a00",
+  공지: "#f04452",
+};
+const BOARD_FALLBACK_COLORS = ["#03a94d", "#0a9d96", "#d99a00", "#e0559b", "#5b6cff"];
+function boardColor(groupName: string): string {
+  const key = groupName.replace(/게시판$/, "") || groupName;
+  if (BOARD_COLORS[key]) return BOARD_COLORS[key];
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return BOARD_FALLBACK_COLORS[h % BOARD_FALLBACK_COLORS.length];
 }
 
 // 토스 커뮤니티식 액션 아이콘(프리티풀 TossIcons 와 같은 선 그림) — 색은 currentColor.
@@ -2389,6 +2455,29 @@ function CommunityStyles() {
         flex: 1;
       }
       /* 아바타 오른쪽 아래에 겹치는 파란 알약(토스 '주주' 자리 = 게시판 이름) */
+      .tc-follow {
+        flex: none;
+        height: 38px;
+        padding: 0 16px;
+        border: none;
+        border-radius: 12px;
+        background: #3182f6;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+        font-family: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .tc-follow.is-on {
+        background: var(--c-bg-muted, #f2f4f6);
+        color: var(--c-text-3, #6b7684);
+      }
+      .tc-follow:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
       .tc-role {
         position: absolute;
         right: -8px;
