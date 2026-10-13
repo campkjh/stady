@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, memo, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
@@ -175,11 +175,6 @@ export default function CommunityClient() {
   // 캐시가 있으면 로딩 표시 안 함(데이터 변동 시에만 갱신).
   const [loading, setLoading] = useState(() => !clientCache.has(postsKey("", "")));
   const [topbarHeight, setTopbarHeight] = useState(0);
-  const weeklyTrackRef = useRef<HTMLDivElement | null>(null);
-  const [weeklyActiveIndex, setWeeklyActiveIndex] = useState(0);
-  // 자동 전환을 직접 이징해서 굴리므로(브라우저 기본 smooth 는 뚝뚝 끊겨 보임) 진행 중 애니메이션·사용자 개입 시각을 기억한다.
-  const weeklyAnimRef = useRef<{ raf: number | null }>({ raf: null });
-  const weeklyTouchedAtRef = useRef(0);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
   // 오늘 아직 글을 안 썼을 때만 글쓰기 말풍선을 띄운다(서버 렌더 깜빡임 방지로 기본 false).
@@ -644,108 +639,6 @@ export default function CommunityClient() {
     router.push(`/community/${postId}`);
   }
 
-  // 주간 인기글 슬라이드에서 현재 보이는(가장 왼쪽에 스냅된) 카드 인덱스를 추적해
-  // 하단 인디케이터에 반영한다.
-  function handleWeeklyScroll() {
-    const track = weeklyTrackRef.current;
-    if (!track) return;
-    const cards = Array.from(track.children) as HTMLElement[];
-    if (cards.length === 0) return;
-    const trackLeft = track.getBoundingClientRect().left;
-    let nearest = 0;
-    let min = Infinity;
-    cards.forEach((card, i) => {
-      const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
-      if (d < min) { min = d; nearest = i; }
-    });
-    setWeeklyActiveIndex(nearest);
-  }
-
-  // 주간 인기글 2.4초마다 자동 전환(자동 스와이프). 끝에 닿으면 방향을 뒤집어(핑퐁) 순환.
-  useEffect(() => {
-    if (weeklyPosts.length <= 1) return;
-    // 방향 전환 기준은 카드 '인덱스'가 아니라 실제 스크롤 경계(maxScroll·0)다.
-    // 태블릿처럼 뷰포트가 넓으면 마지막 카드들이 왼쪽 끝에 못 붙어(뒤에 콘텐츠가 없음)
-    // 스크롤은 maxScroll 에서 포화되는데, 왼쪽 최근접 카드 인덱스는 중간에서 멈춘다.
-    // 인덱스로만 뒤집으면 그 지점에서 매 틱 제자리 클램프 → '중간에서 멈춤'(태블릿 리포트 2026-08-27).
-    const EPS = 4;
-    let dir: 1 | -1 = 1;
-    const stepTo = (track: HTMLDivElement, cards: HTMLElement[], cur: number, d: 1 | -1) => {
-      const trackLeft = track.getBoundingClientRect().left;
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      const idx = Math.max(0, Math.min(cards.length - 1, cur + d));
-      const target = Math.max(
-        0,
-        Math.min(maxScroll, track.scrollLeft + (cards[idx].getBoundingClientRect().left - trackLeft))
-      );
-      return target;
-    };
-    const id = window.setInterval(() => {
-      const track = weeklyTrackRef.current;
-      if (!track) return;
-      const cards = Array.from(track.children) as HTMLElement[];
-      if (cards.length <= 1) return;
-      const trackLeft = track.getBoundingClientRect().left;
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      // 이미 경계에 닿아 있으면 먼저 방향을 뒤집는다.
-      if (dir === 1 && track.scrollLeft >= maxScroll - EPS) dir = -1;
-      else if (dir === -1 && track.scrollLeft <= EPS) dir = 1;
-      let cur = 0;
-      let min = Infinity;
-      cards.forEach((card, i) => {
-        const d = Math.abs(card.getBoundingClientRect().left - trackLeft);
-        if (d < min) { min = d; cur = i; }
-      });
-      let target = stepTo(track, cards, cur, dir);
-      // 클램프로 제자리면(경계에서 더 못 감) 방향을 뒤집어 반대편 카드로 간다 — 멈춤 방지.
-      if (Math.abs(target - track.scrollLeft) < EPS) {
-        dir = dir === 1 ? -1 : 1;
-        target = stepTo(track, cards, cur, dir);
-        if (Math.abs(target - track.scrollLeft) < EPS) return; // 이동할 곳이 없으면(카드 1~2개) 대기
-      }
-      // 손가락/휠로 막 만졌다면 잠깐 쉰다(만지는 중에 카드가 달아나지 않게).
-      if (Date.now() - weeklyTouchedAtRef.current < 4500) return;
-      animateWeeklyScroll(track, target);
-    }, 3200);
-    return () => window.clearInterval(id);
-  }, [weeklyPosts.length]);
-
-  // 자동 전환용 이징 스크롤(easeInOutCubic 0.9초). 진행 중엔 scroll-snap 을 잠시 꺼서 스냅이 애니메이션을 끊지 않게 하고,
-  // 끝나면 되돌린다. 사용자가 만지면 즉시 멈춘다.
-  function stopWeeklyAnim(track: HTMLElement | null) {
-    const anim = weeklyAnimRef.current;
-    if (anim.raf !== null) {
-      cancelAnimationFrame(anim.raf);
-      anim.raf = null;
-    }
-    if (track) track.style.scrollSnapType = "";
-  }
-  function animateWeeklyScroll(track: HTMLElement, target: number) {
-    stopWeeklyAnim(track);
-    const from = track.scrollLeft;
-    const dist = target - from;
-    if (Math.abs(dist) < 1) return;
-    const DURATION = 900;
-    const t0 = performance.now();
-    track.style.scrollSnapType = "none";
-    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - t0) / DURATION);
-      track.scrollLeft = from + dist * ease(t);
-      if (t < 1) {
-        weeklyAnimRef.current.raf = requestAnimationFrame(tick);
-      } else {
-        weeklyAnimRef.current.raf = null;
-        track.style.scrollSnapType = "";
-      }
-    };
-    weeklyAnimRef.current.raf = requestAnimationFrame(tick);
-  }
-  function onWeeklyTouch() {
-    weeklyTouchedAtRef.current = Date.now();
-    stopWeeklyAnim(weeklyTrackRef.current);
-  }
-
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId),
     [groups, selectedGroupId]
@@ -873,54 +766,7 @@ export default function CommunityClient() {
               </h2>
               {!mineFilter && (
               <>
-              <div className="weekly-popular-viewport">
-                <div
-                  className="weekly-popular-track"
-                  ref={weeklyTrackRef}
-                  onScroll={handleWeeklyScroll}
-                  onPointerDown={onWeeklyTouch}
-                  onTouchStart={onWeeklyTouch}
-                  onWheel={onWeeklyTouch}
-                >
-                {weeklyPosts.map((post, index) => (
-                  <button
-                    key={post.id}
-                    type="button"
-                    className="weekly-popular-card"
-                    onClick={() => openPost(post.id)}
-                    // 비활성 카드는 '축소'가 아니라 '흐리게'로 구분한다. scale 은 슬라이드 중
-                    // 카드가 중심으로 줄며 빠져나가 좌측이 잘려 보였다(크기 변화=지오메트리 변형).
-                    style={{ opacity: index === weeklyActiveIndex ? 1 : 0.5 }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      className="weekly-popular-medal"
-                      src={`/icons/community/medal-${Math.min(index + 1, 5)}.svg`}
-                      alt={`${index + 1}위`}
-                      width={44}
-                      height={44}
-                    />
-                    <span className="weekly-popular-top">
-                      <span className="weekly-popular-group">{post.groupName}</span>
-                    </span>
-                    <span className="weekly-popular-card-title">{post.title}</span>
-                    <span className="weekly-popular-card-content">{post.content}</span>
-                    <span className="weekly-popular-card-metrics">
-                      <span><HeartIcon /> {post.likeCount || 0}</span>
-                      <span><CommentIcon /> {post.commentCount || 0}</span>
-                      <span><EyeIcon /> {post.viewCount || 0}</span>
-                    </span>
-                  </button>
-                ))}
-                </div>
-              </div>
-              {weeklyPosts.length > 1 && (
-                <div className="weekly-popular-dots" aria-hidden="true">
-                  {weeklyPosts.map((post, index) => (
-                    <span key={post.id} className={index === weeklyActiveIndex ? "weekly-dot active" : "weekly-dot"} />
-                  ))}
-                </div>
-              )}
+              <WeeklyCards posts={weeklyPosts} onOpen={openPost} />
               </>
               )}
             </section>
@@ -1264,6 +1110,177 @@ export default function CommunityClient() {
     </main>
   );
 }
+
+// 주간 인기글 가로 카드 줄. 목록 전체가 아니라 이 컴포넌트만 다시 그려지도록 분리했다
+// (카드가 바뀔 때마다 페이지 전체가 다시 그려지면 전환이 '딱딱' 끊긴다).
+const WeeklyCards = memo(function WeeklyCards({ posts, onOpen }: { posts: CommunityPost[]; onOpen: (id: string) => void }) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [active, setActive] = useState(0);
+  const animRef = useRef<number | null>(null);
+  const touchedAtRef = useRef(0);
+  const scrollRafRef = useRef<number | null>(null);
+  const onOpenRef = useRef(onOpen);
+  onOpenRef.current = onOpen;
+
+  // 현재 보이는(왼쪽에 스냅된) 카드 인덱스 — 프레임당 한 번, 레이아웃을 새로 재지 않고 offsetLeft 로 계산한다.
+  function handleScroll() {
+    if (scrollRafRef.current !== null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const track = trackRef.current;
+      if (!track) return;
+      const cards = track.children;
+      if (cards.length === 0) return;
+      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      const left = track.scrollLeft + pad;
+      let nearest = 0;
+      let min = Infinity;
+      for (let i = 0; i < cards.length; i++) {
+        const d = Math.abs((cards[i] as HTMLElement).offsetLeft - left);
+        if (d < min) { min = d; nearest = i; }
+      }
+      setActive((cur) => (cur === nearest ? cur : nearest));
+    });
+  }
+
+  function stopAnim() {
+    if (animRef.current !== null) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+    if (trackRef.current) trackRef.current.style.scrollSnapType = "";
+  }
+
+  // 자동 전환용 이징 스크롤(1.1초). 진행 중엔 scroll-snap 을 꺼서 스냅이 애니메이션을 끊지 않게 한다.
+  function animateTo(track: HTMLElement, target: number) {
+    stopAnim();
+    const from = track.scrollLeft;
+    const dist = target - from;
+    if (Math.abs(dist) < 1) return;
+    const DURATION = 1100;
+    const t0 = performance.now();
+    track.style.scrollSnapType = "none";
+    // easeInOutQuart — 출발·도착이 아주 부드럽다
+    const ease = (t: number) => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2);
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - t0) / DURATION);
+      track.scrollLeft = from + dist * ease(t);
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(tick);
+      } else {
+        animRef.current = null;
+        track.style.scrollSnapType = "";
+      }
+    };
+    animRef.current = requestAnimationFrame(tick);
+  }
+
+  function onTouch() {
+    touchedAtRef.current = Date.now();
+    stopAnim();
+  }
+
+  // 3.2초마다 자동 전환. 끝에 닿으면 방향을 뒤집어(핑퐁) 순환.
+  // 방향 전환 기준은 카드 '인덱스'가 아니라 실제 스크롤 경계(maxScroll·0)다(태블릿에서 마지막 카드가 왼쪽 끝에 못 붙는 문제).
+  useEffect(() => {
+    if (posts.length <= 1) return;
+    const EPS = 4;
+    let dir: 1 | -1 = 1;
+    const targetFor = (track: HTMLDivElement, cards: HTMLElement[], cur: number, d: 1 | -1) => {
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      const idx = Math.max(0, Math.min(cards.length - 1, cur + d));
+      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      return Math.max(0, Math.min(maxScroll, cards[idx].offsetLeft - pad));
+    };
+    const id = window.setInterval(() => {
+      const track = trackRef.current;
+      if (!track) return;
+      if (document.hidden) return;
+      if (Date.now() - touchedAtRef.current < 4500) return;
+      const cards = Array.from(track.children) as HTMLElement[];
+      if (cards.length <= 1) return;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      if (dir === 1 && track.scrollLeft >= maxScroll - EPS) dir = -1;
+      else if (dir === -1 && track.scrollLeft <= EPS) dir = 1;
+      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      let cur = 0;
+      let min = Infinity;
+      cards.forEach((card, i) => {
+        const d = Math.abs(card.offsetLeft - pad - track.scrollLeft);
+        if (d < min) { min = d; cur = i; }
+      });
+      let target = targetFor(track, cards, cur, dir);
+      // 클램프로 제자리면(경계에서 더 못 감) 방향을 뒤집어 반대편 카드로 간다 — 멈춤 방지.
+      if (Math.abs(target - track.scrollLeft) < EPS) {
+        dir = dir === 1 ? -1 : 1;
+        target = targetFor(track, cards, cur, dir);
+        if (Math.abs(target - track.scrollLeft) < EPS) return;
+      }
+      animateTo(track, target);
+    }, 3200);
+    return () => {
+      window.clearInterval(id);
+      stopAnim();
+      if (scrollRafRef.current !== null) cancelAnimationFrame(scrollRafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts.length]);
+
+  return (
+    <>
+      <div className="weekly-popular-viewport">
+        <div
+          className="weekly-popular-track"
+          ref={trackRef}
+          onScroll={handleScroll}
+          onPointerDown={onTouch}
+          onTouchStart={onTouch}
+          onWheel={onTouch}
+        >
+          {posts.map((post, index) => (
+            <button
+              key={post.id}
+              type="button"
+              className="weekly-popular-card"
+              onClick={() => onOpenRef.current(post.id)}
+              // 비활성 카드는 '축소'가 아니라 '흐리게'로 구분한다(scale 은 슬라이드 중 좌측이 잘려 보였다).
+              style={{ opacity: index === active ? 1 : 0.55 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="weekly-popular-medal"
+                src={`/icons/community/medal-${Math.min(index + 1, 5)}.svg`}
+                alt={`${index + 1}위`}
+                width={44}
+                height={44}
+              />
+              <span className="weekly-popular-top">
+                <span className="weekly-popular-group">{post.groupName}</span>
+              </span>
+              <span className="weekly-popular-card-title">{post.title}</span>
+              <span className="weekly-popular-card-content">{post.content}</span>
+              <span className="weekly-popular-card-metrics">
+                <span><HeartIcon /> {post.likeCount || 0}</span>
+                <span><CommentIcon /> {post.commentCount || 0}</span>
+                <span><EyeIcon /> {post.viewCount || 0}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        {/* 양끝이 스르륵 사라지는 가장자리 — 스크롤 영역에 마스크를 씌우면 매 프레임 다시 칠해져 끊기므로 위에 얹는 가벼운 오버레이로 */}
+        <div className="weekly-fade weekly-fade-l" aria-hidden="true" />
+        <div className="weekly-fade weekly-fade-r" aria-hidden="true" />
+      </div>
+      {posts.length > 1 && (
+        <div className="weekly-popular-dots" aria-hidden="true">
+          {posts.map((post, index) => (
+            <span key={post.id} className={index === active ? "weekly-dot active" : "weekly-dot"} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+});
 
 // 카테고리 이름별 아이콘(public/icons/cg-*.svg). 활성 칩은 배경이 어두워서
 // 흰색(-on) 버전을 쓴다. 표에 없는 새 카테고리는 태그 아이콘으로 대체.
@@ -2473,16 +2490,29 @@ function CommunityStyles() {
       }
       .wp-tab.is-on { color: var(--c-text); }
 
-      /* 가로 카드 줄: 칼로 자른 듯 끊기지 않게 양끝이 스르륵 사라지는 마스크.
-         트랙을 화면 가장자리까지 내밀고(--wp-b, 페이지 좌우 여백만큼) 그 여백 구간에서만 옅어지게 해서,
-         멈춰 있을 땐 첫 카드가 그대로 보이고 스크롤하면 카드가 가장자리에서 자연스럽게 녹는다. */
+      /* 가로 카드 줄: 칼로 자른 듯 끊기지 않게 양끝이 스르륵 사라진다.
+         트랙을 화면 가장자리까지 내밀고(--wp-b, 페이지 좌우 여백만큼) 그 여백 구간에만 배경색 그라데이션을 얹는다.
+         멈춰 있을 땐 첫 카드가 그대로 보이고, 스크롤하면 카드가 가장자리에서 녹는다.
+         (스크롤 영역에 mask 를 씌우면 매 프레임 전체를 다시 칠해 끊겨서, 위에 얹는 오버레이로 바꿨다) */
       .weekly-popular-viewport {
         --wp-b: 16px;
         position: relative;
         margin-left: calc(var(--wp-b) * -1);
         margin-right: calc(var(--wp-b) * -1);
-        -webkit-mask-image: linear-gradient(to right, transparent 0, rgba(0,0,0,0.12) calc(var(--wp-b) * 0.3), rgba(0,0,0,0.5) calc(var(--wp-b) * 0.65), #000 var(--wp-b), #000 calc(100% - var(--wp-b)), rgba(0,0,0,0.5) calc(100% - var(--wp-b) * 0.65), rgba(0,0,0,0.12) calc(100% - var(--wp-b) * 0.3), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0, rgba(0,0,0,0.12) calc(var(--wp-b) * 0.3), rgba(0,0,0,0.5) calc(var(--wp-b) * 0.65), #000 var(--wp-b), #000 calc(100% - var(--wp-b)), rgba(0,0,0,0.5) calc(100% - var(--wp-b) * 0.65), rgba(0,0,0,0.12) calc(100% - var(--wp-b) * 0.3), transparent 100%);
+      }
+      .weekly-fade {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: var(--wp-b);
+        pointer-events: none;
+        z-index: 2;
+      }
+      .weekly-fade-l { left: 0; background: linear-gradient(to right, var(--c-bg), transparent); }
+      .weekly-fade-r { right: 0; background: linear-gradient(to left, var(--c-bg), transparent); }
+      @supports (background: color-mix(in srgb, red 50%, transparent)) {
+        .weekly-fade-l { background: linear-gradient(to right, var(--c-bg) 0%, color-mix(in srgb, var(--c-bg) 80%, transparent) 30%, color-mix(in srgb, var(--c-bg) 40%, transparent) 62%, transparent 100%); }
+        .weekly-fade-r { background: linear-gradient(to left, var(--c-bg) 0%, color-mix(in srgb, var(--c-bg) 80%, transparent) 30%, color-mix(in srgb, var(--c-bg) 40%, transparent) 62%, transparent 100%); }
       }
       .weekly-popular-track {
         display: flex;
@@ -2511,7 +2541,8 @@ function CommunityStyles() {
         border: 1px solid var(--c-bg-muted-6);
         background: var(--c-bg);
         cursor: pointer;
-        transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+        transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+        will-change: opacity;
       }
       /* 마지막 카드는 왼쪽 끝에 못 붙으므로(뒤 콘텐츠 없음) 오른쪽 끝 정렬로 스냅 →
          스크롤 최대치가 유효한 스냅 지점이 돼 끝에서 되당겨지는 '뚜둑'이 사라진다. */
