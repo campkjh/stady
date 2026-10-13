@@ -204,6 +204,17 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const dockOverlayRef = useRef<HTMLDivElement | null>(null);
   const keyboardInset = useKeyboardInset(true, dockOverlayRef);
   const [sortOpen, setSortOpen] = useState(false);
+  // 스크롤을 내리면 헤더 아래로 그라데이션이 스르륵 나온다. 맨 위 1px 감시점이 화면에서 벗어났는지로 판단한다
+  // (페이지 스크롤이든 넓은 화면 패널 안 스크롤이든 같이 동작).
+  const topSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const el = topSentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [followBusy, setFollowBusy] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<number | null>(null);
@@ -679,7 +690,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   return (
     <main className="community-detail-page">
       <div className="community-detail-shell">
-        <header className="community-detail-topbar">
+        <div ref={topSentinelRef} className="cpd-top-sentinel" aria-hidden="true" />
+        <header className={`community-detail-topbar${scrolled ? " is-scrolled" : ""}`}>
           <button
             type="button"
             onClick={() => router.push("/community")}
@@ -1242,18 +1254,30 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           margin: 0;
           transform: translateX(-50%);
           padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
-          background: var(--c-bg-a88);
-          border-bottom: 1px solid rgba(229, 231, 235, 0.8);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
+          background: transparent;
         }
+        /* 맨 위에서는 배경·테두리가 없다. 스크롤을 내리면 배경색이 위에서 아래로 옅어지는 그라데이션이 스르륵 나온다. */
+        .community-detail-topbar::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: calc(100% + 22px);
+          background: linear-gradient(to bottom, var(--c-bg) 0%, var(--c-bg) 55%, transparent 100%);
+          opacity: 0;
+          transition: opacity 0.28s ease;
+          pointer-events: none;
+        }
+        .community-detail-topbar.is-scrolled::before { opacity: 1; }
+        .community-detail-topbar > * { position: relative; z-index: 1; }
+        .cpd-top-sentinel { position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; }
         .community-detail-icon-button {
           flex-shrink: 0;
           transition: background-color 0.14s ease, color 0.14s ease;
         }
         .community-detail-icon-button:active {
-          background: var(--c-bg-muted-20) !important;
-          color: var(--c-text-2) !important;
+          opacity: 0.5;
         }
         .community-detail-title {
           margin: 0;
@@ -1298,9 +1322,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
           background: var(--c-bg-soft);
         }
         .community-detail-icon-button:hover {
-          background: var(--c-bg-soft) !important;
-          border-color: var(--c-border-strong) !important;
-          transform: translateX(-1px);
+          background: transparent !important;
+          border-color: transparent !important;
         }
         .community-action-button,
         .community-primary-button,
@@ -1322,8 +1345,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         }
         .community-action-button:active,
         .community-primary-button:active,
-        .community-reply-button:active,
-        .community-detail-icon-button:active {
+        .community-reply-button:active {
           transform: scale(0.97);
         }
         .rp-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 2px; border: none; background: none; color: #6B7684; font-size: 15px; font-weight: 500; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; }
@@ -1611,8 +1633,8 @@ const iconButtonStyle = {
   height: 34,
   border: "none",
   borderRadius: 999,
-  background: "var(--c-bg-muted-3)",
-  color: "var(--c-text-3c)",
+  background: "transparent",
+  color: "var(--c-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
