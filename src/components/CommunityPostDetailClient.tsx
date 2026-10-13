@@ -699,8 +699,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             className="community-detail-icon-button"
             style={iconButtonStyle}
           >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           {/* 헤더엔 'STADY / 커뮤니티' 대신 지금 보고 있는 글 제목을 둔다 — 스크롤을 내려도
@@ -1629,8 +1629,8 @@ function updateComment(
 // 뒤로가기. 흰 면 + 테두리 원은 헤더에서 버튼만 도드라져 투박했다 —
 // 테두리를 없애고 은은한 회색 면에 회색 화살표로 낮춘다(누르면 한 톤 진해진다).
 const iconButtonStyle = {
-  width: 34,
-  height: 34,
+  width: 40,
+  height: 40,
   border: "none",
   borderRadius: 999,
   background: "transparent",
