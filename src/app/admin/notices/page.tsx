@@ -11,6 +11,7 @@ export default function AdminNoticesPage() {
       bodyLabel="내용"
       withImages
       simple
+      html
     />
   );
 }

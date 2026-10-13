@@ -44,7 +44,7 @@ const QUICK = [
 ];
 
 const SERVICE_ROWS = [
-  { label: "공지사항", href: "/notice", icon: "/icons/mp-notice.svg" },
+  { label: "공지사항", href: "/notice", icon: "/icons/notice-alert.svg" },
   { label: "자주묻는질문", href: "/faq", icon: "/icons/mp-faq.svg" },
   { label: "고객센터", href: "/customer-center", icon: "/icons/mp-support.svg" },
 ];

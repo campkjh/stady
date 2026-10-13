@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
+import NoticeBody from "@/components/NoticeBody";
 
 interface Notice {
   id: string;
@@ -144,7 +145,7 @@ export default function NoticePopup() {
           <div className="mdl-text">
             <span className="mdl-tag">공지</span>
             <h2 className="mdl-title" style={{ marginTop: 10 }}>{notice.title}</h2>
-            <p className="mdl-body is-sm" style={{ whiteSpace: "pre-wrap" }}>{notice.body}</p>
+            <NoticeBody body={notice.body} className="mdl-body is-sm" />
             <p className="mdl-cap" style={{ color: "var(--mdl-accent)", fontWeight: 600 }}>공지사항에서 자세히 보기 ›</p>
           </div>
         </div>

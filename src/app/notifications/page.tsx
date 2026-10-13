@@ -42,7 +42,7 @@ const ICON: Record<NType, string> = {
   reply: "/icons/toss/chat.svg",
   reaction: "/icons/toss/heart-red.svg",
   comment_like: "/icons/toss/heart-red.svg",
-  notice: "/icons/mp-notice.svg",
+  notice: "/icons/notice-alert.svg",
 };
 
 function timeLabel(iso: string): string {

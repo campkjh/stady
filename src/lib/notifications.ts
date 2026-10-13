@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { listSiteContent } from "@/lib/siteContent";
+import { htmlToText } from "@/lib/noticeHtml";
 
 /*
  * 앱 알림 — 프리티풀 알림(토스 알림 어법)의 데이터 쪽.
@@ -113,7 +114,7 @@ async function syncNotices(userId: string, userCreatedAt: Date) {
       userId,
       type: "notice",
       title: n.title,
-      body: (n.body || "").replace(/\s+/g, " ").trim().slice(0, 160),
+      body: htmlToText(n.body || "").replace(/\s+/g, " ").trim().slice(0, 160),
       link: `/notice?focus=${encodeURIComponent(n.id)}`,
       groupKey: null,
       dedupeKey: `notice:${n.id}`,

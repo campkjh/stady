@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { createCommunityPost, ensureCommunityTables } from "@/lib/community";
 import { getMirroredPostId, setMirroredPostId, clearMirroredPost } from "@/lib/siteContent";
+import { htmlToText } from "@/lib/noticeHtml";
 
 // 공지사항을 커뮤니티 '공지' 게시판에도 올려, 일반 사용자가 공감/댓글을 달 수 있게 한다.
 // 공지 본문(SiteContent)이 원본이고 커뮤니티 글은 미러다 — 수정/삭제도 함께 반영한다.
@@ -43,7 +44,7 @@ export async function syncNoticeToCommunity(input: {
       await prisma.$executeRawUnsafe(
         `UPDATE "CommunityPost" SET "title" = $1, "content" = $2, "is_active" = true, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = $3`,
         input.title,
-        input.body,
+        htmlToText(input.body),
         existing
       );
       // 이미지도 원본 공지 기준으로 교체.
@@ -67,7 +68,7 @@ export async function syncNoticeToCommunity(input: {
       userId: input.authorId,
       groupId,
       title: input.title,
-      content: input.body,
+      content: htmlToText(input.body),
       tagIds: [],
       imageUrls: input.imageUrls ?? [],
     });

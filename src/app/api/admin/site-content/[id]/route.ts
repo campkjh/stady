@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { updateSiteContent, deleteSiteContent, listSiteContent } from "@/lib/siteContent";
 import { syncNoticeToCommunity, removeNoticeMirror } from "@/lib/noticeMirror";
+import { isHtmlBody, sanitizeNoticeHtml } from "@/lib/noticeHtml";
 
 function adminError(error: unknown) {
   if (error instanceof Error && error.message === "Unauthorized") {
@@ -22,7 +23,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json().catch(() => ({}));
     await updateSiteContent(id, {
       ...(body?.title !== undefined ? { title: String(body.title).trim() } : {}),
-      ...(body?.body !== undefined ? { body: String(body.body).trim() } : {}),
+      // HTML 에디터로 쓴 공지는 허용한 태그만 남기고 저장한다(안 그러면 어드민 계정 탈취 시 스크립트가 공지에 실릴 수 있다).
+      ...(body?.body !== undefined ? { body: (isHtmlBody(String(body.body)) ? sanitizeNoticeHtml(String(body.body)) : String(body.body)).trim() } : {}),
       ...(body?.dateLabel !== undefined ? { dateLabel: body.dateLabel ? String(body.dateLabel).trim() : null } : {}),
       ...(body?.sortOrder !== undefined ? { sortOrder: Number(body.sortOrder) || 0 } : {}),
       ...(body?.isActive !== undefined ? { isActive: Boolean(body.isActive) } : {}),

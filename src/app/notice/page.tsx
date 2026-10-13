@@ -2,6 +2,7 @@ import BackHeader from "@/components/BackHeader";
 import Accordion from "@/components/Accordion";
 import NoticeReactions from "@/components/NoticeReactions";
 import { listSiteContent } from "@/lib/siteContent";
+import NoticeBody from "@/components/NoticeBody";
 
 // 공지는 관리자가 수시로 바꾸므로 항상 최신을 보여준다.
 export const dynamic = "force-dynamic";
@@ -33,9 +34,7 @@ export default async function NoticePage({
     ),
     content: (
       <div style={{ padding: "0 0 16px" }}>
-        <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--c-text-3)", whiteSpace: "pre-wrap" }}>
-          {notice.body}
-        </div>
+        <NoticeBody body={notice.body} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--c-text-3)" }} />
         {notice.imageUrls.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
             {notice.imageUrls.map((url) => (

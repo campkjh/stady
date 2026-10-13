@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isNoticePopupActive } from "./NoticePopup";
+import { htmlToText } from "@/lib/noticeHtml";
 
 interface Notice {
   id: string;
@@ -70,18 +71,19 @@ export default function NoticeHomeCard() {
     <div style={{ padding: "2px 10px 10px" }}>
       {/* 홈 말풍선(새 문제집 말풍선)과 같은 유리 말풍선 — 꼬리만 없다. */}
       <div role="button" tabIndex={0} onClick={open} onKeyDown={(e) => { if (e.key === "Enter") open(); }} className="press nhc" aria-label={`공지: ${notice.title}`}>
+        {/* 공지에 이미지가 있으면 아이콘 자리에 그 이미지(첫 장)를 넣는다 — 아이콘 칩과 같은 40px·모서리 14 */}
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt="" className="nhc-thumb" />
         ) : (
           <span className="nhc-ic" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/mp-notice.svg" alt="" />
+            <img src="/icons/notice-alert.svg" alt="" />
           </span>
         )}
         <div className="nhc-text">
           <p className="nhc-title">{notice.title}</p>
-          <p className="nhc-sub">{notice.body.replace(/\s+/g, " ").trim()}</p>
+          <p className="nhc-sub">{htmlToText(notice.body).replace(/\s+/g, " ").trim()}</p>
         </div>
         <button type="button" onClick={dismiss} aria-label="닫기" className="nhc-x">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true">
@@ -97,14 +99,14 @@ export default function NoticeHomeCard() {
           background: linear-gradient(180deg, rgba(250, 252, 255, 0.82) 0%, #FEFEFE 55%);
           -webkit-backdrop-filter: blur(12px) saturate(1.2); backdrop-filter: blur(12px) saturate(1.2);
           border: 1px solid rgba(40, 70, 130, 0.07);
-          box-shadow: 0 14px 30px -12px rgba(22, 38, 72, 0.16), 0 4px 14px -6px rgba(22, 38, 72, 0.07);
+          box-shadow: 0 8px 22px -12px rgba(22, 38, 72, 0.08), 0 2px 8px -4px rgba(22, 38, 72, 0.04);
           -webkit-tap-highlight-color: transparent; outline: none;
           animation: nhcIn 0.6s cubic-bezier(0.2, 1.25, 0.3, 1) backwards;
         }
-        [data-theme="dark"] .nhc { background: #2A2A33; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6); }
-        .nhc-ic { width: 40px; height: 40px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(55, 135, 255, 0.1); animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
+        [data-theme="dark"] .nhc { background: #2A2A33; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 8px 22px -12px rgba(0, 0, 0, 0.35); }
+        .nhc-ic { width: 40px; height: 40px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 197, 58, 0.18); animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
         .nhc-ic img { width: 24px; height: 24px; display: block; }
-        .nhc-thumb { width: 44px; height: 44px; border-radius: 14px; object-fit: cover; flex-shrink: 0; display: block; animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
+        .nhc-thumb { width: 40px; height: 40px; border-radius: 14px; object-fit: cover; flex-shrink: 0; display: block; animation: nhcPop 0.6s cubic-bezier(0.22, 1.7, 0.36, 1) 0.25s backwards; }
         .nhc-text { flex: 1; min-width: 0; animation: nhcFade 0.5s ease 0.2s backwards; }
         .nhc-title {
           margin: 0; width: fit-content; max-width: 100%; font-size: 16px; font-weight: 700; line-height: 1.4; letter-spacing: -0.3px;

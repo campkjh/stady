@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { uiConfirm } from "@/lib/dialog";
+import { htmlToText, isHtmlBody, plainToHtml } from "@/lib/noticeHtml";
 
 interface Item {
   id: string;
@@ -28,6 +29,8 @@ interface Props {
   // 단순 모드(공지): 표시날짜·정렬순서·노출·팝업 설정을 숨기고 자동 처리한다.
   // 날짜=금일 자동, 정렬=항상 최신(맨 위), 노출=항상 켜짐, 팝업=맨 위(최신) 공지 1개만 자동.
   simple?: boolean;
+  // 본문을 HTML 에디터(Toast UI, WYSIWYG)로 쓴다 — 공지. 예전 일반 글은 불러올 때 HTML 로 바꿔 준다.
+  html?: boolean;
 }
 
 const blank = { title: "", body: "", dateLabel: "", sortOrder: 0, isActive: true, imageUrls: [] as string[], popupEnabled: false, popupHideDays: 7 };
@@ -39,7 +42,7 @@ function todayLabel() {
   return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
 }
 
-export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages, withPopup, simple }: Props) {
+export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel, withDate, withImages, withPopup, simple, html }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...blank });
@@ -47,6 +50,46 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // HTML 에디터(공지 본문)
+  const editorHost = useRef<HTMLDivElement>(null);
+  const editorInst = useRef<{ getHTML(): string; setHTML(h: string): void; destroy(): void } | null>(null);
+  const initialHtml = useRef("");
+
+  useEffect(() => {
+    if (!html) return;
+    if (!showForm) {
+      editorInst.current?.destroy();
+      editorInst.current = null;
+      return;
+    }
+    let cancelled = false;
+    const host = editorHost.current;
+    if (!host) return;
+    if (editorInst.current) {
+      editorInst.current.setHTML(initialHtml.current);
+      return;
+    }
+    import("@toast-ui/editor").then((mod) => {
+      import("@toast-ui/editor/dist/toastui-editor.css");
+      if (cancelled || !editorHost.current || editorInst.current) return;
+      const ed = new mod.default({
+        el: editorHost.current,
+        height: "320px",
+        initialEditType: "wysiwyg",
+        hideModeSwitch: true,
+        usageStatistics: false,
+        placeholder: "공지 내용을 입력해주세요",
+        // 사진은 아래 '사진' 칸으로 올린다(공지 맨 위 사진 + 홈 카드 아이콘에 쓰임) — 본문에는 글 서식만.
+        toolbarItems: [["heading", "bold", "italic", "strike"], ["hr", "quote"], ["ul", "ol"], ["link"]],
+      });
+      ed.setHTML(initialHtml.current);
+      editorInst.current = ed;
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [html, showForm, editingId]);
 
   async function load() {
     const res = await fetch(`/api/admin/site-content?kind=${kind}`, { credentials: "include" });
@@ -62,10 +105,12 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
   function openAdd() {
     setEditingId(null);
     setForm({ ...blank, sortOrder: items.length });
+    initialHtml.current = "";
     setShowForm(true);
   }
   function openEdit(it: Item) {
     setEditingId(it.id);
+    initialHtml.current = isHtmlBody(it.body) ? it.body : plainToHtml(it.body);
     setForm({ title: it.title, body: it.body, dateLabel: it.dateLabel ?? "", sortOrder: it.sortOrder, isActive: it.isActive, imageUrls: it.imageUrls ?? [], popupEnabled: it.popupEnabled ?? false, popupHideDays: it.popupHideDays ?? 7 });
     setShowForm(true);
   }
@@ -102,7 +147,8 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
       const payload = {
         kind,
         title: form.title,
-        body: form.body,
+        // HTML 에디터를 쓰는 공지는 에디터의 HTML(내용이 비었으면 빈 글)을 보낸다.
+        body: html && editorInst.current ? (htmlToText(editorInst.current.getHTML()).trim() ? editorInst.current.getHTML() : "") : form.body,
         // 단순 모드: 날짜=금일 자동(수정 시 기존 유지), 정렬=0(=항상 최신 맨 위), 노출=항상 켜짐.
         dateLabel: simple ? (form.dateLabel.trim() || todayLabel()) : (withDate ? form.dateLabel : null),
         sortOrder: simple ? 0 : (Number(form.sortOrder) || 0),
@@ -189,7 +235,13 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={label}>{bodyLabel}</label>
-            <textarea style={{ ...input, minHeight: 90, resize: "vertical" }} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+            {html ? (
+              <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid var(--c-border)", background: "var(--c-bg)" }}>
+                <div ref={editorHost} />
+              </div>
+            ) : (
+              <textarea style={{ ...input, minHeight: 90, resize: "vertical" }} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+            )}
           </div>
 
           {withImages && (
@@ -298,7 +350,7 @@ export default function SiteContentAdmin({ kind, heading, titleLabel, bodyLabel,
                     {!it.isActive && <span style={{ marginLeft: 8, fontSize: 11, color: "var(--c-text-4c)", fontWeight: 600 }}>(숨김)</span>}
                   </div>
                   {withDate && it.dateLabel && <div style={{ fontSize: 12, color: "var(--c-text-4c)", marginTop: 3 }}>{it.dateLabel}</div>}
-                  <div style={{ fontSize: 13.5, color: "var(--c-text-2d)", marginTop: 6, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{it.body}</div>
+                  <div style={{ fontSize: 13.5, color: "var(--c-text-2d)", marginTop: 6, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{htmlToText(it.body)}</div>
                   {withImages && it.imageUrls && it.imageUrls.length > 0 && (
                     <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
                       {it.imageUrls.map((url) => (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { listSiteContent, createSiteContent, type ContentKind } from "@/lib/siteContent";
 import { syncNoticeToCommunity } from "@/lib/noticeMirror";
+import { isHtmlBody, sanitizeNoticeHtml } from "@/lib/noticeHtml";
 
 function adminError(error: unknown) {
   if (error instanceof Error && error.message === "Unauthorized") {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     await createSiteContent({
       kind,
       title,
-      body: String(body?.body ?? "").trim(),
+      body: (isHtmlBody(String(body?.body ?? "")) ? sanitizeNoticeHtml(String(body?.body ?? "")) : String(body?.body ?? "")).trim(),
       dateLabel: body?.dateLabel ? String(body.dateLabel).trim() : null,
       sortOrder: Number.isFinite(Number(body?.sortOrder)) ? Number(body.sortOrder) : 0,
       isActive: body?.isActive !== false,

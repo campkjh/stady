@@ -6,6 +6,8 @@ declare module "@toast-ui/editor" {
     placeholder?: string;
     hideModeSwitch?: boolean;
     toolbarItems?: (string | string[])[];
+    initialValue?: string;
+    usageStatistics?: boolean;
   }
 
   export default class Editor {

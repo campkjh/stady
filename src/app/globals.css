@@ -1721,3 +1721,19 @@ textarea.mdl-field { height: auto; padding: 16px 18px; line-height: 1.5; resize:
 
 /* 하단 네비를 숨기는 화면(커뮤니티 글 상세·글쓰기)은 네비 자리로 비워 둔 아래 여백도 없앤다 */
 body.nav-hidden .main-content-wrap { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
+
+/* 공지 본문(HTML 에디터로 쓴 글) */
+.notice-html { word-break: keep-all; overflow-wrap: anywhere; }
+.notice-html > :first-child { margin-top: 0; }
+.notice-html > :last-child { margin-bottom: 0; }
+.notice-html p { margin: 0 0 0.9em; }
+.notice-html h1, .notice-html h2, .notice-html h3, .notice-html h4 { margin: 1.2em 0 0.5em; font-weight: 700; line-height: 1.4; color: var(--c-text-b); }
+.notice-html h1 { font-size: 1.3em; } .notice-html h2 { font-size: 1.18em; } .notice-html h3, .notice-html h4 { font-size: 1.06em; }
+.notice-html ul, .notice-html ol { margin: 0 0 0.9em; padding-left: 1.3em; }
+.notice-html ul { list-style: disc; } .notice-html ol { list-style: decimal; }
+.notice-html li { margin: 0.2em 0; }
+.notice-html blockquote { margin: 0 0 0.9em; padding: 2px 0 2px 12px; border-left: 3px solid var(--c-border-strong, #D1D6DB); color: var(--c-text-4, #6B7684); }
+.notice-html hr { border: 0; border-top: 1px solid var(--c-border, #E5E8EB); margin: 1.1em 0; }
+.notice-html a { color: var(--c-brand); text-decoration: underline; }
+.notice-html strong, .notice-html b { font-weight: 700; }
+.notice-html code { padding: 1px 5px; border-radius: 5px; background: var(--c-bg-muted, #F2F4F6); font-size: 0.92em; }
