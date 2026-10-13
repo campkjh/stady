@@ -10,6 +10,7 @@ import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, ReplyArrowIcon, SortArrowsIcon, SendUpIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
 import { renderWithMention } from "@/components/community/mention";
+import { PostDetailTour } from "@/components/tours";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { formatRelativeTime, formatExactTime } from "@/lib/relativeTime";
@@ -691,6 +692,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
   return (
     <main className="community-detail-page">
+      <PostDetailTour />
       <div className="community-detail-shell">
         <div ref={topSentinelRef} className="cpd-top-sentinel" aria-hidden="true" />
         <header className={`community-detail-topbar${scrolled ? " is-scrolled" : ""}`}>
@@ -1071,7 +1073,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </div>
               )}
 
-              <div className="cpd-actions">
+              <div className="cpd-actions" data-tour="cd-actions">
                 <button type="button" className={`cpd-act${post.myReaction ? " is-liked" : ""}`} aria-label="좋아요" aria-pressed={!!post.myReaction} onClick={() => react("heart")}>
                   <TossHeartIcon filled={!!post.myReaction} />
                   <span>{formatCount(post.likeCount || 0)}</span>
@@ -1103,7 +1105,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
             <div className="cpd-band" aria-hidden="true" />
             <section className="community-detail-panel cpd-comments">
-              <div className="cpd-sort-wrap">
+              <div className="cpd-sort-wrap" data-tour="cd-sort">
                 <button type="button" className="cpd-sort" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
                   {COMMENT_SORTS.find((x) => x.key === commentSort)?.label}
                   <SortArrowsIcon />
@@ -1176,7 +1178,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
 
             {/* 아래 고정: 감정 반응 줄 + 댓글 입력창(답글이면 파란 @닉네임). 안드 WebView 는 키보드가 가리지 않게 올려 준다. */}
             <div ref={dockOverlayRef} className="cpd-dock-overlay">
-              <div className="cpd-dock" style={{ bottom: keyboardInset }}>
+              <div className="cpd-dock" data-tour="cd-compose" style={{ bottom: keyboardInset }}>
                 <div className="cpd-react-bar">
                   {REACTIONS.map((r) => (
                     <button
@@ -1552,7 +1554,7 @@ function CommentItem({
             <TossHeartIcon filled={comment.likedByMe} />
             {comment.likeCount > 0 && <span>{formatCount(comment.likeCount)}</span>}
           </button>
-          <button type="button" className="rp-btn" onClick={() => onReply(comment)}>
+          <button type="button" className="rp-btn" data-tour={depth === 0 ? "cd-reply" : undefined} onClick={() => onReply(comment)}>
             <ReplyArrowIcon />
             답글 달기
           </button>

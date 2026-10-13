@@ -7,6 +7,7 @@ import IntroBanner from "@/components/IntroBanner";
 import ObsidianIntroSplash from "@/components/ObsidianIntroSplash";
 import { useRouter } from "next/navigation";
 import LoginRequired from "@/components/LoginRequired";
+import { ObsidianTour } from "@/components/tours";
 import { clientCache } from "@/lib/clientCache";
 
 interface TimerUser {
@@ -393,6 +394,8 @@ export default function TimerPage() {
     <div className="tmr-page" style={{ minHeight: "100vh", background: "var(--c-timer-bg)" }}>
       {/* 첫 진입: 어두워지며 크리스탈 영상이 뜨는 스플래시(기기당 1회) → 닫히면 아래 배너 */}
       <ObsidianIntroSplash />
+      {/* 처음 한 번: 어둡게 깔고 짚어 주는 사용 안내(스플래시·배너가 모두 닫힌 뒤에 뜬다) */}
+      <ObsidianTour />
       {/* 첫 진입 배너(X = 3일 동안 안 보기) */}
       <IntroBanner
         image="/banners/obsidian-rank.jpg"
@@ -407,6 +410,7 @@ export default function TimerPage() {
           type="button"
           onClick={() => setFriendsOpen(true)}
           aria-label="친구"
+          data-tour="tmr-friends"
           className="press"
           style={{
             marginLeft: "auto", position: "relative", height: 38, borderRadius: 999,
@@ -436,7 +440,7 @@ export default function TimerPage() {
       <div className="tmr-left">
 
       {/* Main timer row: clock on left, bubble + play on right */}
-      <div className="tmr-clockrow" style={{
+      <div className="tmr-clockrow" data-tour="tmr-clock" style={{
         padding: "0 20px",
         display: "flex",
         alignItems: "center",
@@ -481,7 +485,7 @@ export default function TimerPage() {
       </div>
 
       {/* 내 불꽃 등급 — 이번 주 공부시간 기준이고 월요일에 초기화된다 */}
-      <div className="tmr-flameline" style={{ padding: "0 20px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="tmr-flameline" data-tour="tmr-flame" style={{ padding: "0 20px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
         <FlameChip totalSeconds={myWeeklySeconds} size={15} />
         <span style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 600 }}>
           이번 주 {formatTime(myWeeklySeconds)} · 월요일에 초기화돼요
@@ -517,7 +521,7 @@ export default function TimerPage() {
       <div className="tmr-divider" style={{ height: 1, background: "var(--c-bg-muted)" }} />
 
       {/* 탭 바 — 아이콘 + 라벨, 선택된 쪽에 밑줄 */}
-      <div style={{ display: "flex", padding: "0 20px", gap: 22, borderBottom: "1px solid var(--c-bg-muted)" }}>
+      <div data-tour="tmr-tabs" style={{ display: "flex", padding: "0 20px", gap: 22, borderBottom: "1px solid var(--c-bg-muted)" }}>
         {TIMER_TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           return (

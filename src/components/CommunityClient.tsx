@@ -14,6 +14,7 @@ import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
 import EmojiBar from "@/components/community/EmojiBar";
+import { CommunityTour } from "@/components/tours";
 import { renderWithMention } from "@/components/community/mention";
 import { ReplyArrowIcon, SortArrowsIcon, SendUpIcon } from "@/components/community/TossIcons";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
@@ -748,7 +749,7 @@ export default function CommunityClient() {
           )}
 
           {!selectedGroupId && !query.trim() && weeklyPosts.length > 0 && (
-            <section className="weekly-popular" aria-label="주간 인기글">
+            <section className="weekly-popular" aria-label="주간 인기글" data-tour="com-weekly">
               <h2 className="weekly-popular-title" role="tablist" aria-label="게시글 보기">
                 {/* 텍스트 탭 — 버튼 느낌 없이 글자만. 선택된 항목은 검정, 나머지는 회색. */}
                 {([
@@ -813,7 +814,7 @@ export default function CommunityClient() {
                     }
                   }}
                 >
-                  <div className="community-post-head">
+                  <div className="community-post-head" data-tour={postIndex === 0 ? "com-profile" : undefined}>
                     <div className="tc-ava-wrap is-link" onClick={(event) => openProfile(event, post.userId)}>
                       <div className="community-avatar" aria-hidden="true">
                         {post.authorIsAdmin ? (
@@ -1052,6 +1053,7 @@ export default function CommunityClient() {
         <button
           type="button"
           className="community-floating-write"
+          data-tour="com-write"
           onClick={() => setComposeOpen(true)}
           style={floatingWriteButtonStyle}
         >
@@ -1059,6 +1061,7 @@ export default function CommunityClient() {
         </button>
       </div>
       <CommunityStyles />
+      <CommunityTour />
       {/* 당겨서 새로고침 — 이모지가 통통 튀며 바뀐다(스피너 대신) */}
       <PullToRefresh
         offsetTop={topbarHeight}
@@ -1358,6 +1361,7 @@ function CategoryChips({
       ref={railRef}
       className={`tabrail${stacked ? " is-stacked" : ""}${atEnd ? " is-end" : ""}`}
       aria-label="커뮤니티 카테고리"
+      data-tour="com-cats"
     >
       {items.map((it) => {
         const on = selectedGroupId === it.id;
