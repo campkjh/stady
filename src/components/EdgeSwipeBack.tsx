@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 // 사파리처럼 화면 왼쪽 끝에서 오른쪽으로 밀면 뒤로 간다(상세 페이지 전용).
 //  · 하단 네비에 있는 탭 화면(홈·커뮤니티·타이머·책갈피·마이홈)과 어드민·로그인에서는 꺼 둔다.
-//  · iOS(사파리·앱 WKWebView)는 시스템이 이미 같은 제스처를 주므로 여기서 또 처리하지 않는다(두 번 뒤로 가는 것 방지).
+//  · iOS 앱(WKWebView)의 시스템 뒤로 제스처는 이 앱에서 동작하지 않아(2026-10 아이폰 제보) iOS 에서도 같은 코드로 처리한다.
+//    시스템 제스처가 먼저 터치를 가져가면 touchcancel 이 오고, 그 경우 뒤로 가지 않고 되돌리므로 두 번 뒤로 가진 않는다.
 //  · 화면(body)이 손가락을 따라 오른쪽으로 밀려나고, 놓았을 때 1/3 이상 밀었거나 빠르게 휘둘렀으면 뒤로 간다.
 //
 // 밀 때 position:fixed 요소(고정 헤더·FAB·하단 네비)가 body 의 transform 때문에 스크롤 양만큼 어긋나므로,
@@ -19,14 +20,6 @@ const COMMIT_RATIO = 0.33;
 const COMMIT_VELOCITY = 0.45; // px/ms
 const ANIM_MS = 280;
 const BACK_TIMEOUT_MS = 1200; // 뒤로 갈 곳이 없어 경로가 안 바뀌면 되돌린다
-
-function isIOS(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/i.test(ua)) return true;
-  // 아이패드(iPadOS)는 UA 가 Macintosh 로 오고 터치 지점만 다르다. 안드로이드 UA 는 제외.
-  return /Macintosh/i.test(ua) && !/Android/i.test(ua) && navigator.maxTouchPoints > 1;
-}
 
 function isDetailPath(path: string): boolean {
   if (TAB_ROOTS.has(path)) return false;
@@ -49,12 +42,12 @@ export default function EdgeSwipeBack() {
 
   // 경로가 바뀌면: 이 화면이 상세인지 갱신 + 뒤로 가는 중이었다면 정리
   useEffect(() => {
-    enabledRef.current = isDetailPath(pathname) && !isIOS();
+    enabledRef.current = isDetailPath(pathname);
     leavingDoneRef.current?.();
   }, [pathname]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || isIOS()) return;
+    if (typeof window === "undefined") return;
     const html = document.documentElement;
     const body = document.body;
     const st = {
