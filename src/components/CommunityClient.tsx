@@ -154,6 +154,27 @@ export default function CommunityClient() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  // 검색창이 '열리는 중/닫히는 중'에도 화면에 남아 있어야 전환이 보인다: mounted = DOM 에 있음, searchOn = 펼친 상태.
+  const [searchMounted, setSearchMounted] = useState(false);
+  const [searchOn, setSearchOn] = useState(false);
+  const searchCloseTimer = useRef<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  function openSearch() {
+    if (searchCloseTimer.current) window.clearTimeout(searchCloseTimer.current);
+    setSearchOpen(true);
+    setSearchMounted(true);
+    // 접힌 모양으로 한 프레임 그린 뒤 펼친 모양으로 바꿔야 CSS 전환이 돈다
+    requestAnimationFrame(() => requestAnimationFrame(() => setSearchOn(true)));
+  }
+  function closeSearch() {
+    setSearchOn(false);
+    searchInputRef.current?.blur();
+    searchCloseTimer.current = window.setTimeout(() => {
+      setSearchMounted(false);
+      setSearchOpen(false);
+      setQuery("");
+    }, 520);
+  }
   const [message, setMessage] = useState("");
   // 주간 인기글 옆 '내 글 / 내 댓글' 필터. 전체 탭·검색 없음일 때만 보인다.
   // 글 상세로 갔다가 돌아와도 필터가 유지되도록 sessionStorage 에 두고 복원한다(스크롤 복원과 같은 방식).
@@ -661,7 +682,7 @@ export default function CommunityClient() {
         storageKey="community_intro_answerking_hidden_until"
       />
       <PrimeReferralSheet />
-      <header ref={topbarRef} className={`community-topbar${headerScrolled ? " is-scrolled" : ""}`}>
+      <header ref={topbarRef} className={`community-topbar${headerScrolled ? " is-scrolled" : ""}${searchOn ? " is-searching" : ""}`}>
         <div className="community-topbar-inner">
           <div className="community-title-wrap">
             <h1 className="community-title">커뮤니티</h1>
@@ -697,10 +718,7 @@ export default function CommunityClient() {
           <button
             type="button"
             className="community-icon-button"
-            onClick={() => {
-              if (searchOpen) setQuery("");
-              setSearchOpen((current) => !current);
-            }}
+            onClick={() => (searchOpen ? closeSearch() : openSearch())}
             aria-label="커뮤니티 검색"
             title="검색"
             style={iconButtonStyle}
@@ -710,17 +728,37 @@ export default function CommunityClient() {
               <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
+          {/* 검색 버튼 자리에서 헤더 전체로 쭉 펼쳐지는 입력창(회색 알약). 탭은 옆으로 비켜 사라진다. */}
+          {searchMounted && (
+            <div className={`csb${searchOn ? " is-open" : ""}`} role="search">
+              <div className="csb-pill">
+                <svg className="csb-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
+                  <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  className="csb-input"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === "Escape") closeSearch(); }}
+                  placeholder={selectedGroup ? `${selectedGroup.name}에서 검색` : "커뮤니티 검색"}
+                  enterKeyHint="search"
+                  aria-label="커뮤니티 검색"
+                  autoFocus
+                />
+                {query && (
+                  <button type="button" className="csb-clear" onClick={() => { setQuery(""); searchInputRef.current?.focus(); }} aria-label="검색어 지우기">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+                <button type="button" className="csb-cancel" onClick={closeSearch}>취소</button>
+              </div>
+            </div>
+          )}
         </div>
-        {searchOpen && (
-          <input
-            className="community-search-input"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={selectedGroup ? `${selectedGroup.name}에서 검색` : "커뮤니티 검색"}
-            autoFocus
-            style={searchStyle}
-          />
-        )}
       </header>
 
       <div className="community-layout">
@@ -2335,6 +2373,34 @@ function CommunityStyles() {
       .community-topbar .tabrail-ico img { width: 22px; height: 22px; }
       .community-topbar .tabrail-label { font-size: 16px; font-weight: 500; letter-spacing: -0.3px; color: var(--c-text-4c, #8b95a1); }
       .community-topbar .tabrail-item.is-on .tabrail-label { color: var(--c-text); }
+      /* ── 검색창 펼침: clip-path 로 오른쪽 버튼 크기(48px)에서 전체 폭까지 자라게 한다.
+         폭을 직접 애니메이션하면 레이아웃이 매 프레임 바뀌어 끊기고, clip-path 는 합성만 해서 부드럽다. ── */
+      .community-topbar-inner { position: relative; }
+      .csb { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 3; display: flex; align-items: center; pointer-events: none; }
+      .csb.is-open { pointer-events: auto; }
+      .csb-pill {
+        position: relative; flex: 1; min-width: 0; height: 36px; box-sizing: border-box;
+        display: flex; align-items: center; gap: 8px; padding: 0 6px 0 14px;
+        border-radius: 18px; background: var(--c-bg-muted-2, #f2f4f6);
+        clip-path: inset(0 0 0 calc(100% - 48px) round 18px);
+        transition: clip-path 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: clip-path;
+      }
+      .csb.is-open .csb-pill { clip-path: inset(0 0 0 0 round 18px); }
+      .csb-ico, .csb-input, .csb-clear, .csb-cancel { opacity: 0; transition: opacity 0.18s ease; }
+      .csb.is-open .csb-ico, .csb.is-open .csb-input, .csb.is-open .csb-clear, .csb.is-open .csb-cancel { opacity: 1; transition: opacity 0.3s ease 0.14s; }
+      .csb-ico { flex: none; color: var(--c-text-4c, #8b95a1); }
+      .csb-input { flex: 1; min-width: 0; height: 36px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
+      .csb-input::placeholder { color: var(--c-text-5, #b0b8c1); }
+      .csb-clear { flex: none; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: var(--c-text-5, #b0b8c1); color: var(--c-bg, #fff); cursor: pointer; }
+      .csb-cancel { flex: none; height: 28px; padding: 0 10px; border: none; background: none; color: var(--c-text-3, #6b7684); font-size: 15px; font-weight: 600; letter-spacing: -0.3px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+      /* 펼치면 탭은 옆으로 비켜 사라지고, 원래 검색 버튼은 입력창 속으로 녹아든다. */
+      .community-mobile-filters { transition: opacity 0.28s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+      .community-topbar.is-searching .community-mobile-filters { opacity: 0; transform: translateX(-18px); pointer-events: none; }
+      .community-topbar .community-icon-button { transition: opacity 0.2s ease, background 0.16s ease; }
+      .community-topbar.is-searching .community-icon-button { opacity: 0; pointer-events: none; }
+      @media (min-width: 720px) { .csb { display: none; } }
+      @media (prefers-reduced-motion: reduce) { .csb-pill, .community-mobile-filters { transition: none; } }
       .community-topbar-inner {
         display: flex;
         align-items: center;
@@ -3306,13 +3372,6 @@ const inputStyle = {
   color: "var(--c-text)",
   fontSize: 16,
   boxSizing: "border-box",
-} as const;
-
-const searchStyle = {
-  ...inputStyle,
-  maxWidth: 1120,
-  margin: "0 auto",
-  background: "var(--c-bg)",
 } as const;
 
 const emptyPanelStyle = {
