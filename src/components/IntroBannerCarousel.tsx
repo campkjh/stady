@@ -33,6 +33,11 @@ export default function IntroBannerCarousel({
   // 배너 이미지 중 가장 세로로 긴 것의 가로/세로 비. 이 값으로 카드 폭을 줄여
   // 화면이 낮을 때(폰 가로모드) 카드가 위아래로 잘려 X 버튼이 화면 밖으로 나가는 걸 막는다.
   const [ratio, setRatio] = useState<number | null>(null);
+  // 화면 높이(px). dvh·min() 를 구형 안드로이드 웹뷰가 못 읽으면 폭 계산 전체가 무효가 되어 이미지가 안 보일 수 있어,
+  // 숫자로 직접 계산한다.
+  const [vh, setVh] = useState(0);
+  // 이미지 로드 실패 시 한 번 다시 시도(캐시 우회)
+  const [retry, setRetry] = useState(0);
   const startX = useRef<number | null>(null);
   const dragging = useRef(false);
 
@@ -91,7 +96,18 @@ export default function IntroBannerCarousel({
     setOpen(false);
   }
 
+  useEffect(() => {
+    if (!open) return;
+    const update = () => setVh(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [open]);
+
   if (!open || typeof document === "undefined" || slides.length === 0) return null;
+
+  // 카드 폭 = min(340, (화면 높이 - 위아래 여백 48) × 이미지 비). 높이를 모르면 340.
+  const cardMax = ratio && vh > 0 ? Math.max(200, Math.min(340, Math.floor((vh - 48) * ratio))) : 340;
 
   return createPortal(
     <div
@@ -110,18 +126,20 @@ export default function IntroBannerCarousel({
           position: "relative",
           width: "100%",
           // 세로 여백(padding 24 × 2)을 뺀 높이에 맞춰 폭을 줄인다 — 가로모드에서도 카드 전체가 보인다.
-          maxWidth: ratio ? `min(340px, calc((100dvh - 48px) * ${ratio}))` : 340,
+          maxWidth: cardMax,
         }}
       >
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
-          style={{ overflow: "hidden", borderRadius: 32, touchAction: "pan-y" }}
+          // overflow:hidden + borderRadius + transform 자식 조합은 갤럭시 웹뷰에서 이미지가 비는 일이 있다 →
+          // 래퍼는 사각형으로만 자르고, 둥근 모서리는 이미지 자체에 준다.
+          style={{ overflow: "hidden", touchAction: "pan-y" }}
         >
           <div
             style={{
               display: "flex",
-              transform: `translateX(-${index * 100}%)`,
+              transform: `translate3d(-${index * 100}%, 0, 0)`,
               transition: "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
             }}
           >
@@ -129,15 +147,16 @@ export default function IntroBannerCarousel({
               <div key={s.image} style={{ flex: "0 0 100%", minWidth: "100%" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={s.image}
+                  src={retry ? `${s.image}?r=${retry}` : s.image}
                   alt={s.alt}
+                  onError={() => setRetry((n) => (n < 1 ? n + 1 : n))}
                   onLoad={(e) => {
                     const img = e.currentTarget;
                     if (!img.naturalHeight) return;
                     const r = img.naturalWidth / img.naturalHeight;
                     setRatio((cur) => (cur === null ? r : Math.min(cur, r)));
                   }}
-                  style={{ width: "100%", height: "auto", display: "block" }}
+                  style={{ width: "100%", height: "auto", display: "block", borderRadius: 32 }}
                 />
               </div>
             ))}

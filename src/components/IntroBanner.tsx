@@ -24,6 +24,8 @@ export default function IntroBanner({
   const [open, setOpen] = useState(false);
   // 이미지의 가로/세로 비 — 화면이 낮을 때 카드 폭을 줄이는 데 쓴다.
   const [ratio, setRatio] = useState<number | null>(null);
+  // 화면 높이(px) — dvh·min() 를 구형 안드로이드 웹뷰가 못 읽으면 폭 계산 전체가 무효가 되므로 숫자로 직접 계산한다.
+  const [vh, setVh] = useState(0);
 
   useEffect(() => {
     let until = 0;
@@ -49,6 +51,14 @@ export default function IntroBanner({
     return () => clearTimeout(t);
   }, [storageKey]);
 
+  useEffect(() => {
+    if (!open) return;
+    const update = () => setVh(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [open]);
+
   function closeForDays() {
     try {
       localStorage.setItem(storageKey, String(Date.now() + hideDays * 24 * 60 * 60 * 1000));
@@ -59,6 +69,8 @@ export default function IntroBanner({
   }
 
   if (!open || typeof document === "undefined") return null;
+
+  const cardMax = ratio && vh > 0 ? Math.max(200, Math.min(340, Math.floor((vh - 48) * ratio))) : 340;
 
   return createPortal(
     <div
@@ -77,7 +89,7 @@ export default function IntroBanner({
           position: "relative",
           width: "100%",
           // 가로모드처럼 화면이 낮을 때 카드가 잘려 X 가 화면 밖으로 나가지 않게 폭을 줄인다.
-          maxWidth: ratio ? `min(340px, calc((100dvh - 48px) * ${ratio}))` : 340,
+          maxWidth: cardMax,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
