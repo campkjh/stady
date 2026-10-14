@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { useModalExit } from "@/lib/useModalExit";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
@@ -130,7 +129,38 @@ export default function CommunityComposeModal({
   // 그대로 두면 모달 아래쪽(입력칸·'게시' 버튼)이 키보드 뒤로 숨는데, 가로모드는 화면이
   // 낮아서 본문까지 통째로 가린다 → 덮인 높이만큼 모달을 줄여 항상 보이는 영역 안에 둔다.
   const rootRef = useRef<HTMLDivElement>(null);
-  const keyboardInset = useKeyboardInset(true, rootRef);
+  // 키보드가 오르내릴 때 시트가 '뚝뚝' 끊기며 뒤 화면이 비치지 않게 — 오버레이를 visualViewport(실제 보이는 영역)에
+  // 그대로 맞춘다. 키보드가 뜨면 오버레이가 줄고, 시트는 그 안을 꽉 채워(data-kb) 위가 비지 않는다.
+  // className 은 React 가 다시 쓰므로 상태는 data- 속성으로 둔다. React state 를 거치지 않고 style 로 바로 써서 리렌더 없이 매 이벤트마다 따라가고, CSS transition 이 부드럽게 메운다.
+  useEffect(() => {
+    const el = rootRef.current;
+    const vv = window.visualViewport;
+    if (!el || !vv) return;
+    let base = vv.height; // 키보드 없는 상태의 높이(가장 컸던 값)
+    let raf = 0;
+    const apply = () => {
+      raf = 0;
+      if (vv.height > base) base = vv.height;
+      el.style.top = `${Math.round(vv.offsetTop)}px`;
+      el.style.height = `${Math.round(vv.height)}px`;
+      el.style.bottom = "auto";
+      if (base - vv.height > 80) el.dataset.kb = "1"; else delete el.dataset.kb;
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
+    apply();
+    // 첫 배치는 애니메이션 없이 맞추고, 그 뒤 변화부터 transition
+    const live = requestAnimationFrame(() => { el.dataset.live = "1"; });
+    vv.addEventListener("resize", schedule);
+    vv.addEventListener("scroll", schedule);
+    window.addEventListener("focusin", schedule);
+    return () => {
+      cancelAnimationFrame(live);
+      if (raf) cancelAnimationFrame(raf);
+      vv.removeEventListener("resize", schedule);
+      vv.removeEventListener("scroll", schedule);
+      window.removeEventListener("focusin", schedule);
+    };
+  }, []);
   useBodyScrollLock(true);
   const { leaving, exit } = useModalExit();
   const onCloseRef = useRef(onClose);
@@ -451,9 +481,6 @@ export default function CommunityComposeModal({
     <div
       ref={rootRef}
       className={`compose-root${leaving ? " is-leaving" : ""}`}
-      /* 높이(bottom)를 줄이면 이 요소를 재서 덮인 높이를 구하는 훅이 0 을 보고 되돌려
-         진동한다 → 테두리 상자는 그대로 두고 padding 으로만 안쪽을 좁힌다. */
-      style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
     >
       {/* 딤 — 쓰던 내용이 없을 때만 바깥을 눌러 닫는다(실수로 날리지 않게) */}
       <div
@@ -866,13 +893,19 @@ function ComposeStyles() {
         position: absolute; top: 0; right: 0; bottom: 0; left: 0;
         background: rgba(0, 0, 0, 0.5); animation: cmpFade 0.2s ease-out backwards;
       }
+      /* 오버레이 높이·위치는 JS 가 visualViewport 에 맞춘다 — 변화는 부드럽게 */
+      .compose-root[data-live] { transition: top 0.22s cubic-bezier(0.22, 1, 0.36, 1), height 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
       .compose-modal {
         position: relative; width: 100%; max-width: 560px; height: 92%; max-height: 100%;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         display: flex; flex-direction: column; box-sizing: border-box;
         background: var(--c-bg); border-radius: 28px 28px 0 0;
         box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.16);
         animation: cmpSheet 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
       }
+      .compose-root[data-live] .compose-modal { transition: height 0.22s cubic-bezier(0.22, 1, 0.36, 1), padding-bottom 0.22s ease; }
+      /* 키보드가 떠 있으면 시트가 남은 영역을 꽉 채운다(상태바 아래까지) */
+      .compose-root[data-kb] .compose-modal { height: calc(100% - env(safe-area-inset-top, 0px)); padding-bottom: 0; }
       .cmp-handle { flex-shrink: 0; width: 36px; height: 4px; border-radius: 2px; background: var(--c-bg-muted-6); margin: 10px auto 0; }
       @keyframes cmpFade { from { opacity: 0; } to { opacity: 1; } }
       @keyframes cmpSheet { from { transform: translateY(100%); } to { transform: none; } }
