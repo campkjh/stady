@@ -175,8 +175,8 @@ export default function CommunityClient() {
   const [topbarHeight, setTopbarHeight] = useState(0);
   const scrollRestoredRef = useRef(false);
   const restoreTimerRef = useRef<number | null>(null);
-  // 아래로 스크롤하면 카테고리 탭을 한 줄(아이콘+라벨)로 접어 헤더를 낮춘다.
-  const [compactHeader, setCompactHeader] = useState(false);
+  // 스크롤을 내리면 헤더 뒤로 배경색 그라데이션이 스르륵 나온다(카테고리 탭은 항상 아이콘 옆 글자 한 줄).
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   // 블라인드 노이즈를 탭해서 공개한 글 id 모음(피드에서 바로 걷기).
   const [revealedBlind, setRevealedBlind] = useState<Set<string>>(() => new Set());
   // 지금 투표 요청 중인 글 id(중복 클릭 방지).
@@ -420,49 +420,12 @@ export default function CommunityClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 접혔을 때 항목 너비(아이콘 30 + 여백 + 라벨). 라벨 길이가 제각각이라 실제로 재서 넣는다.
   useEffect(() => {
-    const bar = topbarRef.current;
-    if (!bar) return;
-    // 라벨 폭은 화면 밖 프로브로 잰다. 레일이 숨겨진 상태(넓은 화면·회전 직후 등)에서
-    // scrollWidth 를 재면 0 이 되어 --cw 가 50px 로 굳고, 라벨이 옆 항목 위로 넘쳐
-    // "전체 [아이콘] 자유 [아이콘]…" 처럼 겹쳐 보였다. 프로브는 표시 여부와 무관하다.
-    const measure = () => {
-      const probe = document.createElement("span");
-      probe.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:12.5px;pointer-events:none;";
-      document.body.appendChild(probe);
-      bar.querySelectorAll<HTMLElement>(".tabrail-item").forEach((item) => {
-        const label = item.querySelector<HTMLElement>(".tabrail-label");
-        if (!label) return;
-        const cs = getComputedStyle(label);
-        probe.style.fontFamily = cs.fontFamily;
-        probe.style.fontWeight = cs.fontWeight;
-        probe.style.letterSpacing = cs.letterSpacing;
-        probe.textContent = label.textContent || "";
-        // 라벨 레이아웃 폰트는 12.5px 고정(축소는 transform: scale 로만) → 잰 폭이 곧 접힘 폭.
-        const w = Math.ceil(probe.getBoundingClientRect().width) || Math.ceil(label.scrollWidth);
-        if (w > 0) item.style.setProperty("--cw", `${38 + w + 12}px`);
-      });
-      probe.remove();
-    };
-    measure();
-    // 웹폰트가 늦게 오면 폭이 달라진다 → 로드 후 한 번 더. 회전·창 크기 변경 후에도 다시 잰다.
-    try { document.fonts?.ready.then(measure).catch(() => {}); } catch { /* ignore */ }
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [groups]);
-
-  useEffect(() => {
-    let lastY = window.scrollY;
     const onScroll = () => {
-      const y = window.scrollY;
-      const dy = y - lastY;
-      // 손떨림 정도(6px 미만)는 방향으로 치지 않는다.
-      if (Math.abs(dy) < 6) return;
-      lastY = y;
-      // 최상단 근처에서는 항상 펼쳐둔다.
-      setCompactHeader(y > 60 && dy > 0);
+      const next = window.scrollY > 6;
+      setHeaderScrolled((cur) => (cur === next ? cur : next));
     };
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -642,7 +605,7 @@ export default function CommunityClient() {
         storageKey="community_intro_answerking_hidden_until"
       />
       <PrimeReferralSheet />
-      <header ref={topbarRef} className={`community-topbar${compactHeader ? " is-compact" : ""}`}>
+      <header ref={topbarRef} className={`community-topbar${headerScrolled ? " is-scrolled" : ""}`}>
         <div className="community-topbar-inner">
           <div className="community-title-wrap">
             <h1 className="community-title">커뮤니티</h1>
@@ -2282,72 +2245,39 @@ function CommunityStyles() {
         display: grid;
         gap: 12px;
         transform: translateX(-50%);
-        background: var(--c-bg);
-        border-bottom: 1px solid var(--c-bg-muted-6);
-        padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
-        transition: gap 0.24s cubic-bezier(0.22, 1, 0.36, 1), padding 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+        /* 맨 위에서는 배경·보더가 없다. 스크롤을 내리면 아래로 옅어지는 그라데이션이 스르륵 나온다. */
+        background: transparent;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 8px;
       }
-      /* 스크롤을 내리면 카테고리 탭이 '아이콘 위·라벨 아래'에서 '아이콘 옆 라벨'로
-         접히며 헤더가 그만큼 낮아진다. flex-direction은 애니메이션이 안 되므로
-         라벨을 절대배치로 두고 위치·크기만 바꾼다 → 매 프레임 부드럽게 이어진다.
-         (--cw = 접혔을 때 항목 너비. 라벨 길이가 달라 마운트 후 JS로 재서 넣는다) */
+      .community-topbar::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: calc(100% + 22px);
+        z-index: -1;
+        background: linear-gradient(to bottom, var(--c-bg) 0%, var(--c-bg) 55%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.28s ease;
+        pointer-events: none;
+      }
+      .community-topbar.is-scrolled::before { opacity: 1; }
+      /* 카테고리 탭: 아이콘 옆에 글자(16px, 얇게). 스크롤로 접히거나 움직이지 않는다. */
+      .community-topbar .tabrail { gap: 4px; padding: 0; align-items: center; }
       .community-topbar .tabrail-item {
-        position: relative;
         flex-direction: row;
-        justify-content: flex-start;
-        width: 64px;
-        height: 67px;
-        padding: 0;
-        transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), height 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+        align-items: center;
+        gap: 6px;
+        width: auto;
+        height: 44px;
+        padding: 0 14px 0 8px;
+        border-radius: 14px;
       }
-      /* 부드럽게: 위치·크기 변화를 레이아웃 속성(left/top/width/height/font-size) 대신
-         transform 으로 준다. font-size 애니메이션은 매 프레임 글자를 다시 래스터라이즈해
-         '프레임 보이는' 끊김의 주범이라 scale 로 대체한다. */
-      .community-topbar .tabrail-ico {
-        position: absolute;
-        left: 0;
-        top: 0;
-        /* 40px 아이콘을 64px 항목 안에서 가로 중앙·상단(4px)에 */
-        transform: translate(12px, 4px);
-        transform-origin: top left;
-        will-change: transform;
-        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background 0.16s ease;
-      }
-      .community-topbar .tabrail-label {
-        position: absolute;
-        left: 0;
-        top: 0;
-        font-size: 12.5px;
-        /* 항목(64px) 하단 중앙: 가로 중앙은 부모 폭에 의존하므로 %가 필요하지만,
-           transform 으로만 옮겨 레이아웃을 안 건드린다. */
-        transform: translate(calc(32px - 50%), 46px) scale(0.88);
-        transform-origin: left top;
-        will-change: transform;
-        transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease;
-      }
-      .community-topbar.is-compact .tabrail-item {
-        width: var(--cw, 96px);
-        height: 36px;
-      }
-      .community-topbar.is-compact .tabrail-ico {
-        transform: translate(3px, 3px) scale(0.75);
-      }
-      .community-topbar.is-compact .tabrail-label {
-        transform: translate(38px, 11px) scale(1);
-      }
-      /* 전역 .tabrail-item:active .tabrail-ico { transform: scale(0.94) } 가 위치 transform 을
-         덮어써 탭 누를 때 아이콘이 튀는 걸 막는다 — 위치는 유지하고 눌림만 살짝. */
-      .community-topbar .tabrail-item:active .tabrail-ico {
-        transform: translate(12px, 4px) scale(0.95);
-      }
-      .community-topbar.is-compact .tabrail-item:active .tabrail-ico {
-        transform: translate(3px, 3px) scale(0.71);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .community-topbar {
-          transition: none;
-        }
-      }
+      .community-topbar .tabrail-ico { flex: none; width: 30px; height: 30px; border-radius: 10px; }
+      .community-topbar .tabrail-ico img { width: 22px; height: 22px; }
+      .community-topbar .tabrail-label { font-size: 16px; font-weight: 500; letter-spacing: -0.3px; color: var(--c-text-4c, #8b95a1); }
+      .community-topbar .tabrail-item.is-on .tabrail-label { color: var(--c-text); }
       .community-topbar-inner {
         display: flex;
         align-items: center;
