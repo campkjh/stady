@@ -3180,8 +3180,7 @@ function CommunityStyles() {
         animation: communitySearchIn 0.18s ease;
       }
       .community-icon-button:hover {
-        background: var(--c-bg-soft) !important;
-        border-color: var(--c-border-strong) !important;
+        background: var(--c-bg-muted-3, #e8ebed) !important;
       }
       .community-floating-write {
         transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, background 0.18s ease;
@@ -3285,13 +3284,14 @@ function CommunityStyles() {
 }
 
 // 카테고리 알약 칩: 선택은 짙은 차콜, 나머지는 연회색(보더 없이 면으로만 구분).
+// 검색 버튼 — 댓글 입력창과 같은 연한 회색 알약(48×36, 반경 18).
 const iconButtonStyle = {
-  width: 40,
-  height: 40,
-  border: "1px solid var(--c-border)",
-  borderRadius: 999,
-  background: "var(--c-bg)",
-  color: "var(--c-text)",
+  width: 48,
+  height: 36,
+  border: "none",
+  borderRadius: 18,
+  background: "var(--c-bg-muted-2, #f2f4f6)",
+  color: "var(--c-text-2, #333d4b)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
