@@ -12,6 +12,11 @@ import { usePathname, useRouter } from "next/navigation";
 // 밀 때 position:fixed 요소(고정 헤더·FAB·하단 네비)가 body 의 transform 때문에 스크롤 양만큼 어긋나므로,
 // 제스처가 시작되면 body 를 화면 크기로 고정하고 스크롤 양을 body.scrollTop 으로 옮겨 둔다(globals.css .swb-active).
 // 끝나면 원래대로 되돌리고 스크롤 위치를 복원한다.
+//
+// 밀려나는 화면 뒤에는 '이전 화면'이 보여야 한다. SPA 라 이전 화면은 이미 사라졌으므로, 링크·버튼을 누르는 순간
+// (React 핸들러보다 먼저 도는 click 캡처 단계) 화면(body)을 통째로 복제해 두었다가 제스처 때 밑에 깔아 준다.
+//  · 복제본은 {경로, 노드, 스크롤} 로 스택에 쌓고, 그 경로로 돌아오면(뒤로) 꺼낸다.
+//  · 복제본이 없으면(예: 코드로만 이동) 옅은 바탕으로 대신한다.
 
 const TAB_ROOTS = new Set(["/", "/community", "/timer", "/bookmarks", "/mypage"]);
 const EDGE_PX = 24; // 이 안쪽에서 시작한 터치만 인정
@@ -27,6 +32,33 @@ function isDetailPath(path: string): boolean {
   return true;
 }
 
+interface Snap {
+  path: string;
+  node: HTMLElement;
+  scrollY: number;
+}
+const MAX_SNAPS = 3;
+const PENDING_TTL_MS = 4000;
+
+// 지금 화면의 복제본. 동작에 필요 없는 것(스크립트·미디어·개발용 오버레이)은 뺀다.
+function snapshotPage(): Snap | null {
+  try {
+    const html = document.documentElement;
+    if (html.classList.contains("swb-active") || document.body.style.position === "fixed") return null;
+    const node = document.body.cloneNode(true) as HTMLElement;
+    node
+      .querySelectorAll("script,noscript,iframe,video,audio,canvas,nextjs-portal,next-route-announcer,.swb-ghost")
+      .forEach((n) => n.remove());
+    node.querySelectorAll("[id]").forEach((n) => n.removeAttribute("id"));
+    node.removeAttribute("id");
+    node.setAttribute("aria-hidden", "true");
+    node.setAttribute("inert", "");
+    return { path: window.location.pathname, node, scrollY: window.scrollY };
+  } catch {
+    return null;
+  }
+}
+
 type Phase = "idle" | "track" | "drag" | "settling" | "leaving";
 
 export default function EdgeSwipeBack() {
@@ -35,14 +67,31 @@ export default function EdgeSwipeBack() {
   const enabledRef = useRef(false);
   const leavingDoneRef = useRef<(() => void) | null>(null);
   const routerRef = useRef(router);
+  const stackRef = useRef<Snap[]>([]);
+  const pendingRef = useRef<{ snap: Snap; timer: number } | null>(null);
+  const prevPathRef = useRef(pathname);
 
   useEffect(() => {
     routerRef.current = router;
   }, [router]);
 
-  // 경로가 바뀌면: 이 화면이 상세인지 갱신 + 뒤로 가는 중이었다면 정리
+  // 경로가 바뀌면: 이 화면이 상세인지 갱신 + 이전 화면 복제본 스택 정리 + 뒤로 가는 중이었다면 마무리
   useEffect(() => {
     enabledRef.current = isDetailPath(pathname);
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    if (prev !== pathname) {
+      const stack = stackRef.current;
+      const pending = pendingRef.current;
+      if (stack.length > 0 && stack[stack.length - 1].path === pathname) {
+        stack.pop(); // 뒤로 돌아왔다 — 그 화면의 복제본은 이제 필요 없다
+      } else if (pending && pending.snap.path === prev) {
+        stack.push(pending.snap); // 앞으로 갔다 — 떠나온 화면을 복제본으로 남긴다
+        if (stack.length > MAX_SNAPS) stack.shift();
+      }
+      if (pending) window.clearTimeout(pending.timer);
+      pendingRef.current = null;
+    }
     leavingDoneRef.current?.();
   }, [pathname]);
 
@@ -61,11 +110,58 @@ export default function EdgeSwipeBack() {
       scrollY: 0,
       w: 0,
       timer: 0,
+      ghost: null as HTMLDivElement | null,
+    };
+
+    // 링크·버튼을 누르는 순간(React 핸들러보다 먼저) 지금 화면을 복제해 둔다. 이동하지 않는 클릭이면 곧 버린다.
+    const onClickCapture = (e: MouseEvent) => {
+      const el = e.target as Element | null;
+      if (!el || el.closest("input,textarea,select,label")) return;
+      const snap = snapshotPage();
+      if (!snap) return;
+      const old = pendingRef.current;
+      if (old) window.clearTimeout(old.timer);
+      pendingRef.current = {
+        snap,
+        timer: window.setTimeout(() => {
+          pendingRef.current = null;
+        }, PENDING_TTL_MS),
+      };
+    };
+
+    // 밀려나는 화면 밑에 깔 이전 화면(복제본). 없으면 null → 옅은 바탕만 보인다.
+    const mountGhost = () => {
+      const stack = stackRef.current;
+      const snap = stack[stack.length - 1];
+      if (!snap || snap.path === window.location.pathname) return;
+      const ghost = document.createElement("div");
+      ghost.className = "swb-ghost";
+      ghost.setAttribute("aria-hidden", "true");
+      ghost.appendChild(snap.node);
+      html.appendChild(ghost);
+      snap.node.scrollTop = snap.scrollY;
+      st.ghost = ghost;
+      setGhost(0);
+    };
+    const unmountGhost = () => {
+      const g = st.ghost;
+      if (!g) return;
+      g.remove(); // 안의 복제본 노드는 메모리에 남아 다음 제스처에 다시 쓸 수 있다
+      st.ghost = null;
+    };
+    // 진행도(0~1)에 따라 살짝 뒤에서 따라 나오고(시차) 어두움이 걷힌다
+    const setGhost = (p: number) => {
+      const g = st.ghost;
+      if (!g) return;
+      const x = -(1 - p) * st.w * 0.25;
+      g.style.transform = `translate3d(${x}px, 0, 0)`;
+      g.style.setProperty("--swb-dim", String(((1 - p) * 0.16).toFixed(3)));
     };
 
     const cleanup = (restoreScroll: boolean) => {
       window.clearTimeout(st.timer);
       html.classList.remove("swb-active");
+      unmountGhost();
       body.style.transform = "";
       body.style.transition = "";
       if (restoreScroll) window.scrollTo(0, st.scrollY);
@@ -75,8 +171,13 @@ export default function EdgeSwipeBack() {
     };
 
     const animateTo = (x: number, done: () => void) => {
-      body.style.transition = `transform ${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+      const ease = `${ANIM_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+      body.style.transition = `transform ${ease}`;
       body.style.transform = `translate3d(${x}px, 0, 0)`;
+      if (st.ghost) {
+        st.ghost.style.transition = `transform ${ease}`;
+        setGhost(x / st.w);
+      }
       st.timer = window.setTimeout(done, ANIM_MS);
     };
 
@@ -85,6 +186,7 @@ export default function EdgeSwipeBack() {
       st.w = window.innerWidth;
       html.classList.add("swb-active");
       body.scrollTop = st.scrollY; // body 가 스크롤 컨테이너가 됐으니 보던 자리를 그대로 옮긴다
+      mountGhost();
       st.phase = "drag";
     };
 
@@ -123,6 +225,7 @@ export default function EdgeSwipeBack() {
       st.lastX = t.clientX;
       st.lastT = e.timeStamp;
       body.style.transform = `translate3d(${st.dx}px, 0, 0)`;
+      setGhost(Math.min(1, st.dx / st.w));
     };
 
     const onEnd = (e: TouchEvent) => {
@@ -138,6 +241,9 @@ export default function EdgeSwipeBack() {
         return;
       }
       st.phase = "leaving";
+      // 돌아간 화면이 다시 페이드 인 하면 복제본과 어긋나 깜빡인다 — 진입 애니메이션을 잠깐 끈다
+      html.classList.add("swb-noenter");
+      window.setTimeout(() => html.classList.remove("swb-noenter"), 900);
       animateTo(st.w, () => {
         // 경로가 바뀌면 usePathname 효과가 leavingDoneRef 를 불러 정리한다.
         leavingDoneRef.current = () => cleanup(false);
@@ -151,11 +257,13 @@ export default function EdgeSwipeBack() {
       });
     };
 
+    document.addEventListener("click", onClickCapture, true);
     document.addEventListener("touchstart", onStart, { passive: true });
     document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", onEnd);
     document.addEventListener("touchcancel", onEnd);
     return () => {
+      document.removeEventListener("click", onClickCapture, true);
       document.removeEventListener("touchstart", onStart);
       document.removeEventListener("touchmove", onMove);
       document.removeEventListener("touchend", onEnd);

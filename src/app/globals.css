@@ -1934,8 +1934,27 @@ body.nav-hidden .main-content-wrap { padding-bottom: env(safe-area-inset-bottom,
    body 를 화면 크기로 고정하고 그 안에서 스크롤하게 해, transform 이 position:fixed 요소를 어긋나게 하지 않는다.
    뒤에는 옅은 바탕이 깔리고 밀려나는 화면 왼쪽 가장자리에 그림자가 진다. */
 html.swb-active { background: var(--c-bg-muted-2, #eceef2); }
-html.swb-active body {
+html.swb-active > body {
   position: fixed; top: 0; right: 0; bottom: 0; left: 0;
   overflow: hidden !important; will-change: transform;
   box-shadow: -10px 0 32px rgba(0, 0, 0, 0.16);
 }
+
+/* 밀려나는 화면 밑에 깔리는 '이전 화면' 복제본(EdgeSwipeBack). 복제본 body 는 ghost 안에서 화면 크기로 놓고,
+   애니메이션·전환은 멈춰 처음 그려졌던 모습 그대로 보이게 한다. */
+.swb-ghost {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: -1;
+  overflow: hidden; pointer-events: none; will-change: transform;
+  background: var(--c-bg, #fff);
+}
+.swb-ghost > body {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  margin: 0; overflow: hidden !important; box-shadow: none;
+}
+.swb-ghost *, .swb-ghost *::before, .swb-ghost *::after { animation: none !important; transition: none !important; }
+.swb-ghost::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: #000; opacity: var(--swb-dim, 0.16); pointer-events: none;
+}
+html.swb-noenter .page-enter,
+html.swb-noenter .page-enter > * > * { animation: none !important; }
