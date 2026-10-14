@@ -700,6 +700,9 @@ export default function CommunityClient() {
   );
   return (
     <main className="community-page" style={{ "--community-header-height": `${topbarHeight}px` } as CSSProperties}>
+      {/* 스타일은 맨 앞에 둔다 — 끝에 있으면 스트리밍 HTML 이 중간에 끊겨 그려질 때 CSS 없는 헤더가 먼저 보였다가
+          (제목 영역이 탭을 오른쪽으로 밀어 둠) 스타일이 도착하는 순간 탭이 왼쪽으로 '뚝' 튀었다. */}
+      <CommunityStyles />
       {/* 커뮤니티 진입 시 하단에서 올라오는 친구초대 시트(일주일 동안 안보기 지원) */}
       {/* 첫 진입 배너(X = 3일 동안 안 보기) — 초대 시트보다 위에 뜬다 */}
       <IntroBanner
@@ -1109,7 +1112,6 @@ export default function CommunityClient() {
           게시글 +
         </button>
       </div>
-      <CommunityStyles />
       <CommunityTour />
       {/* 당겨서 새로고침 — 이모지가 통통 튀며 바뀐다(스피너 대신) */}
       <PullToRefresh
@@ -2376,14 +2378,18 @@ function CommunityStyles() {
       .community-topbar {
         position: fixed;
         top: 0;
-        left: 50%;
+        /* 가운데 정렬을 transform 으로 하면 페이지 진입 애니메이션(.page-enter > * > *, transform 덮어씀)이 도는 동안
+           헤더가 절반 폭만큼 오른쪽에 있다가 끝나는 순간 왼쪽으로 '뚝' 튄다 → 좌우 0 + 자동 마진으로 가운데 둔다. */
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
         z-index: 80;
         width: min(100vw, 720px);
         max-width: 720px;
         box-sizing: border-box;
         display: grid;
         gap: 12px;
-        transform: translateX(-50%);
         /* 맨 위에서는 배경·보더가 없다. 스크롤을 내리면 아래로 옅어지는 그라데이션이 스르륵 나온다. */
         background: transparent;
         padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 8px;
@@ -3368,7 +3374,8 @@ function CommunityStyles() {
           width: calc(min(100vw, 1024px) - 124px - env(safe-area-inset-left, 0px));
           max-width: none;
           right: auto;
-          transform: none;
+          margin-left: 0;
+          margin-right: 0;
         }
       }
       @media (min-width: 1180px) {
