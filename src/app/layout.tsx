@@ -4,6 +4,7 @@ import "./globals.css";
 import { NativeAuthProvider } from "@/components/NativeAuthProvider";
 import ThemeBoot from "@/components/ThemeBoot";
 import PageViewTracker from "@/components/PageViewTracker";
+import EdgeSwipeBack from "@/components/EdgeSwipeBack";
 import DialogHost from "@/components/DialogHost";
 import IapAutoRestore from "@/components/IapAutoRestore";
 import NicknameGate from "@/components/NicknameGate";
@@ -69,6 +70,8 @@ export default function RootLayout({
             문제집·구독 등)이 그 레이아웃 밖이라 한 건도 안 잡힌다 — 반드시 루트에 둔다.
             /admin·/api 는 서버·클라이언트 양쪽에서 제외한다. */}
         <PageViewTracker />
+        {/* 상세 페이지에서 왼쪽 끝을 오른쪽으로 밀면 뒤로 간다(탭 화면 제외, iOS 는 시스템 제스처) */}
+        <EdgeSwipeBack />
         <DialogHost />
         {/* 앱 실행 시 조용한 자동 구매복원 — 구글 검증 미구성 기간에 지급 안 된 안드
             결제분을, 사용자가 '구매 복원'을 누르지 않아도 앱만 켜면 살아나게 한다. */}

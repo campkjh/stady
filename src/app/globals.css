@@ -1929,3 +1929,13 @@ body.nav-hidden .main-content-wrap { padding-bottom: env(safe-area-inset-bottom,
 @keyframes oxrBob { 0%, 100% { transform: none; } 35% { transform: translateY(-6px) rotate(-6deg); } 65% { transform: translateY(1px) rotate(4deg); } }
 @keyframes oxrShake { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 @media (prefers-reduced-motion: reduce) { .qn-head, .qn-body, .qn-foot, .qmp-paper, .qmp-tools, .ql-drawer, .ql-head, .ql-sum, .ql-foot, .ql-cell, .oxr-badge, .oxr-badge img, .oxr-card, .oxr-text p, .ql-ring-fg { animation: none !important; } }
+
+/* 왼쪽 끝 스와이프 뒤로가기(EdgeSwipeBack) — 제스처 중에만 붙는다.
+   body 를 화면 크기로 고정하고 그 안에서 스크롤하게 해, transform 이 position:fixed 요소를 어긋나게 하지 않는다.
+   뒤에는 옅은 바탕이 깔리고 밀려나는 화면 왼쪽 가장자리에 그림자가 진다. */
+html.swb-active { background: var(--c-bg-muted-2, #eceef2); }
+html.swb-active body {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  overflow: hidden !important; will-change: transform;
+  box-shadow: -10px 0 32px rgba(0, 0, 0, 0.16);
+}
