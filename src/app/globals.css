@@ -967,6 +967,13 @@ body {
 .tabrail-item.is-on .tabrail-label {
   color: var(--c-text-2b);
 }
+/* 카테고리를 받기 전 자리표시 / 받은 뒤 살며시 등장 — '뚝' 생기지 않게. fill-mode backwards 라 끝나면 평소 상태. */
+.tabrail-ph { cursor: default; pointer-events: none; }
+.tabrail-ph .tabrail-ico { background: var(--c-bg-muted-2); opacity: 0.7; }
+.tabrail-ph .tabrail-label { width: 28px; height: 9px; border-radius: 5px; margin-top: 4px; background: var(--c-bg-muted-2); opacity: 0.7; }
+.tabrail-item.is-fade { animation: tabrailIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
+@keyframes tabrailIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tabrail-item.is-fade { animation: none; } }
 /* 넓은 화면 좌측용 세로 레일(흰 카드) */
 .tabrail.is-stacked {
   flex-direction: column;

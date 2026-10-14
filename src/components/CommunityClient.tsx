@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
@@ -149,6 +149,10 @@ export default function CommunityClient() {
   const topbarRef = useRef<HTMLElement | null>(null);
   // 캐시된 값으로 초기화 → 탭 재진입 시 즉시 표시(로딩/깜빡임 없음).
   const [groups, setGroups] = useState<CategoryGroup[]>(() => clientCache.get<CategoryGroup[]>("community-groups") ?? []);
+  // 카테고리를 아직 못 받은 동안(앱 첫 진입)엔 빈 자리 대신 자리표시 탭을 그려 '뚝' 생기지 않게 하고,
+  // 받은 뒤 새로 생기는 탭은 살며시 나타나게 한다. 직전에 본 목록은 localStorage 에 남겨 다음 진입엔 즉시 그린다.
+  const [groupsReady, setGroupsReady] = useState(() => clientCache.has("community-groups"));
+  const [groupsFade, setGroupsFade] = useState(false);
   const [posts, setPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>(postsKey("", "")) ?? []);
   const [weeklyPosts, setWeeklyPosts] = useState<CommunityPost[]>(() => clientCache.get<CommunityPost[]>("community-weekly") ?? []);
   const [selectedGroupId, setSelectedGroupId] = useState("");
@@ -404,6 +408,20 @@ export default function CommunityClient() {
     }
   }
 
+  // 하이드레이션 직후 첫 페인트 전에 저장해 둔 카테고리를 채운다(서버 HTML 과 달라지지 않게 effect 로).
+  useLayoutEffect(() => {
+    if (clientCache.has("community-groups")) return;
+    try {
+      const raw = window.localStorage.getItem("stady:community-groups");
+      const saved = raw ? (JSON.parse(raw) as CategoryGroup[]) : null;
+      if (Array.isArray(saved) && saved.length > 0) {
+        clientCache.set("community-groups", saved);
+        setGroups(saved);
+        setGroupsReady(true);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     loadGroups();
     loadWeeklyPopular();
@@ -531,7 +549,15 @@ export default function CommunityClient() {
         if (b.name === "자유") return 1;
         return 0;
       });
-      if (clientCache.set("community-groups", ordered)) setGroups(ordered);
+      if (clientCache.set("community-groups", ordered)) {
+        // 저장해 둔 목록과 같으면(이미 그려져 있음) 다시 그리지 않는다.
+        setGroups((prev) => {
+          if (prev.length === 0) setGroupsFade(true);
+          return ordered;
+        });
+      }
+      setGroupsReady(true);
+      try { window.localStorage.setItem("stady:community-groups", JSON.stringify(ordered)); } catch {}
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "카테고리를 불러오지 못했습니다.");
     }
@@ -693,6 +719,8 @@ export default function CommunityClient() {
               groups={groups}
               selectedGroupId={selectedGroupId}
               onSelect={(id) => setSelectedGroupId(id)}
+              pending={!groupsReady && groups.length === 0}
+              fadeIn={groupsFade}
             />
           </div>
           {/* 넓은 화면: 아이콘 버튼 대신 헤더에 검색창을 그대로 편다. */}
@@ -769,6 +797,8 @@ export default function CommunityClient() {
               selectedGroupId={selectedGroupId}
               onSelect={(id) => setSelectedGroupId(id)}
               stacked
+              pending={!groupsReady && groups.length === 0}
+              fadeIn={groupsFade}
             />
           </div>
         </aside>
@@ -1406,11 +1436,17 @@ function CategoryChips({
   selectedGroupId,
   onSelect,
   stacked = false,
+  pending = false,
+  fadeIn = false,
 }: {
   groups: CategoryGroup[];
   selectedGroupId: string;
   onSelect: (id: string) => void;
   stacked?: boolean;
+  /** 카테고리를 아직 못 받음 — 자리표시 탭을 그린다 */
+  pending?: boolean;
+  /** 받은 뒤 새로 생긴 탭을 살며시 나타나게 */
+  fadeIn?: boolean;
 }) {
   const items = [{ id: "", name: "전체", icon: "cg-all" }, ...groups.map((g) => ({ id: g.id, name: g.name, icon: groupIcon(g.name) }))];
   // 가로로 더 볼 게 남았을 때만 우측을 페이드한다(끝까지 밀면 마지막 탭이 흐려지지 않게).
@@ -1436,13 +1472,14 @@ function CategoryChips({
       aria-label="커뮤니티 카테고리"
       data-tour="com-cats"
     >
-      {items.map((it) => {
+      {items.map((it, i) => {
         const on = selectedGroupId === it.id;
         return (
           <button
             key={it.id || "all"}
             type="button"
-            className={`tabrail-item${on ? " is-on" : ""}`}
+            className={`tabrail-item${on ? " is-on" : ""}${fadeIn && i > 0 ? " is-fade" : ""}`}
+            style={fadeIn && i > 0 ? { animationDelay: `${Math.min(i, 8) * 45}ms` } : undefined}
             onClick={() => onSelect(it.id)}
             aria-current={on ? "true" : undefined}
           >
@@ -1454,6 +1491,13 @@ function CategoryChips({
           </button>
         );
       })}
+      {pending &&
+        [0, 1, 2, 3, 4].map((n) => (
+          <span key={`ph${n}`} className="tabrail-item tabrail-ph" aria-hidden="true">
+            <span className="tabrail-ico" />
+            <span className="tabrail-label" />
+          </span>
+        ))}
     </nav>
   );
 }
