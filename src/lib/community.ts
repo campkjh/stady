@@ -132,9 +132,62 @@ export function normalizeSlug(value: string) {
 // 매 요청 33개 DDL 을 반복 실행했고(피드 한 번에 ensure 3회 = ~100 DDL 왕복),
 // 이게 커뮤니티가 느려진 원인이었다(로컬 실측 54초). CREATE/ALTER/INDEX 모두
 // IF NOT EXISTS 라 1회 후 스킵해도 안전. 새 마이그 추가 시 배포로 프로세스가 갈리며 재실행됨.
+//
+// 서버가 새로 뜰 때(콜드 스타트)마다 이 40여 개를 순서대로 보내면 첫 요청이 수 초 느려진다. 그래서
+//  · 같은 프로세스에서 동시에 여러 곳이 부르면 진행 중인 한 번을 같이 기다린다(동시 CREATE 충돌 방지),
+//  · DB 에 '이 DDL 묶음의 해시'를 적어 두고, 같으면(= 이미 같은 버전이 적용됨) 통째로 건너뛴다.
+//    해시는 아래 본문(runCommunityDdl 함수 소스)에서 계산하므로 DDL 을 고치면 자동으로 달라져 다시 한 번 돌아간다.
 let communityTablesReady = false;
+let communityTablesPromise: Promise<void> | null = null;
+const SCHEMA_MARKER_KEY = "community";
+
+function ddlVersionOf(fn: () => Promise<void>): string {
+  const src = fn.toString();
+  let h = 5381;
+  for (let i = 0; i < src.length; i++) h = ((h * 33) ^ src.charCodeAt(i)) >>> 0;
+  return `${src.length}-${h.toString(36)}`;
+}
+
 export async function ensureCommunityTables() {
   if (communityTablesReady) return;
+  if (!communityTablesPromise) {
+    communityTablesPromise = (async () => {
+      const version = ddlVersionOf(runCommunityDdl);
+      let matched = false;
+      try {
+        await prisma.$executeRawUnsafe(
+          `CREATE TABLE IF NOT EXISTS "StadySchemaMarker" ("key" TEXT PRIMARY KEY, "version" TEXT NOT NULL, "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`
+        );
+        const rows = await prisma.$queryRawUnsafe<{ version: string }[]>(
+          `SELECT "version" FROM "StadySchemaMarker" WHERE "key" = $1`,
+          SCHEMA_MARKER_KEY
+        );
+        matched = rows[0]?.version === version;
+      } catch {
+        matched = false; // 표식을 못 읽으면 예전처럼 전부 돌린다
+      }
+      if (!matched) {
+        await runCommunityDdl();
+        try {
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO "StadySchemaMarker" ("key", "version") VALUES ($1, $2)
+             ON CONFLICT ("key") DO UPDATE SET "version" = EXCLUDED."version", "updated_at" = CURRENT_TIMESTAMP`,
+            SCHEMA_MARKER_KEY,
+            version
+          );
+        } catch {
+          /* 표식을 못 적어도 이번 프로세스는 정상 동작한다 */
+        }
+      }
+      communityTablesReady = true;
+    })().finally(() => {
+      communityTablesPromise = null;
+    });
+  }
+  return communityTablesPromise;
+}
+
+async function runCommunityDdl(): Promise<void> {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CommunityCategoryGroup" (
       "id" TEXT PRIMARY KEY,
@@ -431,7 +484,6 @@ export async function ensureCommunityTables() {
       ON CONFLICT ("slug") DO NOTHING
     `
   );
-  communityTablesReady = true;
 }
 
 // The 6 supported empathy reactions. Order = display order.
@@ -444,10 +496,15 @@ export function normalizeReactionType(value: unknown): CommunityReactionType {
     : "heart";
 }
 
+let taxonomySeeded = false;
 export async function seedDefaultCommunityTaxonomy() {
+  if (taxonomySeeded) return; // 이미 확인했으면 요청마다 COUNT 를 다시 보내지 않는다
   await ensureCommunityTables();
   const existing = await prisma.$queryRawUnsafe<{ count: bigint }[]>(`SELECT COUNT(*)::bigint AS "count" FROM "CommunityCategoryGroup"`);
-  if (Number(existing[0]?.count || 0) > 0) return;
+  if (Number(existing[0]?.count || 0) > 0) {
+    taxonomySeeded = true;
+    return;
+  }
 
   const groups = [
     { name: "입시", slug: "admission", description: "입시 자료와 뉴스" },
@@ -744,7 +801,9 @@ export const TIER_THRESHOLDS: { tier: CommunityTier; min: number }[] = [
 
 // 관리자 수동 등급 조정용 가산점(경험치 보너스). 활동 점수에 그대로 더해지므로
 // 커뮤니티 뱃지(getUserTiers)와 마이페이지 진행도(getUserActivityScore)가 일관되게 반영된다.
+let scoreBonusTableReady = false;
 async function ensureScoreBonusTable() {
+  if (scoreBonusTableReady) return; // 프로세스당 1번만 — 매 요청 DDL 왕복을 없앤다
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CommunityScoreBonus" (
       "user_id" TEXT PRIMARY KEY REFERENCES "User"("id") ON DELETE CASCADE,
@@ -752,6 +811,7 @@ async function ensureScoreBonusTable() {
       "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  scoreBonusTableReady = true;
 }
 
 export async function getScoreBonuses(userIds: (string | null | undefined)[]): Promise<Record<string, number>> {
@@ -950,39 +1010,44 @@ export async function getUserTiers(userIds: (string | null | undefined)[]): Prom
   const apply = (rows: { id: string; c: bigint | number }[], weight: number) => {
     for (const r of rows) if (score[r.id] != null) score[r.id] += Number(r.c) * weight;
   };
-  const [posts, comments, likes, attempts] = await Promise.all([
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPost" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityComment" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT p."user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPostLike" l JOIN "CommunityPost" p ON p."id" = l."post_id" WHERE p."user_id" IN (${ph}) GROUP BY p."user_id"`, ...ids),
-    prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "userId" AS id, COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" IN (${ph}) GROUP BY "userId"`, ...ids),
+  // 서로 이어지지 않는 집계들이라 한꺼번에 보낸다(예전엔 7~8번을 차례로 기다렸다 — 목록 진입이 느린 큰 원인).
+  const quizXpPromise = prisma
+    .$queryRawUnsafe<{ id: string; c: bigint }[]>(QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" IN (${ph})`), ...ids)
+    .catch((e) => {
+      console.error("getUserTiers quiz-xp aggregate skipped:", e);
+      return [] as { id: string; c: bigint }[];
+    });
+  // 데일리 퀴즈 정답(×5). 테이블이 아직 없을 수 있으니 실패해도 티어 계산은 계속.
+  const dailyPromise = ensureDailyQuizTable()
+    .then(() =>
+      prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
+        `SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "DailyQuizAnswer" WHERE "user_id" IN (${ph}) AND "is_correct" = true GROUP BY "user_id"`,
+        ...ids
+      )
+    )
+    .catch((e) => {
+      console.error("getUserTiers daily-quiz aggregate skipped:", e);
+      return [] as { id: string; c: bigint }[];
+    });
+  const [[posts, comments, likes, attempts], quizXp, dailyCorrect, bonuses] = await Promise.all([
+    Promise.all([
+      prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPost" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
+      prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityComment" WHERE "user_id" IN (${ph}) AND "is_active" = true GROUP BY "user_id"`, ...ids),
+      prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT p."user_id" AS id, COUNT(*)::bigint AS c FROM "CommunityPostLike" l JOIN "CommunityPost" p ON p."id" = l."post_id" WHERE p."user_id" IN (${ph}) GROUP BY p."user_id"`, ...ids),
+      prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(`SELECT "userId" AS id, COUNT(*)::bigint AS c FROM "QuizAttempt" WHERE "userId" IN (${ph}) GROUP BY "userId"`, ...ids),
+    ]),
+    quizXpPromise,
+    dailyPromise,
+    // 관리자 가산점(수동 등급 조정)
+    getScoreBonuses(ids),
   ]);
   apply(posts, 10);
   apply(comments, 3);
   apply(likes, 2);
   apply(attempts, 1);
   // 내가 낸 OX 퀴즈 문제(글당 최대 5문제) × 5 — 문제를 낸 사람에게 주는 경험치.
-  try {
-    const quizXp = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
-      QUIZ_XP_SQL.replace("%WHERE%", `p."user_id" IN (${ph})`),
-      ...ids
-    );
-    apply(quizXp, QUIZ_XP_PER_QUESTION);
-  } catch (e) {
-    console.error("getUserTiers quiz-xp aggregate skipped:", e);
-  }
-  // 데일리 퀴즈 정답(×5). 테이블이 아직 없을 수 있으니 실패해도 티어 계산은 계속.
-  try {
-    await ensureDailyQuizTable();
-    const dailyCorrect = await prisma.$queryRawUnsafe<{ id: string; c: bigint }[]>(
-      `SELECT "user_id" AS id, COUNT(*)::bigint AS c FROM "DailyQuizAnswer" WHERE "user_id" IN (${ph}) AND "is_correct" = true GROUP BY "user_id"`,
-      ...ids
-    );
-    apply(dailyCorrect, 5);
-  } catch (e) {
-    console.error("getUserTiers daily-quiz aggregate skipped:", e);
-  }
-  // 관리자 가산점(수동 등급 조정)을 활동 점수에 더한다.
-  const bonuses = await getScoreBonuses(ids);
+  apply(quizXp, QUIZ_XP_PER_QUESTION);
+  apply(dailyCorrect, 5);
   for (const id of ids) score[id] = (score[id] ?? 0) + (bonuses[id] ?? 0);
   const result: Record<string, CommunityTier> = {};
   for (const id of ids) result[id] = tierForScore(score[id]);
@@ -1033,6 +1098,21 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
   const limit = options.limit && Number.isFinite(options.limit)
     ? Math.max(1, Math.min(500, Math.floor(options.limit)))
     : 500;
+  // 좋아요·댓글 수: 최신순은 '실제로 돌려줄 글'에 대해서만 글별로 센다. 예전엔 두 테이블 전체를 GROUP BY 로
+  // 집계해 조인해서 글이 몇 개든 전체 행을 훑었다(커뮤니티 진입이 느려진 원인). 인기순은 순위를 매겨야 해서 기존 집계 조인을 쓴다.
+  const rankByPopularity = options.sort === "popular";
+  const countSelect = rankByPopularity
+    ? `COALESCE(pl."like_count", 0) AS "like_count", COALESCE(cc."comment_count", 0) AS "comment_count"`
+    : `(SELECT COUNT(*)::bigint FROM "CommunityPostLike" lk WHERE lk."post_id" = p."id") AS "like_count",
+       (SELECT COUNT(*)::bigint FROM "CommunityComment" cm WHERE cm."post_id" = p."id" AND cm."is_active" = true) AS "comment_count"`;
+  const countJoins = rankByPopularity
+    ? `LEFT JOIN (
+        SELECT "post_id", COUNT(*)::bigint AS "like_count" FROM "CommunityPostLike" GROUP BY "post_id"
+      ) pl ON pl."post_id" = p."id"
+      LEFT JOIN (
+        SELECT "post_id", COUNT(*)::bigint AS "comment_count" FROM "CommunityComment" WHERE "is_active" = true GROUP BY "post_id"
+      ) cc ON cc."post_id" = p."id"`
+    : "";
   const posts = await prisma.$queryRawUnsafe<Omit<CommunityPostRow, "tags" | "images">[]>(
     `
       SELECT
@@ -1041,23 +1121,12 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
         (u."avatar" IS NOT NULL) AS "has_avatar",
         g."name" AS "group_name",
         g."slug" AS "group_slug",
-        COALESCE(pl."like_count", 0) AS "like_count",
-        COALESCE(cc."comment_count", 0) AS "comment_count",
+        ${countSelect},
         COALESCE(vc."count", 0) AS "view_count"
       FROM "CommunityPost" p
       JOIN "CommunityCategoryGroup" g ON g."id" = p."group_id"
       LEFT JOIN "User" u ON u."id" = p."user_id"
-      LEFT JOIN (
-        SELECT "post_id", COUNT(*)::bigint AS "like_count"
-        FROM "CommunityPostLike"
-        GROUP BY "post_id"
-      ) pl ON pl."post_id" = p."id"
-      LEFT JOIN (
-        SELECT "post_id", COUNT(*)::bigint AS "comment_count"
-        FROM "CommunityComment"
-        WHERE "is_active" = true
-        GROUP BY "post_id"
-      ) cc ON cc."post_id" = p."id"
+      ${countJoins}
       LEFT JOIN "CommunityPostViewCount" vc ON vc."post_id" = p."id"
       ${where}
       ${orderBy}
@@ -1065,58 +1134,68 @@ export async function getCommunityPosts(options: { activeOnly?: boolean; groupId
     `,
     ...params
   );
-  const tags = await getTags({ activeOnly: options.activeOnly });
-  const tagsByPost = await prisma.$queryRawUnsafe<{ post_id: string; tag_id: string }[]>(`
-    SELECT "post_id", "tag_id" FROM "CommunityPostTag"
-  `);
-  const imagesByPost = await getImagesByPost(posts.map((post) => post.id));
+  const postIds = posts.map((post) => post.id);
+  // 서로 이어지지 않는 조회라 한꺼번에 보낸다(순서대로 기다리면 왕복 시간이 그대로 더해진다).
+  const [tags, tagsByPost, imagesByPost, pollEntries, quizEntries, topCommentByPost, likersByPost, myReactionRows] = await Promise.all([
+    getTags({ activeOnly: options.activeOnly }),
+    // 돌려줄 글의 태그만 읽는다(예전엔 전체 태그 연결 표를 통째로 읽었다).
+    postIds.length === 0
+      ? Promise.resolve([] as { post_id: string; tag_id: string }[])
+      : prisma.$queryRawUnsafe<{ post_id: string; tag_id: string }[]>(
+          `SELECT "post_id", "tag_id" FROM "CommunityPostTag" WHERE "post_id" = ANY($1::text[])`,
+          postIds
+        ),
+    getImagesByPost(postIds),
+    // 투표글은 목록에서도 바로 투표할 수 있게 결과(내 선택 포함)를 함께 실어 보낸다. 투표글은 드물어 건별 조회 비용이 미미하다.
+    Promise.all(
+      posts
+        .filter((post) => post.type === "poll")
+        .map(async (post) => [post.id, await getPollResult(post.id, options.viewerId ?? null)] as const)
+    ),
+    Promise.all(
+      posts
+        .filter((post) => post.type === "quiz")
+        .map(
+          async (post) =>
+            [
+              post.id,
+              await getQuizResult(post.id, options.viewerId ?? null, {
+                // 내가 낸 문제면 정답이 보여야 한다.
+                revealAll: !!options.viewerId && post.user_id === options.viewerId,
+              }),
+            ] as const
+        )
+    ),
+    // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
+    getTopCommentsByPost(postIds),
+    // 좋아요 3명 이상이면 목록에 누른 사람 프로필을 겹쳐 보여주기 위한 최근 좋아요 유저.
+    getLikersByPost(postIds, 5),
+    // 목록에서 바로 좋아요를 누를 수 있게, 보는 사람이 각 글에 누른 반응 타입을 함께 싣는다.
+    options.viewerId && postIds.length > 0
+      ? prisma.$queryRawUnsafe<{ post_id: string; type: string }[]>(
+          `SELECT "post_id", "type" FROM "CommunityPostLike" WHERE "user_id" = $1 AND "post_id" = ANY($2::text[])`,
+          options.viewerId,
+          postIds
+        )
+      : Promise.resolve([] as { post_id: string; type: string }[]),
+  ]);
   const tagById = new Map(tags.map((tag) => [tag.id, tag]));
-  // 투표글은 목록에서도 바로 투표할 수 있게 결과(내 선택 포함)를 함께 실어 보낸다.
-  // 투표글은 드물어 건별 조회 비용이 미미하다. 투표가 아닌 글은 null.
-  const pollByPost = new Map<string, CommunityPollResult | null>();
-  const quizByPost = new Map<string, CommunityQuizResult | null>();
-  await Promise.all(
-    posts
-      .filter((post) => post.type === "poll")
-      .map(async (post) => {
-        pollByPost.set(post.id, await getPollResult(post.id, options.viewerId ?? null));
-      })
-  );
-  await Promise.all(
-    posts
-      .filter((post) => post.type === "quiz")
-      .map(async (post) => {
-        quizByPost.set(
-          post.id,
-          await getQuizResult(post.id, options.viewerId ?? null, {
-            // 내가 낸 문제면 정답이 보여야 한다.
-            revealAll: !!options.viewerId && post.user_id === options.viewerId,
-          })
-        );
-      })
-  );
-  // 목록에서도 상세에 안 들어가고 '제일 상단 댓글' 1개를 미리 볼 수 있게 함께 싣는다.
-  const topCommentByPost = await getTopCommentsByPost(posts.map((post) => post.id));
-  // 좋아요 3명 이상이면 목록에 누른 사람 프로필을 겹쳐 보여주기 위한 최근 좋아요 유저.
-  const likersByPost = await getLikersByPost(posts.map((post) => post.id), 5);
-  // 목록에서 바로 좋아요를 누를 수 있게, 보는 사람이 각 글에 누른 반응 타입을 함께 싣는다.
+  const pollByPost = new Map<string, CommunityPollResult | null>(pollEntries);
+  const quizByPost = new Map<string, CommunityQuizResult | null>(quizEntries);
   const myReactionByPost = new Map<string, string>();
-  if (options.viewerId && posts.length > 0) {
-    const ids = posts.map((p) => p.id);
-    const inPh = ids.map((_, i) => `$${i + 2}`).join(", ");
-    const rr = await prisma.$queryRawUnsafe<{ post_id: string; type: string }[]>(
-      `SELECT "post_id", "type" FROM "CommunityPostLike" WHERE "user_id" = $1 AND "post_id" IN (${inPh})`,
-      options.viewerId,
-      ...ids
-    );
-    for (const r of rr) myReactionByPost.set(r.post_id, r.type);
+  for (const r of myReactionRows) myReactionByPost.set(r.post_id, r.type);
+  // 글별 태그를 미리 묶어 둔다(글마다 전체 배열을 filter 하지 않도록).
+  const tagRowsByPost = new Map<string, CommunityTagRow[]>();
+  for (const item of tagsByPost) {
+    const tag = tagById.get(item.tag_id);
+    if (!tag) continue;
+    const list = tagRowsByPost.get(item.post_id);
+    if (list) list.push(tag as CommunityTagRow);
+    else tagRowsByPost.set(item.post_id, [tag as CommunityTagRow]);
   }
   return posts.map((post) => ({
     ...post,
-    tags: tagsByPost
-      .filter((item) => item.post_id === post.id)
-      .map((item) => tagById.get(item.tag_id))
-      .filter(Boolean) as CommunityTagRow[],
+    tags: tagRowsByPost.get(post.id) ?? [],
     images: imagesByPost.get(post.id) || [],
     poll: post.type === "poll" ? pollByPost.get(post.id) ?? null : null,
     quiz: post.type === "quiz" ? quizByPost.get(post.id) ?? null : null,
@@ -1143,30 +1222,41 @@ export async function getTopCommentsByPost(
   if (postIds.length === 0) return result;
   const ph = postIds.map((_, i) => `$${i + 1}`).join(", ");
 
-  // 1) 최상위·활성 댓글 중 글별 1위(좋아요 DESC, 오래된 순).
-  const topRows = await prisma.$queryRawUnsafe<
-    { post_id: string; id: string; nickname: string | null; content: string; like_count: bigint }[]
-  >(
-    `
-      SELECT "post_id", "id", "nickname", "content", "like_count" FROM (
+  type TopRow = { post_id: string; id: string; nickname: string | null; content: string; like_count: bigint };
+  // 두 조회는 서로 이어지지 않아 한꺼번에 보낸다. 댓글 좋아요 수는 '대상 댓글'에 대해서만 센다
+  // (예전엔 좋아요 표 전체를 GROUP BY 해서 조인했다).
+  const [topRows, pinnedRows] = await Promise.all([
+    // 1) 최상위·활성 댓글 중 글별 1위(좋아요 DESC, 오래된 순).
+    prisma.$queryRawUnsafe<TopRow[]>(
+      `
+        SELECT "post_id", "id", "nickname", "content", "like_count" FROM (
+          SELECT t.*, ROW_NUMBER() OVER (PARTITION BY t."post_id" ORDER BY t."like_count" DESC, t."created_at" ASC) AS rn
+          FROM (
+            SELECT
+              c."post_id", c."id", u."nickname", c."content", c."created_at",
+              (SELECT COUNT(*)::bigint FROM "CommunityCommentLike" x WHERE x."comment_id" = c."id") AS "like_count"
+            FROM "CommunityComment" c
+            LEFT JOIN "User" u ON u."id" = c."user_id"
+            WHERE c."post_id" IN (${ph}) AND c."parent_id" IS NULL AND c."is_active" = true
+          ) t
+        ) r WHERE r.rn = 1
+      `,
+      ...postIds
+    ),
+    // 2) 고정 댓글이 있으면 그걸로 덮어쓴다(상세와 동일하게 최우선).
+    prisma.$queryRawUnsafe<TopRow[]>(
+      `
         SELECT
-          c."post_id", c."id", u."nickname", c."content",
-          COALESCE(cl."like_count", 0) AS "like_count",
-          ROW_NUMBER() OVER (
-            PARTITION BY c."post_id"
-            ORDER BY COALESCE(cl."like_count", 0) DESC, c."created_at" ASC
-          ) AS rn
-        FROM "CommunityComment" c
+          p."post_id", c."id", u."nickname", c."content",
+          (SELECT COUNT(*)::bigint FROM "CommunityCommentLike" x WHERE x."comment_id" = c."id") AS "like_count"
+        FROM "CommunityPinnedComment" p
+        JOIN "CommunityComment" c ON c."id" = p."comment_id" AND c."is_active" = true
         LEFT JOIN "User" u ON u."id" = c."user_id"
-        LEFT JOIN (
-          SELECT "comment_id", COUNT(*)::bigint AS "like_count"
-          FROM "CommunityCommentLike" GROUP BY "comment_id"
-        ) cl ON cl."comment_id" = c."id"
-        WHERE c."post_id" IN (${ph}) AND c."parent_id" IS NULL AND c."is_active" = true
-      ) t WHERE t.rn = 1
-    `,
-    ...postIds
-  );
+        WHERE p."post_id" IN (${ph})
+      `,
+      ...postIds
+    ),
+  ]);
   for (const r of topRows) {
     result.set(r.post_id, {
       id: r.id,
@@ -1176,26 +1266,6 @@ export async function getTopCommentsByPost(
       pinned: false,
     });
   }
-
-  // 2) 고정 댓글이 있으면 그걸로 덮어쓴다(상세와 동일하게 최우선).
-  const pinnedRows = await prisma.$queryRawUnsafe<
-    { post_id: string; id: string; nickname: string | null; content: string; like_count: bigint }[]
-  >(
-    `
-      SELECT
-        p."post_id", c."id", u."nickname", c."content",
-        COALESCE(cl."like_count", 0) AS "like_count"
-      FROM "CommunityPinnedComment" p
-      JOIN "CommunityComment" c ON c."id" = p."comment_id" AND c."is_active" = true
-      LEFT JOIN "User" u ON u."id" = c."user_id"
-      LEFT JOIN (
-        SELECT "comment_id", COUNT(*)::bigint AS "like_count"
-        FROM "CommunityCommentLike" GROUP BY "comment_id"
-      ) cl ON cl."comment_id" = c."id"
-      WHERE p."post_id" IN (${ph})
-    `,
-    ...postIds
-  );
   for (const r of pinnedRows) {
     result.set(r.post_id, {
       id: r.id,

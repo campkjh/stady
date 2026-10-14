@@ -58,23 +58,33 @@ export async function GET(request: NextRequest) {
         limit: 5,
         viewerId,
       });
-      const popTiers = await getUserTiers(popular.map((p) => p.user_id));
-      const popAdmins = await getAdminUserIds(popular.map((p) => p.user_id));
-      const popKings = await getCommunityKings(popular.map((p) => p.user_id));
-      const popRepost = await getCommunityRepostInfo(popular.map((p) => p.id), viewerId);
+      const popAuthorIds = popular.map((p) => p.user_id);
+      const [popTiers, popAdmins, popKings, popRepost] = await Promise.all([
+        getUserTiers(popAuthorIds),
+        getAdminUserIds(popAuthorIds),
+        getCommunityKings(popAuthorIds),
+        getCommunityRepostInfo(popular.map((p) => p.id), viewerId),
+      ]);
       return NextResponse.json({ posts: popular.map((p) => mapPost(p, popTiers, popAdmins, popKings, popRepost)) });
     }
+    // 첫 화면용으로 앞쪽 N개만 먼저 받을 수 있다(?limit=20). 클라이언트는 이걸로 먼저 그리고 전체는 뒤이어 받는다.
+    const limitRaw = Number(searchParams.get("limit"));
     const posts = await getCommunityPosts({
       activeOnly: true,
       groupId: searchParams.get("groupId"),
       tagId: searchParams.get("tagId"),
       query: searchParams.get("q"),
+      limit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined,
       viewerId,
     });
-    const tiers = await getUserTiers(posts.map((p) => p.user_id));
-    const adminIds = await getAdminUserIds(posts.map((p) => p.user_id));
-    const kings = await getCommunityKings(posts.map((p) => p.user_id));
-    const repost = await getCommunityRepostInfo(posts.map((p) => p.id), viewerId);
+    const authorIds = posts.map((p) => p.user_id);
+    // 서로 이어지지 않는 조회라 한꺼번에 보낸다.
+    const [tiers, adminIds, kings, repost] = await Promise.all([
+      getUserTiers(authorIds),
+      getAdminUserIds(authorIds),
+      getCommunityKings(authorIds),
+      getCommunityRepostInfo(posts.map((p) => p.id), viewerId),
+    ]);
     return NextResponse.json({ posts: posts.map((p) => mapPost(p, tiers, adminIds, kings, repost)) });
   } catch (error) {
     console.error("Community posts GET error:", error);

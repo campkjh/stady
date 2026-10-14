@@ -177,6 +177,10 @@ export default function CommunityClient() {
   const restoreTimerRef = useRef<number | null>(null);
   // 스크롤을 내리면 헤더 뒤로 배경색 그라데이션이 스르륵 나온다(카테고리 탭은 항상 아이콘 옆 글자 한 줄).
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  // 목록은 처음 20개만 그리고, 아래로 내리면 20개씩 더 그린다(500개를 한꺼번에 그리면 진입이 느려진다).
+  const [renderCount, setRenderCount] = useState(20);
+  const renderMoreRef = useRef<HTMLDivElement | null>(null);
+  const filterMountedRef = useRef(false);
   // 블라인드 노이즈를 탭해서 공개한 글 id 모음(피드에서 바로 걷기).
   const [revealedBlind, setRevealedBlind] = useState<Set<string>>(() => new Set());
   // 지금 투표 요청 중인 글 id(중복 클릭 방지).
@@ -430,6 +434,36 @@ export default function CommunityClient() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // 필터가 바뀌면 처음 20개부터 다시. (첫 마운트는 건너뛴다)
+  useEffect(() => {
+    if (!filterMountedRef.current) {
+      filterMountedRef.current = true;
+      return;
+    }
+    setRenderCount(20);
+  }, [selectedGroupId, query, mineFilter]);
+
+  // 상세에서 돌아와 스크롤을 복원해야 하면 목록 전체를 그려 높이를 확보한다.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("community-scroll")) setRenderCount(500);
+    } catch { /* 저장소 막힘 */ }
+  }, []);
+
+  // 목록 맨 아래 감시점이 보이기 직전(800px 전)에 20개씩 더 그린다.
+  useEffect(() => {
+    const el = renderMoreRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setRenderCount((c) => c + 20);
+      },
+      { rootMargin: "800px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  });
+
   // 상세에서 돌아왔을 때(목록 첫 로드 완료 시점) 저장해둔 스크롤 위치로 복원.
   useEffect(() => {
     if (scrollRestoredRef.current) return;
@@ -529,12 +563,34 @@ export default function CommunityClient() {
       const params = new URLSearchParams();
       if (selectedGroupId) params.set("groupId", selectedGroupId);
       if (query.trim()) params.set("q", query.trim());
-      const response = await fetch(`/api/community/posts?${params.toString()}`);
+      // 전체 목록(최대 500개)은 응답이 크고 느리다. 캐시가 없으면 앞쪽 20개만 먼저 받아 바로 그리고,
+      // 전체는 같이 요청해 뒤이어 채운다. 상세에서 돌아와 스크롤을 복원해야 할 땐 목록이 길어야 하므로 건너뛴다.
+      let skipQuick = false;
+      try { skipQuick = !!sessionStorage.getItem("community-scroll"); } catch {}
+      const fullPromise = fetch(`/api/community/posts?${params.toString()}`);
+      let fullDone = false;
+      if (!cached && !skipQuick) {
+        const quickParams = new URLSearchParams(params);
+        quickParams.set("limit", "20");
+        const quickPromise = fetch(`/api/community/posts?${quickParams.toString()}`)
+          .then(async (res) => (res.ok ? (await res.json()).posts : null))
+          .catch(() => null);
+        quickPromise.then((quick) => {
+          // 전체가 먼저 도착했으면 건너뛴다(덮어쓰지 않게)
+          if (!fullDone && Array.isArray(quick) && quick.length > 0) {
+            setPosts(quick);
+            setLoading(false);
+          }
+        });
+      }
+      const response = await fullPromise;
+      fullDone = true;
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "게시글을 불러오지 못했습니다.");
       const fresh = data.posts || [];
-      // 달라졌을 때만 갱신(데이터 변동 시에만 리렌더).
+      // 달라졌을 때만 갱신(데이터 변동 시에만 리렌더). 앞쪽 20개만 보이던 상태면 캐시가 비어 있으므로 set 이 항상 true 다.
       if (clientCache.set(key, fresh)) setPosts(fresh);
+      else if (!cached) setPosts(fresh);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "게시글을 불러오지 못했습니다.");
     } finally {
@@ -737,7 +793,7 @@ export default function CommunityClient() {
                 </p>
               </div>
             ) : (
-              visiblePosts.map((post, postIndex) => (
+              visiblePosts.slice(0, renderCount).map((post, postIndex) => (
                 <article
                   key={post.id}
                   className="community-post-card"
@@ -967,6 +1023,7 @@ export default function CommunityClient() {
                 </article>
               ))
             )}
+            {!loading && visiblePosts.length > renderCount && <div ref={renderMoreRef} style={{ height: 1 }} aria-hidden="true" />}
           </div>
         </section>
       </div>
