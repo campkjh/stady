@@ -474,7 +474,11 @@ export default function CommunityComposeModal({
       <div className="cmp-head">
         <button type="button" className="cmp-cancel" onClick={requestClose}>취소</button>
         <span className="cmp-title">새로운 스레드</span>
-        <span className="cmp-head-right" aria-hidden="true" />
+        <span className="cmp-head-right">
+          <button type="button" className="cmp-post" disabled={!canPost} onClick={submit}>
+            {posting ? "게시 중…" : "게시"}
+          </button>
+        </span>
       </div>
 
       {/* 본문 */}
@@ -688,13 +692,6 @@ export default function CommunityComposeModal({
         </div>
 
         {message && <p className="cmp-msg">{message}</p>}
-      </div>
-
-      {/* 푸터 */}
-      <div className="cmp-foot">
-        <button type="button" className="cmp-post" disabled={!canPost} onClick={submit}>
-          {posting ? "게시 중…" : "게시"}
-        </button>
       </div>
 
       {/* 문제 고르기 시트 — 최근 푼 문제 또는 검색 */}
@@ -1008,14 +1005,9 @@ function ComposeStyles() {
       .cmp-add-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .cmp-add-text { color: var(--c-text-4); font-size: 15px; }
       .cmp-msg { margin: 12px 0 0; color: var(--c-brand-deep-2); font-size: 13px; font-weight: 600; }
-      .cmp-foot {
-        flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end;
-        gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        border-top: 1px solid var(--c-bg-muted-6);
-      }
       .cmp-post {
-        border: none; border-radius: 999px; padding: 9px 20px;
-        background: var(--c-inverse); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+        border: none; border-radius: 999px; padding: 7px 16px;
+        background: var(--c-inverse); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
         -webkit-tap-highlight-color: transparent; transition: opacity 0.15s ease;
       }
       .cmp-post:disabled { opacity: 0.4; cursor: default; }
