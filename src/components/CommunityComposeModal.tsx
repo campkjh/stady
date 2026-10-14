@@ -6,6 +6,8 @@ import { clientCache } from "@/lib/clientCache";
 import { markWroteToday } from "@/lib/writeNudge";
 import { uploadCommunityImage, revokeUploadPreview } from "@/lib/communityUpload";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
+import { useModalExit } from "@/lib/useModalExit";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 // 스레드(Threads) 스타일 게시물 작성 모달. 커뮤니티 목록 위에 올라온다.
 // 백엔드는 groupId·title·content 가 필수라, 제목은 본문 첫 줄에서 자동으로 뽑는다.
@@ -129,6 +131,14 @@ export default function CommunityComposeModal({
   // 낮아서 본문까지 통째로 가린다 → 덮인 높이만큼 모달을 줄여 항상 보이는 영역 안에 둔다.
   const rootRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset(true, rootRef);
+  useBodyScrollLock(true);
+  const { leaving, exit } = useModalExit();
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  // 닫을 때는 시트가 내려가는 연출을 먼저 보인 뒤 실제 닫기를 실행한다.
+  const requestClose = () => exit(() => onCloseRef.current());
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
   const imagesRef = useRef<UploadedImage[]>([]);
   imagesRef.current = images;
 
@@ -178,17 +188,11 @@ export default function CommunityComposeModal({
       if (e.key !== "Escape") return;
       // GIF 피커가 열려 있으면 그것만 닫는다.
       if (gifOpen) setGifOpen(false);
-      else onClose();
+      else requestCloseRef.current();
     };
     window.addEventListener("keydown", onKey);
-    // 모달 열리면 배경 스크롤 잠금
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose, gifOpen]);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [gifOpen]);
 
   // GIF 검색 — 피커가 열려 있는 동안 질의가 바뀌면 디바운스 후 조회(빈 질의는 트렌딩).
   useEffect(() => {
@@ -430,7 +434,7 @@ export default function CommunityComposeModal({
       clientCache.clearPrefix("community-");
       markWroteToday();
       onPosted?.();
-      onClose();
+      requestClose();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "게시글을 저장하지 못했어요.");
     } finally {
@@ -446,17 +450,29 @@ export default function CommunityComposeModal({
   return createPortal(
     <div
       ref={rootRef}
-      className="compose-modal"
-      role="dialog"
-      aria-label="새로운 스레드"
-      aria-modal="true"
+      className={`compose-root${leaving ? " is-leaving" : ""}`}
       /* 높이(bottom)를 줄이면 이 요소를 재서 덮인 높이를 구하는 훅이 0 을 보고 되돌려
          진동한다 → 테두리 상자는 그대로 두고 padding 으로만 안쪽을 좁힌다. */
       style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
     >
+      {/* 딤 — 쓰던 내용이 없을 때만 바깥을 눌러 닫는다(실수로 날리지 않게) */}
+      <div
+        className="compose-dim"
+        aria-hidden="true"
+        onClick={() => {
+          if (!content.trim() && images.length === 0) requestClose();
+        }}
+      />
+      <div
+        className="compose-modal"
+        role="dialog"
+        aria-label="새로운 스레드"
+        aria-modal="true"
+      >
+      <div className="cmp-handle" aria-hidden="true" />
       {/* 헤더 */}
       <div className="cmp-head">
-        <button type="button" className="cmp-cancel" onClick={onClose}>취소</button>
+        <button type="button" className="cmp-cancel" onClick={requestClose}>취소</button>
         <span className="cmp-title">새로운 스레드</span>
         <span className="cmp-head-right" aria-hidden="true" />
       </div>
@@ -834,6 +850,7 @@ export default function CommunityComposeModal({
         </div>
       )}
 
+      </div>
       <ComposeStyles />
     </div>,
     document.body
@@ -843,30 +860,44 @@ export default function CommunityComposeModal({
 function ComposeStyles() {
   return (
     <style>{`
-      .compose-modal {
-        position: fixed;
-        /* 안드로이드 WebView 는 inset 단축을 무시하는 버전이 있다 — 개별 지정 */
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 1200;
-        background: var(--c-bg);
-        display: flex;
-        flex-direction: column;
-        /* 키보드가 덮은 높이를 padding 으로 받아내므로 테두리 상자 기준이어야 한다 */
+      .compose-root {
+        position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1200;
+        display: flex; align-items: flex-end; justify-content: center;
         box-sizing: border-box;
-        animation: cmpUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
       }
-      /* 배경까지 반투명해지면 뒤 화면이 비친다 → 불투명하게 두고 살짝 올라오기만 한다 */
-      @keyframes cmpUp { from { transform: translateY(24px); } to { transform: translateY(0); } }
+      .compose-dim {
+        position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+        background: rgba(0, 0, 0, 0.5); animation: cmpFade 0.2s ease-out backwards;
+      }
+      .compose-modal {
+        position: relative; width: 100%; max-width: 560px; height: 92%; max-height: 100%;
+        display: flex; flex-direction: column; box-sizing: border-box;
+        background: var(--c-bg); border-radius: 28px 28px 0 0;
+        box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.16);
+        animation: cmpSheet 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      }
+      .cmp-handle { flex-shrink: 0; width: 36px; height: 4px; border-radius: 2px; background: var(--c-bg-muted-6); margin: 10px auto 0; }
+      @keyframes cmpFade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes cmpSheet { from { transform: translateY(100%); } to { transform: none; } }
+      @keyframes cmpPop { from { opacity: 0; transform: translateY(14px) scale(0.94); } to { opacity: 1; transform: none; } }
+      .compose-root.is-leaving { pointer-events: none; }
+      .compose-root.is-leaving .compose-dim { animation: cmpFadeOut 0.22s ease-in forwards; }
+      .compose-root.is-leaving .compose-modal { animation: cmpSheetOut 0.24s cubic-bezier(0.4, 0, 1, 1) forwards; }
+      @keyframes cmpFadeOut { from { opacity: 1; } to { opacity: 0; } }
+      @keyframes cmpSheetOut { from { transform: none; } to { transform: translateY(100%); } }
+      @media (min-width: 720px) {
+        .compose-root { align-items: center; }
+        .compose-modal { height: auto; min-height: 420px; max-height: 80%; border-radius: 24px; animation-name: cmpPop; animation-duration: 0.42s; animation-timing-function: cubic-bezier(0.2, 1.25, 0.3, 1); }
+        .compose-root.is-leaving .compose-modal { animation: cmpFadeOut 0.22s ease-in forwards; }
+      }
+      @media (prefers-reduced-motion: reduce) { .compose-dim, .compose-modal { animation: none !important; } }
       .cmp-head {
         flex-shrink: 0;
         display: grid;
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
         gap: 8px;
-        padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+        padding: 10px 16px 12px;
         border-bottom: 1px solid var(--c-bg-muted-6);
       }
       .cmp-cancel { justify-self: start; border: none; background: none; padding: 0; font-size: 16px; font-weight: 500; color: var(--c-text); cursor: pointer; }
@@ -990,9 +1021,10 @@ function ComposeStyles() {
       .cmp-post:disabled { opacity: 0.4; cursor: default; }
 
       /* GIF 피커 시트 — 모달 위에 덮는다 */
+      @keyframes cmpUp { from { transform: translateY(24px); } to { transform: translateY(0); } }
       .cmp-gif-sheet {
         position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 10;
-        background: var(--c-bg); display: flex; flex-direction: column;
+        background: var(--c-bg); display: flex; flex-direction: column; border-radius: inherit;
         animation: cmpUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .cmp-gif-search { flex-shrink: 0; padding: 12px 16px; }
