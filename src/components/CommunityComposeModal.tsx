@@ -129,21 +129,26 @@ export default function CommunityComposeModal({
   // 그대로 두면 모달 아래쪽(입력칸·'게시' 버튼)이 키보드 뒤로 숨는데, 가로모드는 화면이
   // 낮아서 본문까지 통째로 가린다 → 덮인 높이만큼 모달을 줄여 항상 보이는 영역 안에 둔다.
   const rootRef = useRef<HTMLDivElement>(null);
-  // 키보드가 오르내릴 때 시트가 '뚝뚝' 끊기며 뒤 화면이 비치지 않게 — 오버레이를 visualViewport(실제 보이는 영역)에
-  // 그대로 맞춘다. 키보드가 뜨면 오버레이가 줄고, 시트는 그 안을 꽉 채워(data-kb) 위가 비지 않는다.
-  // className 은 React 가 다시 쓰므로 상태는 data- 속성으로 둔다. React state 를 거치지 않고 style 로 바로 써서 리렌더 없이 매 이벤트마다 따라가고, CSS transition 이 부드럽게 메운다.
+  // 키보드가 오르내릴 때 시트가 끊기거나 뒤 화면이 비치지 않게.
+  //  · 키보드 여부(data-kb)는 모든 플랫폼에서 visualViewport 높이로 판단 — 시트가 남은 영역을 꽉 채운다.
+  //  · 오버레이를 visualViewport 에 직접 맞추는 건 안드로이드 WebView 뿐이다(키보드가 떠도 뷰포트를 안 줄여서).
+  //    아이폰 앱(WKWebView)은 네이티브가 이미 뷰 크기를 줄여 주므로 여기서 또 움직이면 두 번 움직여 어긋난다.
+  //  className 은 React 가 다시 쓰므로 상태는 data- 속성으로 두고, state 없이 style 로 바로 쓴다.
   useEffect(() => {
     const el = rootRef.current;
     const vv = window.visualViewport;
     if (!el || !vv) return;
-    let base = vv.height; // 키보드 없는 상태의 높이(가장 컸던 값)
+    const manual = /Android/i.test(navigator.userAgent);
+    let base = Math.max(vv.height, window.innerHeight); // 키보드 없는 상태의 높이
     let raf = 0;
     const apply = () => {
       raf = 0;
       if (vv.height > base) base = vv.height;
-      el.style.top = `${Math.round(vv.offsetTop)}px`;
-      el.style.height = `${Math.round(vv.height)}px`;
-      el.style.bottom = "auto";
+      if (manual) {
+        el.style.top = `${Math.round(vv.offsetTop)}px`;
+        el.style.height = `${Math.round(vv.height)}px`;
+        el.style.bottom = "auto";
+      }
       if (base - vv.height > 80) el.dataset.kb = "1"; else delete el.dataset.kb;
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
