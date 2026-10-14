@@ -10,7 +10,6 @@ import BlindNoiseCover from "@/components/BlindNoiseCover";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
-import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
 import EmojiBar from "@/components/community/EmojiBar";
@@ -93,8 +92,6 @@ interface CommunityPost {
   authorIsAdmin?: boolean;
   authorIsAnswerKing?: boolean;
   authorIsPickKing?: boolean;
-  authorFollowerCount?: number;
-  authorIsFollowing?: boolean;
   repostCount?: number;
   myReposted?: boolean;
   groupName: string;
@@ -260,41 +257,6 @@ export default function CommunityClient() {
     } catch (error) {
       apply(was, base);
       showLinkToast(error instanceof Error ? error.message : "리포스트하지 못했어요.");
-    }
-  }
-
-  // 팔로우 토글 — 같은 작성자의 글 카드가 모두 같이 바뀌도록 userId 로 갱신한다(낙관적 → 서버 확정).
-  const [followingBusy, setFollowingBusy] = useState<string | null>(null);
-  async function toggleFollow(post: CommunityPost) {
-    const targetId = post.userId;
-    if (!targetId || followingBusy) return;
-    setFollowingBusy(targetId);
-    const was = !!post.authorIsFollowing;
-    const base = post.authorFollowerCount || 0;
-    const apply = (following: boolean, count: number) =>
-      setPosts((prev) => {
-        const next = prev.map((p) =>
-          p.userId === targetId ? { ...p, authorIsFollowing: following, authorFollowerCount: count } : p
-        );
-        clientCache.set(postsKey(selectedGroupId, query), next);
-        return next;
-      });
-    apply(!was, Math.max(0, base + (was ? -1 : 1)));
-    try {
-      const res = await fetch("/api/community/follows", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: targetId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "팔로우하지 못했어요.");
-      apply(!!data.following, typeof data.followerCount === "number" ? data.followerCount : base);
-    } catch (error) {
-      apply(was, base);
-      showLinkToast(error instanceof Error ? error.message : "팔로우하지 못했어요.");
-    } finally {
-      setFollowingBusy(null);
     }
   }
 
@@ -846,16 +808,9 @@ export default function CommunityClient() {
                     <div className="tc-who is-link" onClick={(event) => openProfile(event, post.userId)}>
                       <p className="community-post-author" data-tour={postIndex === 0 ? "com-tier" : undefined}><span className="tc-name" style={{ backgroundImage: boardTone(post.groupName).ink }}>{post.nickname}</span><TierBadge tier={post.authorTier} /><KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} /></p>
                       <p className="community-post-date" title={formatExactTime(post.createdAt)}>
-                        {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
+                        {formatRelativeTime(post.createdAt)}
                       </p>
                     </div>
-                    {post.userId && post.userId !== meId && !post.authorIsAdmin && (
-                      <FollowButton
-                        following={!!post.authorIsFollowing}
-                        busy={followingBusy === post.userId}
-                        onToggle={() => toggleFollow(post)}
-                      />
-                    )}
                   </div>
                   <h2 className="community-post-title">
                     {post.type === "poll" && (

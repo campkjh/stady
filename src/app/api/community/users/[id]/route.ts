@@ -27,9 +27,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         isPickKing: kings.pick.has(id),
         isMe: viewer?.id === id,
       },
-      followerCount: profile.followerCount,
-      followingCount: profile.followingCount,
-      isFollowing: profile.isFollowing,
       isBlocked: profile.isBlocked,
       posts: profile.posts.map((post) => ({
         id: post.id,

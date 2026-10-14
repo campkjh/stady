@@ -7,6 +7,7 @@ import LoginRequired from "@/components/LoginRequired";
 import AlertModal from "@/components/AlertModal";
 import { clientCache } from "@/lib/clientCache";
 import { useEntrance } from "@/lib/entrance";
+import { BookmarksTour } from "@/components/tours";
 
 const bmKey = (tab: string) => `bookmarks:${tab}`;
 
@@ -288,12 +289,15 @@ export default function BookmarksPage() {
 
   return (
     <div className={`px-4 pt-6${enter ? " qd-body" : ""}`}>
+      {/* 처음 한 번: 어둡게 깔고 짚어 주는 사용 안내 */}
+      <BookmarksTour />
       <div style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "var(--c-bg)", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
           <h1 className="text-xl font-bold" style={{ margin: 0 }}>책갈피</h1>
           {!loading && bookmarks.length > 0 && (
             <button
               type="button"
+              data-tour="bm-clear"
               onClick={() => setShowDeleteAllConfirm(true)}
               disabled={deletingAll}
               className="press"
@@ -317,7 +321,7 @@ export default function BookmarksPage() {
       </div>
 
       {/* Tab filters */}
-      <div className={`tabrail is-illustrated ${activeTab === "ox" && oxCategories.length > 0 ? "mb-3" : "mb-6"}`}>
+      <div data-tour="bm-tabs" className={`tabrail is-illustrated ${activeTab === "ox" && oxCategories.length > 0 ? "mb-3" : "mb-6"}`}>
         {TABS.map((tab) => (
           <button
             key={tab.value}
@@ -375,6 +379,7 @@ export default function BookmarksPage() {
           type="button"
           onClick={() => router.push(`/retest?source=bookmark&type=${activeTab || "all"}`)}
           className="press bm-review-card"
+          data-tour="bm-review"
           style={{
             position: "relative",
             width: "100%",
@@ -454,7 +459,7 @@ export default function BookmarksPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 16 }}>
           {/* Vocab section: en | ko list */}
           {vocabBookmarks.length > 0 && (
-            <div style={{
+            <div data-tour="bm-vocab" style={{
               borderRadius: 14, border: "1px solid var(--c-bg-muted)",
               background: "var(--c-bg)", overflow: "hidden",
             }}>
@@ -471,16 +476,17 @@ export default function BookmarksPage() {
           )}
 
           {/* Others section: 카테고리(OX)/문제집별 그룹 + 카드 그리드 */}
-          {otherGroups.map((group) => (
+          {otherGroups.map((group, gi) => (
             <div key={group.key}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "0 2px 10px" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-2c)" }}>{group.key}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-4c)" }}>{group.items.length}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {group.items.map((bookmark) => (
+                {group.items.map((bookmark, bi) => (
                   <button
                     key={bookmark.id}
+                    data-tour={gi === 0 && bi === 0 ? "bm-card" : undefined}
                     onClick={() => handleNavigate(bookmark)}
                     className="flex flex-col items-start rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition-shadow hover:shadow-md"
                   >

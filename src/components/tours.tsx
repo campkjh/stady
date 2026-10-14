@@ -9,7 +9,7 @@ import CoachMarks, { K, type TourStep } from "@/components/CoachMarks";
 const COMMUNITY: TourStep[] = [
   { sel: '[data-tour="com-cats"]', text: <>게시판별로 <K>골라서</K> 볼 수 있어요</>, sub: "궁금한 건 질문게시판에 올려 보세요", radius: 22 },
   { sel: '[data-tour="com-weekly"]', text: <>이번 주 <K>인기글</K>이 여기 모여요</>, sub: "옆으로 밀어서 넘겨 보세요" },
-  { sel: '[data-tour="com-profile"]', text: <><K>프로필</K>을 누르면 활동을 볼 수 있어요</>, sub: "팔로우하면 그 사람 소식을 놓치지 않아요", radius: 16 },
+  { sel: '[data-tour="com-profile"]', text: <><K>프로필</K>을 누르면 활동을 볼 수 있어요</>, sub: "남긴 글·댓글·리포스트와 배지를 볼 수 있어요", radius: 16 },
   {
     sel: '[data-tour="com-write"]',
     text: <>활동하면 <K>점수</K>가 쌓여요</>,
@@ -52,7 +52,16 @@ const OX_QUIZ: TourStep[] = [
   { sel: '[data-tour="ox-list"]', text: <><K>목록</K>에서 원하는 문제로 바로 가요</>, sub: "정답은 노랑, 오답은 빨강으로 표시돼요", radius: 14 },
 ];
 
+const BOOKMARKS: TourStep[] = [
+  { sel: '[data-tour="bm-tabs"]', text: <>문제 종류별로 <K>모아서</K> 볼 수 있어요</>, sub: "OX·영단어·문제집 탭을 눌러 보세요", radius: 22 },
+  { sel: '[data-tour="bm-review"]', text: <>모은 문제를 <K>한 번에 다시 풀어요</K></>, sub: "틀렸거나 헷갈린 문제만 복습하기 좋아요", radius: 20 },
+  { sel: '[data-tour="bm-card"]', text: <>카드를 누르면 그 <K>문제로 이동</K>해요</>, sub: "퀴즈 노트에 적은 메모와 그림도 같이 보여요", radius: 14 },
+  { sel: '[data-tour="bm-vocab"]', text: <>영단어는 <K>옆으로 밀어서</K> 뺄 수 있어요</>, sub: "왼쪽으로 밀면 삭제 버튼이 나와요", radius: 14 },
+  { sel: '[data-tour="bm-clear"]', text: <>정리할 땐 <K>모든 책갈피</K>를 한 번에 취소해요</>, sub: "눌러도 한 번 더 물어봐요", radius: 999 },
+];
+
 export const CommunityTour = () => <CoachMarks id="com-v1" steps={COMMUNITY} />;
 export const ObsidianTour = () => <CoachMarks id="obs-v1" steps={OBSIDIAN} />;
 export const PostDetailTour = () => <CoachMarks id="cdet-v1" steps={POST_DETAIL} />;
 export const OxQuizTour = () => <CoachMarks id="ox-v1" steps={OX_QUIZ} />;
+export const BookmarksTour = () => <CoachMarks id="bm-v1" steps={BOOKMARKS} />;

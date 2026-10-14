@@ -6,7 +6,6 @@ import AlertModal from "@/components/AlertModal";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
-import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, ReplyArrowIcon, SortArrowsIcon, SendUpIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
 import { renderWithMention } from "@/components/community/mention";
@@ -140,8 +139,6 @@ interface CommunityPostDetail {
   authorTier?: string;
   authorIsAnswerKing?: boolean;
   authorIsPickKing?: boolean;
-  authorFollowerCount?: number;
-  authorIsFollowing?: boolean;
   repostCount?: number;
   myReposted?: boolean;
   groupName: string;
@@ -220,7 +217,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const [followBusy, setFollowBusy] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<number | null>(null);
   const [revealBlind, setRevealBlind] = useState(false);
@@ -528,32 +524,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  // 팔로우 토글(낙관적 → 서버 확정). 목록 캐시도 같이 비운다.
-  async function toggleFollow() {
-    if (!post?.userId || followBusy) return;
-    const was = !!post.authorIsFollowing;
-    const base = post.authorFollowerCount || 0;
-    setFollowBusy(true);
-    setPost((cur) => (cur ? { ...cur, authorIsFollowing: !was, authorFollowerCount: Math.max(0, base + (was ? -1 : 1)) } : cur));
-    try {
-      const response = await fetch("/api/community/follows", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: post.userId }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "팔로우하지 못했어요.");
-      setPost((cur) => (cur ? { ...cur, authorIsFollowing: !!data.following, authorFollowerCount: typeof data.followerCount === "number" ? data.followerCount : base } : cur));
-      clientCache.clearPrefix("community-");
-    } catch (error) {
-      setPost((cur) => (cur ? { ...cur, authorIsFollowing: was, authorFollowerCount: base } : cur));
-      showToast(error instanceof Error ? error.message : "팔로우하지 못했어요.");
-    } finally {
-      setFollowBusy(false);
-    }
-  }
-
   async function react(type: string) {
     if (!post) return;
     setMessage("");
@@ -783,12 +753,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                     <KingBadges answer={post.authorIsAnswerKing} pick={post.authorIsPickKing} />
                   </p>
                   <p className="cpd-meta" title={formatExactTime(post.createdAt)}>
-                    {formatRelativeTime(post.createdAt)} · 팔로워 {formatCount(post.authorFollowerCount || 0)}
+                    {formatRelativeTime(post.createdAt)}
                   </p>
                 </div>
-                {post.userId && post.userId !== currentUserId && (
-                  <FollowButton following={!!post.authorIsFollowing} busy={followBusy} onToggle={toggleFollow} />
-                )}
               </div>
               {editing ? (
                 <div style={{ display: "grid", gap: 10, margin: "12px 0" }}>

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import FollowButton from "@/components/community/FollowButton";
 import { TossHeartIcon, TossCommentIcon, TossRepostIcon, formatCount } from "@/components/community/TossIcons";
 import { boardShortName, boardTone } from "@/lib/boardTone";
 import { formatRelativeTime } from "@/lib/relativeTime";
@@ -50,9 +49,6 @@ interface ProfileComment {
 }
 interface ProfileData {
   user: ProfileUser;
-  followerCount: number;
-  followingCount: number;
-  isFollowing: boolean;
   isBlocked: boolean;
   posts: ProfilePost[];
   reposts: ProfileRepost[];
@@ -82,7 +78,6 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"activity" | "badge">("activity");
   const [chip, setChip] = useState<"all" | "post" | "comment" | "repost">("all");
-  const [followBusy, setFollowBusy] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -112,30 +107,6 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
   function goBack() {
     if (window.history.length > 1) router.back();
     else router.push("/community");
-  }
-
-  async function toggleFollow() {
-    if (!data || followBusy) return;
-    const was = data.isFollowing;
-    const base = data.followerCount;
-    setFollowBusy(true);
-    setData({ ...data, isFollowing: !was, followerCount: Math.max(0, base + (was ? -1 : 1)) });
-    try {
-      const res = await fetch("/api/community/follows", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "팔로우하지 못했어요.");
-      setData((cur) => (cur ? { ...cur, isFollowing: !!json.following, followerCount: typeof json.followerCount === "number" ? json.followerCount : base } : cur));
-    } catch (e) {
-      setData((cur) => (cur ? { ...cur, isFollowing: was, followerCount: base } : cur));
-      showToast(e instanceof Error ? e.message : "팔로우하지 못했어요.");
-    } finally {
-      setFollowBusy(false);
-    }
   }
 
   async function toggleBlock() {
@@ -203,16 +174,7 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
                 )}
               </span>
               <h1 className="up-name">{user.nickname}</h1>
-              <p className="up-counts">
-                <span>팔로워 <b>{formatCount(data.followerCount)}</b></span>
-                <span>팔로잉 <b>{formatCount(data.followingCount)}</b></span>
-              </p>
             </div>
-            {!user.isMe && (
-              <div className="up-follow">
-                <FollowButton block following={data.isFollowing} busy={followBusy} onToggle={toggleFollow} />
-              </div>
-            )}
           </>
         ) : (
           <div className="up-head">
@@ -345,7 +307,6 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
         .up-name { margin: 12px 0 0; font-size: 23px; font-weight: 700; letter-spacing: -0.5px; text-align: center; overflow-wrap: anywhere; }
         .up-counts { margin: 8px 0 0; display: flex; gap: 14px; color: var(--c-text-4c, #8b95a1); font-size: 16px; font-weight: 500; letter-spacing: -0.3px; }
         .up-counts b { color: var(--c-text-3, #6b7684); font-weight: 600; }
-        .up-follow { animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.08s backwards; }
         .up-error { margin: 40px 0; color: var(--c-text-4); font-size: 15px; font-weight: 600; }
         .up-sk { display: block; border-radius: 8px; background: var(--c-bg-muted-6, rgba(0,0,0,0.06)); animation: cpdSkPulse 1.4s ease-in-out infinite; }
         .up-body { animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.12s backwards; }
@@ -378,7 +339,7 @@ export default function CommunityUserProfileClient({ userId }: { userId: string 
         .up-toast { position: fixed; left: 50%; bottom: calc(40px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 300; padding: 12px 18px; border-radius: 12px; background: rgba(25, 31, 40, 0.92); color: #fff; font-size: 15px; font-weight: 600; max-width: calc(100% - 32px); text-align: center; pointer-events: none; }
         @keyframes cpdSkPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
         @media (min-width: 720px) { .up-page { max-width: 640px; margin: 0 auto; } }
-        @media (prefers-reduced-motion: reduce) { .up-head, .up-follow, .up-body { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .up-head, .up-body { animation: none; } }
       `}</style>
     </main>
   );

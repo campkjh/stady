@@ -301,19 +301,6 @@ export async function ensureCommunityTables() {
     )
   `);
 
-  // 팔로우: follower 가 followee 를 따라간다(단방향). 글 목록·상세에 팔로워 수/팔로잉 여부를 붙이는 용도.
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "CommunityFollow" (
-      "follower_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
-      "followee_id" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
-      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY ("follower_id", "followee_id")
-    )
-  `);
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS "CommunityFollow_followee_idx" ON "CommunityFollow" ("followee_id")
-  `);
-
   // 리포스트: 남의 글을 내 프로필 활동에 올린다(글 복사 X, 원글을 가리키는 표시만). 한 글에 사람당 1번.
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CommunityRepost" (
@@ -2365,62 +2352,6 @@ export async function toggleCommunityBlock(blockerId: string, blockedId: string)
   return { blocked: true };
 }
 
-/** 팔로우 토글. 결과로 현재 상태와 상대의 팔로워 수를 돌려준다. */
-export async function toggleCommunityFollow(followerId: string, followeeId: string) {
-  await ensureCommunityTables();
-  if (followerId === followeeId) throw new Error("CommunityFollowSelf");
-  const removed = await prisma.$queryRawUnsafe<{ follower_id: string }[]>(
-    `DELETE FROM "CommunityFollow" WHERE "follower_id" = $1 AND "followee_id" = $2 RETURNING "follower_id"`,
-    followerId,
-    followeeId
-  );
-  let following = false;
-  if (removed.length === 0) {
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "CommunityFollow" ("follower_id", "followee_id") VALUES ($1, $2)
-       ON CONFLICT ("follower_id", "followee_id") DO NOTHING`,
-      followerId,
-      followeeId
-    );
-    following = true;
-  }
-  const counts = await prisma.$queryRawUnsafe<{ c: number }[]>(
-    `SELECT COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "followee_id" = $1`,
-    followeeId
-  );
-  return { following, followerCount: counts[0]?.c ?? 0 };
-}
-
-export interface CommunityFollowInfo {
-  counts: Record<string, number>;
-  mine: Set<string>;
-}
-
-/** 글쓴이들의 팔로워 수 + 보는 사람이 이미 팔로우 중인지. 쿼리 2번(작성자 id 묶음). */
-export async function getCommunityFollowInfo(
-  userIds: (string | null | undefined)[],
-  viewerId?: string | null
-): Promise<CommunityFollowInfo> {
-  const ids = Array.from(new Set(userIds.filter((id): id is string => !!id)));
-  const info: CommunityFollowInfo = { counts: {}, mine: new Set() };
-  if (ids.length === 0) return info;
-  await ensureCommunityTables();
-  const rows = await prisma.$queryRawUnsafe<{ followee_id: string; c: number }[]>(
-    `SELECT "followee_id", COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "followee_id" = ANY($1::text[]) GROUP BY "followee_id"`,
-    ids
-  );
-  for (const row of rows) info.counts[row.followee_id] = row.c;
-  if (viewerId) {
-    const mine = await prisma.$queryRawUnsafe<{ followee_id: string }[]>(
-      `SELECT "followee_id" FROM "CommunityFollow" WHERE "follower_id" = $1 AND "followee_id" = ANY($2::text[])`,
-      viewerId,
-      ids
-    );
-    for (const row of mine) info.mine.add(row.followee_id);
-  }
-  return info;
-}
-
 /** 유저 프로필 화면용 — 기본 정보·팔로워/팔로잉 수·최근 글/댓글(가볍게 30건씩). */
 export async function getCommunityUserProfile(userId: string, viewerId?: string | null) {
   await ensureCommunityTables();
@@ -2431,18 +2362,9 @@ export async function getCommunityUserProfile(userId: string, viewerId?: string 
   const user = users[0];
   if (!user) return null;
 
-  const [followers, following] = await Promise.all([
-    prisma.$queryRawUnsafe<{ c: number }[]>(`SELECT COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "followee_id" = $1`, userId),
-    prisma.$queryRawUnsafe<{ c: number }[]>(`SELECT COUNT(*)::int AS "c" FROM "CommunityFollow" WHERE "follower_id" = $1`, userId),
-  ]);
-  let isFollowing = false;
   let isBlocked = false;
   if (viewerId && viewerId !== userId) {
-    const [f, b] = await Promise.all([
-      prisma.$queryRawUnsafe<{ x: number }[]>(`SELECT 1 AS "x" FROM "CommunityFollow" WHERE "follower_id" = $1 AND "followee_id" = $2`, viewerId, userId),
-      prisma.$queryRawUnsafe<{ x: number }[]>(`SELECT 1 AS "x" FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`, viewerId, userId),
-    ]);
-    isFollowing = f.length > 0;
+    const b = await prisma.$queryRawUnsafe<{ x: number }[]>(`SELECT 1 AS "x" FROM "CommunityBlock" WHERE "blocker_id" = $1 AND "blocked_id" = $2`, viewerId, userId);
     isBlocked = b.length > 0;
   }
 
@@ -2497,9 +2419,6 @@ export async function getCommunityUserProfile(userId: string, viewerId?: string 
   return {
     user,
     reposts,
-    followerCount: followers[0]?.c ?? 0,
-    followingCount: following[0]?.c ?? 0,
-    isFollowing,
     isBlocked,
     posts,
     comments,
