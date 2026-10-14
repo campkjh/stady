@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, memo, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CommunityPostDetailClient from "@/components/CommunityPostDetailClient";
 import CommunityComposeModal from "@/components/CommunityComposeModal";
@@ -1133,68 +1133,128 @@ const WeeklyCards = memo(function WeeklyCards({ posts, onOpen }: { posts: Commun
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState(0);
   const animRef = useRef<number | null>(null);
+  const snapTimerRef = useRef<number | null>(null);
+  const animatingRef = useRef(false);
+  const visibleRef = useRef(true);
   const touchedAtRef = useRef(0);
   const scrollRafRef = useRef<number | null>(null);
+  // 카드 위치·여백을 미리 재서 두고 쓴다 — 스크롤 중 매 프레임 레이아웃/스타일을 읽으면 저사양 폰에서 끊긴다.
+  const metricsRef = useRef<{ lefts: number[]; pad: number; max: number }>({ lefts: [], pad: 0, max: 0 });
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
 
-  // 현재 보이는(왼쪽에 스냅된) 카드 인덱스 — 프레임당 한 번, 레이아웃을 새로 재지 않고 offsetLeft 로 계산한다.
+  const measure = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    metricsRef.current = {
+      lefts: Array.from(track.children).map((c) => (c as HTMLElement).offsetLeft),
+      pad,
+      max: Math.max(0, track.scrollWidth - track.clientWidth),
+    };
+  }, []);
+
+  const nearestIndex = (scrollLeft: number) => {
+    const { lefts, pad } = metricsRef.current;
+    const x = scrollLeft + pad;
+    let best = 0;
+    let min = Infinity;
+    for (let i = 0; i < lefts.length; i++) {
+      const d = Math.abs(lefts[i] - x);
+      if (d < min) { min = d; best = i; }
+    }
+    return best;
+  };
+
+  // 손으로 넘길 때 현재 카드 표시 갱신 — 프레임당 한 번, DOM 은 scrollLeft 하나만 읽는다. 자동 전환 중엔 목표 카드를 미리 켜 두므로 건너뛴다.
   function handleScroll() {
-    if (scrollRafRef.current !== null) return;
+    if (animatingRef.current || scrollRafRef.current !== null) return;
     scrollRafRef.current = requestAnimationFrame(() => {
       scrollRafRef.current = null;
       const track = trackRef.current;
       if (!track) return;
-      const cards = track.children;
-      if (cards.length === 0) return;
-      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      const left = track.scrollLeft + pad;
-      let nearest = 0;
-      let min = Infinity;
-      for (let i = 0; i < cards.length; i++) {
-        const d = Math.abs((cards[i] as HTMLElement).offsetLeft - left);
-        if (d < min) { min = d; nearest = i; }
-      }
-      setActive((cur) => (cur === nearest ? cur : nearest));
+      const next = nearestIndex(track.scrollLeft);
+      setActive((cur) => (cur === next ? cur : next));
     });
   }
 
-  function stopAnim() {
+  function finishAnim() {
+    animatingRef.current = false;
     if (animRef.current !== null) {
       cancelAnimationFrame(animRef.current);
       animRef.current = null;
     }
+    if (snapTimerRef.current !== null) {
+      window.clearTimeout(snapTimerRef.current);
+      snapTimerRef.current = null;
+    }
     if (trackRef.current) trackRef.current.style.scrollSnapType = "";
   }
 
-  // 자동 전환용 이징 스크롤(1.1초). 진행 중엔 scroll-snap 을 꺼서 스냅이 애니메이션을 끊지 않게 한다.
+  // 자동 전환. 브라우저 기본 smooth 스크롤을 쓴다(합성 스레드에서 돌아 자바스크립트가 바빠도 끊기지 않는다).
+  // 도는 동안만 scroll-snap 을 꺼서 스냅이 끼어들지 않게 하고, 끝나면 되돌린다(이미 스냅 위치라 튀지 않는다).
+  // smooth 를 못 쓰는 구형 WebView 는 이징 스크롤로 대신한다.
   function animateTo(track: HTMLElement, target: number) {
-    stopAnim();
+    finishAnim();
     const from = track.scrollLeft;
     const dist = target - from;
     if (Math.abs(dist) < 1) return;
+    animatingRef.current = true;
+    setActive(nearestIndex(target)); // 목표 카드를 먼저 밝힌다(불투명도 전환은 합성만 한다)
+    track.style.scrollSnapType = "none";
+    const nativeSmooth = typeof document !== "undefined" && "scrollBehavior" in document.documentElement.style;
+    if (nativeSmooth) {
+      track.scrollTo({ left: target, behavior: "smooth" });
+      snapTimerRef.current = window.setTimeout(() => {
+        snapTimerRef.current = null;
+        finishAnim();
+        // 실제 스크롤 위치에 맞춰 현재 카드를 다시 맞춘다(스크롤이 막힌 환경에서도 어긋나지 않게)
+        if (trackRef.current) {
+          const next = nearestIndex(trackRef.current.scrollLeft);
+          setActive((cur) => (cur === next ? cur : next));
+        }
+      }, 1000);
+      return;
+    }
     const DURATION = 1100;
     const t0 = performance.now();
-    track.style.scrollSnapType = "none";
-    // easeInOutQuart — 출발·도착이 아주 부드럽다
     const ease = (t: number) => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2);
     const tick = (now: number) => {
       const t = Math.min(1, (now - t0) / DURATION);
       track.scrollLeft = from + dist * ease(t);
-      if (t < 1) {
-        animRef.current = requestAnimationFrame(tick);
-      } else {
-        animRef.current = null;
-        track.style.scrollSnapType = "";
-      }
+      if (t < 1) animRef.current = requestAnimationFrame(tick);
+      else finishAnim();
     };
     animRef.current = requestAnimationFrame(tick);
   }
 
   function onTouch() {
     touchedAtRef.current = Date.now();
-    stopAnim();
+    // 자동 전환 중에 손이 닿으면 즉시 멈춘다(smooth 스크롤도 제자리에서 끊는다)
+    if (animatingRef.current && trackRef.current) {
+      trackRef.current.scrollTo({ left: trackRef.current.scrollLeft, behavior: "instant" as ScrollBehavior });
+    }
+    finishAnim();
   }
+
+  // 위치 미리 재기(마운트·크기 변화·카드 수 변화)
+  useEffect(() => {
+    measure();
+    const track = trackRef.current;
+    if (!track || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [posts.length, measure]);
+
+  // 화면 밖이면 자동 전환을 쉰다(안 보이는 곳에서 스크롤 일을 하지 않는다)
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => { visibleRef.current = entry.isIntersecting; });
+    io.observe(track);
+    return () => io.disconnect();
+  }, []);
 
   // 3.2초마다 자동 전환. 끝에 닿으면 방향을 뒤집어(핑퐁) 순환.
   // 방향 전환 기준은 카드 '인덱스'가 아니라 실제 스크롤 경계(maxScroll·0)다(태블릿에서 마지막 카드가 왼쪽 끝에 못 붙는 문제).
@@ -1202,41 +1262,35 @@ const WeeklyCards = memo(function WeeklyCards({ posts, onOpen }: { posts: Commun
     if (posts.length <= 1) return;
     const EPS = 4;
     let dir: 1 | -1 = 1;
-    const targetFor = (track: HTMLDivElement, cards: HTMLElement[], cur: number, d: 1 | -1) => {
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      const idx = Math.max(0, Math.min(cards.length - 1, cur + d));
-      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      return Math.max(0, Math.min(maxScroll, cards[idx].offsetLeft - pad));
+    const targetFor = (cur: number, d: 1 | -1) => {
+      const { lefts, pad, max } = metricsRef.current;
+      const idx = Math.max(0, Math.min(lefts.length - 1, cur + d));
+      return Math.max(0, Math.min(max, lefts[idx] - pad));
     };
     const id = window.setInterval(() => {
       const track = trackRef.current;
       if (!track) return;
-      if (document.hidden) return;
+      if (document.hidden || !visibleRef.current) return;
+      if (animatingRef.current) return;
       if (Date.now() - touchedAtRef.current < 4500) return;
-      const cards = Array.from(track.children) as HTMLElement[];
-      if (cards.length <= 1) return;
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      if (dir === 1 && track.scrollLeft >= maxScroll - EPS) dir = -1;
-      else if (dir === -1 && track.scrollLeft <= EPS) dir = 1;
-      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      let cur = 0;
-      let min = Infinity;
-      cards.forEach((card, i) => {
-        const d = Math.abs(card.offsetLeft - pad - track.scrollLeft);
-        if (d < min) { min = d; cur = i; }
-      });
-      let target = targetFor(track, cards, cur, dir);
+      const { lefts, max } = metricsRef.current;
+      if (lefts.length <= 1) return;
+      const left = track.scrollLeft;
+      if (dir === 1 && left >= max - EPS) dir = -1;
+      else if (dir === -1 && left <= EPS) dir = 1;
+      const cur = nearestIndex(left);
+      let target = targetFor(cur, dir);
       // 클램프로 제자리면(경계에서 더 못 감) 방향을 뒤집어 반대편 카드로 간다 — 멈춤 방지.
-      if (Math.abs(target - track.scrollLeft) < EPS) {
+      if (Math.abs(target - left) < EPS) {
         dir = dir === 1 ? -1 : 1;
-        target = targetFor(track, cards, cur, dir);
-        if (Math.abs(target - track.scrollLeft) < EPS) return;
+        target = targetFor(cur, dir);
+        if (Math.abs(target - left) < EPS) return;
       }
       animateTo(track, target);
     }, 3200);
     return () => {
       window.clearInterval(id);
-      stopAnim();
+      finishAnim();
       if (scrollRafRef.current !== null) cancelAnimationFrame(scrollRafRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2577,7 +2631,6 @@ function CommunityStyles() {
         height: 40px;
         z-index: 2;
         pointer-events: none;
-        filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.1));
       }
       .weekly-popular-top {
         display: flex;
