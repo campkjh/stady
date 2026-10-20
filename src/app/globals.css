@@ -1788,54 +1788,25 @@ body.nav-hidden .main-content-wrap { padding-bottom: env(safe-area-inset-bottom,
 @media (prefers-reduced-motion: reduce) { .coach, .coach-hole, .coach-hand-wrap, .coach-tap, .coach-hand, .coach-text { animation: none !important; } }
 
 
-/* ── 퀴즈 떠다니는 툴박스(QuizToolbox) — 글래스 ──
-   반투명 + 블러 + 흰 테두리 하이라이트. 접힌 알약(시계)을 끌어 옮기고, 누르면 도구가 촤라락 펼쳐진다. */
-.tb { position: fixed; z-index: 61; width: max-content; transition: left 0.42s cubic-bezier(0.22, 1.2, 0.36, 1), top 0.42s cubic-bezier(0.22, 1.2, 0.36, 1); touch-action: none; }
-.tb.is-dragging { transition: none; }
-.tb-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; }
-.tb-fab, .tb-ico {
-  background: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.7);
-  backdrop-filter: blur(18px) saturate(1.7);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 12px 44px rgba(15, 23, 42, 0.08), 0 2px 12px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+/* ── OX퀴즈 헤더: 풀이 시간 알약 + 도구 버튼(양옆 탭 넘기기·문제 섞기·퀴즈 노트·책갈피) ── */
+.oxh-time {
+  flex-shrink: 0; display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+  border-radius: 999px; background: var(--c-bg-muted-2, #f2f4f6);
+  color: var(--c-text-2, #333d4b); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.2px;
 }
-.tb-fab {
-  display: inline-flex; align-items: center; gap: 4px; height: 44px; padding: 0 12px 0 14px; border-radius: 999px;
-  color: var(--c-text-2, #333d4b); cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; font-family: inherit;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+.oxh-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.oxh-tool {
+  position: relative; width: 36px; height: 36px; flex-shrink: 0; padding: 0; border: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--c-text-3, #6b7684); -webkit-tap-highlight-color: transparent;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
 }
-.tb.is-dragging .tb-fab { cursor: grabbing; transform: scale(1.06); box-shadow: 0 20px 56px rgba(15, 23, 42, 0.12), 0 2px 12px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.75); }
-.tb-fab:active { transform: scale(0.96); }
-.tb-caret { color: var(--c-text-4b, #8b95a1); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.tb-caret.is-open { transform: rotate(180deg); }
-.tb-items { position: absolute; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-.tb.is-right .tb-items { right: 0; align-items: flex-end; }
-.tb.is-left .tb-items { left: 0; align-items: flex-start; }
-.tb-items.is-up { bottom: calc(100% + 12px); }
-.tb-items.is-down { top: calc(100% + 12px); }
-.tb-row { pointer-events: auto; animation: tbIn 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: calc(var(--i) * 55ms); }
-.tb-items.is-up { --tb-from: 26px; }
-.tb-items.is-down { --tb-from: -26px; }
-.tb-items.is-closing .tb-row { animation: tbOut 0.2s cubic-bezier(0.4, 0, 1, 1) forwards; animation-delay: calc((var(--n) - var(--i) - 1) * 28ms); }
-.tb-item { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: none; background: none; cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent; color: var(--c-text-3, #6b7684); }
-.tb.is-left .tb-item { flex-direction: row-reverse; }
-.tb-label {
-  padding: 7px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; letter-spacing: -0.3px; white-space: nowrap; color: var(--c-text-2, #333d4b);
-  background: rgba(255, 255, 255, 0.5); -webkit-backdrop-filter: blur(18px) saturate(1.7); backdrop-filter: blur(18px) saturate(1.7);
-  border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 10px 36px rgba(15, 23, 42, 0.07);
-}
-.tb-item .tb-ico { background-image: linear-gradient(var(--tb-bg, transparent), var(--tb-bg, transparent)); }
-.tb-ico { width: 46px; height: 46px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.18s ease; }
-.tb-item:active .tb-ico { transform: scale(0.88); }
-.tb-item.is-on .tb-ico { color: var(--tb-tint, #3182f6); box-shadow: 0 12px 44px rgba(15, 23, 42, 0.08), inset 0 0 0 2px var(--tb-tint, #3182f6); }
-.tb-item.is-on .tb-label { color: var(--tb-tint, #3182f6); }
-@keyframes tbIn { from { opacity: 0; transform: translateY(var(--tb-from)) scale(0.6); } to { opacity: 1; transform: none; } }
-@keyframes tbOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(var(--tb-from)) scale(0.6); } }
-[data-theme="dark"] .tb-fab, [data-theme="dark"] .tb-ico, [data-theme="dark"] .tb-label {
-  background: rgba(38, 39, 46, 0.55); border-color: rgba(255, 255, 255, 0.14); box-shadow: 0 12px 44px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-@media (prefers-reduced-motion: reduce) { .tb, .tb-row { animation: none !important; transition: none !important; } }
+.oxh-tool svg, .oxh-tool img { width: 22px; height: 22px; }
+.oxh-tool:active { transform: scale(0.88); }
+/* 켜진 도구는 아이콘 대표색 링으로 표시 */
+.oxh-tool.is-on { color: var(--tint, #3182f6); box-shadow: inset 0 0 0 2px var(--tint, #3182f6); }
+/* 손가락 타깃은 44px 로 넓힌다(보이는 원은 36px) */
+.oxh-tool::after { content: ""; position: absolute; top: -4px; right: -4px; bottom: -4px; left: -4px; }
 
 
 /* ═══ OX퀴즈 — 메모 시트(.qn-*) · 메모지(.qmp-*) · 문제 목록 서랍(.ql-*) · 정답·해설(.oxr-*) ═══ */

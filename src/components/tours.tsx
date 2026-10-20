@@ -47,7 +47,7 @@ const POST_DETAIL: TourStep[] = [
 const OX_QUIZ: TourStep[] = [
   { sel: '[data-tour="ox-question"]', text: <>문제 <K>지문</K>을 읽고 O / X 로 답해요</>, sub: "양옆 화면을 탭하거나 옆으로 밀어서 문제를 넘겨요", radius: 16 },
   { sel: '[data-tour="ox-answer"]', text: <><K>그렇다 / 아니다</K>를 눌러요</>, sub: "누르면 정답과 해설이 바로 나와요", radius: 20 },
-  { sel: '[data-tour="ox-toolbox"]', text: <><K>시계</K>를 누르면 도구가 펼쳐져요</>, sub: "섞기·노트·책갈피·탭 넘기기 — 끌어서 원하는 곳에 둘 수 있어요", radius: 24 },
+  { sel: '[data-tour="ox-toolbox"]', text: <>도구는 <K>위 헤더</K>에 있어요</>, sub: "양옆 탭 넘기기 · 문제 섞기 · 퀴즈 노트 · 책갈피", radius: 20 },
   { sel: '[data-tour="ox-chips"]', text: <><K>정답·오답</K>만 모아 다시 풀 수 있어요</>, sub: "틀린 문제만 골라 복습해 보세요", radius: 24 },
   { sel: '[data-tour="ox-list"]', text: <><K>목록</K>에서 원하는 문제로 바로 가요</>, sub: "정답은 노랑, 오답은 빨강으로 표시돼요", radius: 14 },
 ];

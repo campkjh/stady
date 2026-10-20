@@ -13,7 +13,6 @@ import QuizTimer from "@/components/QuizTimer";
 import LoginRequired from "@/components/LoginRequired";
 import PremiumRequired from "@/components/PremiumRequired";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
-import QuizToolbox from "@/components/QuizToolbox";
 import { useSideTap } from "@/lib/useSideTap";
 import { TapIcon } from "@/components/icons/ToolIcons";
 import { ShuffleIcon, MemoIcon, BookmarkFillIcon, BookmarkLineIcon } from "@/components/icons/ToolIcons";
@@ -641,6 +640,65 @@ export default function OxQuizSolvePage() {
     currentQuestion?.section,
   ].filter(Boolean).join(" > ");
 
+  // 헤더 도구 — 양옆 탭 넘기기 · 문제 섞기 · 퀴즈 노트 · 책갈피(예전엔 떠다니는 툴박스 안에 있었다)
+  const toolItems: HeaderTool[] = [
+    {
+      key: "sidetap",
+      label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
+      icon: <SideTapIcon on={sideTapOn} />,
+      active: sideTapOn,
+      tint: "#03a94d",
+      bg: sideTapOn ? "rgba(3,169,77,0.14)" : "rgba(107,118,132,0.12)",
+      onClick: () => {
+        const next = !sideTapOn;
+        setSideTapOn(next);
+        showToast(next ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 스와이프로 넘겨요", 2400);
+      },
+    },
+    ...(!bookmarkMode.enabled || (quiz?.questions.length ?? 0) > 1
+      ? [{
+          key: "shuffle",
+          label: shuffleOn ? "원래 순서로" : "문제 섞기",
+          icon: <ShuffleIcon size={24} />,
+          active: shuffleOn,
+          tint: "#e02939",
+          bg: "rgba(224,41,57,0.11)",
+          onClick: () => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); },
+        }]
+      : []),
+    ...(noteEnabled
+      ? [{
+          key: "note",
+          label: "퀴즈 노트",
+          icon: <MemoIcon size={24} />,
+          bg: "rgba(255,195,58,0.28)",
+          active: !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
+          tint: "#f2a100",
+          onClick: () => {
+            if (!currentQuestion) return;
+            setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
+            setNoteOpen(true);
+          },
+        }]
+      : []),
+    {
+      key: "bookmark",
+      label: isBookmarked ? "책갈피 해제" : "책갈피",
+      icon: isBookmarked ? <BookmarkFillIcon size={24} /> : <BookmarkLineIcon size={24} />,
+      active: isBookmarked,
+      tint: "#007ffa",
+      bg: isBookmarked ? "rgba(0,127,250,0.14)" : "rgba(107,118,132,0.12)",
+      onClick: () => {
+        if (!currentQuestion) return;
+        if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
+          setShowNoteLossConfirm(true);
+          return;
+        }
+        toggleBookmark();
+      },
+    },
+  ];
+
   return (
     <div className="flex flex-col bg-white" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, maxWidth: 720, margin: "0 auto", overflow: "hidden" }}>
       {/* Header — 제목/타이머, 진행도·도구, 필터를 한 덩어리로 통합 */}
@@ -652,8 +710,8 @@ export default function OxQuizSolvePage() {
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
         }}
       >
-        {/* 1행: 나가기 · 목록 (타이머·섞기·메모·북마크·양옆탭은 떠다니는 툴박스로) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 6px" }}>
+        {/* 1행: 나가기 · 시간 · (도구: 양옆 탭 넘기기·섞기·노트·책갈피) · 목록 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 12px 6px" }}>
           <button
             type="button"
             aria-label="나가기"
@@ -665,8 +723,26 @@ export default function OxQuizSolvePage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          {/* 제목은 헤더에서 뺐다 — 남는 자리는 비워 타이머·목록 버튼을 오른쪽에 둔다 */}
+          <span className="oxh-time" aria-label="풀이 시간">
+            <QuizTimer startAt={startTime} paused={submitted} bare />
+          </span>
           <div style={{ flex: 1, minWidth: 0 }} />
+          <div className="oxh-tools" data-tour="ox-toolbox">
+            {toolItems.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                aria-label={t.label}
+                title={t.label}
+                aria-pressed={t.active ? true : undefined}
+                onClick={t.onClick}
+                className={`oxh-tool press${t.active ? " is-on" : ""}`}
+                style={{ background: t.bg, ["--tint" as string]: t.tint } as React.CSSProperties}
+              >
+                {t.icon}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             aria-label="문제 목록"
@@ -726,69 +802,6 @@ export default function OxQuizSolvePage() {
 
       {/* 처음 들어왔을 때 한 번: 어둡게 깔고 짚어 주는 사용 안내(스와이프 안내가 닫힌 뒤에 뜬다) */}
       <OxQuizTour />
-
-      {/* 떠다니는 글래스 툴박스 — 시계(타이머)를 누르면 도구가 펼쳐지고, 끌어서 위치를 옮긴다 */}
-      <QuizToolbox
-        tourId="ox-toolbox"
-        timer={<QuizTimer startAt={startTime} paused={submitted} bare />}
-        items={[
-          {
-            key: "sidetap",
-            label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
-            icon: <SideTapIcon on={sideTapOn} />,
-            active: sideTapOn,
-            tint: "#03a94d",
-            bg: sideTapOn ? "rgba(3,169,77,0.14)" : "rgba(107,118,132,0.12)",
-            onClick: () => {
-              const next = !sideTapOn;
-              setSideTapOn(next);
-              showToast(next ? "양옆 화면 탭으로 넘기기를 켰어요" : "양옆 화면 탭 넘기기를 껐어요 · 스와이프로 넘겨요", 2400);
-            },
-          },
-          ...(!bookmarkMode.enabled || (quiz?.questions.length ?? 0) > 1
-            ? [{
-                key: "shuffle",
-                label: shuffleOn ? "원래 순서로" : "문제 섞기",
-                icon: <ShuffleIcon size={24} />,
-                active: shuffleOn,
-                tint: "#e02939",
-                bg: "rgba(224,41,57,0.11)",
-                onClick: () => { if (answers.size > 0) setShowShuffleConfirm(true); else applyShuffleToggle(); },
-              }]
-            : []),
-          ...(noteEnabled
-            ? [{
-                key: "note",
-                label: "퀴즈 노트",
-                icon: <MemoIcon size={24} />,
-                bg: "rgba(255,195,58,0.28)",
-                active: !!currentQuestion && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id)),
-                tint: "#f2a100",
-                onClick: () => {
-                  if (!currentQuestion) return;
-                  setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
-                  setNoteOpen(true);
-                },
-              }]
-            : []),
-          {
-            key: "bookmark",
-            label: isBookmarked ? "책갈피 해제" : "책갈피",
-            icon: isBookmarked ? <BookmarkFillIcon size={24} /> : <BookmarkLineIcon size={24} />,
-            active: isBookmarked,
-            tint: "#007ffa",
-            bg: isBookmarked ? "rgba(0,127,250,0.14)" : "rgba(107,118,132,0.12)",
-            onClick: () => {
-              if (!currentQuestion) return;
-              if (isBookmarked && (memoByQuestion.has(currentQuestion.id) || drawingByQuestion.has(currentQuestion.id))) {
-                setShowNoteLossConfirm(true);
-                return;
-              }
-              toggleBookmark();
-            },
-          },
-        ]}
-      />
 
       <SideTapNavigation
         onPrev={goPrev}
@@ -1376,6 +1389,18 @@ export default function OxQuizSolvePage() {
 }
 
 // 헤더 공용 스타일
+interface HeaderTool {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  active?: boolean;
+  /** 켜졌을 때 링 색(아이콘 대표색) */
+  tint?: string;
+  /** 아이콘 동그라미 배경 */
+  bg?: string;
+  onClick: () => void;
+}
+
 const hIconBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
   width: 34, height: 34, flexShrink: 0, cursor: "pointer", padding: 0,
