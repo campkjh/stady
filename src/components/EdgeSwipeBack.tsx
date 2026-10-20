@@ -26,9 +26,20 @@ const COMMIT_VELOCITY = 0.45; // px/ms
 const ANIM_MS = 280;
 const BACK_TIMEOUT_MS = 1200; // 뒤로 갈 곳이 없어 경로가 안 바뀌면 되돌린다
 
+// 풀이·필기 화면 — 펜 필기(모의고사), 핀치·가로 이동, 문항 넘기기 스와이프가 왼쪽 끝 터치와 겹치고,
+// 큰 시험지 이미지를 들고 있어 화면 복제만으로도 안드로이드 웹뷰 메모리가 넘쳐 시험지가 하얗게 비었다(갤럭시탭 제보).
+// 여기서는 제스처도, 화면 복제도 하지 않는다.
+const HEAVY_PREFIXES = ["/mock-exam/", "/ox-quiz/", "/vocab-quiz/", "/retest"];
+
+function isHeavyPath(path: string): boolean {
+  if (path.startsWith("/workbook/") && path.endsWith("/solve")) return true; // 문제집 풀이만(문제집 소개 화면은 그대로)
+  return HEAVY_PREFIXES.some((p) => path.startsWith(p));
+}
+
 function isDetailPath(path: string): boolean {
   if (TAB_ROOTS.has(path)) return false;
   if (path.startsWith("/admin") || path.startsWith("/login")) return false;
+  if (isHeavyPath(path)) return false;
   return true;
 }
 
@@ -45,6 +56,7 @@ function snapshotPage(): Snap | null {
   try {
     const html = document.documentElement;
     if (html.classList.contains("swb-active") || document.body.style.position === "fixed") return null;
+    if (isHeavyPath(window.location.pathname)) return null;
     const node = document.body.cloneNode(true) as HTMLElement;
     node
       .querySelectorAll("script,noscript,iframe,video,audio,canvas,nextjs-portal,next-route-announcer,.swb-ghost")
