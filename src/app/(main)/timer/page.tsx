@@ -132,6 +132,18 @@ export default function TimerPage() {
   // 앱을 백그라운드로 보냈다 와도(JS 타이머 정지) 시간이 그대로 이어진다.
   const myStartAtRef = useRef<number | null>(null);
 
+  // 태블릿 레이아웃의 높이 기준 — 단위(vh/dvh)가 웹뷰마다 달리 계산되는 일이 있어 실제 창 높이를 px 로 직접 잰다.
+  useEffect(() => {
+    const root = document.documentElement;
+    const set = () => root.style.setProperty("--tmr-vh", `${window.innerHeight}px`);
+    set();
+    window.addEventListener("resize", set);
+    return () => {
+      window.removeEventListener("resize", set);
+      root.style.removeProperty("--tmr-vh");
+    };
+  }, []);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -785,10 +797,13 @@ export default function TimerPage() {
           /* 태블릿에서는 페이지가 통째로 스크롤되지 않는다 — 화면 높이에 딱 맞춰 놓고
              왼쪽(타이머) 칸은 고정, 오른쪽(스타디룸·주간옵시디언) 칸만 스크롤한다.
              빼는 값은 레이아웃 래퍼의 하단 패딩(122px + 세이프영역)과 같다. */
+          /* ⚠️ 이 높이가 0 근처로 계산되면(일부 갤럭시 탭 웹뷰에서 단위·세이프영역 값이 어긋나는 제보) overflow:hidden 때문에
+             화면이 하단 바만 남고 통째로 비어 보인다. 그래서 ① 화면 높이는 JS 가 잰 px(--tmr-vh)를 우선 쓰고
+             ② 세이프영역은 60px 로 상한을 두며 ③ 어떤 경우에도 480px 아래로는 줄지 않게 바닥을 둔다. */
           .tmr-page {
-            min-height: 0 !important;
-            height: calc(100vh - 122px - env(safe-area-inset-bottom, 0px));
-            height: calc(100dvh - 122px - env(safe-area-inset-bottom, 0px));
+            min-height: 480px !important;
+            height: calc(100vh - 122px - min(env(safe-area-inset-bottom, 0px), 60px));
+            height: calc(var(--tmr-vh, 100vh) - 122px - min(env(safe-area-inset-bottom, 0px), 60px));
             display: flex;
             flex-direction: column;
             overflow: hidden;
