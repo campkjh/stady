@@ -647,8 +647,8 @@ export default function OxQuizSolvePage() {
       label: sideTapOn ? "양옆 탭 넘기기 끄기" : "양옆 탭 넘기기 켜기",
       icon: <SideTapIcon on={sideTapOn} />,
       active: sideTapOn,
-      tint: "#03a94d",
-      bg: sideTapOn ? "rgba(3,169,77,0.14)" : "rgba(107,118,132,0.12)",
+      tint: "#6f61ff", // 보라(요청) — 켜짐 링·아이콘 색
+      bg: sideTapOn ? "rgba(100,85,253,0.14)" : "rgba(107,118,132,0.12)",
       onClick: () => {
         const next = !sideTapOn;
         setSideTapOn(next);
@@ -759,8 +759,8 @@ export default function OxQuizSolvePage() {
           </button>
         </div>
 
-        {/* 3행: 필터 칩(가운데 정렬) */}
-        <div data-tour="ox-chips" style={{ display: "flex", justifyContent: "center", gap: 6, padding: "0 12px 10px" }}>
+        {/* 2행: 전체/정답/오답 필터(가운데 정렬, 알약 배경 없이) */}
+        <div data-tour="ox-chips" style={{ display: "flex", justifyContent: "center", gap: 14, padding: "0 12px 8px" }}>
           {[
             // 칩 색은 테두리가 아니라 이모지 색에서 가져온다: 행성=보라, 정답(웃는 얼굴)=노랑, 오답(꼬깔)=빨강.
           { key: "all" as TabFilter, label: "전체", icon: "/icons/emoji-all-planet.svg", count: answers.size, tint: "#6f61ff", onBg: "rgba(100,85,253,0.16)", offBg: "rgba(100,85,253,0.07)" },
@@ -775,10 +775,11 @@ export default function OxQuizSolvePage() {
                 onClick={() => setTabFilter(tab.key)}
                 className="press"
                 style={{
+                  // 알약(배경) 없이 아이콘·글자만 — 선택은 글자색과 굵기로 드러낸다
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  height: 46, padding: "0 16px 0 12px", borderRadius: 999, cursor: "pointer",
+                  height: 40, padding: "0 10px", cursor: "pointer",
                   border: "none",
-                  background: on ? tab.onBg : tab.offBg,
+                  background: "none",
                   color: on ? tab.tint : "var(--c-text-4b)",
                   fontSize: 14, fontWeight: 700, letterSpacing: "-0.3px",
                   transition: "background 0.16s ease, color 0.16s ease, opacity 0.16s ease",
@@ -1431,7 +1432,7 @@ function shuffleArray<T>(src: T[]): T[] {
 function SideTapIcon({ on }: { on: boolean }) {
   return (
     <span style={{ position: "relative", display: "inline-flex" }}>
-      <TapIcon size={24} color={on ? "#03a94d" : "#8b95a1"} />
+      <TapIcon size={24} color={on ? "#6f61ff" : "#8b95a1"} />
       {!on && (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0 }}>
           <line x1="4" y1="3" x2="20" y2="21" stroke="rgba(255,255,255,0.9)" strokeWidth="5" />
