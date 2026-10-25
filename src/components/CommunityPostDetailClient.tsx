@@ -6,7 +6,7 @@ import AlertModal from "@/components/AlertModal";
 import ReportBlockMenu from "@/components/ReportBlockMenu";
 import { clientCache } from "@/lib/clientCache";
 import KingBadges from "@/components/KingBadges";
-import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, ReplyArrowIcon, SendUpIcon, formatCount } from "@/components/community/TossIcons";
+import { TossHeartIcon, TossCommentIcon, TossRepostIcon, TossShareIcon, ReplyArrowIcon, SortArrowsIcon, SendUpIcon, formatCount } from "@/components/community/TossIcons";
 import { boardTone, boardShortName } from "@/lib/boardTone";
 import { renderWithMention } from "@/components/community/mention";
 import { PostDetailTour } from "@/components/tours";
@@ -202,6 +202,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   // 토스처럼 답글도 아래 고정 입력창 하나로 쓴다: '답글 달기'를 누르면 입력창에 파란 @닉네임이 붙는다.
   const [replyTo, setReplyTo] = useState<{ id: string; nickname: string } | null>(null);
   const composerRef = useRef<HTMLInputElement | null>(null);
+  const [sortOpen, setSortOpen] = useState(false);
   // 스크롤을 내리면 헤더 아래로 그라데이션이 스르륵 나온다. 맨 위 1px 감시점이 화면에서 벗어났는지로 판단한다
   // (페이지 스크롤이든 넓은 화면 패널 안 스크롤이든 같이 동작).
   const topSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -444,25 +445,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
     }
   }
 
-  // 이모지 줄을 누르면 입력칸의 커서 자리에 넣는다(키보드는 내려가지 않게 유지).
-  function insertEmoji(emoji: string) {
-    const input = composerRef.current;
-    const start = input?.selectionStart ?? comment.length;
-    const end = input?.selectionEnd ?? comment.length;
-    const next = comment.slice(0, start) + emoji + comment.slice(end);
-    setComment(next);
-    const caret = start + emoji.length;
-    requestAnimationFrame(() => {
-      const el = composerRef.current;
-      if (!el) return;
-      el.focus();
-      try {
-        el.setSelectionRange(caret, caret);
-      } catch {
-        /* 일부 WebView 는 지원 안 함 */
-      }
-    });
-  }
 
   function startReply(target: CommunityComment) {
     setReplyTo({ id: target.id, nickname: target.nickname });
@@ -1091,23 +1073,8 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
             <section className="community-detail-panel cpd-comments">
               <h2 className="cpd-c-title">댓글 <span>{formatCount(post.commentCount || 0)}</span></h2>
 
-              {/* 댓글 입력 — 옛 상세처럼 댓글 칸 맨 위에. 이모지를 누르면 입력칸에 들어가고, 답글이면 파란 @닉네임. */}
+              {/* 댓글 입력 — 옛 상세처럼 댓글 칸 맨 위에. 답글이면 파란 @닉네임. */}
               <div className="cpd-composer" data-tour="cd-compose">
-                <div className="cpd-react-bar">
-                  {REACTIONS.map((r) => (
-                    <button
-                      key={r.key}
-                      type="button"
-                      className="cpd-react"
-                      aria-label={`${r.emoji} 넣기`}
-                      // 누르는 순간 입력칸이 포커스를 잃어 키보드가 내려가지 않게 한다.
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => insertEmoji(r.emoji)}
-                    >
-                      <ReactionIcon name={r.icon} size={28} />
-                    </button>
-                  ))}
-                </div>
                 <form className="cpd-compose" onSubmit={submitComment}>
                   <MiniAvatar nickname={me?.nickname ?? "나"} avatar={me?.avatar ?? null} size={40} />
                   <div className="cpd-bar">
@@ -1132,22 +1099,35 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                 </form>
               </div>
 
-              {comments.length > 0 && (
-                <div className="cpd-sorts" data-tour="cd-sort" role="tablist" aria-label="댓글 정렬">
-                  {COMMENT_SORTS.map((x) => (
-                    <button
-                      key={x.key}
-                      type="button"
-                      role="tab"
-                      aria-selected={commentSort === x.key}
-                      className={`cpd-sort-chip${commentSort === x.key ? " on" : ""}`}
-                      onClick={() => changeCommentSort(x.key)}
-                    >
-                      {x.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="cpd-sort-wrap" data-tour="cd-sort">
+                <button type="button" className="cpd-sort" aria-haspopup="listbox" aria-expanded={sortOpen} onClick={() => setSortOpen((v) => !v)}>
+                  {COMMENT_SORTS.find((x) => x.key === commentSort)?.label}
+                  <SortArrowsIcon />
+                </button>
+                {sortOpen && (
+                  <>
+                    <div className="cpd-sort-backdrop" onClick={() => setSortOpen(false)} />
+                    <div className="cpd-sort-menu" role="listbox">
+                      {COMMENT_SORTS.map((x) => (
+                        <button
+                          key={x.key}
+                          type="button"
+                          role="option"
+                          aria-selected={commentSort === x.key}
+                          className={`cpd-sort-item${commentSort === x.key ? " on" : ""}`}
+                          onClick={() => {
+                            setSortOpen(false);
+                            changeCommentSort(x.key);
+                          }}
+                        >
+                          {x.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
 
               {comments.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "36px 0 24px" }}>
@@ -1354,10 +1334,13 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-comments { padding: 0 20px; }
         .cpd-c-title { margin: 20px 0 12px; color: var(--c-text); font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
         .cpd-c-title span { color: #3182f6; }
-        .cpd-composer { padding-bottom: 6px; }
-        .cpd-sorts { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 4px; }
-        .cpd-sort-chip { height: 32px; padding: 0 13px; border: none; border-radius: 999px; background: var(--c-bg-muted-2, #f2f4f6); color: var(--c-text-3, #6b7684); font-size: 14px; font-weight: 600; letter-spacing: -0.2px; cursor: pointer; font-family: inherit; transition: background 0.15s ease, color 0.15s ease; }
-        .cpd-sort-chip.on { background: var(--c-inverse, #191f28); color: #fff; }
+        .cpd-composer { padding-bottom: 2px; }
+        .cpd-sort-wrap { position: relative; display: inline-block; padding: 18px 0 8px; }
+        .cpd-sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: none; background: none; color: var(--c-text-3, #6b7684); font-size: 17px; font-weight: 500; letter-spacing: -0.3px; cursor: pointer; font-family: inherit; }
+        .cpd-sort-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 55; }
+        .cpd-sort-menu { position: absolute; top: calc(100% - 4px); left: 0; z-index: 60; min-width: 150px; display: grid; padding: 8px; background: var(--c-bg, #fff); border-radius: 18px; box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14), 0 2px 10px rgba(15, 23, 42, 0.05); animation: cpdMenuIn 0.28s cubic-bezier(0.33, 1, 0.68, 1) backwards; transform-origin: top left; }
+        .cpd-sort-item { display: flex; align-items: center; padding: 11px 12px; border: none; background: none; border-radius: 12px; color: var(--c-text-2c, #333d4b); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; font-family: inherit; }
+        .cpd-sort-item.on { color: #3182f6; font-weight: 700; }
         @keyframes cpdMenuIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
         .cpd-clist { display: grid; }
         .cpd-c { display: flex; gap: 12px; padding: 18px 0 14px; }
@@ -1377,9 +1360,6 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-c-replies { margin-top: 2px; }
         .cpd-c.is-active > .cpd-c-main > .cpd-c-text { background: rgba(49, 130, 246, 0.07); border-radius: 8px; }
         /* 아래 고정 입력 영역 */
-        .cpd-react-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 8px; }
-        .cpd-react { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: none; border-radius: 14px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease; }
-        .cpd-react:active { transform: scale(0.86); }
         .cpd-compose { display: flex; align-items: center; gap: 10px; }
         .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
         .cpd-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
@@ -1711,19 +1691,6 @@ function reactionLabel(key: string) {
 }
 
 // 리액션 아이콘 이미지(이모지 대체).
-function ReactionIcon({ name, size = 18 }: { name: string; size?: number }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`/icons/community/${name}.svg`}
-      alt=""
-      width={size}
-      height={size}
-      style={{ display: "block", flexShrink: 0 }}
-    />
-  );
-}
-
 function pollOptionStyle(mine: boolean) {
   return {
     position: "relative",
