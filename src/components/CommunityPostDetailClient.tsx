@@ -1485,10 +1485,12 @@ function CommentItem({
   const goProfile = () => { if (comment.userId) router.push(`/community/user/${comment.userId}`); };
   const isEditing = editingCommentId === comment.id;
   const rowClass = `cpd-c${depth > 0 ? " is-reply" : ""}${isPinned ? " is-pinned" : ""}${activeReplyId === comment.id ? " is-active" : ""}`;
+  // 답글도 댓글과 같은 왼쪽 선에 놓는다 — 부모 본문 칸 안에 넣으면 사진 폭만큼 오른쪽으로 밀린다.
   return (
+    <>
     <div className={rowClass}>
       <span onClick={goProfile} style={{ cursor: comment.userId ? "pointer" : undefined, flexShrink: 0, display: "inline-flex", alignSelf: "flex-start" }}>
-        <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={depth > 0 ? 34 : 44} />
+        <MiniAvatar nickname={comment.nickname} avatar={comment.avatar} size={44} />
       </span>
       <div className="cpd-c-main">
         {isPinned && (
@@ -1559,33 +1561,34 @@ function CommentItem({
             />
           </span>
         </div>
-        {comment.replies.length > 0 && (
-          <div className="cpd-c-replies">
-            {comment.replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                currentUserId={currentUserId}
-                onBlocked={onBlocked}
-                activeReplyId={activeReplyId}
-                isAdmin={isAdmin}
-                editingCommentId={editingCommentId}
-                editCommentContent={editCommentContent}
-                commentActionBusy={commentActionBusy}
-                onStartEdit={onStartEdit}
-                onEditChange={onEditChange}
-                onCancelEdit={onCancelEdit}
-                onSubmitEdit={onSubmitEdit}
-                onDelete={onDelete}
-                onToggleLike={onToggleLike}
-                onReply={onReply}
-                depth={depth + 1}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
+    {comment.replies.length > 0 && (
+      <div className="cpd-c-replies">
+        {comment.replies.map((reply) => (
+          <CommentItem
+            key={reply.id}
+            comment={reply}
+            currentUserId={currentUserId}
+            onBlocked={onBlocked}
+            activeReplyId={activeReplyId}
+            isAdmin={isAdmin}
+            editingCommentId={editingCommentId}
+            editCommentContent={editCommentContent}
+            commentActionBusy={commentActionBusy}
+            onStartEdit={onStartEdit}
+            onEditChange={onEditChange}
+            onCancelEdit={onCancelEdit}
+            onSubmitEdit={onSubmitEdit}
+            onDelete={onDelete}
+            onToggleLike={onToggleLike}
+            onReply={onReply}
+            depth={depth + 1}
+          />
+        ))}
+      </div>
+    )}
+    </>
   );
 }
 
