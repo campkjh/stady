@@ -73,7 +73,35 @@ export async function ensureMockExamTables(): Promise<void> {
       "subject" TEXT
     )
   `);
+  // 원본 PDF(인쇄·한 번에 보기용). 같은 이유로 MockExam 에 컬럼을 늘리지 않고 별도 테이블.
+  // URL 은 Blob 공개 주소(무작위 접미)라 화면에는 내보내지 않고, /api/mock-exams/[id]/pdf 가
+  // 프리미엄 확인 뒤에만 넘겨준다.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "MockExamPdf" (
+      "exam_id" TEXT PRIMARY KEY,
+      "problem_url" TEXT,
+      "solution_url" TEXT,
+      "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
   ready = true;
+}
+
+export interface MockExamPdf {
+  problemUrl: string | null;
+  solutionUrl: string | null;
+}
+
+// 원본 PDF 주소(없으면 null). 화면에는 있는지 여부만 알려 주고 주소는 다운로드 API 에서만 쓴다.
+export async function getMockExamPdf(examId: string): Promise<MockExamPdf | null> {
+  await ensureMockExamTables();
+  const rows = await prisma.$queryRawUnsafe<{ problem_url: string | null; solution_url: string | null }[]>(
+    `SELECT "problem_url", "solution_url" FROM "MockExamPdf" WHERE "exam_id" = $1`,
+    examId
+  );
+  const r = rows[0];
+  if (!r || (!r.problem_url && !r.solution_url)) return null;
+  return { problemUrl: r.problem_url, solutionUrl: r.solution_url };
 }
 
 // 분류 저장(있으면 갱신). 값이 null이면 '미분류'로 비운다.

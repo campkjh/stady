@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AlertModal from "@/components/AlertModal";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
+import MockExamPdfButton from "@/components/MockExamPdfButton";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
 
@@ -822,7 +823,7 @@ const PageCanvas = forwardRef<
   );
 });
 
-export default function MockExamViewer({ exam }: { exam: Exam }) {
+export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 PDF 유무(있으면 상단바에 PDF 받기 버튼) */ pdf?: { problem: boolean; solution: boolean } }) {
   const router = useRouter();
   const [tool, setTool] = useState<Tool>("pen");
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -1160,6 +1161,9 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
           )}
         </div>
         <span style={{ flex: 1 }} />
+        {pdf && (pdf.problem || pdf.solution) && (
+          <MockExamPdfButton examId={exam.id} title={exam.title} subtitle={exam.subtitle} has={pdf} buttonStyle={barBtn} />
+        )}
         {zoom > 1.01 && (
           <button type="button" onClick={resetZoom} aria-label="확대 초기화"
             style={{ ...barBtn, width: "auto", padding: "0 9px", color: "#fff", fontSize: 12.5, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>

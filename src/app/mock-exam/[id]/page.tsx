@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMockExam } from "@/lib/mockExam";
+import { getMockExam, getMockExamPdf } from "@/lib/mockExam";
 import MockExamViewer from "@/components/MockExamViewer";
 import PremiumRequired from "@/components/PremiumRequired";
 import { viewerHasPremiumAccess } from "@/lib/premiumGate";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MockExamViewerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const exam = await getMockExam(id);
+  const [exam, pdf] = await Promise.all([getMockExam(id), getMockExamPdf(id)]);
 
   // 모의고사는 전부 프리미엄 전용.
   if (!(await viewerHasPremiumAccess())) {
@@ -35,6 +35,8 @@ export default async function MockExamViewerPage({ params }: { params: Promise<{
         solutionImageUrls: exam.solutionImageUrls,
         solutionLineBoxes: exam.solutionLineBoxes,
       }}
+      // 주소는 넘기지 않고 유무만 — 받기는 /api/mock-exams/[id]/pdf 가 프리미엄 확인 뒤 처리한다.
+      pdf={pdf ? { problem: !!pdf.problemUrl, solution: !!pdf.solutionUrl } : undefined}
     />
   );
 }
