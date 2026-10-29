@@ -64,3 +64,4 @@ scripts/mock-exam-import/uploaded.json
 scripts/mock-exam-import/manifest.json
 scripts/mock-exam-import/render
 scripts/mock-exam-import/pdfinfo
+scripts/mock-exam-import/pdf-uploaded.json
