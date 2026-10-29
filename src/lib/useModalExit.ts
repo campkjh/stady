@@ -24,5 +24,16 @@ export function useModalExit() {
       after?.();
     }, MODAL_EXIT_MS);
   }, []);
-  return { leaving, exit };
+  // 같은 컴포넌트가 모달을 닫았다가 다시 여는 경우(훅이 계속 살아 있음) 열기 전에 불러 '닫히는 중' 표시를 지운다.
+  // 안 지우면 다시 연 모달이 .is-leaving 인 채 그려져 투명하게 내려가 버려 "눌러도 안 열린다"가 된다
+  // (퀴즈 노트 저장 뒤 다시 안 열리던 제보). 닫기 콜백에서 자동으로 지우지 않는 건, 화면 이동만 하고
+  // 모달을 숨기지 않는 콜백(공지 전체보기·뒤로가기 등)에서 이동 중에 모달이 다시 보이지 않게 하려는 것.
+  const reset = useCallback(() => {
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+    setLeaving(false);
+  }, []);
+  return { leaving, exit, reset };
 }

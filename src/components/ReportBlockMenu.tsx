@@ -49,7 +49,7 @@ export default function ReportBlockMenu({
   const [step, setStep] = useState<Step | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const { leaving, exit } = useModalExit();
+  const { leaving, exit, reset } = useModalExit();
   useBodyScrollLock(!!step);
 
   // 내 글/댓글이거나 작성자를 알 수 없으면(탈퇴 등) 메뉴 자체를 숨긴다.
@@ -61,6 +61,7 @@ export default function ReportBlockMenu({
   }
 
   function openMenu() {
+    reset();
     if (!currentUserId) {
       setMessage("로그인 후 이용할 수 있어요.");
       setStep("done");

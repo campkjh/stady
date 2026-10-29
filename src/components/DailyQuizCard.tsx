@@ -239,6 +239,7 @@ export default function DailyQuizCard() {
   }, []);
 
   function openPref() {
+    prefExit.reset();
     setPrefOpen(true);
     loadPref();
   }

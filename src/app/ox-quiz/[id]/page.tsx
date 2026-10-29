@@ -97,8 +97,8 @@ export default function OxQuizSolvePage() {
   const [noteText, setNoteText] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   // 메모 시트·문제 목록 서랍: 열릴 땐 스프링으로 올라오고, 닫을 땐 내려가며 사라진다(공용 모달과 같은 규칙).
-  const { leaving: noteLeaving, exit: noteExit } = useModalExit();
-  const { leaving: listLeaving, exit: listExit } = useModalExit();
+  const { leaving: noteLeaving, exit: noteExit, reset: noteReset } = useModalExit();
+  const { leaving: listLeaving, exit: listExit, reset: listReset } = useModalExit();
   useBodyScrollLock(noteOpen);
   useBodyScrollLock(showList);
   const [showNoteLossConfirm, setShowNoteLossConfirm] = useState(false);
@@ -677,6 +677,7 @@ export default function OxQuizSolvePage() {
           onClick: () => {
             if (!currentQuestion) return;
             setNoteText(memoByQuestion.get(currentQuestion.id) ?? "");
+            noteReset();
             setNoteOpen(true);
           },
         }]
@@ -747,7 +748,7 @@ export default function OxQuizSolvePage() {
             type="button"
             aria-label="문제 목록"
             data-tour="ox-list"
-            onClick={() => setShowList(true)}
+            onClick={() => { listReset(); setShowList(true); }}
             className="press"
             style={{ ...hIconBtn, background: "none", border: "none" }}
           >

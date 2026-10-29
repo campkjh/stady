@@ -410,7 +410,7 @@ export default function WorkbookDetailPage() {
 
         {isLoggedIn && hasCompleted && (
           <button
-            onClick={() => setShowReviewModal(true)}
+            onClick={() => { reviewExit.reset(); setShowReviewModal(true); }}
             className="press"
             style={{
               width: "100%",

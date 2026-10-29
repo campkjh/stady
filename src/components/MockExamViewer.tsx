@@ -1024,6 +1024,7 @@ export default function MockExamViewer({ exam }: { exam: Exam }) {
 
   async function runOcr(dataUrl: string) {
     setOcrBusy(true);
+    ocrExit.reset();
     setOcrText("");
     try {
       const T = await loadTesseract();
