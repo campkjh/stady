@@ -329,10 +329,10 @@ const BANNER_ITEMS: BannerItem[] = [
     href: "/mock-exam",
   },
   {
-    title: "엘리트\n모의고사",
+    title: "수능대비\n자료",
     image: "/images/home/shortcut-elite.webp",
     bg: "#ECF4E7",
-    // 실제 문제집으로 보낸다(없으면 문제집 목록). id 를 박지 않고 데이터에서 찾는다.
+    // 수능대비자료(엘리트 모의고사 + 사상가별 파이널 선지) 화면. 빈 값 = 아래 eliteHref(말풍선이 가리키는 칸).
     href: "",
   },
 ];
@@ -360,7 +360,7 @@ export default function HomeClient({
       .catch(() => {});
     return () => { alive = false; };
   }, [userName]);
-  // '새로운 문제집' 말풍선 자리 계산용 — 바로가기 묶음(기준 칸)과 가리킬 '엘리트 모의고사' 카드.
+  // '새로운 문제집' 말풍선 자리 계산용 — 바로가기 묶음(기준 칸)과 가리킬 '수능대비자료' 카드.
   const shortcutsRef = useRef<HTMLDivElement>(null);
   const eliteCardRef = useRef<HTMLButtonElement>(null);
   // 캐시 시드 → 탭 재진입 시 즉시 표시(데이터 변동 시에만 갱신).
@@ -441,9 +441,8 @@ export default function HomeClient({
   // "새로운 퀴즈": 최근 등록된 OX·단어 세트(등록 최신순, 최대 6개).
   // 7일 안에 올라온 문제집이 있는 과목 — 홈 과목 버튼 위 말풍선용.
   // 여러 과목에 걸쳐 있으면 가장 최근 것 하나만 알린다(말풍선이 겹치지 않게).
-  // '엘리트 모의고사' 바로가기가 갈 곳 — id 를 박지 않고 제목으로 찾는다(없으면 문제집 목록).
-  const eliteWorkbook = workbooks.find((w) => w.title.includes("엘리트")) ?? workbooks[0];
-  const eliteHref = eliteWorkbook ? `/workbook/${eliteWorkbook.id}` : "/category";
+  // '수능대비자료' 바로가기(구 엘리트 모의고사)가 갈 곳 — 엘리트 모의고사·파이널 선지를 묶은 화면(261029).
+  const eliteHref = "/csat-prep";
   const freshWorkbook = workbooks
     .filter((w) => isNewCreatedAt(w.createdAt))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];

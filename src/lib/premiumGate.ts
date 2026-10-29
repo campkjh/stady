@@ -2,11 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { isPremium } from "@/lib/iap/entitlements";
 import { getOxOrderMap } from "@/lib/oxOrder";
+import { getCsatOxSetIds } from "@/lib/csatPrep";
 
 // 프리미엄 접근 정책 (2026-08-29) — 단일 진실 공급원.
 //  - 생윤(생활과윤리)·윤사(윤리와사상): 각 과목의 "가장 앞 N개 소단원"만 무료, 나머지는 프리미엄
 //  - 모의고사: 전부 프리미엄
 //  - 문제집: WorkbookPremium 에 등록된 것만 프리미엄(엘리트 모의고사 등)
+//  - 수능대비자료 OX(사상가별 파이널 선지, lib/csatPrep): 전부 프리미엄 — "앞 5개 무료" 순번에도 끼지 않는다
 //  - 그 외(단어·커뮤니티·다른 OX 카테고리 등): 제약 없음(그대로)
 // 무료 개수를 "과목 합산 5개"로 바꾸려면 아래 상수/로직만 조정하면 된다.
 export const PREMIUM_OX_CATEGORY_NAMES = ["생활과윤리", "윤리와사상"];
@@ -16,11 +18,15 @@ export const FREE_OX_SETS_PER_CATEGORY = 5;
 // = 프리미엄 카테고리(생윤·윤사)에서, 노출 순서(OxSetOrder → createdAt)상 앞 5개를 뺀 나머지.
 // 정렬 기준은 목록 API(/api/ox-quiz)·인트로가 쓰는 것과 동일해야 "앞 5개"가 화면과 일치한다.
 export async function getLockedOxSetIds(): Promise<Set<string>> {
-  const sets = await prisma.oxQuizSet.findMany({
-    where: { category: { name: { in: PREMIUM_OX_CATEGORY_NAMES } } },
-    select: { id: true, categoryId: true, createdAt: true },
-  });
-  const orderMap = await getOxOrderMap();
+  const [allSets, orderMap, csatIds] = await Promise.all([
+    prisma.oxQuizSet.findMany({
+      where: { category: { name: { in: PREMIUM_OX_CATEGORY_NAMES } } },
+      select: { id: true, categoryId: true, createdAt: true },
+    }),
+    getOxOrderMap(),
+    getCsatOxSetIds(),
+  ]);
+  const sets = allSets.filter((s) => !csatIds.has(s.id));
 
   const byCat = new Map<string, typeof sets>();
   for (const s of sets) {
@@ -41,6 +47,7 @@ export async function getLockedOxSetIds(): Promise<Set<string>> {
       if (i >= FREE_OX_SETS_PER_CATEGORY) locked.add(s.id);
     });
   }
+  for (const id of csatIds) locked.add(id);
   return locked;
 }
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { getOxOrderMap } from "@/lib/oxOrder";
 import { getLockedOxSetIds } from "@/lib/premiumGate";
+import { getCsatOxSetIds } from "@/lib/csatPrep";
 import oxImportData from "../../../../scripts/ox-import-data.json";
 
 interface OxImportQuestion {
@@ -119,9 +120,11 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "asc" },
     });
 
+    // 수능대비자료(사상가별 파이널 선지) 세트는 일반 목록에 띄우지 않는다 — /csat-prep 에서만 연다.
+    const csatIds = await getCsatOxSetIds();
     // 관리자가 지정한 순서(OxSetOrder)로 정렬. 미지정 세트는 뒤로(생성순).
     const orderMap = await getOxOrderMap();
-    const sorted = [...oxQuizSets].sort((a, b) => {
+    const sorted = oxQuizSets.filter((s) => !csatIds.has(s.id)).sort((a, b) => {
       const oa = orderMap[a.id] ?? Number.MAX_SAFE_INTEGER;
       const ob = orderMap[b.id] ?? Number.MAX_SAFE_INTEGER;
       if (oa !== ob) return oa - ob;

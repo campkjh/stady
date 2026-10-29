@@ -5,6 +5,7 @@ import { isMasterAdminEmail } from "@/lib/auth";
 import { isPremium } from "@/lib/iap/entitlements";
 import { computeSetAnswerRates } from "@/lib/oxAnswerRate";
 import { getLockedOxSetIds } from "@/lib/premiumGate";
+import { getCsatOxSetIds } from "@/lib/csatPrep";
 import HomeClient from "@/components/HomeClient";
 
 export default async function HomePage() {
@@ -45,12 +46,14 @@ export default async function HomePage() {
   const isAdmin = user?.role === "admin" || isMasterAdminEmail(user?.email);
 
   // 프리미엄 접근 여부 + 잠금 OX 세트 — 홈의 모의고사/생윤·윤사 카드 잠금 표시용.
-  const [isPremiumUser, lockedOxIds] = await Promise.all([
+  const [isPremiumUser, lockedOxIds, csatIds] = await Promise.all([
     isAdmin ? Promise.resolve(true) : userId ? isPremium(userId).catch(() => false) : Promise.resolve(false),
     getLockedOxSetIds().catch(() => new Set<string>()),
+    getCsatOxSetIds(),
   ]);
 
-  const oxQuizSetsWithRate = oxQuizSets.map((s) => ({
+  // 수능대비자료 세트는 홈 OX 카드·'새로운 퀴즈'에 섞지 않는다(수능대비자료 바로가기 안에서만).
+  const oxQuizSetsWithRate = oxQuizSets.filter((s) => !csatIds.has(s.id)).map((s) => ({
     ...s,
     answerRate: setRates.get(s.id) ?? null,
     isPremium: lockedOxIds.has(s.id),
