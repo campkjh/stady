@@ -75,10 +75,10 @@ export default function TermsPage() {
           color: "var(--c-text-5)",
         }}
       >
-        <p>스타디 | 우 16891</p>
-        <p>경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
+        <p>스타디</p>
+        <p>경기도 용인시 수지구 동천로 387, 103동 102호(동천동, 다웰빌리지1단지)</p>
         <p>T 010-4726-9276 | E tlsdml0507@naver.com</p>
-        <p>대표자 김지승 | 사업자 등록 번호 852-06-03583</p>
+        <p>대표자 김지승 | 사업자 등록 번호 733-05-03873</p>
         <p style={{ marginTop: 8 }}>Copyright&copy; stady. All right reserved.</p>
       </div>
     </div>

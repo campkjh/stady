@@ -266,9 +266,9 @@ export default function MyPage() {
         <section className="mpx-foot">
           <StadyLogo height={24} style={{ filter: "grayscale(100%)", opacity: 0.3, marginBottom: 12 }} />
           <div style={{ fontSize: 11, lineHeight: 1.8, color: "var(--mpx-sub)" }}>
-            <p>스타디 | 우 06314  경기도 용인시 수지구 동천동 다웰빌리지 103동 102호</p>
+            <p>스타디 | 경기도 용인시 수지구 동천로 387, 103동 102호(동천동, 다웰빌리지1단지)</p>
             <p>T 01047269276 | E tlsdml0507@naver.com</p>
-            <p>대표자 김지승 | 사업자 등록 번호 852-06-03583</p>
+            <p>대표자 김지승 | 사업자 등록 번호 733-05-03873</p>
             <p>Copyright© stady. All right reserved.</p>
           </div>
         </section>
