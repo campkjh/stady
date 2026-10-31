@@ -1,7 +1,7 @@
 "use client";
 
 // 수능대비자료(2026-10-29, 구 홈 바로가기 '엘리트 모의고사') — 프리미엄 구독자 전용 파이널 자료.
-//  · 엘리트 모의고사(문제집) 카드 + '사상가별 파이널 선지' 묶음 카드 → 누르면 단원별 OX 세트(소분류=사상가).
+//  · 엘리트 모의고사(문제집) 카드 + OX 묶음 카드(생윤 '사상가별 파이널 선지'·윤사 '사상가별 고난도 선지') → 누르면 단원별 OX 세트(소분류=사상가).
 //  · 모양은 OX 인트로와 같은 유리 카드(oxiTheme). 잠금이면 결제 화면, 아니면 로그인 확인 후 풀이 화면.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,8 @@ import { OXI_THEME_CSS } from "@/components/oxiTheme";
 
 interface CsatSet {
   id: string;
+  /** 묶음(OxSetCollection.collection) */
+  group: string;
   title: string;
   totalQuestions: number;
   sections: string[];
@@ -23,7 +25,9 @@ interface CsatElite {
 }
 interface QuizSummaryEntry { answered: number; total: number; completed: boolean; bestPct: number | null }
 
-const FINAL_GROUP = "사상가별 파이널 선지";
+interface CsatGroup { collection: string; title: string; subject: string }
+// API 가 묶음 목록을 안 주던 때 대비 기본값
+const DEFAULT_GROUPS: CsatGroup[] = [{ collection: "csat-final", title: "사상가별 파이널 선지", subject: "생활과 윤리" }];
 
 function LockIcon() {
   return (
@@ -50,7 +54,9 @@ export default function CsatPrepPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [openFinal, setOpenFinal] = useState(false);
+  const [groups, setGroups] = useState<CsatGroup[]>(DEFAULT_GROUPS);
+  // 열어 둔 묶음(collection). null 이면 첫 화면(카드 목록).
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -73,6 +79,7 @@ export default function CsatPrepPage() {
       setIsLoggedIn(loggedIn);
       setElite(data?.elite ?? null);
       setSets(data?.sets ?? []);
+      if (Array.isArray(data?.groups) && data.groups.length) setGroups(data.groups);
       setSummary(oxSummary);
       setIsPremiumUser(premium);
       setLoading(false);
@@ -93,15 +100,16 @@ export default function CsatPrepPage() {
     );
   }
 
-  const finalTotal = sets.reduce((sum, s) => sum + (summary[s.id]?.total || s.totalQuestions), 0);
-  const finalDone = sets.filter((s) => summary[s.id]?.completed).length;
+  const setsOf = (collection: string) => sets.filter((s) => (s.group ?? DEFAULT_GROUPS[0].collection) === collection);
+  const openSets = openGroup ? setsOf(openGroup) : [];
+  const openMeta = groups.find((g) => g.collection === openGroup);
   const eliteLocked = !!elite?.isPremium && !isPremiumUser;
 
   return (
     <div className="oxi-bg" style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <button
         type="button"
-        onClick={() => (openFinal ? setOpenFinal(false) : router.back())}
+        onClick={() => (openGroup ? setOpenGroup(null) : router.back())}
         className="press"
         aria-label="뒤로"
         style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top, 0px))", left: 16, background: "none", border: "none", zIndex: 10 }}
@@ -124,7 +132,7 @@ export default function CsatPrepPage() {
 
       <div style={{ position: "relative", padding: "0 20px 40px", flexShrink: 0 }}>
         <div style={{ maxHeight: 392, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, margin: "-32px -32px 0", padding: "32px 32px 24px" }} className="quiz-list-scroll">
-          {!openFinal && (
+          {!openGroup && (
             <>
               {elite && (
                 <button
@@ -143,37 +151,44 @@ export default function CsatPrepPage() {
                   </span>
                 </button>
               )}
-              {sets.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOpenFinal(true)}
-                  className={`press oxi-card${finalDone === sets.length ? " is-done" : ""}`}
-                  style={{ width: "100%", padding: "20px 18px", borderRadius: 18, textAlign: "center", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}
-                >
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
-                    {!isPremiumUser && <LockIcon />}
-                    <span>{FINAL_GROUP}</span>
-                    {!isPremiumUser && <PremiumBadge />}
-                  </span>
-                  <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--oxi-sub)" }}>
-                    생활과 윤리 OX · {sets.length}개 단원 · {finalTotal}문항
-                    {finalDone > 0 && <span style={{ color: "var(--oxi-accent)" }}>{` · ${finalDone}/${sets.length} 단원 완료`}</span>}
-                  </span>
-                </button>
-              )}
+              {groups.map((g) => {
+                const gs = setsOf(g.collection);
+                if (gs.length === 0) return null;
+                const total = gs.reduce((sum, s) => sum + (summary[s.id]?.total || s.totalQuestions), 0);
+                const done = gs.filter((s) => summary[s.id]?.completed).length;
+                return (
+                  <button
+                    key={g.collection}
+                    type="button"
+                    onClick={() => setOpenGroup(g.collection)}
+                    className={`press oxi-card${done === gs.length ? " is-done" : ""}`}
+                    style={{ width: "100%", padding: "20px 18px", borderRadius: 18, textAlign: "center", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
+                      {!isPremiumUser && <LockIcon />}
+                      <span>{g.title}</span>
+                      {!isPremiumUser && <PremiumBadge />}
+                    </span>
+                    <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 700, color: "var(--oxi-sub)" }}>
+                      {g.subject} OX · {gs.length}개 단원 · {total}문항
+                      {done > 0 && <span style={{ color: "var(--oxi-accent)" }}>{` · ${done}/${gs.length} 단원 완료`}</span>}
+                    </span>
+                  </button>
+                );
+              })}
               {!elite && sets.length === 0 && (
                 <p style={{ textAlign: "center", color: "var(--oxi-sub)", fontSize: 14 }}>준비 중인 자료예요.</p>
               )}
             </>
           )}
 
-          {openFinal && (
+          {openGroup && (
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, color: "var(--oxi-ink-soft)", margin: "4px 4px 8px", letterSpacing: 0.2 }}>
-                {FINAL_GROUP}
+                {openMeta ? `${openMeta.title} · ${openMeta.subject}` : ""}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-                {sets.map((s) => {
+                {openSets.map((s) => {
                   const stat = summary[s.id];
                   const denom = stat && stat.total > 0 ? stat.total : s.totalQuestions;
                   const answered = stat?.answered ?? 0;
