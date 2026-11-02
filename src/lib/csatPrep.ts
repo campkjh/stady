@@ -52,3 +52,35 @@ export async function getCsatOxOrder(): Promise<Map<string, number>> {
 export async function getCsatOxSetIds(): Promise<Set<string>> {
   return new Set((await getCsatOxOrder()).keys());
 }
+
+// 카드별 원본 PDF(인쇄·한 번에 보기용). 키 = "elite"(엘리트 모의고사) 또는 OX 묶음 collection.
+// URL 은 Blob 공개 주소(무작위 접미)라 화면에는 내보내지 않고, /api/csat-prep/pdf 가 프리미엄 확인 뒤에만 넘긴다.
+export const CSAT_PDF_KEYS = ["elite", ...CSAT_COLLECTIONS] as string[];
+
+let pdfTableReady = false;
+async function ensureCsatPdfTable(): Promise<void> {
+  if (pdfTableReady) return;
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CsatPrepPdf" (
+      "key" TEXT PRIMARY KEY,
+      "problem_url" TEXT,
+      "solution_url" TEXT,
+      "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
+  pdfTableReady = true;
+}
+
+/** 키 → {문제, 해설} 주소. 조회 실패는 빈 값(목록이 깨지면 안 된다). */
+export async function getCsatPdfs(): Promise<Map<string, { problemUrl: string | null; solutionUrl: string | null }>> {
+  try {
+    await ensureCsatPdfTable();
+    const rows = await prisma.$queryRawUnsafe<{ key: string; problem_url: string | null; solution_url: string | null }[]>(
+      `SELECT "key", "problem_url", "solution_url" FROM "CsatPrepPdf"`
+    );
+    return new Map(rows.map((r) => [r.key, { problemUrl: r.problem_url, solutionUrl: r.solution_url }]));
+  } catch (error) {
+    console.error("getCsatPdfs failed:", error);
+    return new Map();
+  }
+}

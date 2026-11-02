@@ -1162,7 +1162,7 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
         </div>
         <span style={{ flex: 1 }} />
         {pdf && (pdf.problem || pdf.solution) && (
-          <MockExamPdfButton examId={exam.id} title={exam.title} subtitle={exam.subtitle} has={pdf} buttonStyle={barBtn} />
+          <MockExamPdfButton apiBase={`/api/mock-exams/${encodeURIComponent(exam.id)}/pdf`} title={exam.title} subtitle={exam.subtitle} has={pdf} buttonStyle={barBtn} />
         )}
         {zoom > 1.01 && (
           <button type="button" onClick={resetZoom} aria-label="확대 초기화"

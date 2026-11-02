@@ -3,9 +3,11 @@
 // 수능대비자료(2026-10-29, 구 홈 바로가기 '엘리트 모의고사') — 프리미엄 구독자 전용 파이널 자료.
 //  · 엘리트 모의고사(문제집) 카드 + OX 묶음 카드(생윤 '사상가별 파이널 선지'·윤사 '사상가별 고난도 선지') → 누르면 단원별 OX 세트(소분류=사상가).
 //  · 모양은 OX 인트로와 같은 유리 카드(oxiTheme). 잠금이면 결제 화면, 아니면 로그인 확인 후 풀이 화면.
+//  · 카드 오른쪽 ↓ 버튼 = 원본 PDF(문제/해설) 받기(CsatPrepPdf, 키 = elite·묶음). 미구독이면 결제 화면.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OXI_THEME_CSS } from "@/components/oxiTheme";
+import MockExamPdfButton from "@/components/MockExamPdfButton";
 
 interface CsatSet {
   id: string;
@@ -23,11 +25,19 @@ interface CsatElite {
   totalQuestions: number;
   isPremium: boolean;
 }
+type PdfHas = { problem: boolean; solution: boolean };
 interface QuizSummaryEntry { answered: number; total: number; completed: boolean; bestPct: number | null }
 
 interface CsatGroup { collection: string; title: string; subject: string }
 // API 가 묶음 목록을 안 주던 때 대비 기본값
 const DEFAULT_GROUPS: CsatGroup[] = [{ collection: "csat-final", title: "사상가별 파이널 선지", subject: "생활과 윤리" }];
+const ELITE_PDF_LABELS = { problem: "시험지 PDF", solution: "해설 PDF" };
+const OX_PDF_LABELS = { problem: "문제 PDF", solution: "해설 PDF" };
+const PDF_BTN_STYLE = {
+  width: 36, height: 36, borderRadius: 999,
+  display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+  background: "var(--oxi-chip-bg)", border: "1px solid var(--oxi-chip-bd)",
+} as const;
 
 function LockIcon() {
   return (
@@ -55,6 +65,7 @@ export default function CsatPrepPage() {
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<CsatGroup[]>(DEFAULT_GROUPS);
+  const [pdf, setPdf] = useState<Record<string, PdfHas>>({});
   // 열어 둔 묶음(collection). null 이면 첫 화면(카드 목록).
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
@@ -80,6 +91,7 @@ export default function CsatPrepPage() {
       setElite(data?.elite ?? null);
       setSets(data?.sets ?? []);
       if (Array.isArray(data?.groups) && data.groups.length) setGroups(data.groups);
+      setPdf(data?.pdf ?? {});
       setSummary(oxSummary);
       setIsPremiumUser(premium);
       setLoading(false);
@@ -104,6 +116,27 @@ export default function CsatPrepPage() {
   const openSets = openGroup ? setsOf(openGroup) : [];
   const openMeta = groups.find((g) => g.collection === openGroup);
   const eliteLocked = !!elite?.isPremium && !isPremiumUser;
+  // PDF 는 프리미엄만 받는다(API 가 다시 확인). 못 받는 사람은 누르면 로그인/결제로.
+  const pdfBlocked = !isLoggedIn ? () => router.push("/login") : !isPremiumUser ? () => router.push("/subscribe") : undefined;
+  const pdfButton = (key: string, title: string, labels: typeof OX_PDF_LABELS) => {
+    const has = pdf[key];
+    if (!has || (!has.problem && !has.solution)) return null;
+    return (
+      <span style={{ position: "absolute", top: "50%", right: 10, marginTop: -18, display: "flex" }}>
+      <MockExamPdfButton
+        apiBase={`/api/csat-prep/pdf?key=${encodeURIComponent(key)}`}
+        title={title}
+        subtitle={null}
+        has={has}
+        labels={labels}
+        iconColor="var(--oxi-accent)"
+        buttonStyle={PDF_BTN_STYLE}
+        onBlocked={pdfBlocked}
+      />
+      </span>
+    );
+  };
+  const hasPdf = (key: string) => !!(pdf[key]?.problem || pdf[key]?.solution);
 
   return (
     <div className="oxi-bg" style={{ position: "fixed", inset: 0, maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -135,11 +168,12 @@ export default function CsatPrepPage() {
           {!openGroup && (
             <>
               {elite && (
+                <div style={{ position: "relative", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}>
                 <button
                   type="button"
                   onClick={() => go(eliteLocked, `/workbook/${elite.id}`)}
                   className="press oxi-card"
-                  style={{ width: "100%", padding: "20px 18px", borderRadius: 18, textAlign: "center", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}
+                  style={{ width: "100%", padding: hasPdf("elite") ? "20px 52px" : "20px 18px", borderRadius: 18, textAlign: "center" }}
                 >
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
                     {eliteLocked && <LockIcon />}
@@ -150,6 +184,8 @@ export default function CsatPrepPage() {
                     {elite.subject ? `${elite.subject} · ` : ""}{elite.totalQuestions}문항 실전 모의고사
                   </span>
                 </button>
+                {pdfButton("elite", [elite.subject, elite.title].filter(Boolean).join(" "), ELITE_PDF_LABELS)}
+                </div>
               )}
               {groups.map((g) => {
                 const gs = setsOf(g.collection);
@@ -157,12 +193,12 @@ export default function CsatPrepPage() {
                 const total = gs.reduce((sum, s) => sum + (summary[s.id]?.total || s.totalQuestions), 0);
                 const done = gs.filter((s) => summary[s.id]?.completed).length;
                 return (
+                  <div key={g.collection} style={{ position: "relative", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}>
                   <button
-                    key={g.collection}
                     type="button"
                     onClick={() => setOpenGroup(g.collection)}
                     className={`press oxi-card${done === gs.length ? " is-done" : ""}`}
-                    style={{ width: "100%", padding: "20px 18px", borderRadius: 18, textAlign: "center", flexShrink: 0, animation: "quizItemFadeUp 0.5s" }}
+                    style={{ width: "100%", padding: hasPdf(g.collection) ? "20px 52px" : "20px 18px", borderRadius: 18, textAlign: "center" }}
                   >
                     <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
                       {!isPremiumUser && <LockIcon />}
@@ -174,6 +210,8 @@ export default function CsatPrepPage() {
                       {done > 0 && <span style={{ color: "var(--oxi-accent)" }}>{` · ${done}/${gs.length} 단원 완료`}</span>}
                     </span>
                   </button>
+                  {pdfButton(g.collection, `${g.subject} ${g.title}`, OX_PDF_LABELS)}
+                  </div>
                 );
               })}
               {!elite && sets.length === 0 && (

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CSAT_GROUPS, getCsatOxGroups } from "@/lib/csatPrep";
+import { CSAT_GROUPS, getCsatOxGroups, getCsatPdfs } from "@/lib/csatPrep";
 import { getLockedOxSetIds, getPremiumWorkbookIds } from "@/lib/premiumGate";
 
 // 수능대비자료 목록 — 엘리트 모의고사(문제집) + OX 묶음들(생윤 파이널 선지·윤사 고난도 선지, 묶음별 단원 순서).
 // 잠금 여부만 알려 준다. 실제 문제·정답은 각 풀이 API 가 프리미엄을 다시 확인한다.
 export async function GET() {
   try {
-    const [groupOf, lockedOx, premiumWorkbooks, elite] = await Promise.all([
+    const [groupOf, lockedOx, premiumWorkbooks, elite, pdfs] = await Promise.all([
       getCsatOxGroups(),
       getLockedOxSetIds(),
       getPremiumWorkbookIds(),
@@ -16,6 +16,7 @@ export async function GET() {
         select: { id: true, title: true, totalQuestions: true, category: { select: { name: true } } },
         orderBy: { createdAt: "asc" },
       }),
+      getCsatPdfs(),
     ]);
 
     const sets = groupOf.size
@@ -34,6 +35,8 @@ export async function GET() {
       elite: elite
         ? { id: elite.id, title: elite.title, subject: elite.category?.name ?? null, totalQuestions: elite.totalQuestions, isPremium: premiumWorkbooks.has(elite.id) }
         : null,
+      // 카드별 원본 PDF 유무(주소는 /api/csat-prep/pdf 가 프리미엄 확인 뒤에만 준다)
+      pdf: Object.fromEntries([...pdfs].map(([k, v]) => [k, { problem: !!v.problemUrl, solution: !!v.solutionUrl }])),
       groups: CSAT_GROUPS.map((g) => ({ collection: g.collection, title: g.title, subject: g.subject })),
       sets: sets
         .sort((a, b) => (groupOf.get(a.id)?.order ?? 0) - (groupOf.get(b.id)?.order ?? 0))
