@@ -35,6 +35,8 @@ export default function MockExamPdfButton({
   iconColor = "#fff",
   labels = LABEL,
   onBlocked,
+  label,
+  wrapStyle,
 }: {
   /** PDF 받는 API 주소(뒤에 kind 를 붙인다) */
   apiBase: string;
@@ -46,6 +48,9 @@ export default function MockExamPdfButton({
   labels?: Record<Kind, string>;
   /** 받을 수 없는 사람(비로그인·미구독)이 누르면 메뉴 대신 이걸 부른다 */
   onBlocked?: () => void;
+  /** 있으면 아이콘 옆에 글자를 붙인다(카드 하단 버튼) */
+  label?: string;
+  wrapStyle?: CSSProperties;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number; up: boolean } | null>(null);
@@ -116,7 +121,7 @@ export default function MockExamPdfButton({
   }
 
   return (
-    <span style={{ position: "relative", display: "inline-flex" }}>
+    <span style={{ position: "relative", display: "inline-flex", ...wrapStyle }}>
       <button
         ref={btnRef}
         type="button"
@@ -126,11 +131,12 @@ export default function MockExamPdfButton({
         aria-expanded={open}
         style={{ ...buttonStyle, background: open ? "rgba(255,255,255,0.14)" : (buttonStyle.background as string | undefined) }}
       >
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ color: iconColor }} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width={label ? 18 : 21} height={label ? 18 : 21} viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ color: iconColor }} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 4v11" />
           <polyline points="7 10.5 12 15.5 17 10.5" />
           <path d="M5 19.5h14" />
         </svg>
+        {label && <span>{label}</span>}
       </button>
 
       {open && pos && createPortal(

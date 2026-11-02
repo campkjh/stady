@@ -3,7 +3,7 @@
 // 수능대비자료(2026-10-29, 구 홈 바로가기 '엘리트 모의고사') — 프리미엄 구독자 전용 파이널 자료.
 //  · 엘리트 모의고사(문제집) 카드 + OX 묶음 카드(생윤 '사상가별 파이널 선지'·윤사 '사상가별 고난도 선지') → 누르면 단원별 OX 세트(소분류=사상가).
 //  · 모양은 OX 인트로와 같은 유리 카드(oxiTheme). 잠금이면 결제 화면, 아니면 로그인 확인 후 풀이 화면.
-//  · 카드 오른쪽 ↓ 버튼 = 원본 PDF(문제/해설) 받기(CsatPrepPdf, 키 = elite·묶음). 미구독이면 결제 화면.
+//  · 카드 하단 [PDF 다운로드] = 원본 PDF(문제/해설) 받기(CsatPrepPdf, 키 = elite·묶음). 미구독이면 결제 화면.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OXI_THEME_CSS } from "@/components/oxiTheme";
@@ -33,10 +33,13 @@ interface CsatGroup { collection: string; title: string; subject: string }
 const DEFAULT_GROUPS: CsatGroup[] = [{ collection: "csat-final", title: "사상가별 파이널 선지", subject: "생활과 윤리" }];
 const ELITE_PDF_LABELS = { problem: "시험지 PDF", solution: "해설 PDF" };
 const OX_PDF_LABELS = { problem: "문제 PDF", solution: "해설 PDF" };
+// 카드 버튼 안에 버튼을 넣을 수 없어서 카드 아래쪽에 자리를 비워 두고 겹쳐 올린다.
+const PDF_BTN_SPACE = 58;
 const PDF_BTN_STYLE = {
-  width: 36, height: 36, borderRadius: 999,
+  width: "100%", height: 40, borderRadius: 12, gap: 6,
   display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
   background: "var(--oxi-chip-bg)", border: "1px solid var(--oxi-chip-bd)",
+  color: "var(--oxi-accent)", fontSize: 14, fontWeight: 700, fontFamily: "inherit",
 } as const;
 
 function LockIcon() {
@@ -122,7 +125,7 @@ export default function CsatPrepPage() {
     const has = pdf[key];
     if (!has || (!has.problem && !has.solution)) return null;
     return (
-      <span style={{ position: "absolute", top: "50%", right: 10, marginTop: -18, display: "flex" }}>
+      <span style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex" }}>
       <MockExamPdfButton
         apiBase={`/api/csat-prep/pdf?key=${encodeURIComponent(key)}`}
         title={title}
@@ -131,6 +134,8 @@ export default function CsatPrepPage() {
         labels={labels}
         iconColor="var(--oxi-accent)"
         buttonStyle={PDF_BTN_STYLE}
+        label="PDF 다운로드"
+        wrapStyle={{ display: "flex", width: "100%" }}
         onBlocked={pdfBlocked}
       />
       </span>
@@ -173,7 +178,7 @@ export default function CsatPrepPage() {
                   type="button"
                   onClick={() => go(eliteLocked, `/workbook/${elite.id}`)}
                   className="press oxi-card"
-                  style={{ width: "100%", padding: hasPdf("elite") ? "20px 52px" : "20px 18px", borderRadius: 18, textAlign: "center" }}
+                  style={{ width: "100%", padding: hasPdf("elite") ? `20px 18px ${20 + PDF_BTN_SPACE}px` : "20px 18px", borderRadius: 18, textAlign: "center" }}
                 >
                   <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
                     {eliteLocked && <LockIcon />}
@@ -198,7 +203,7 @@ export default function CsatPrepPage() {
                     type="button"
                     onClick={() => setOpenGroup(g.collection)}
                     className={`press oxi-card${done === gs.length ? " is-done" : ""}`}
-                    style={{ width: "100%", padding: hasPdf(g.collection) ? "20px 52px" : "20px 18px", borderRadius: 18, textAlign: "center" }}
+                    style={{ width: "100%", padding: hasPdf(g.collection) ? `20px 18px ${20 + PDF_BTN_SPACE}px` : "20px 18px", borderRadius: 18, textAlign: "center" }}
                   >
                     <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 17, fontWeight: 700 }}>
                       {!isPremiumUser && <LockIcon />}
