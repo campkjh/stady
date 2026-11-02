@@ -40,8 +40,8 @@ const OBSIDIAN: TourStep[] = [
 const POST_DETAIL: TourStep[] = [
   { sel: '[data-tour="cd-actions"]', text: <><K>하트</K>로 공감하고 <K>공유</K>도 할 수 있어요</>, sub: "리포스트·공유는 오른쪽 아이콘이에요", radius: 14 },
   { sel: '[data-tour="cd-sort"]', text: <>댓글은 <K>인기순·최신순</K>으로 골라 봐요</>, sub: "추천순·오래된순도 있어요", radius: 14 },
-  { sel: '[data-tour="cd-reply"]', text: <><K>답글 달기</K>를 누르면 <K>@멘션</K>이 붙어요</>, sub: "그 사람에게 바로 답글이 달려요", radius: 12 },
-  { sel: '[data-tour="cd-compose"]', text: <>여기서 <K>댓글</K>을 남겨요</>, sub: "답글 달기를 누르면 @닉네임이 붙어요", radius: 22 },
+  { sel: '[data-tour="cd-reply"]', text: <><K>답글</K>을 누르면 <K>@멘션</K>이 붙어요</>, sub: "그 사람에게 바로 답글이 달려요", radius: 12 },
+  { sel: '[data-tour="cd-compose"]', text: <>여기서 <K>댓글</K>을 남겨요</>, sub: "답글을 누르면 @닉네임이 붙어요 · 자물쇠를 켜면 비밀 댓글", radius: 22 },
 ];
 
 const OX_QUIZ: TourStep[] = [

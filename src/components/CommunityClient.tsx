@@ -1900,7 +1900,7 @@ function CommentRow({
             </button>
             <button type="button" className="ccs-reply" onClick={() => onReply(c)}>
               <ReplyArrowIcon />
-              답글 달기
+              답글
             </button>
             {mine && (
               <>
@@ -3199,7 +3199,7 @@ function CommunityStyles() {
         font-size: 14px;
         font-weight: 500;
       }
-      /* 댓글 한 줄: 아바타 · 이름·시간 / 본문 / 하트·답글 달기·⋯ (답글은 본문 칸 안에 들여써서 이어진다) */
+      /* 댓글 한 줄: 아바타 · 이름·시간 / 본문 / 하트·답글·⋯ (답글은 본문 칸 안에 들여써서 이어진다) */
       .ccs-c { display: flex; gap: 12px; padding: 14px 0 10px; animation: mdlRise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards; }
       .ccs-c:nth-child(1) { animation-delay: 0.16s; }
       .ccs-c:nth-child(2) { animation-delay: 0.21s; }

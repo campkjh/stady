@@ -112,6 +112,7 @@ export interface CommunityCommentRow {
   updated_at: Date;
   like_count?: bigint | number;
   liked_by_me?: boolean;
+  is_secret?: boolean;
 }
 
 export interface CommunityCommentNode extends CommunityCommentRow {
@@ -399,6 +400,15 @@ async function runCommunityDdl(): Promise<void> {
     CREATE TABLE IF NOT EXISTS "CommunityPinnedComment" (
       "post_id" TEXT PRIMARY KEY REFERENCES "CommunityPost"("id") ON DELETE CASCADE,
       "comment_id" TEXT NOT NULL REFERENCES "CommunityComment"("id") ON DELETE CASCADE,
+      "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // --- 비밀 댓글(261102, 마이닥과 같은 규칙) — 댓글 쓴이·글쓴이·(답글이면) 원댓글 쓴이·관리자만 본다 ---
+  // 같은 이유(c.* 조회)로 CommunityComment 에 컬럼을 붙이지 않고 별도 테이블.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "CommunityCommentSecret" (
+      "comment_id" TEXT PRIMARY KEY REFERENCES "CommunityComment"("id") ON DELETE CASCADE,
       "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -1238,6 +1248,7 @@ export async function getTopCommentsByPost(
             FROM "CommunityComment" c
             LEFT JOIN "User" u ON u."id" = c."user_id"
             WHERE c."post_id" IN (${ph}) AND c."parent_id" IS NULL AND c."is_active" = true
+              AND NOT EXISTS (SELECT 1 FROM "CommunityCommentSecret" sx WHERE sx."comment_id" = c."id")
           ) t
         ) r WHERE r.rn = 1
       `,
@@ -1252,7 +1263,7 @@ export async function getTopCommentsByPost(
         FROM "CommunityPinnedComment" p
         JOIN "CommunityComment" c ON c."id" = p."comment_id" AND c."is_active" = true
         LEFT JOIN "User" u ON u."id" = c."user_id"
-        WHERE p."post_id" IN (${ph})
+        WHERE p."post_id" IN (${ph}) AND NOT EXISTS (SELECT 1 FROM "CommunityCommentSecret" sx WHERE sx."comment_id" = c."id")
       `,
       ...postIds
     ),
@@ -1502,7 +1513,8 @@ export async function getCommunityComments(
   postId: string,
   viewerId?: string | null,
   activeOnly = true,
-  sort: CommentSort = "popular"
+  sort: CommentSort = "popular",
+  viewerIsAdmin = false
 ): Promise<CommunityCommentNode[]> {
   await ensureCommunityTables();
   const conditions = [`c."post_id" = $1`];
@@ -1519,7 +1531,8 @@ export async function getCommunityComments(
         EXISTS (
           SELECT 1 FROM "CommunityCommentLike" x
           WHERE x."comment_id" = c."id" AND x."user_id" = $2
-        ) AS "liked_by_me"
+        ) AS "liked_by_me",
+        EXISTS (SELECT 1 FROM "CommunityCommentSecret" s WHERE s."comment_id" = c."id") AS "is_secret"
       FROM "CommunityComment" c
       LEFT JOIN "User" u ON u."id" = c."user_id"
       LEFT JOIN (
@@ -1537,7 +1550,7 @@ export async function getCommunityComments(
     postId
   );
   const pinnedId = pinnedRows[0]?.comment_id ?? null;
-  const tree = buildCommentTree(rows);
+  const tree = buildCommentTree(await hideSecretComments(postId, rows, viewerId ?? null, viewerIsAdmin));
   sortCommentRoots(tree, sort);
   return pinnedId
     ? [...tree].sort((a, b) => (a.id === pinnedId ? -1 : b.id === pinnedId ? 1 : 0))
@@ -1546,7 +1559,7 @@ export async function getCommunityComments(
 
 export async function getCommunityPostDetail(
   postId: string,
-  options: { activeOnly?: boolean; viewerId?: string | null; sort?: CommentSort } = {}
+  options: { activeOnly?: boolean; viewerId?: string | null; sort?: CommentSort; viewerIsAdmin?: boolean } = {}
 ) {
   await seedDefaultCommunityTaxonomy();
   const viewerId = options.viewerId || null;
@@ -1628,7 +1641,8 @@ export async function getCommunityPostDetail(
     postId,
     viewerId,
     Boolean(options.activeOnly),
-    options.sort ?? "popular"
+    options.sort ?? "popular",
+    Boolean(options.viewerIsAdmin)
   );
 
   // 고정 댓글 id 는 상세 payload 에도 실어 보낸다(UI 고정 배지용).
@@ -1691,6 +1705,35 @@ export async function setPinnedComment(
     commentId
   );
   return { pinnedCommentId: commentId };
+}
+
+// 비밀 댓글을 볼 수 없는 사람에겐 그 댓글과 딸린 답글을 통째로 뺀다(답글이 맨 위로 떠오르지 않게).
+// 볼 수 있는 사람 = 댓글 쓴이 · 글쓴이 · (답글이면) 원댓글 쓴이 · 관리자.
+async function hideSecretComments(
+  postId: string,
+  rows: CommunityCommentRow[],
+  viewerId: string | null,
+  viewerIsAdmin: boolean
+): Promise<CommunityCommentRow[]> {
+  if (viewerIsAdmin || !rows.some((r) => r.is_secret)) return rows;
+  let postOwner: string | null = null;
+  if (viewerId) {
+    const owner = await prisma.$queryRawUnsafe<{ user_id: string | null }[]>(
+      `SELECT "user_id" FROM "CommunityPost" WHERE "id" = $1 LIMIT 1`,
+      postId
+    );
+    postOwner = owner[0]?.user_id ?? null;
+  }
+  const authorOf = new Map(rows.map((r) => [r.id, r.user_id]));
+  const hidden = new Set<string>();
+  for (const r of rows) {
+    if (!r.is_secret) continue;
+    const ok =
+      !!viewerId &&
+      (r.user_id === viewerId || postOwner === viewerId || (!!r.parent_id && authorOf.get(r.parent_id) === viewerId));
+    if (!ok) hidden.add(r.id);
+  }
+  return rows.filter((r) => !hidden.has(r.id) && !(r.parent_id && hidden.has(r.parent_id)));
 }
 
 function buildCommentTree(rows: CommunityCommentRow[]) {
@@ -1828,6 +1871,7 @@ export async function createCommunityComment(input: {
   userId: string;
   parentId?: string | null;
   content: string;
+  isSecret?: boolean;
 }) {
   await ensureCommunityTables();
   await assertActiveCommunityPost(input.postId);
@@ -1861,6 +1905,10 @@ export async function createCommunityComment(input: {
     input.userId,
     input.content
   );
+  if (input.isSecret) {
+    await prisma.$executeRawUnsafe(`INSERT INTO "CommunityCommentSecret" ("comment_id") VALUES ($1) ON CONFLICT DO NOTHING`, id);
+  }
+  // 알림 받는 사람(원댓글 쓴이·글쓴이)은 비밀 댓글도 볼 수 있는 사람이라 본문을 그대로 보낸다.
   await notifyNewComment({ postId: input.postId, commentId: id, actorId: input.userId, parentId, content: input.content });
   return id;
 }
@@ -2463,7 +2511,7 @@ export async function getCommunityUserProfile(userId: string, viewerId?: string 
                 (SELECT COUNT(*)::int FROM "CommunityCommentLike" l WHERE l."comment_id" = c."id") AS "like_count"
          FROM "CommunityComment" c
          JOIN "CommunityPost" p ON p."id" = c."post_id" AND p."is_active" = true
-         WHERE c."user_id" = $1 AND c."is_active" = true
+         WHERE c."user_id" = $1 AND c."is_active" = true AND NOT EXISTS (SELECT 1 FROM "CommunityCommentSecret" sx WHERE sx."comment_id" = c."id")
          ORDER BY c."created_at" DESC LIMIT 30`,
         userId
       );
@@ -2609,7 +2657,7 @@ export async function getBlockedUserContent(blockerId: string, blockedId: string
     `SELECT c."id", c."post_id", c."content", c."created_at", p."title" AS "post_title"
      FROM "CommunityComment" c
      LEFT JOIN "CommunityPost" p ON p."id" = c."post_id"
-     WHERE c."user_id" = $1 AND c."is_active" = true
+     WHERE c."user_id" = $1 AND c."is_active" = true AND NOT EXISTS (SELECT 1 FROM "CommunityCommentSecret" sx WHERE sx."comment_id" = c."id")
      ORDER BY c."created_at" DESC LIMIT 50`,
     blockedId
   );

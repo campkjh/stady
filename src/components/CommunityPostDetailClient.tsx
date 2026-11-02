@@ -44,6 +44,8 @@ interface CommunityComment {
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
+  /** 비밀 댓글 — 서버가 볼 수 있는 사람에게만 내려 준다 */
+  isSecret?: boolean;
   replies: CommunityComment[];
 }
 
@@ -199,8 +201,10 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
   const [loading, setLoading] = useState(false);
   const [comment, setComment] = useState("");
   const [commentPosting, setCommentPosting] = useState(false);
-  // 토스처럼 답글도 아래 고정 입력창 하나로 쓴다: '답글 달기'를 누르면 입력창에 파란 @닉네임이 붙는다.
+  // 토스처럼 답글도 아래 고정 입력창 하나로 쓴다: '답글'을 누르면 입력창에 파란 @닉네임이 붙는다.
   const [replyTo, setReplyTo] = useState<{ id: string; nickname: string } | null>(null);
+  // 비밀 댓글(마이닥과 같은 자물쇠 토글) — 글쓴이·나(답글이면 원댓글 쓴이도)·관리자만 본다.
+  const [secret, setSecret] = useState(false);
   const composerRef = useRef<HTMLInputElement | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   // 스크롤을 내리면 헤더 아래로 그라데이션이 스르륵 나온다. 맨 위 1px 감시점이 화면에서 벗어났는지로 판단한다
@@ -431,12 +435,14 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(replyTo ? { content, parentId: replyTo.id } : { content }),
+        body: JSON.stringify({ content, ...(replyTo ? { parentId: replyTo.id } : {}), ...(secret ? { isSecret: true } : {}) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "댓글을 저장하지 못했습니다.");
+      if (secret) showToast("비밀 댓글을 남겼어요");
       setComment("");
       setReplyTo(null);
+      setSecret(false);
       await loadDetail();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "댓글을 저장하지 못했습니다.");
@@ -1077,7 +1083,17 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
               <div className="cpd-composer" data-tour="cd-compose">
                 <form className="cpd-compose" onSubmit={submitComment}>
                   <MiniAvatar nickname={me?.nickname ?? "나"} avatar={me?.avatar ?? null} size={40} />
-                  <div className="cpd-bar">
+                  <div className="cpd-bar" data-secret={secret || undefined}>
+                    <button
+                      type="button"
+                      className="cpd-secret"
+                      aria-pressed={secret}
+                      aria-label={secret ? "비밀 댓글 끄기" : "비밀 댓글로 쓰기"}
+                      title="비밀 댓글"
+                      onClick={() => setSecret((v) => { if (!v) showToast("비밀 댓글은 글쓴이와 나만 볼 수 있어요"); return !v; })}
+                    >
+                      <LockGlyph size={18} />
+                    </button>
                     {replyTo && (
                       <button type="button" className="cpd-mention" onClick={() => setReplyTo(null)} aria-label={`${replyTo.nickname}님 답글 취소`}>
                         @{replyTo.nickname}
@@ -1088,7 +1104,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
                       className="cpd-input"
                       value={comment}
                       onChange={(event) => setComment(event.target.value)}
-                      placeholder={replyTo ? "" : "댓글로 의견을 남겨보세요"}
+                      placeholder={replyTo ? "" : secret ? "비밀 댓글 · 글쓴이와 나만 봐요" : "댓글로 의견을 남겨보세요"}
                       enterKeyHint="send"
                       aria-label={replyTo ? `${replyTo.nickname}님에게 답글` : "댓글"}
                     />
@@ -1343,7 +1359,7 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-sort-item.on { color: #3182f6; font-weight: 700; }
         @keyframes cpdMenuIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
         .cpd-clist { display: grid; }
-        .cpd-c { display: flex; gap: 12px; padding: 18px 0 14px; }
+        .cpd-c { display: flex; flex-wrap: wrap; gap: 0 12px; padding: 18px 0 14px; }
         .cpd-c.is-reply { padding: 14px 0 6px; }
         .cpd-c.is-pinned { background: var(--c-warn-soft, transparent); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
         .cpd-c-main { min-width: 0; flex: 1; }
@@ -1352,7 +1368,9 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-c-name { color: var(--c-text-3, #6b7684); font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
         .cpd-c-time { margin-left: 5px; color: var(--c-text-4c, #8b95a1); font-size: 15px; font-weight: 500; }
         .cpd-c-text { margin: 4px 0 0; color: var(--c-text); font-size: 17px; line-height: 1.6; letter-spacing: -0.3px; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .cpd-c-acts { display: flex; align-items: center; gap: 16px; margin-top: 6px; color: #6b7684; }
+        /* 하트·답글 줄은 사진 아래 왼쪽 선부터(본문 칸 안에 두면 사진 폭만큼 밀린다) */
+        .cpd-c-acts { flex-basis: 100%; display: flex; align-items: center; gap: 16px; margin-top: 8px; color: #6b7684; }
+        .cpd-c-secret { display: inline-flex; align-items: center; gap: 3px; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: 5px; background: var(--c-bg-muted-2, #f2f4f6); color: var(--c-text-3, #6b7684); font-size: 12px; font-weight: 600; }
         .cpd-c-like { display: inline-flex; align-items: center; gap: 4px; padding: 4px 2px; border: none; background: none; color: inherit; font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .cpd-c-like.is-liked { color: #f04452; }
         .cpd-c-text-btn { padding: 4px 2px; border: none; background: none; color: #6b7684; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
@@ -1361,7 +1379,11 @@ export default function CommunityPostDetailClient({ postId }: CommunityPostDetai
         .cpd-c.is-active > .cpd-c-main > .cpd-c-text { background: rgba(49, 130, 246, 0.07); border-radius: 8px; }
         /* 아래 고정 입력 영역 */
         .cpd-compose { display: flex; align-items: center; gap: 10px; }
-        .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 18px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); }
+        .cpd-bar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; padding: 8px 8px 8px 8px; border-radius: 26px; background: var(--c-bg-muted-2, #f2f4f6); transition: box-shadow 0.15s ease; }
+        .cpd-bar[data-secret] { box-shadow: inset 0 0 0 1.5px rgba(49, 130, 246, 0.45); }
+        .cpd-secret { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: none; border-radius: 18px; background: transparent; color: var(--c-text-5, #b0b8c1); cursor: pointer; transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease; -webkit-tap-highlight-color: transparent; }
+        .cpd-secret:active { transform: scale(0.92); }
+        .cpd-secret[aria-pressed="true"] { color: #3182f6; background: var(--c-bg, #fff); }
         .cpd-mention { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none; color: #3182f6; font-size: 16px; font-weight: 500; letter-spacing: -0.2px; font-family: inherit; cursor: pointer; }
         .cpd-input { flex: 1; min-width: 0; height: 36px; border: none; outline: none; background: transparent; color: var(--c-text); font-size: 16px; font-family: inherit; caret-color: #3182f6; padding: 0; }
         .cpd-input::placeholder { color: var(--c-text-5, #b0b8c1); }
@@ -1438,7 +1460,7 @@ interface CommentItemProps {
   depth?: number;
 }
 
-// 토스식 댓글 한 줄: 아바타 · 이름 · 시간 / 본문 / 하트 · 답글 달기 · ⋯ . 답글은 본문 칸 안에 들여써서 이어진다.
+// 토스식 댓글 한 줄: 아바타 · 이름 · 시간 / 본문 / 하트 · 답글 · ⋯ (하트 줄은 사진 아래 왼쪽 선부터). 답글도 같은 왼쪽 선.
 function CommentItem({
   comment,
   activeReplyId,
@@ -1485,6 +1507,7 @@ function CommentItem({
           <TierBadge tier={comment.authorTier} />
           <KingBadges answer={comment.authorIsAnswerKing} pick={comment.authorIsPickKing} />
           <span className="cpd-c-time" title={formatExactTime(comment.createdAt)}>· {formatRelativeTime(comment.createdAt)}</span>
+          {comment.isSecret && <span className="cpd-c-secret"><LockGlyph size={12} />비밀</span>}
         </div>
         {isEditing ? (
           <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
@@ -1509,38 +1532,38 @@ function CommentItem({
         ) : (
           <p className="cpd-c-text">{renderWithMention(comment.content)}</p>
         )}
-        <div className="cpd-c-acts">
-          <button type="button" className={`cpd-c-like${comment.likedByMe ? " is-liked" : ""}`} aria-label="공감" aria-pressed={comment.likedByMe} onClick={() => onToggleLike(comment.id)}>
-            <TossHeartIcon filled={comment.likedByMe} />
-            {comment.likeCount > 0 && <span>{formatCount(comment.likeCount)}</span>}
+      </div>
+      <div className="cpd-c-acts">
+        <button type="button" className={`cpd-c-like${comment.likedByMe ? " is-liked" : ""}`} aria-label="공감" aria-pressed={comment.likedByMe} onClick={() => onToggleLike(comment.id)}>
+          <TossHeartIcon filled={comment.likedByMe} />
+          {comment.likeCount > 0 && <span>{formatCount(comment.likeCount)}</span>}
+        </button>
+        <button type="button" className="rp-btn" data-tour={depth === 0 ? "cd-reply" : undefined} onClick={() => onReply(comment)}>
+          <ReplyArrowIcon />
+          답글
+        </button>
+        {canPin && depth === 0 && (
+          <button type="button" className="cpd-c-text-btn" onClick={() => onTogglePin?.(comment.id)} disabled={pinBusy}>
+            {isPinned ? "고정 해제" : "고정"}
           </button>
-          <button type="button" className="rp-btn" data-tour={depth === 0 ? "cd-reply" : undefined} onClick={() => onReply(comment)}>
-            <ReplyArrowIcon />
-            답글 달기
-          </button>
-          {canPin && depth === 0 && (
-            <button type="button" className="cpd-c-text-btn" onClick={() => onTogglePin?.(comment.id)} disabled={pinBusy}>
-              {isPinned ? "고정 해제" : "고정"}
-            </button>
-          )}
-          {isAdmin && !isEditing && (
-            <>
-              <button type="button" className="cpd-c-text-btn" onClick={() => onStartEdit(comment)}>수정</button>
-              <button type="button" className="cpd-c-text-btn is-danger" onClick={() => onDelete(comment.id)}>삭제</button>
-            </>
-          )}
-          <span className="cpd-more">
-            <ReportBlockMenu
-              targetType="comment"
-              commentId={comment.id}
-              targetUserId={comment.userId}
-              targetNickname={comment.nickname}
-              currentUserId={currentUserId}
-              onBlocked={onBlocked}
-              variant="dots"
-            />
-          </span>
-        </div>
+        )}
+        {isAdmin && !isEditing && (
+          <>
+            <button type="button" className="cpd-c-text-btn" onClick={() => onStartEdit(comment)}>수정</button>
+            <button type="button" className="cpd-c-text-btn is-danger" onClick={() => onDelete(comment.id)}>삭제</button>
+          </>
+        )}
+        <span className="cpd-more">
+          <ReportBlockMenu
+            targetType="comment"
+            commentId={comment.id}
+            targetUserId={comment.userId}
+            targetNickname={comment.nickname}
+            currentUserId={currentUserId}
+            onBlocked={onBlocked}
+            variant="dots"
+          />
+        </span>
       </div>
     </div>
     {comment.replies.length > 0 && (
@@ -1728,3 +1751,13 @@ const commentBoxStyle = {
   background: "transparent",
   padding: "12px 0",
 } as const;
+
+// 비밀 댓글 자물쇠(마이닥과 같은 모양).
+function LockGlyph({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7.5 10.5V8a4.5 4.5 0 019 0v2.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <rect x="4.5" y="10" width="15" height="10.5" rx="3" fill="currentColor" />
+    </svg>
+  );
+}

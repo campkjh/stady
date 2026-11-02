@@ -22,6 +22,7 @@ function mapComment(c: CommunityCommentNode): unknown {
     createdAt: c.created_at,
     likeCount: toNumber(c.like_count ?? 0),
     likedByMe: Boolean(c.liked_by_me),
+    isSecret: Boolean(c.is_secret),
     replies: c.replies.map(mapComment),
   };
 }
@@ -35,7 +36,7 @@ export async function GET(
     const viewer = await getCurrentUser();
     const sortRaw = new URL(request.url).searchParams.get("sort") as CommentSort | null;
     const sort: CommentSort = sortRaw && SORTS.includes(sortRaw) ? sortRaw : "popular";
-    const comments = await getCommunityComments(postId, viewer?.id ?? null, true, sort);
+    const comments = await getCommunityComments(postId, viewer?.id ?? null, true, sort, viewer?.role === "admin");
     return NextResponse.json({
       comments: comments.map(mapComment),
       currentUserId: viewer?.id ?? null,
@@ -73,6 +74,7 @@ export async function POST(
     const body = await request.json();
     const content = String(body.content || "").trim();
     const parentId = body.parentId ? String(body.parentId) : null;
+    const isSecret = body.isSecret === true;
 
     if (!content) {
       return NextResponse.json({ error: "댓글 내용을 입력해주세요." }, { status: 400 });
@@ -83,6 +85,7 @@ export async function POST(
       userId: user.id,
       parentId,
       content,
+      isSecret,
     });
 
     return NextResponse.json({ id }, { status: 201 });

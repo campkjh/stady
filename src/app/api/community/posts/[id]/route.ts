@@ -53,6 +53,7 @@ function mapComment(comment: CommunityCommentNode, tiers: Record<string, Communi
     updatedAt: comment.updated_at,
     likeCount: toNumber(comment.like_count),
     likedByMe: Boolean(comment.liked_by_me),
+    isSecret: Boolean(comment.is_secret),
     replies: comment.replies.map((reply) => mapComment(reply, tiers, kings)),
   };
 }
@@ -85,6 +86,7 @@ export async function GET(
       activeOnly: true,
       viewerId: user?.id,
       sort,
+      viewerIsAdmin: user?.role === "admin",
     });
 
     if (!detail) {
