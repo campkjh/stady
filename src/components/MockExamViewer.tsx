@@ -32,6 +32,8 @@ interface HighlightBand {
 
 const PEN_COLORS = ["#111827", "#EF4444", "#3787FF", "#10B981"];
 const HL_COLORS = ["#FFE44D", "#8CF08C", "#FFB3D1", "#9DD8FF"];
+// 필기 캔버스 한 장의 최대 픽셀 수(약 16MB). 넘으면 배율을 낮춘다.
+const MAX_CANVAS_PIXELS = 4_000_000;
 
 // Tesseract.js를 필요할 때만 CDN에서 로드(메인 번들에 포함 안 함).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,36 +261,57 @@ const PageCanvas = forwardRef<
     // 크기가 바뀌면 캔버스 내용이 지워진다(화면 회전 등) — 아직 저장 못 한 획을 먼저 저장한다.
     persist();
     fittedSize.current = { w, h };
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    dprRef.current = dpr;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
-    const ctx = canvas.getContext("2d");
-    if (ctx) ctx.scale(dpr, dpr);
-    setSized(true);
     // 크기가 바뀌면 이전 패치 좌표가 어긋나므로 되돌리기 이력은 초기화.
     undoStack.current = [];
     redoStack.current = [];
     shadowRef.current = null;
     notifyHistory();
-    // 저장된 필기 복원. 복원이 끝날 때까지는 저장 금지(빈 캔버스로 덮어쓰는 걸 막는다).
-    restored.current = false;
     dirty.current = false;
+    let saved: string | null = null;
     try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved && saved.startsWith("data:image/")) {
-        restore(saved);
-      } else {
-        // 예전 버전이 반납된(0×0) 캔버스를 저장해 남긴 "data:," 같은 값은 그림이 아니다.
-        if (saved) localStorage.removeItem(storageKey);
-        syncShadow();
-        restored.current = true;
+      saved = localStorage.getItem(storageKey);
+      // 예전 버전이 반납된(0×0) 캔버스를 저장해 남긴 "data:," 같은 값은 그림이 아니다.
+      if (saved && !saved.startsWith("data:image/")) {
+        localStorage.removeItem(storageKey);
+        saved = null;
       }
     } catch {
-      restored.current = true;
+      saved = null;
     }
+    // 필기가 없는 페이지는 픽셀을 아예 잡지 않는다(펜을 대는 순간 allocate()).
+    // 보기만 해도 페이지마다 화면 크기 캔버스를 잡던 것이 안드로이드 태블릿에서
+    // 시험지가 안 뜨던 원인이었다 — 큰 화면일수록 캔버스가 커져 GPU 메모리가 먼저 바닥나고,
+    // 그러면 WebView 가 시험지 이미지를 그리지 못해 흰 화면이 된다.
+    canvas.width = 0;
+    canvas.height = 0;
+    setSized(true);
+    if (!saved) {
+      restored.current = true;
+      return;
+    }
+    // 저장된 필기 복원. 복원이 끝날 때까지는 저장 금지(빈 캔버스로 덮어쓰는 걸 막는다).
+    restored.current = false;
+    if (allocate()) restore(saved);
+    else restored.current = true;
+  }
+
+  // 필기용 픽셀을 잡는다(이미 잡혀 있으면 그대로). fit() 이 정한 크기 기준.
+  function allocate() {
+    const canvas = canvasRef.current;
+    const { w, h } = fittedSize.current;
+    if (!canvas || !nearRef.current || w === 0 || h === 0) return false;
+    if (canvas.width > 0) return true;
+    // 태블릿 전체 폭이면 한 장이 dpr 2 로 2168×3067(27MB)이다. 필기 선명도엔 충분한
+    // 선에서 장당 픽셀 수에 상한을 둔다.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(MAX_CANVAS_PIXELS / (w * h)));
+    dprRef.current = dpr;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.scale(dpr, dpr);
+    return true;
   }
 
   function restore(dataUrl: string) {
@@ -299,11 +322,10 @@ const PageCanvas = forwardRef<
     im.onload = () => {
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight);
-      syncShadow();
+      if (shadowRef.current) syncShadow();
       restored.current = true;
     };
     im.onerror = () => {
-      syncShadow();
       restored.current = true;
     };
     im.src = dataUrl;
@@ -320,7 +342,8 @@ const PageCanvas = forwardRef<
       shadow.height = canvas.height;
       shadowRef.current = shadow;
     }
-    const sctx = shadow.getContext("2d");
+    // 되돌리기용 getImageData 만 하는 캔버스라 CPU 메모리에 둔다(GPU 메모리 절약).
+    const sctx = shadow.getContext("2d", { willReadFrequently: true });
     if (!sctx) return null;
     sctx.clearRect(0, 0, shadow.width, shadow.height);
     sctx.drawImage(canvas, 0, 0);
@@ -429,7 +452,7 @@ const PageCanvas = forwardRef<
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      syncShadow();
+      if (shadowRef.current) syncShadow();
       undoStack.current = [];
       redoStack.current = [];
       if (persistTimer.current != null) {
@@ -595,6 +618,10 @@ const PageCanvas = forwardRef<
       capture(e);
       return;
     }
+    // 필기가 없던 페이지는 여기서 처음 픽셀을 잡는다. 지우개는 지울 게 없으니 건너뛴다.
+    if (tool === "eraser" ? !canvasRef.current?.width : !allocate()) return;
+    // 되돌리기의 '이전 상태'는 획을 시작하기 전에 떠 둬야 한다.
+    if (!shadowRef.current) syncShadow();
     if (tool === "highlight") {
       // 글자 줄에 스냅한 일직선 형광펜. 시작 시점 스냅샷을 떠서 러버밴드로 그린다.
       drawing.current = true;
