@@ -31,8 +31,6 @@ interface QuizSummaryEntry { answered: number; total: number; completed: boolean
 interface CsatGroup { collection: string; title: string; subject: string }
 // API 가 묶음 목록을 안 주던 때 대비 기본값
 const DEFAULT_GROUPS: CsatGroup[] = [{ collection: "csat-final", title: "사상가별 파이널 선지", subject: "생활과 윤리" }];
-const ELITE_PDF_LABELS = { problem: "시험지 PDF", solution: "해설 PDF" };
-const OX_PDF_LABELS = { problem: "문제 PDF", solution: "해설 PDF" };
 // 카드 버튼 안에 버튼을 넣을 수 없어서 카드 아래쪽에 자리를 비워 두고 겹쳐 올린다.
 const PDF_BTN_SPACE = 58;
 const PDF_BTN_STYLE = {
@@ -121,7 +119,7 @@ export default function CsatPrepPage() {
   const eliteLocked = !!elite?.isPremium && !isPremiumUser;
   // PDF 는 프리미엄만 받는다(API 가 다시 확인). 못 받는 사람은 누르면 로그인/결제로.
   const pdfBlocked = !isLoggedIn ? () => router.push("/login") : !isPremiumUser ? () => router.push("/subscribe") : undefined;
-  const pdfButton = (key: string, title: string, labels: typeof OX_PDF_LABELS) => {
+  const pdfButton = (key: string, title: string) => {
     const has = pdf[key];
     if (!has || (!has.problem && !has.solution)) return null;
     return (
@@ -131,7 +129,6 @@ export default function CsatPrepPage() {
         title={title}
         subtitle={null}
         has={has}
-        labels={labels}
         iconColor="var(--oxi-accent)"
         buttonStyle={PDF_BTN_STYLE}
         label="PDF 다운로드"
@@ -189,7 +186,7 @@ export default function CsatPrepPage() {
                     {elite.subject ? `${elite.subject} · ` : ""}{elite.totalQuestions}문항 실전 모의고사
                   </span>
                 </button>
-                {pdfButton("elite", [elite.subject, elite.title].filter(Boolean).join(" "), ELITE_PDF_LABELS)}
+                {pdfButton("elite", [elite.subject, elite.title].filter(Boolean).join(" "))}
                 </div>
               )}
               {groups.map((g) => {
@@ -215,7 +212,7 @@ export default function CsatPrepPage() {
                       {done > 0 && <span style={{ color: "var(--oxi-accent)" }}>{` · ${done}/${gs.length} 단원 완료`}</span>}
                     </span>
                   </button>
-                  {pdfButton(g.collection, `${g.subject} ${g.title}`, OX_PDF_LABELS)}
+                  {pdfButton(g.collection, `${g.subject} ${g.title}`)}
                   </div>
                 );
               })}
