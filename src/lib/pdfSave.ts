@@ -19,7 +19,9 @@ function isTouchDevice(): boolean {
 
 /** 파일을 미리 받아 둔다. 실패하면 오류 메시지를 던진다. */
 export async function fetchPdfFile(url: string, fileName: string): Promise<File> {
-  const res = await fetch(url, { credentials: "include" });
+  // Keep cookies for our premium check, but omit them after the Blob redirect.
+  // Blob allows CORS with '*', which browsers reject with credentials: 'include'.
+  const res = await fetch(url, { credentials: "same-origin" });
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error(data?.error || "PDF를 받지 못했어요.");
