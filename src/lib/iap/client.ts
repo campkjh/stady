@@ -51,6 +51,18 @@ function nativeWindow(): NativeWindow {
   return window as unknown as NativeWindow;
 }
 
+// Native replies have no request id, so restore and purchase must not overlap.
+let nativeFlow: Promise<void> = Promise.resolve();
+function requestNativeResult(
+  action: "iapPurchase" | "iapRestore",
+  payload: Record<string, unknown>,
+  timeoutMs?: number
+): Promise<IapNativeResult> {
+  const result = nativeFlow.then(() => awaitNativeResult(timeoutMs, () => sendToNative(action, payload)));
+  nativeFlow = result.then(() => undefined, () => undefined);
+  return result;
+}
+
 /** Open the shell's native login sheet (same bridge LoginRequired uses). */
 function requestNativeLogin() {
   const w = nativeWindow();
@@ -98,7 +110,12 @@ function sendToNative(action: "iapPurchase" | "iapRestore", payload: Record<stri
     w.webkit!.messageHandlers![action]!.postMessage(payload);
   } else if (platform === "google") {
     if (action === "iapPurchase") w.Android!.iapPurchase!(JSON.stringify(payload));
-    else w.Android!.iapRestore?.();
+    else {
+      if (typeof w.Android?.iapRestore !== "function") {
+        throw new Error("구매 복원을 지원하는 최신 앱으로 업데이트해 주세요.");
+      }
+      w.Android.iapRestore();
+    }
   } else {
     throw new Error("인앱결제는 앱에서만 이용할 수 있어요.");
   }
@@ -113,7 +130,7 @@ function sendToNative(action: "iapPurchase" | "iapRestore", payload: Record<stri
  * removed the callback, and the completed purchase's result had nowhere to land
  * (App Review rejection 2.1(b), 2026-08-21). The timeout is only a last-resort
  * guard against a dead bridge, so make it generous. */
-function awaitNativeResult(timeoutMs = 10 * 60_000): Promise<IapNativeResult> {
+function awaitNativeResult(timeoutMs = 10 * 60_000, dispatch?: () => void): Promise<IapNativeResult> {
   return new Promise<IapNativeResult>((resolve, reject) => {
     const timer = setTimeout(() => {
       cleanup();
@@ -122,16 +139,27 @@ function awaitNativeResult(timeoutMs = 10 * 60_000): Promise<IapNativeResult> {
     const w = nativeWindow();
     function cleanup() {
       clearTimeout(timer);
-      if (w.__STADY_IAP__) delete w.__STADY_IAP__;
+      if (w.__STADY_IAP__ === callback) delete w.__STADY_IAP__;
     }
-    w.__STADY_IAP__ = {
-      onResult(result) {
+    const callback = {
+      onResult(result: IapNativeResult | string) {
         cleanup();
-        const parsed: IapNativeResult =
-          typeof result === "string" ? (JSON.parse(result) as IapNativeResult) : result;
-        resolve(parsed);
+        try {
+          const parsed: IapNativeResult = typeof result === "string" ? JSON.parse(result) : result;
+          if (!parsed || typeof parsed.ok !== "boolean") throw new Error("Invalid native result");
+          resolve(parsed);
+        } catch {
+          reject(new Error("결제 응답을 확인하지 못했어요. ‘구매 복원’을 눌러 주세요."));
+        }
       },
     };
+    w.__STADY_IAP__ = callback;
+    try {
+      dispatch?.();
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
   });
 }
 
@@ -191,9 +219,7 @@ export async function autoRestoreEntitlement(): Promise<void> {
       .catch(() => null);
     // 비로그인(검증이 계정에 붙으므로)·이미 보유면 굳이 복원하지 않는다.
     if (!st || st.authenticated === false || st.entitlement?.active) return;
-    const pending = awaitNativeResult(30_000); // 조용한 경로라 짧게 — 응답 없으면 포기
-    sendToNative("iapRestore", {});
-    const result = await pending;
+    const result = await requestNativeResult("iapRestore", {}, 30_000);
     if (result.ok && (result.transactionId || result.purchaseToken || result.signedTransaction)) {
       await verifyWithServer(result);
     }
@@ -292,9 +318,7 @@ export function useIap() {
           requestNativeLogin();
           throw new Error("구독하려면 먼저 로그인해 주세요. 로그인 후 다시 시도하면 됩니다.");
         }
-        const pending = awaitNativeResult();
-        sendToNative("iapPurchase", { planId, productId });
-        const result = await pending;
+        const result = await requestNativeResult("iapPurchase", { planId, productId });
         if (!result.ok) {
           if (result.error === "cancelled") return; // user dismissed — silent
           // 이미 구매한 구독인데 지급이 안 된 경우(Google ITEM_ALREADY_OWNED=7 등):
@@ -302,9 +326,7 @@ export function useIap() {
           const alreadyOwned =
             result.code === "7" || /already|이미\s*(구매|소유|구독)/i.test(result.error || "");
           if (alreadyOwned) {
-            const restorePending = awaitNativeResult();
-            sendToNative("iapRestore", {});
-            const restored = await restorePending;
+            const restored = await requestNativeResult("iapRestore", {});
             if (
               restored.ok &&
               (restored.transactionId || restored.purchaseToken || restored.signedTransaction)
@@ -333,9 +355,7 @@ export function useIap() {
     busyRef.current = true;
     setBusy(true);
     try {
-      const pending = awaitNativeResult();
-      sendToNative("iapRestore", {});
-      const result = await pending;
+      const result = await requestNativeResult("iapRestore", {});
       if (result.ok && (result.transactionId || result.purchaseToken || result.signedTransaction)) {
         await verifyWithServer(result);
       }
