@@ -75,8 +75,8 @@ test("premium PDF redirect keeps app cookies without credentialed Blob CORS", as
 
     const downloaded = page.waitForEvent("download");
     await page.evaluate(async () => {
-      const { fetchPdfFile, savePdfFile } = await import("/pdfSave.js");
-      await savePdfFile(await fetchPdfFile("/api/csat-prep/pdf?key=elite", "elite.pdf"));
+      const { fetchPdfFile, downloadFiles } = await import("/pdfSave.js");
+      downloadFiles([await fetchPdfFile("/api/csat-prep/pdf?key=elite", "elite.pdf")]);
     });
     const download = await downloaded;
     assert.equal(download.suggestedFilename(), "elite.pdf");

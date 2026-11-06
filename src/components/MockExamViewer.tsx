@@ -57,7 +57,7 @@ interface PageHandle {
   clear: () => void;
   /** 부모가 스크롤 위치로 계산한 "화면 근처인가"를 알려준다. */
   setNear: (near: boolean) => void;
-  /** 스크롤 컨테이너 기준 위/아래 좌표(px). 근접 판정용. */
+  /** 확대 배율이 반영된 뷰포트 좌표(px). 근접 판정용. */
   bounds: () => { top: number; bottom: number } | null;
 }
 
@@ -126,6 +126,11 @@ const PageCanvas = forwardRef<
   // 마지막으로 캔버스를 맞춘 크기(같은 크기로 다시 맞추면 필기가 지워지므로).
   const fittedSize = useRef({ w: 0, h: 0 });
   const [sized, setSized] = useState(false);
+  const [pageRatio, setPageRatio] = useState(1555 / 2200);
+  const [imageState, setImageState] = useState<"loading" | "loaded" | "error">("loading");
+  const [imageAttempt, setImageAttempt] = useState(0);
+  const imageRetryTimer = useRef<number | null>(null);
+  const restoreVersion = useRef(0);
 
   // 지우개 커서: 지울 영역만큼의 원형 보더를 포인터 위치에 표시.
   function showEraserCursor(px: number, py: number) {
@@ -163,12 +168,21 @@ const PageCanvas = forwardRef<
   // 근접 여부는 부모가 스크롤 위치로 계산해 setNear 로 내려준다.
   // (IntersectionObserver 를 쓰지 않는 이유: 백그라운드 탭 등 콜백이 오지 않는 환경에서
   //  캔버스가 영원히 안 생겨 필기가 아예 막히는 위험이 있다. 스크롤 계산은 항상 동작한다.)
-  const [nearViewport, setNearViewport] = useState(true);
+  const [nearViewport, setNearViewport] = useState(pageIndex === 0);
   // fit() 은 이미지 onLoad 로도 불리므로(화면 밖 lazy 이미지가 뒤늦게 로드될 때)
   // state 가 아니라 ref 로 최신값을 봐야 한다.
-  const nearRef = useRef(true);
-  // 메모리 압박으로 이미지 디코딩이 드롭됐을 때 재시도 횟수(갤럭시탭 해설 빈 화면 복구).
-  const imgRetry = useRef(0);
+  const nearRef = useRef(pageIndex === 0);
+
+  // lazy 이미지도 한 번 읽으면 계속 남는다. 멀어진 이미지는 DOM에서 빼고,
+  // 마지막으로 확인한 페이지 비율만 유지해 스크롤 위치가 바뀌지 않게 한다.
+  useEffect(() => {
+    return () => {
+      if (imageRetryTimer.current !== null) {
+        window.clearTimeout(imageRetryTimer.current);
+        imageRetryTimer.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -183,6 +197,7 @@ const PageCanvas = forwardRef<
     // 멀어짐 — 그리는 중이면 건드리지 않는다.
     if (drawing.current) return;
     persist();
+    restoreVersion.current += 1;
     canvas.width = 0;
     canvas.height = 0;
     shadowRef.current = null;
@@ -214,6 +229,7 @@ const PageCanvas = forwardRef<
       // 픽셀을 잠깐 동시에 들고 있다가 새 해설 이미지 디코딩을 포기해 해설이 빈 화면이
       // 된다(iPad 는 여유가 있어 증상이 안 나타남 — 갤럭시탭 '해설 안 뜸' 신고의 원인).
       persist(canvasAtMount);
+      restoreVersion.current += 1;
       if (canvasAtMount) {
         canvasAtMount.width = 0;
         canvasAtMount.height = 0;
@@ -260,6 +276,7 @@ const PageCanvas = forwardRef<
     if (fittedSize.current.w === w && fittedSize.current.h === h) return;
     // 크기가 바뀌면 캔버스 내용이 지워진다(화면 회전 등) — 아직 저장 못 한 획을 먼저 저장한다.
     persist();
+    restoreVersion.current += 1;
     fittedSize.current = { w, h };
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
@@ -318,14 +335,17 @@ const PageCanvas = forwardRef<
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
+    const version = restoreVersion.current;
     const im = new Image();
     im.onload = () => {
+      if (version !== restoreVersion.current || !nearRef.current) return;
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight);
       if (shadowRef.current) syncShadow();
       restored.current = true;
     };
     im.onerror = () => {
+      if (version !== restoreVersion.current) return;
       restored.current = true;
     };
     im.src = dataUrl;
@@ -420,14 +440,24 @@ const PageCanvas = forwardRef<
 
   useImperativeHandle(ref, () => ({
     setNear(near: boolean) {
+      if (!near && drawing.current) return;
       if (nearRef.current === near) return;
+      if (!near) {
+        if (imageRetryTimer.current !== null) {
+          window.clearTimeout(imageRetryTimer.current);
+          imageRetryTimer.current = null;
+        }
+        setImageState("loading");
+        setImageAttempt(0);
+      }
       nearRef.current = near;
       setNearViewport(near);
     },
     bounds() {
       const wrap = wrapRef.current;
       if (!wrap) return null;
-      return { top: wrap.offsetTop, bottom: wrap.offsetTop + wrap.offsetHeight };
+      const rect = wrap.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
     },
     undo() {
       const patch = undoStack.current.pop();
@@ -773,50 +803,64 @@ const PageCanvas = forwardRef<
     onOcrRegion(off.toDataURL("image/png"));
   }
 
+  const imageSource = (() => {
+    if (imageAttempt === 0) return imageUrl;
+    const url = new URL(imageUrl, "https://stady.kr");
+    url.searchParams.set("_retry", String(imageAttempt));
+    return url.href;
+  })();
+
   return (
     <div
       ref={wrapRef}
-      style={{ position: "relative", width: "100%", marginBottom: 12, background: "var(--c-bg)", lineHeight: 0 }}
+      style={{ position: "relative", width: "100%", aspectRatio: pageRatio, marginBottom: 12, background: "#fff", lineHeight: 0 }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imgRef}
-        src={imageUrl}
-        alt={`페이지 ${pageIndex + 1}`}
-        onLoad={() => {
-          imgRetry.current = 0;
-          fit();
-        }}
-        // 메모리 압박(갤럭시탭)으로 디코딩이 드롭돼 빈 페이지가 되면, 캐시버스터 쿼리로
-        // 강제 재로딩·재디코딩을 몇 번 재시도해 해설 빈 화면을 자동 복구한다.
-        onError={() => {
-          if (imgRetry.current >= 3) return;
-          imgRetry.current += 1;
-          const attempt = imgRetry.current;
-          const base = imageUrl.split("#")[0];
-          const sep = base.includes("?") ? "&" : "?";
-          window.setTimeout(() => {
-            const el = imgRef.current;
-            if (el) el.src = `${base}${sep}_retry=${attempt}`;
-          }, 400 * attempt);
-        }}
-        // 시험지 16장을 한 번에 디코딩하면 이미지만 100MB가 넘어 안드로이드 WebView가
-        // 디코딩을 포기해 빈 페이지로 보인다(갤럭시탭 신고). 화면 근처만 디코딩한다.
-        //
-        // 단 첫 두 장은 절대 lazy 로 두지 않는다 — 첫 화면에 보이는 이미지에 lazy 를 걸면
-        // 브라우저 판단에 따라 로드가 늦거나(백그라운드·저사양) 아예 시작되지 않아
-        // "시험지가 안 보인다"는 같은 증상을 만든다. 실제로 그렇게 되는 것을 확인했다.
-        loading={pageIndex < 2 ? "eager" : "lazy"}
-        fetchPriority={pageIndex === 0 ? "high" : undefined}
-        decoding="async"
-        style={{
-          width: "100%", height: "auto", display: "block", userSelect: "none",
-          // lazy 로 두면 로드 전 높이가 0이라 스크롤이 튄다. 시험지 스캔은 A4 비율로
-          // 거의 일정하므로 기본 비율을 깔아두고, 로드되면 실제 비율이 이를 대체한다.
-          aspectRatio: "1555 / 2200",
-        }}
-        draggable={false}
-      />
+      {nearViewport && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imgRef}
+            src={imageSource}
+            alt={`페이지 ${pageIndex + 1}`}
+            onLoad={() => {
+              const img = imgRef.current;
+              if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                setPageRatio(img.naturalWidth / img.naturalHeight);
+              }
+              setImageState("loaded");
+              fit();
+            }}
+            onError={() => {
+              if (imageAttempt >= 3) {
+                setImageState("error");
+                return;
+              }
+              imageRetryTimer.current = window.setTimeout(() => {
+                imageRetryTimer.current = null;
+                setImageAttempt(attempt => attempt + 1);
+              }, 400 * (imageAttempt + 1));
+            }}
+            loading="eager"
+            fetchPriority={pageIndex === 0 ? "high" : undefined}
+            decoding="async"
+            style={{
+              width: "100%", height: "auto", display: "block", userSelect: "none",
+              visibility: imageState === "error" ? "hidden" : "visible",
+            }}
+            draggable={false}
+          />
+          {imageState !== "loaded" && (
+            <div style={{ position: "absolute", top: "min(240px, 30vh)", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "#6b7280", lineHeight: 1.5, fontSize: 14 }}>
+              <span role="status">{imageState === "error" ? "시험지를 불러오지 못했어요." : "시험지를 불러오는 중…"}</span>
+              {imageState === "error" && (
+                <button type="button" onClick={() => { setImageState("loading"); setImageAttempt(0); }} style={{ border: "1px solid #d1d5db", borderRadius: 6, padding: "8px 12px", color: "#2563eb", background: "#fff", cursor: "pointer" }}>
+                  다시 불러오기
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
       <canvas
         ref={canvasRef}
         onPointerDown={onDown}
@@ -830,7 +874,8 @@ const PageCanvas = forwardRef<
           inset: 0,
           touchAction: "pan-y",
           cursor: tool === "eraser" ? "none" : "crosshair",
-          opacity: sized ? 1 : 0,
+          opacity: sized && imageState === "loaded" ? 1 : 0,
+          pointerEvents: imageState === "loaded" ? "auto" : "none",
         }}
       />
       {/* 지우개 영역 표시 커서 */}
@@ -934,7 +979,7 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
     };
   }, []);
 
-  // 화면 근처 페이지만 캔버스를 들고 있게 한다.
+  // 화면 근처 페이지만 이미지와 캔버스를 들고 있게 한다.
   //
   // 한 과목이 16장까지 되는데 페이지마다 표시용/되돌리기용 캔버스를 device pixel 해상도로
   // 잡는다. 768px 태블릿 실측으로 캔버스 405MB + 그림자 405MB + 이미지 디코딩 105MB =
@@ -943,20 +988,19 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
   //
   // 스크롤할 때마다 위아래 한 화면 분량만 살려두고 나머지는 캔버스를 반납시킨다.
   // 필기는 반납 직전에 저장되고 다시 가까워지면 복원된다.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const sc = scrollRef.current;
     if (!sc) return;
     let timer = 0;
     const apply = () => {
       timer = 0;
       const vh = sc.clientHeight || 1;
-      const z = zoomRef.current || 1;
-      const top = sc.scrollTop / z;
-      const margin = vh; // 위아래로 한 화면씩 여유
+      const viewport = sc.getBoundingClientRect();
+      const margin = vh / 2;
       for (const h of pageRefs.current) {
         const b = h?.bounds();
         if (!h || !b) continue;
-        h.setNear(b.bottom > top - margin && b.top < top + vh / z + margin);
+        h.setNear(b.bottom > viewport.top - margin && b.top < viewport.bottom + margin);
       }
     };
     // rAF 로 묶으면 탭이 백그라운드일 때 콜백이 오지 않아 스크롤에 반응하지 못한다.
@@ -968,6 +1012,9 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
     };
     sc.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onScroll) : null;
+    if (contentRef.current) ro?.observe(contentRef.current);
+    ro?.observe(sc);
     // 이미지가 로드되며 높이가 바뀌므로 초기에 몇 번 다시 계산한다.
     apply();
     const t1 = window.setTimeout(apply, 300);
@@ -975,11 +1022,12 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
     return () => {
       sc.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      ro?.disconnect();
       if (timer) window.clearTimeout(timer);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [section, pages.length]);
+  }, [section, pages.length, zoom]);
 
   // 핀치 제스처(두 손가락). 스타일러스가 섞이면 필기이므로 무시.
   useEffect(() => {
@@ -1363,7 +1411,7 @@ export default function MockExamViewer({ exam, pdf }: { exam: Exam; /** 원본 P
         <div ref={sizerRef} style={{ transformOrigin: "0 0" }}>
           <div
             ref={contentRef}
-            style={{ transformOrigin: "0 0", transform: `scale(${zoom})` }}
+            style={{ transformOrigin: "0 0", transform: zoom === 1 ? "none" : `scale(${zoom})` }}
           >
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 8px 40px" }}>
               {pages.length === 0 ? (
