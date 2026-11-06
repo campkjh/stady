@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
 import { uiConfirm } from "@/lib/dialog";
+import ProblemExplanation from "@/components/ProblemExplanation";
 
 interface RetestItem {
   id: string;
@@ -354,7 +355,7 @@ function RetestContent() {
                 </p>
                 {current.explanation && (
                   <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 12, background: "var(--c-bg-soft)" }}>
-                    <p style={{ fontSize: 15.5, color: "var(--c-text-2d)", lineHeight: 1.65 }}>{current.explanation}</p>
+                    <ProblemExplanation explanation={current.explanation} style={{ fontSize: 15.5, color: "var(--c-text-2d)", lineHeight: 1.65 }} />
                   </div>
                 )}
               </div>

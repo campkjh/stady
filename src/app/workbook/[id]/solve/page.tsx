@@ -6,6 +6,7 @@ import SideTapNavigation from "@/components/SideTapNavigation";
 import AlertModal from "@/components/AlertModal";
 import { maybePromptAppReviewAfterQuiz } from "@/lib/appReview";
 import SideTapToggle from "@/components/SideTapToggle";
+import ProblemExplanation from "@/components/ProblemExplanation";
 
 interface Problem {
   id: string;
@@ -572,9 +573,7 @@ export default function SolvePage() {
 
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-c)", marginBottom: 8 }}>해설</h3>
             {currentProblem.explanation ? (
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--c-text-2c)", whiteSpace: "pre-wrap" }}>
-                {currentProblem.explanation}
-              </p>
+              <ProblemExplanation explanation={currentProblem.explanation} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--c-text-2c)", whiteSpace: "pre-wrap" }} />
             ) : (
               <p style={{ fontSize: 13, color: "var(--c-text-4c)" }}>해설이 아직 준비되지 않았습니다.</p>
             )}
