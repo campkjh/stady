@@ -6,6 +6,7 @@ import AlertModal from "@/components/AlertModal";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import { useModalExit } from "@/lib/useModalExit";
 import MockExamPdfButton from "@/components/MockExamPdfButton";
+import { deleteInk, loadInk, peekInk, saveInk } from "@/lib/inkStore";
 
 type Tool = "pen" | "highlight" | "eraser" | "ocr";
 
@@ -103,7 +104,7 @@ const PageCanvas = forwardRef<
   const redoStack = useRef<StrokePatch[]>([]);
   // 현재 획이 지나간 영역(CSS px). 커밋할 때 이 사각형만 잘라 저장한다.
   const strokeBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
-  // 필기 중에는 저장을 미루는 타이머(연속 필기 중 localStorage 쓰기로 끊기지 않게).
+  // 필기 중에는 저장을 미루는 타이머(연속 필기 중 PNG 인코딩으로 끊기지 않게).
   const persistTimer = useRef<number | null>(null);
   // 저장된 필기를 캔버스에 되살리는 중인지. 복원 전 캔버스는 비어 있으므로
   // 그 상태로 저장하면 "빈 그림"이 원본을 덮어쓴다(아래 persist 주석 참고).
@@ -131,6 +132,8 @@ const PageCanvas = forwardRef<
   const [imageAttempt, setImageAttempt] = useState(0);
   const imageRetryTimer = useRef<number | null>(null);
   const restoreVersion = useRef(0);
+  // 화면에서 멀어졌지만 저장을 못 해 캔버스를 반납하지 않고 들고 있는 중.
+  const keptUnsaved = useRef(false);
 
   // 지우개 커서: 지울 영역만큼의 원형 보더를 포인터 위치에 표시.
   function showEraserCursor(px: number, py: number) {
@@ -163,8 +166,7 @@ const PageCanvas = forwardRef<
   // 이미지 디코딩부터 포기해 "시험지가 안 보인다"가 된다(갤럭시탭 신고).
   //
   // 그래서 뷰포트에서 멀어지면 캔버스 크기를 0으로 되돌려 메모리를 반납한다.
-  // 필기는 해제 직전에 localStorage 로 저장하고, 다시 가까워지면 fit() 이 복원한다
-  // (fit 은 원래도 크기가 바뀌면 localStorage 에서 되살리는 경로를 갖고 있다).
+  // 필기는 해제 직전에 저장하고(lib/inkStore.ts), 다시 가까워지면 fit() 이 복원한다.
   // 근접 여부는 부모가 스크롤 위치로 계산해 setNear 로 내려준다.
   // (IntersectionObserver 를 쓰지 않는 이유: 백그라운드 탭 등 콜백이 오지 않는 환경에서
   //  캔버스가 영원히 안 생겨 필기가 아예 막히는 위험이 있다. 스크롤 계산은 항상 동작한다.)
@@ -188,15 +190,24 @@ const PageCanvas = forwardRef<
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (nearViewport) {
-      // 다시 화면 근처 — 강제로 다시 맞춘다(fit 은 같은 크기면 건너뛰므로 캐시를 비운다).
       nearRef.current = true;
+      // 저장을 못 해 반납하지 않고 들고 있던 캔버스면 그대로 쓴다(다시 맞추면 지워진다).
+      if (keptUnsaved.current) {
+        keptUnsaved.current = false;
+        return;
+      }
+      // 다시 화면 근처 — 강제로 다시 맞춘다(fit 은 같은 크기면 건너뛰므로 캐시를 비운다).
       fittedSize.current = { w: 0, h: 0 };
       fit();
       return;
     }
     // 멀어짐 — 그리는 중이면 건드리지 않는다.
     if (drawing.current) return;
-    persist();
+    // 저장에 실패했으면(메모리 부족 등) 반납하지 않는다 — 반납하면 그 필기는 사라진다.
+    if (!persist()) {
+      keptUnsaved.current = true;
+      return;
+    }
     restoreVersion.current += 1;
     canvas.width = 0;
     canvas.height = 0;
@@ -286,17 +297,6 @@ const PageCanvas = forwardRef<
     shadowRef.current = null;
     notifyHistory();
     dirty.current = false;
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem(storageKey);
-      // 예전 버전이 반납된(0×0) 캔버스를 저장해 남긴 "data:," 같은 값은 그림이 아니다.
-      if (saved && !saved.startsWith("data:image/")) {
-        localStorage.removeItem(storageKey);
-        saved = null;
-      }
-    } catch {
-      saved = null;
-    }
     // 필기가 없는 페이지는 픽셀을 아예 잡지 않는다(펜을 대는 순간 allocate()).
     // 보기만 해도 페이지마다 화면 크기 캔버스를 잡던 것이 안드로이드 태블릿에서
     // 시험지가 안 뜨던 원인이었다 — 큰 화면일수록 캔버스가 커져 GPU 메모리가 먼저 바닥나고,
@@ -304,14 +304,22 @@ const PageCanvas = forwardRef<
     canvas.width = 0;
     canvas.height = 0;
     setSized(true);
-    if (!saved) {
-      restored.current = true;
+    // 저장된 필기 복원. 복원이 끝날 때까지는 저장 금지(빈 캔버스로 덮어쓰는 걸 막는다).
+    // 메모리에 있으면 바로, 없으면 IndexedDB 에서 읽어 온다(lib/inkStore.ts).
+    const version = restoreVersion.current;
+    const apply = (saved: string | null) => {
+      // 기다리는 사이 다시 맞췄거나(크기 변경·반납) 화면에서 멀어졌으면 그쪽이 처리한다.
+      if (version !== restoreVersion.current || !nearRef.current) return;
+      if (saved && allocate()) restore(saved);
+      else restored.current = true;
+    };
+    const cached = peekInk(storageKey);
+    if (cached !== undefined) {
+      apply(cached || null);
       return;
     }
-    // 저장된 필기 복원. 복원이 끝날 때까지는 저장 금지(빈 캔버스로 덮어쓰는 걸 막는다).
     restored.current = false;
-    if (allocate()) restore(saved);
-    else restored.current = true;
+    void loadInk(storageKey).then(apply);
   }
 
   // 필기용 픽셀을 잡는다(이미 잡혀 있으면 그대로). fit() 이 정한 크기 기준.
@@ -334,13 +342,17 @@ const PageCanvas = forwardRef<
   function restore(dataUrl: string) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx) { restored.current = true; return; }
+    restored.current = false;
     const version = restoreVersion.current;
     const im = new Image();
     im.onload = () => {
       if (version !== restoreVersion.current || !nearRef.current) return;
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      // 불러오는 사이 먼저 그은 획이 있으면 지우지 않고 그 아래에 깐다.
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-over";
       ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight);
+      ctx.restore();
       if (shadowRef.current) syncShadow();
       restored.current = true;
     };
@@ -370,7 +382,7 @@ const PageCanvas = forwardRef<
     return shadow;
   }
 
-  // 현재 캔버스를 localStorage 에 저장한다.
+  // 현재 캔버스를 저장한다(lib/inkStore.ts — 메모리 + IndexedDB).
   //
   // ⚠️ 저장은 "지금 캔버스에 보이는 것"을 그대로 덮어쓰는 동작이라, 캔버스가 아직
   //    준비되지 않은 순간에 부르면 **멀쩡한 필기가 빈 그림으로 지워진다.** 실제로
@@ -383,23 +395,31 @@ const PageCanvas = forwardRef<
   // 언마운트 정리에서 부를 때는 캔버스를 인자로 받는다 — 리액트가 passive 정리보다
   // 먼저 ref 를 null 로 끊어서, ref 로만 찾으면 아무것도 저장되지 않는다(섹션을 바꾸기
   // 직전에 그은 획이 사라지던 또 하나의 경로).
-  function persist(target?: HTMLCanvasElement | null) {
+  //
+  // 저장 못 한 획이 남아 있으면 false — 그때는 캔버스를 반납하면 안 된다.
+  function persist(target?: HTMLCanvasElement | null): boolean {
     if (persistTimer.current != null) {
       window.clearTimeout(persistTimer.current);
       persistTimer.current = null;
     }
     const canvas = target ?? canvasRef.current;
-    if (!canvas || canvas.width === 0 || canvas.height === 0) return;
-    if (!restored.current || !dirty.current) return;
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return true;
+    if (!dirty.current) return true;
+    if (!restored.current) return false;
+    let url = "";
     try {
-      localStorage.setItem(storageKey, canvas.toDataURL("image/png"));
-      dirty.current = false;
+      url = canvas.toDataURL("image/png");
     } catch {
-      /* 용량 초과 등은 무시(dirty 를 남겨 다음 기회에 다시 시도한다) */
+      /* 아래에서 실패로 처리 */
     }
+    // 메모리가 모자라면 WebKit 이 "data:," 를 돌려준다 — 그걸 저장하면 필기가 지워진다.
+    if (!url.startsWith("data:image/")) return false;
+    saveInk(storageKey, url);
+    dirty.current = false;
+    return true;
   }
 
-  // 저장(전체 캔버스 PNG 인코딩 + localStorage 쓰기)은 무겁다. 획이 끝날 때마다
+  // 저장(전체 캔버스 PNG 인코딩)은 무겁다. 획이 끝날 때마다
   // 바로 하지 않고 손을 뗀 뒤 잠깐 쉴 때 한 번만 처리해, 연속으로 쓰는 동안
   // 메인 스레드가 막혀 다음 획을 놓치는 일이 없게 한다.
   function schedulePersist() {
@@ -489,7 +509,7 @@ const PageCanvas = forwardRef<
         window.clearTimeout(persistTimer.current);
         persistTimer.current = null;
       }
-      try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
+      deleteInk(storageKey);
       dirty.current = false;
       notifyHistory();
     },
