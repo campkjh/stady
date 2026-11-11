@@ -52,7 +52,8 @@ export function downloadFiles(files: File[]) {
 export async function shareFiles(files: File[]): Promise<"shared" | "cancelled" | "blocked"> {
   try {
     if (typeof navigator.share !== "function" || !navigator.canShare?.({ files })) return "blocked";
-    await navigator.share({ files, title: files[0]?.name });
+    // title 은 넘기지 않는다 — 아이폰 공유 시트가 그 글자를 '텍스트' 파일로 같이 저장한다(엘리트 신고).
+    await navigator.share({ files });
     return "shared";
   } catch (e) {
     if (e instanceof Error && e.name === "AbortError") return "cancelled";

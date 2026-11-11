@@ -229,7 +229,7 @@ export default function AdminInquiriesPage() {
                     wordBreak: "break-word",
                     lineHeight: 1.7,
                   }}>
-                    {inquiry.content}
+                    {inquiryText(inquiry.content)}
                   </div>
 
                   {/* Existing reply */}
@@ -328,6 +328,21 @@ export default function AdminInquiriesPage() {
 
 /* 제이씨랩 자가견적(jaicylab.com/estimate) 톤.
    면=흰색, 보조면·경계=#F2F3F5, 강조=#EAF2FF/#3180F7, 그림자 없음. */
+// 문의 본문은 고객센터 에디터가 만든 HTML 이다. 태그를 그대로 보여 주지 않고 글자만 꺼낸다
+// (사용자가 쓴 HTML 을 관리자 화면에 innerHTML 로 넣지는 않는다).
+function inquiryText(html: string): string {
+  if (!/<[a-z/][^>]*>/i.test(html)) return html;
+  const text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
+    .replace(/<img[^>]*>/gi, "[이미지]")
+    .replace(/<[^>]*>/g, "");
+  if (typeof document === "undefined") return text.trim();
+  const ta = document.createElement("textarea");
+  ta.innerHTML = text; // &amp; 같은 문자 참조만 푼다(textarea 는 태그를 실행하지 않는다).
+  return ta.value.trim();
+}
+
 const JC = {
   soft: "var(--c-bg-muted-3)", // #F2F3F5
   accentBg: "var(--c-brand-soft-6)", // #EAF2FF
